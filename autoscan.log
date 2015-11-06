@@ -1,0 +1,13 @@
+autoscan: warning: missing AC_CHECK_HEADERS([fcntl.h]) wanted by: 
+	lib/examples/sasearch.c:51
+	lib/examples/suftest.c:51
+	lib/examples/unbwt.c:51
+	lib/examples/mksary.c:51
+	lib/examples/bwt.c:51
+autoscan: warning: missing AC_CHECK_HEADERS([stddef.h]) wanted by: 
+	lib/examples/sasearch.c:41
+	lib/examples/suftest.c:41
+	lib/examples/unbwt.c:41
+	lib/examples/mksary.c:41
+	lib/examples/bwt.c:41
+	lib/include/divsufsort_private.h:49

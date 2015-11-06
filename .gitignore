@@ -1,0 +1,8 @@
+# Ignore Autotools cache
+**/*.cache
+**/.deps
+# Ignore any Eclipse metadata
+**/.autotools
+**/.cproject
+**/.project
+**/.settings
