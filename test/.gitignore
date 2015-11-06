@@ -1,0 +1,5 @@
+*.o
+*.fasta
+*.fastq
+*.dat
+*test?
