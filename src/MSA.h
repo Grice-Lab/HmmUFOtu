@@ -9,7 +9,7 @@
 #define MSA_H_
 #include <string>
 #include <vector>
-#include <fstream>
+#include <iostream>
 #include <stdexcept>
 #include "SeqCommons.h"
 
@@ -42,6 +42,10 @@ public:
 		return concatMSA;
 	}
 
+	/*
+	 * Get the consensus seq of this MSA
+	 * @return the consensus seq
+	 */
 	const string& getCS() const {
 		return CS;
 	}
@@ -140,7 +144,7 @@ public:
 	 * @param f  the binary output
 	 * @return  true if everything is good after saved
 	 */
-	bool save(ofstream& f);
+	bool save(std::ostream& f);
 
 	/* static methods */
 	/**
@@ -168,7 +172,7 @@ public:
 	 * @return  a newly constructed MSA pointer
 	 * @throws invalid_argument if alphabet or format is not known
 	 */
-	 static MSA* load(ifstream& f);
+	 static MSA* load(std::istream& f);
 
 	 virtual ~MSA() {
 		 clear();
@@ -190,6 +194,9 @@ private:
 	/* Clear the heap memories */
 	void clear();
 
+	/* calculate the CS if not provided by the MSA file */
+	void calculateCS();
+
 	string alphabet;
 	const DegenAlphabet* abc;
 	unsigned numSeq; /* number of sequences */
@@ -198,7 +205,7 @@ private:
 	//vector<string> ids;
 	string concatMSA; // concatenated MSA
 	string CS;        // Consensus Sequence
-	unsigned **resCount; /* Residual count matrix w/ csLen * alphabet-size dimention */
+	unsigned **resCount; /* Residual count matrix w/ csLen * alphabet-size dimension */
 	unsigned *gapCount; /* gap count array w/ CSLen length */
 };
 
@@ -231,10 +238,14 @@ inline string MSA::alignAt(unsigned j) const {
 
 inline MSA* MSA::loadMSAFile(const string& alphabet,
 		const string& filename, const string& format) {
+	MSA* msa = NULL;
 	if(format == "fasta")
-		return loadFastaFile(alphabet, filename);
+		msa = loadFastaFile(alphabet, filename);
 	else
 		throw invalid_argument("Unsupported MSA file format '" + format + "'");
+	/* construct the CS, if it is not set bythe MSA file yet */
+	msa->calculateCS();
+	return msa;
 }
 
 } /* namespace EGriceLab */

@@ -13,6 +13,7 @@
 #include <map>
 #include <vector>
 #include <cassert>
+#include <cmath>
 
 namespace EGriceLab {
 using std::map;
@@ -103,11 +104,12 @@ V max(map<K, V> freq) {
 template <typename T>
 T max(const T* arr, size_t n) {
 	assert(n > 0);
-	T max = arr++[0];
-	while(arr != arr + n) {
-		if(max < *arr)
-			max = *arr;
-		arr++;
+	const T* ptr = arr;
+	T max = ptr++[0];
+	while(ptr != arr + n) {
+		if(max < *ptr)
+			max = *ptr;
+		ptr++;
 	}
 	return max;
 }
@@ -125,6 +127,20 @@ bool is_element(T x, vector<T> vec) {
 		if(*it == x)
 			return true;
 	return false;
+}
+
+/**
+ * calculate bit-per-element for an given alphabet
+ * @param n  maximum number to encode
+ * @return bits required to encode this numbers upto this value, or -1 if size is zero or negative
+ */
+inline int bpe(int n) {
+	if(n <= 0)
+		return -1;
+	int shift = 0;
+	for(int x = 1; x < n; x <<= 1)
+		shift++;
+	return shift;
 }
 
 } /* namespace EGriceLab */

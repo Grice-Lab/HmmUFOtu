@@ -92,10 +92,13 @@ target_triplet = x86_64-unknown-linux-gnu
 noinst_PROGRAMS = alphabet_test1$(EXEEXT) dna_test1$(EXEEXT) \
 	nucl_test1$(EXEEXT) amino_test1$(EXEEXT) seqIO_test1$(EXEEXT) \
 	banded_align_known_seed_test1$(EXEEXT) MSAIO_test1$(EXEEXT) \
-	MSAIO_test2$(EXEEXT)
+	MSAIO_test2$(EXEEXT) FMIO_test1$(EXEEXT) FMIO_test2$(EXEEXT)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -103,59 +106,53 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__dirstamp = $(am__leading_dot)dirstamp
-am_MSAIO_test1_OBJECTS = MSAIO_test1.$(OBJEXT) \
-	../src/Alphabet.$(OBJEXT) ../src/StringUtils.$(OBJEXT) \
-	../src/DegenAlphabet.$(OBJEXT) ../src/IUPACNucl.$(OBJEXT) \
-	../src/IUPACAmino.$(OBJEXT) ../src/SeqCommons.$(OBJEXT) \
-	../src/MSA.$(OBJEXT) ../src/PrimarySeq.$(OBJEXT) \
-	../src/SeqIO.$(OBJEXT) ../src/Stats.$(OBJEXT)
+am_FMIO_test1_OBJECTS = FMIO_test1.$(OBJEXT)
+FMIO_test1_OBJECTS = $(am_FMIO_test1_OBJECTS)
+FMIO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a \
+	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+	$(top_srcdir)/src/libcds/src/libcds.la
+AM_V_lt = $(am__v_lt_$(V))
+am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
+am__v_lt_0 = --silent
+am__v_lt_1 = 
+FMIO_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(FMIO_test1_LDFLAGS) $(LDFLAGS) -o $@
+am_FMIO_test2_OBJECTS = FMIO_test2.$(OBJEXT)
+FMIO_test2_OBJECTS = $(am_FMIO_test2_OBJECTS)
+FMIO_test2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a \
+	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+	$(top_srcdir)/src/libcds/src/libcds.la
+FMIO_test2_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(FMIO_test2_LDFLAGS) $(LDFLAGS) -o $@
+am_MSAIO_test1_OBJECTS = MSAIO_test1.$(OBJEXT)
 MSAIO_test1_OBJECTS = $(am_MSAIO_test1_OBJECTS)
-MSAIO_test1_LDADD = $(LDADD)
-am_MSAIO_test2_OBJECTS = MSAIO_test2.$(OBJEXT) \
-	../src/Alphabet.$(OBJEXT) ../src/StringUtils.$(OBJEXT) \
-	../src/DegenAlphabet.$(OBJEXT) ../src/IUPACNucl.$(OBJEXT) \
-	../src/IUPACAmino.$(OBJEXT) ../src/SeqCommons.$(OBJEXT) \
-	../src/MSA.$(OBJEXT) ../src/PrimarySeq.$(OBJEXT) \
-	../src/SeqIO.$(OBJEXT) ../src/Stats.$(OBJEXT)
+MSAIO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+am_MSAIO_test2_OBJECTS = MSAIO_test2.$(OBJEXT)
 MSAIO_test2_OBJECTS = $(am_MSAIO_test2_OBJECTS)
-MSAIO_test2_LDADD = $(LDADD)
-am_alphabet_test1_OBJECTS = alphabet_test1.$(OBJEXT) \
-	../src/Alphabet.$(OBJEXT) ../src/StringUtils.$(OBJEXT)
+MSAIO_test2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+am_alphabet_test1_OBJECTS = alphabet_test1.$(OBJEXT)
 alphabet_test1_OBJECTS = $(am_alphabet_test1_OBJECTS)
-alphabet_test1_LDADD = $(LDADD)
-am_amino_test1_OBJECTS = amino_test1.$(OBJEXT) \
-	../src/Alphabet.$(OBJEXT) ../src/StringUtils.$(OBJEXT) \
-	../src/DegenAlphabet.$(OBJEXT) ../src/IUPACAmino.$(OBJEXT)
+alphabet_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+am_amino_test1_OBJECTS = amino_test1.$(OBJEXT)
 amino_test1_OBJECTS = $(am_amino_test1_OBJECTS)
-amino_test1_LDADD = $(LDADD)
+amino_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 am_banded_align_known_seed_test1_OBJECTS =  \
-	banded_align_known_seed_test1.$(OBJEXT) \
-	../src/Alphabet.$(OBJEXT) ../src/StringUtils.$(OBJEXT) \
-	../src/DegenAlphabet.$(OBJEXT) ../src/IUPACNucl.$(OBJEXT) \
-	../src/IUPACAmino.$(OBJEXT) ../src/SeqCommons.$(OBJEXT) \
-	../src/PrimarySeq.$(OBJEXT) ../src/BandedHMMP7Bg.$(OBJEXT) \
-	../src/BandedHMMP7.$(OBJEXT)
+	banded_align_known_seed_test1.$(OBJEXT)
 banded_align_known_seed_test1_OBJECTS =  \
 	$(am_banded_align_known_seed_test1_OBJECTS)
-banded_align_known_seed_test1_LDADD = $(LDADD)
-am_dna_test1_OBJECTS = dna_test1.$(OBJEXT) ../src/Alphabet.$(OBJEXT) \
-	../src/StringUtils.$(OBJEXT) ../src/DegenAlphabet.$(OBJEXT) \
-	../src/DNA.$(OBJEXT)
+banded_align_known_seed_test1_DEPENDENCIES =  \
+	$(top_srcdir)/src/libHmmUFOtu.a
+am_dna_test1_OBJECTS = dna_test1.$(OBJEXT)
 dna_test1_OBJECTS = $(am_dna_test1_OBJECTS)
-dna_test1_LDADD = $(LDADD)
-am_nucl_test1_OBJECTS = nucl_test1.$(OBJEXT) ../src/Alphabet.$(OBJEXT) \
-	../src/StringUtils.$(OBJEXT) ../src/DegenAlphabet.$(OBJEXT) \
-	../src/IUPACNucl.$(OBJEXT)
+dna_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+am_nucl_test1_OBJECTS = nucl_test1.$(OBJEXT)
 nucl_test1_OBJECTS = $(am_nucl_test1_OBJECTS)
-nucl_test1_LDADD = $(LDADD)
-am_seqIO_test1_OBJECTS = seqIO_test1.$(OBJEXT) \
-	../src/Alphabet.$(OBJEXT) ../src/StringUtils.$(OBJEXT) \
-	../src/DegenAlphabet.$(OBJEXT) ../src/IUPACNucl.$(OBJEXT) \
-	../src/IUPACAmino.$(OBJEXT) ../src/SeqCommons.$(OBJEXT) \
-	../src/PrimarySeq.$(OBJEXT) ../src/SeqIO.$(OBJEXT)
+nucl_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+am_seqIO_test1_OBJECTS = seqIO_test1.$(OBJEXT)
 seqIO_test1_OBJECTS = $(am_seqIO_test1_OBJECTS)
-seqIO_test1_LDADD = $(LDADD)
+seqIO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
 am__v_P_0 = false
@@ -174,22 +171,29 @@ am__depfiles_maybe = depfiles
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+LTCXXCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CXXFLAGS) $(CXXFLAGS)
 AM_V_CXX = $(am__v_CXX_$(V))
 am__v_CXX_ = $(am__v_CXX_$(AM_DEFAULT_VERBOSITY))
 am__v_CXX_0 = @echo "  CXX     " $@;
 am__v_CXX_1 = 
 CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
+CXXLINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CXXLD = $(am__v_CXXLD_$(V))
 am__v_CXXLD_ = $(am__v_CXXLD_$(AM_DEFAULT_VERBOSITY))
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(MSAIO_test1_SOURCES) $(MSAIO_test2_SOURCES) \
+SOURCES = $(FMIO_test1_SOURCES) $(FMIO_test2_SOURCES) \
+	$(MSAIO_test1_SOURCES) $(MSAIO_test2_SOURCES) \
 	$(alphabet_test1_SOURCES) $(amino_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) $(dna_test1_SOURCES) \
 	$(nucl_test1_SOURCES) $(seqIO_test1_SOURCES)
-DIST_SOURCES = $(MSAIO_test1_SOURCES) $(MSAIO_test2_SOURCES) \
+DIST_SOURCES = $(FMIO_test1_SOURCES) $(FMIO_test2_SOURCES) \
+	$(MSAIO_test1_SOURCES) $(MSAIO_test2_SOURCES) \
 	$(alphabet_test1_SOURCES) $(amino_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) $(dna_test1_SOURCES) \
 	$(nucl_test1_SOURCES) $(seqIO_test1_SOURCES)
@@ -222,6 +226,7 @@ DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = ${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing aclocal-1.15
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
+AR = ar
 AUTOCONF = ${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing autoconf
 AUTOHEADER = ${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing autoheader
 AUTOMAKE = ${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing automake-1.15
@@ -232,29 +237,44 @@ CFLAGS = -g -O2
 CPP = gcc -E
 CPPFLAGS = 
 CXX = g++
+CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -g -O2
 CYGPATH_W = echo
-DEFS = -DPACKAGE_NAME=\"HmmUFOtu\" -DPACKAGE_TARNAME=\"hmmufotu\" -DPACKAGE_VERSION=\"1.0\" -DPACKAGE_STRING=\"HmmUFOtu\ 1.0\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE__BOOL=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DPACKAGE=\"hmmufotu\" -DVERSION=\"1.0\"
+DEFS = -DPACKAGE_NAME=\"HmmUFOtu\" -DPACKAGE_TARNAME=\"hmmufotu\" -DPACKAGE_VERSION=\"1.0\" -DPACKAGE_STRING=\"HmmUFOtu\ 1.0\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -DHAVE__BOOL=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DPACKAGE=\"hmmufotu\" -DVERSION=\"1.0\"
 DEPDIR = .deps
+DLLTOOL = false
+DSYMUTIL = 
+DUMPBIN = 
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
 EGREP = /usr/bin/grep -E
 EXEEXT = 
+FGREP = /usr/bin/grep -F
 GREP = /usr/bin/grep
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
+LD = /usr/bin/ld -m elf_x86_64
 LDFLAGS = 
 LIBOBJS = 
 LIBS = 
+LIBTOOL = $(SHELL) $(top_builddir)/libtool
+LIPO = 
+LN_S = ln -s
 LTLIBOBJS = 
 MAKEINFO = ${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing makeinfo
+MANIFEST_TOOL = :
 MKDIR_P = /usr/bin/mkdir -p
+NM = /usr/bin/nm -B
+NMEDIT = 
+OBJDUMP = objdump
 OBJEXT = o
+OTOOL = 
+OTOOL64 = 
 PACKAGE = hmmufotu
 PACKAGE_BUGREPORT = 
 PACKAGE_NAME = HmmUFOtu
@@ -263,16 +283,20 @@ PACKAGE_TARNAME = hmmufotu
 PACKAGE_URL = 
 PACKAGE_VERSION = 1.0
 PATH_SEPARATOR = :
+RANLIB = ranlib
+SED = /usr/bin/sed
 SET_MAKE = 
 SHELL = /bin/sh
-STRIP = 
+STRIP = strip
 VERSION = 1.0
 abs_builddir = /home/zhengqi/git/HmmUFOtu/HmmUFOtu/test
 abs_srcdir = /home/zhengqi/git/HmmUFOtu/HmmUFOtu/test
 abs_top_builddir = /home/zhengqi/git/HmmUFOtu/HmmUFOtu
 abs_top_srcdir = /home/zhengqi/git/HmmUFOtu/HmmUFOtu
+ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = g++
+ac_ct_DUMPBIN = 
 am__include = include
 am__leading_dot = .
 am__quote = 
@@ -323,78 +347,42 @@ top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
 AUTOMAKE_OPTIONS = subdir-objects
-AM_CXXFLAGS = -I$(top_srcdir)/src
-alphabet_test1_SOURCES = alphabet_test1.cpp \
-../src/Alphabet.cpp \
-../src/StringUtils.cpp
+AM_CXXFLAGS = -I$(top_srcdir)/src \
+-I$(top_srcdir)/src/libdivsufsort/include \
+-I$(top_srcdir)/src/libcds/include
 
-dna_test1_SOURCES = dna_test1.cpp \
-../src/Alphabet.cpp \
-../src/StringUtils.cpp \
-../src/DegenAlphabet.cpp \
-../src/DNA.cpp
+alphabet_test1_SOURCES = alphabet_test1.cpp
+alphabet_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+dna_test1_SOURCES = dna_test1.cpp
+dna_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+nucl_test1_SOURCES = nucl_test1.cpp
+nucl_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+amino_test1_SOURCES = amino_test1.cpp
+amino_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+seqIO_test1_SOURCES = seqIO_test1.cpp
+seqIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+banded_align_known_seed_test1_SOURCES = banded_align_known_seed_test1.cpp
+banded_align_known_seed_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+MSAIO_test1_SOURCES = MSAIO_test1.cpp
+MSAIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+MSAIO_test2_SOURCES = MSAIO_test2.cpp
+MSAIO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+FMIO_test1_SOURCES = FMIO_test1.cpp
+FMIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+$(top_srcdir)/src/libcds/src/libcds.la
 
-nucl_test1_SOURCES = nucl_test1.cpp \
-../src/Alphabet.cpp \
-../src/StringUtils.cpp \
-../src/DegenAlphabet.cpp \
-../src/IUPACNucl.cpp
+FMIO_test1_LDFLAGS = -static
+FMIO_test2_SOURCES = FMIO_test2.cpp
+FMIO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+$(top_srcdir)/src/libcds/src/libcds.la
 
-amino_test1_SOURCES = amino_test1.cpp \
-../src/Alphabet.cpp \
-../src/StringUtils.cpp \
-../src/DegenAlphabet.cpp \
-../src/IUPACAmino.cpp
-
-seqIO_test1_SOURCES = seqIO_test1.cpp \
-../src/Alphabet.cpp \
-../src/StringUtils.cpp \
-../src/DegenAlphabet.cpp \
-../src/IUPACNucl.cpp \
-../src/IUPACAmino.cpp \
-../src/SeqCommons.cpp \
-../src/PrimarySeq.cpp \
-../src/SeqIO.cpp
-
-banded_align_known_seed_test1_SOURCES = banded_align_known_seed_test1.cpp \
-../src/Alphabet.cpp \
-../src/StringUtils.cpp \
-../src/DegenAlphabet.cpp \
-../src/IUPACNucl.cpp \
-../src/IUPACAmino.cpp \
-../src/SeqCommons.cpp \
-../src/PrimarySeq.cpp \
-../src/BandedHMMP7Bg.cpp \
-../src/BandedHMMP7.cpp
-
-MSAIO_test1_SOURCES = MSAIO_test1.cpp \
-../src/Alphabet.cpp \
-../src/StringUtils.cpp \
-../src/DegenAlphabet.cpp \
-../src/IUPACNucl.cpp \
-../src/IUPACAmino.cpp \
-../src/SeqCommons.cpp \
-../src/MSA.cpp \
-../src/PrimarySeq.cpp \
-../src/SeqIO.cpp \
-../src/Stats.cpp
-
-MSAIO_test2_SOURCES = MSAIO_test2.cpp \
-../src/Alphabet.cpp \
-../src/StringUtils.cpp \
-../src/DegenAlphabet.cpp \
-../src/IUPACNucl.cpp \
-../src/IUPACAmino.cpp \
-../src/SeqCommons.cpp \
-../src/MSA.cpp \
-../src/PrimarySeq.cpp \
-../src/SeqIO.cpp \
-../src/Stats.cpp
-
+FMIO_test2_LDFLAGS = -static
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .cpp .lo .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -426,33 +414,21 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 $(am__aclocal_m4_deps):
 
 clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-../src/$(am__dirstamp):
-	@$(MKDIR_P) ../src
-	@: > ../src/$(am__dirstamp)
-../src/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) ../src/$(DEPDIR)
-	@: > ../src/$(DEPDIR)/$(am__dirstamp)
-../src/Alphabet.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/StringUtils.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/DegenAlphabet.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/IUPACNucl.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/IUPACAmino.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/SeqCommons.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/MSA.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/PrimarySeq.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/SeqIO.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/Stats.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
+	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
+
+FMIO_test1$(EXEEXT): $(FMIO_test1_OBJECTS) $(FMIO_test1_DEPENDENCIES) $(EXTRA_FMIO_test1_DEPENDENCIES) 
+	@rm -f FMIO_test1$(EXEEXT)
+	$(AM_V_CXXLD)$(FMIO_test1_LINK) $(FMIO_test1_OBJECTS) $(FMIO_test1_LDADD) $(LIBS)
+
+FMIO_test2$(EXEEXT): $(FMIO_test2_OBJECTS) $(FMIO_test2_DEPENDENCIES) $(EXTRA_FMIO_test2_DEPENDENCIES) 
+	@rm -f FMIO_test2$(EXEEXT)
+	$(AM_V_CXXLD)$(FMIO_test2_LINK) $(FMIO_test2_OBJECTS) $(FMIO_test2_LDADD) $(LIBS)
 
 MSAIO_test1$(EXEEXT): $(MSAIO_test1_OBJECTS) $(MSAIO_test1_DEPENDENCIES) $(EXTRA_MSAIO_test1_DEPENDENCIES) 
 	@rm -f MSAIO_test1$(EXEEXT)
@@ -469,16 +445,10 @@ alphabet_test1$(EXEEXT): $(alphabet_test1_OBJECTS) $(alphabet_test1_DEPENDENCIES
 amino_test1$(EXEEXT): $(amino_test1_OBJECTS) $(amino_test1_DEPENDENCIES) $(EXTRA_amino_test1_DEPENDENCIES) 
 	@rm -f amino_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(amino_test1_OBJECTS) $(amino_test1_LDADD) $(LIBS)
-../src/BandedHMMP7Bg.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
-../src/BandedHMMP7.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
 
 banded_align_known_seed_test1$(EXEEXT): $(banded_align_known_seed_test1_OBJECTS) $(banded_align_known_seed_test1_DEPENDENCIES) $(EXTRA_banded_align_known_seed_test1_DEPENDENCIES) 
 	@rm -f banded_align_known_seed_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(banded_align_known_seed_test1_OBJECTS) $(banded_align_known_seed_test1_LDADD) $(LIBS)
-../src/DNA.$(OBJEXT): ../src/$(am__dirstamp) \
-	../src/$(DEPDIR)/$(am__dirstamp)
 
 dna_test1$(EXEEXT): $(dna_test1_OBJECTS) $(dna_test1_DEPENDENCIES) $(EXTRA_dna_test1_DEPENDENCIES) 
 	@rm -f dna_test1$(EXEEXT)
@@ -494,24 +464,12 @@ seqIO_test1$(EXEEXT): $(seqIO_test1_OBJECTS) $(seqIO_test1_DEPENDENCIES) $(EXTRA
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f ../src/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
-include ../src/$(DEPDIR)/Alphabet.Po
-include ../src/$(DEPDIR)/BandedHMMP7.Po
-include ../src/$(DEPDIR)/BandedHMMP7Bg.Po
-include ../src/$(DEPDIR)/DNA.Po
-include ../src/$(DEPDIR)/DegenAlphabet.Po
-include ../src/$(DEPDIR)/IUPACAmino.Po
-include ../src/$(DEPDIR)/IUPACNucl.Po
-include ../src/$(DEPDIR)/MSA.Po
-include ../src/$(DEPDIR)/PrimarySeq.Po
-include ../src/$(DEPDIR)/SeqCommons.Po
-include ../src/$(DEPDIR)/SeqIO.Po
-include ../src/$(DEPDIR)/Stats.Po
-include ../src/$(DEPDIR)/StringUtils.Po
+include ./$(DEPDIR)/FMIO_test1.Po
+include ./$(DEPDIR)/FMIO_test2.Po
 include ./$(DEPDIR)/MSAIO_test1.Po
 include ./$(DEPDIR)/MSAIO_test2.Po
 include ./$(DEPDIR)/alphabet_test1.Po
@@ -536,6 +494,20 @@ include ./$(DEPDIR)/seqIO_test1.Po
 #	$(AM_V_CXX)source='$<' object='$@' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.cpp.lo:
+	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+	$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+	$(am__mv) $$depbase.Tpo $$depbase.Plo
+#	$(AM_V_CXX)source='$<' object='$@' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(LTCXXCOMPILE) -c -o $@ $<
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -649,18 +621,17 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-	-rm -f ../src/$(DEPDIR)/$(am__dirstamp)
-	-rm -f ../src/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
+	mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ../src/$(DEPDIR) ./$(DEPDIR)
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -706,13 +677,14 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ../src/$(DEPDIR) ./$(DEPDIR)
+	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
 
 pdf: pdf-am
 
@@ -727,17 +699,18 @@ uninstall-am:
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS cscopelist-am ctags ctags-am distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+	clean-libtool clean-noinstPROGRAMS cscopelist-am ctags \
+	ctags-am distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am
 
 .PRECIOUS: Makefile
 

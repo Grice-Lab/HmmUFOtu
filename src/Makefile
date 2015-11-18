@@ -15,6 +15,7 @@
 
 
 
+
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
     false; \
@@ -92,19 +93,40 @@ target_triplet = x86_64-unknown-linux-gnu
 bin_PROGRAMS = HmmUFOtu$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.ac
+am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+LIBRARIES = $(noinst_LIBRARIES)
+ARFLAGS = cru
+AM_V_AR = $(am__v_AR_$(V))
+am__v_AR_ = $(am__v_AR_$(AM_DEFAULT_VERBOSITY))
+am__v_AR_0 = @echo "  AR      " $@;
+am__v_AR_1 = 
+libHmmUFOtu_a_AR = $(AR) $(ARFLAGS)
+libHmmUFOtu_a_LIBADD =
+am_libHmmUFOtu_a_OBJECTS = Stats.$(OBJEXT) Alphabet.$(OBJEXT) \
+	DegenAlphabet.$(OBJEXT) StringUtils.$(OBJEXT) \
+	IUPACNucl.$(OBJEXT) IUPACAmino.$(OBJEXT) DNA.$(OBJEXT) \
+	SeqCommons.$(OBJEXT) PrimarySeq.$(OBJEXT) SeqIO.$(OBJEXT) \
+	BandedHMMP7Bg.$(OBJEXT) BandedHMMP7.$(OBJEXT) MSA.$(OBJEXT) \
+	CSFMIndex.$(OBJEXT)
+libHmmUFOtu_a_OBJECTS = $(am_libHmmUFOtu_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_HmmUFOtu_OBJECTS = HmmUFOtu.$(OBJEXT) Alphabet.$(OBJEXT) \
-	StringUtils.$(OBJEXT)
+am_HmmUFOtu_OBJECTS = HmmUFOtu.$(OBJEXT)
 HmmUFOtu_OBJECTS = $(am_HmmUFOtu_OBJECTS)
 HmmUFOtu_LDADD = $(LDADD)
+AM_V_lt = $(am__v_lt_$(V))
+am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
 am__v_P_0 = false
@@ -123,19 +145,24 @@ am__depfiles_maybe = depfiles
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+LTCXXCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CXXFLAGS) $(CXXFLAGS)
 AM_V_CXX = $(am__v_CXX_$(V))
 am__v_CXX_ = $(am__v_CXX_$(AM_DEFAULT_VERBOSITY))
 am__v_CXX_0 = @echo "  CXX     " $@;
 am__v_CXX_1 = 
 CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
+CXXLINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CXXLD = $(am__v_CXXLD_$(V))
 am__v_CXXLD_ = $(am__v_CXXLD_$(AM_DEFAULT_VERBOSITY))
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(HmmUFOtu_SOURCES)
-DIST_SOURCES = $(HmmUFOtu_SOURCES)
+SOURCES = $(libHmmUFOtu_a_SOURCES) $(HmmUFOtu_SOURCES)
+DIST_SOURCES = $(libHmmUFOtu_a_SOURCES) $(HmmUFOtu_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -207,6 +234,7 @@ am__relativize = \
 ACLOCAL = ${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing aclocal-1.15
 AMTAR = $${TAR-tar}
 AM_DEFAULT_VERBOSITY = 1
+AR = ar
 AUTOCONF = ${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing autoconf
 AUTOHEADER = ${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing autoheader
 AUTOMAKE = ${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing automake-1.15
@@ -217,29 +245,44 @@ CFLAGS = -g -O2
 CPP = gcc -E
 CPPFLAGS = 
 CXX = g++
+CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -g -O2
 CYGPATH_W = echo
-DEFS = -DPACKAGE_NAME=\"HmmUFOtu\" -DPACKAGE_TARNAME=\"hmmufotu\" -DPACKAGE_VERSION=\"1.0\" -DPACKAGE_STRING=\"HmmUFOtu\ 1.0\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE__BOOL=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DPACKAGE=\"hmmufotu\" -DVERSION=\"1.0\"
+DEFS = -DPACKAGE_NAME=\"HmmUFOtu\" -DPACKAGE_TARNAME=\"hmmufotu\" -DPACKAGE_VERSION=\"1.0\" -DPACKAGE_STRING=\"HmmUFOtu\ 1.0\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -DHAVE__BOOL=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DPACKAGE=\"hmmufotu\" -DVERSION=\"1.0\"
 DEPDIR = .deps
+DLLTOOL = false
+DSYMUTIL = 
+DUMPBIN = 
 ECHO_C = 
 ECHO_N = -n
 ECHO_T = 
 EGREP = /usr/bin/grep -E
 EXEEXT = 
+FGREP = /usr/bin/grep -F
 GREP = /usr/bin/grep
 INSTALL = /usr/bin/install -c
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}
 INSTALL_STRIP_PROGRAM = $(install_sh) -c -s
+LD = /usr/bin/ld -m elf_x86_64
 LDFLAGS = 
 LIBOBJS = 
 LIBS = 
+LIBTOOL = $(SHELL) $(top_builddir)/libtool
+LIPO = 
+LN_S = ln -s
 LTLIBOBJS = 
 MAKEINFO = ${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing makeinfo
+MANIFEST_TOOL = :
 MKDIR_P = /usr/bin/mkdir -p
+NM = /usr/bin/nm -B
+NMEDIT = 
+OBJDUMP = objdump
 OBJEXT = o
+OTOOL = 
+OTOOL64 = 
 PACKAGE = hmmufotu
 PACKAGE_BUGREPORT = 
 PACKAGE_NAME = HmmUFOtu
@@ -248,16 +291,20 @@ PACKAGE_TARNAME = hmmufotu
 PACKAGE_URL = 
 PACKAGE_VERSION = 1.0
 PATH_SEPARATOR = :
+RANLIB = ranlib
+SED = /usr/bin/sed
 SET_MAKE = 
 SHELL = /bin/sh
-STRIP = 
+STRIP = strip
 VERSION = 1.0
 abs_builddir = /home/zhengqi/git/HmmUFOtu/HmmUFOtu/src
 abs_srcdir = /home/zhengqi/git/HmmUFOtu/HmmUFOtu/src
 abs_top_builddir = /home/zhengqi/git/HmmUFOtu/HmmUFOtu
 abs_top_srcdir = /home/zhengqi/git/HmmUFOtu/HmmUFOtu
+ac_ct_AR = ar
 ac_ct_CC = gcc
 ac_ct_CXX = g++
+ac_ct_DUMPBIN = 
 am__include = include
 am__leading_dot = .
 am__quote = 
@@ -307,12 +354,35 @@ target_vendor = unknown
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
-SUBDIRS = libdivsufsort  libcds2
-HmmUFOtu_SOURCES = HmmUFOtu.cpp Alphabet.cpp StringUtils.cpp
+SUBDIRS = libdivsufsort  libcds
+AM_CXXFLAGS = -I$(top_srcdir)/src \
+-I$(top_srcdir)/src/libdivsufsort/include \
+-I$(top_srcdir)/src/libcds/include
+
+
+# Build a convenient library
+noinst_LIBRARIES = libHmmUFOtu.a
+libHmmUFOtu_a_SOURCES = \
+Stats.cpp \
+Alphabet.cpp \
+DegenAlphabet.cpp \
+StringUtils.cpp \
+IUPACNucl.cpp \
+IUPACAmino.cpp \
+DNA.cpp \
+SeqCommons.cpp \
+PrimarySeq.cpp \
+SeqIO.cpp \
+BandedHMMP7Bg.cpp \
+BandedHMMP7.cpp \
+MSA.cpp \
+CSFMIndex.cpp
+
+HmmUFOtu_SOURCES = HmmUFOtu.cpp HmmUFOtu.a
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .cpp .lo .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -342,6 +412,14 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+
+libHmmUFOtu.a: $(libHmmUFOtu_a_OBJECTS) $(libHmmUFOtu_a_DEPENDENCIES) $(EXTRA_libHmmUFOtu_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libHmmUFOtu.a
+	$(AM_V_AR)$(libHmmUFOtu_a_AR) libHmmUFOtu.a $(libHmmUFOtu_a_OBJECTS) $(libHmmUFOtu_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libHmmUFOtu.a
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
@@ -352,6 +430,7 @@ install-binPROGRAMS: $(bin_PROGRAMS)
 	for p in $$list; do echo "$$p $$p"; done | \
 	sed 's/$(EXEEXT)$$//' | \
 	while read p p1; do if test -f $$p \
+	 || test -f $$p1 \
 	  ; then echo "$$p"; echo "$$p"; else :; fi; \
 	done | \
 	sed -e 'p;s,.*/,,;n;h' \
@@ -366,8 +445,8 @@ install-binPROGRAMS: $(bin_PROGRAMS)
 	while read type dir files; do \
 	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
 	    test -z "$$files" || { \
-	      echo " $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(bindir)$$dir'"; \
-	      $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(bindir)$$dir" || exit $$?; \
+	    echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(bindir)$$dir'"; \
+	    $(INSTALL_PROGRAM_ENV) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=install $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(bindir)$$dir" || exit $$?; \
 	    } \
 	; done
 
@@ -383,7 +462,13 @@ uninstall-binPROGRAMS:
 	cd "$(DESTDIR)$(bindir)" && rm -f $$files
 
 clean-binPROGRAMS:
-	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
+	@list='$(bin_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
 
 HmmUFOtu$(EXEEXT): $(HmmUFOtu_OBJECTS) $(HmmUFOtu_DEPENDENCIES) $(EXTRA_HmmUFOtu_DEPENDENCIES) 
 	@rm -f HmmUFOtu$(EXEEXT)
@@ -396,7 +481,19 @@ distclean-compile:
 	-rm -f *.tab.c
 
 include ./$(DEPDIR)/Alphabet.Po
+include ./$(DEPDIR)/BandedHMMP7.Po
+include ./$(DEPDIR)/BandedHMMP7Bg.Po
+include ./$(DEPDIR)/CSFMIndex.Po
+include ./$(DEPDIR)/DNA.Po
+include ./$(DEPDIR)/DegenAlphabet.Po
 include ./$(DEPDIR)/HmmUFOtu.Po
+include ./$(DEPDIR)/IUPACAmino.Po
+include ./$(DEPDIR)/IUPACNucl.Po
+include ./$(DEPDIR)/MSA.Po
+include ./$(DEPDIR)/PrimarySeq.Po
+include ./$(DEPDIR)/SeqCommons.Po
+include ./$(DEPDIR)/SeqIO.Po
+include ./$(DEPDIR)/Stats.Po
 include ./$(DEPDIR)/StringUtils.Po
 
 .cpp.o:
@@ -412,6 +509,19 @@ include ./$(DEPDIR)/StringUtils.Po
 #	$(AM_V_CXX)source='$<' object='$@' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
 #	$(AM_V_CXX_no)$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.cpp.lo:
+	$(AM_V_CXX)$(LTCXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+#	$(AM_V_CXX)source='$<' object='$@' libtool=yes \
+#	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) \
+#	$(AM_V_CXX_no)$(LTCXXCOMPILE) -c -o $@ $<
+
+mostlyclean-libtool:
+	-rm -f *.lo
+
+clean-libtool:
+	-rm -rf .libs _libs
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run 'make' without going through this Makefile.
@@ -569,7 +679,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LIBRARIES) $(PROGRAMS)
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(bindir)"; do \
@@ -607,7 +717,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libtool \
+	clean-noinstLIBRARIES mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
@@ -662,7 +773,8 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
 
 pdf: pdf-recursive
 
@@ -677,8 +789,9 @@ uninstall-am: uninstall-binPROGRAMS
 .MAKE: $(am__recursive_targets) install-am install-strip
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
-	check-am clean clean-binPROGRAMS clean-generic cscopelist-am \
-	ctags ctags-am distclean distclean-compile distclean-generic \
+	check-am clean clean-binPROGRAMS clean-generic clean-libtool \
+	clean-noinstLIBRARIES cscopelist-am ctags ctags-am distclean \
+	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-binPROGRAMS install-data \
 	install-data-am install-dvi install-dvi-am install-exec \
@@ -687,8 +800,8 @@ uninstall-am: uninstall-binPROGRAMS
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs installdirs-am maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-binPROGRAMS
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags tags-am uninstall uninstall-am uninstall-binPROGRAMS
 
 .PRECIOUS: Makefile
 

@@ -16,9 +16,9 @@ const IUPACAmino* const SeqCommons::aminoAbc = new IUPACAmino();
 
 const DegenAlphabet* SeqCommons::getAlphabetByName(const string& alphabet) {
 	const string& name = toLower(alphabet);
-	if(name == "dna" || name == "rna")
+	if(name == "dna" || name == "rna" || alphabet == "IUPACNucl")
 		return nuclAbc;
-	else if(name == "protein")
+	else if(name == "protein" || alphabet == "IUPACAmino")
 		return aminoAbc;
 	else
 		throw invalid_argument("Unknown alphabet name found: " + alphabet);

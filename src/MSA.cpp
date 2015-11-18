@@ -8,6 +8,7 @@
 #include <fstream>
 #include <map>
 #include <cstdlib>
+#include <cctype>
 #include "MSA.h"
 #include "Stats.h"
 #include "SeqIO.h"
@@ -20,10 +21,8 @@ char MSA::CSResidualAt(unsigned j) const {
 	if(!(j >= 0 && j < csLen)) // check range once
 		throw out_of_range("CS pos is out of range");
 
-	if(!CS.empty()) // CS is provided by MSA file
-		return CS[j];
+	return CS.empty() ? '\0' /* not calculated yet */ : CS[j];
 
-	return abc->decode(which_max(resCount[j], abc->getSize()));
 }
 
 double MSA::identityAt(unsigned j) const {
@@ -72,15 +71,16 @@ MSA* MSA::loadFastaFile(const string& alphabet, const string& filename) {
 		/* check new seq */
 		if(msa->csLen != 0 && seq.length() != msa->csLen)
 			throw ios_base::failure("Not a valid fasta alignment file where not all sequences have the same length!");
-		msa->csLen = seq.length();
+		msa->csLen = seq.length(); /* update csLen */
 		msa->numSeq++;
 		msa->totalNumGap += seq.numGap();
 		//ids.push_back(seq.getId());
-		msa->concatMSA.append(EGriceLab::toUpper(seq.getSeq())); /* Ignore cases when reading multiple alignment */
+		msa->concatMSA.append(seq.getSeq());
 	}
 	assert(msa->concatMSA.length() == msa->numSeq * msa->csLen);
-
 	msa->updateCounts();
+
+	msa->calculateCS();
 	return msa;
 }
 
@@ -91,6 +91,20 @@ void MSA::clear() {
 		delete[] resCount;
 	}
 	delete[] gapCount;
+}
+
+void MSA::calculateCS() {
+	if(CS.length() == csLen) /* already calculated, ignore */
+		return;
+	CS.clear();
+	for(unsigned j = 0; j < csLen; ++j) {
+		char csRes;
+		if(max(resCount[j], abc->getSize()) >= gapCount[j]) /* consensus is not a gap */
+			csRes = abc->decode(which_max(resCount[j], abc->getSize()));
+		else
+		    csRes =  abc->getGap()[0]; /* use the first gap character */
+		CS.push_back(csRes);
+	}
 }
 
 void MSA::updateCounts() {
@@ -104,7 +118,7 @@ void MSA::updateCounts() {
 
 	for(unsigned i = 0; i < numSeq; ++i)
 		for(unsigned j = 0; j < csLen; ++j) {
-			char c = residualAt(i, j);
+			char c = ::toupper(residualAt(i, j));
 			if(abc->isSymbolOrSynonymous(c))
 				resCount[j][abc->encode(c)]++;
 			else if(abc->isGap(c))
@@ -113,7 +127,7 @@ void MSA::updateCounts() {
 		}
 }
 
-bool MSA::save(ofstream& f) {
+bool MSA::save(ostream& f) {
 	/* write basic info */
 	string::size_type nAlphabet = alphabet.length();
 	string::size_type nCS = CS.length();
@@ -137,7 +151,7 @@ bool MSA::save(ofstream& f) {
 }
 
 
-MSA* MSA::load(ifstream& f) {
+MSA* MSA::load(istream& f) {
 	/* construct a MSA object */
 	MSA* msa = new MSA(); // use default alphabet first
 	/* read basic info */
@@ -145,7 +159,7 @@ MSA* MSA::load(ifstream& f) {
 	string::size_type nAlphabet, nCS;
 	f.read((char*) &nAlphabet, sizeof(string::size_type));
 	buf = new char[nAlphabet + 1];
-	f.read(buf, nAlphabet + 1);
+	f.read(buf, nAlphabet + 1); /* read the null terminal */
 	msa->alphabet.assign(buf, nAlphabet); // override the original alphabet
 	delete[] buf;
 	msa->abc = SeqCommons::getAlphabetByName(msa->alphabet);
@@ -155,7 +169,7 @@ MSA* MSA::load(ifstream& f) {
 	f.read((char*) &nCS, sizeof(string::size_type));
 	buf = new char[nCS + 1];
 	f.read(buf, nCS + 1);
-	msa->CS.assign(buf, nCS);
+	msa->CS.assign(buf, nCS); /* read the null terminal */
 	delete[] buf;
 	/* read concatMSA */
 	buf = new char[msa->numSeq * msa->csLen + 1];
