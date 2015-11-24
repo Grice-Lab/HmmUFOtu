@@ -28,6 +28,7 @@ int main() {
 	for(string::const_iterator it = dna2->getSynonymous().begin(); it != dna2->getSynonymous().end(); ++it)
 		cout << *it << " -> " << static_cast<int> (dna2->encode(*it)) << endl;
 
+	cout << "comparing" << endl;
 	cout << "dna1 == dna2:" << (dna1 == *dna2) << endl;
 
 	return 0;

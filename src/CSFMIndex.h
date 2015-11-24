@@ -13,6 +13,7 @@
 #include "MSA.h"
 #include "divsufsort.h"
 #include "WaveletTreeNoptrs.h"
+#include "Array.h"
 
 namespace EGriceLab {
 
@@ -81,11 +82,21 @@ private:
 	CSFMIndex(const CSFMIndex& other);
 	CSFMIndex& operator=(const CSFMIndex& other);
 
+	/* private functions */
+	/**
+	 * Extract consensus sequence of given region at concatSeq location
+	 * @param start  start on BWT string
+	 * @param len  length of BWT string
+	 * @return the CS of this region, with gaps filled with default gap characters
+	 */
+	string extractCS(int32_t start, int32_t len) const;
+
 	const DegenAlphabet* abc;
+	char gapCh;
 	uint16_t csLen; /* consensus length */
 	//uint8_t* concatSeq; /* concatenated alphabet-encoded non-Gap seq */
 	int32_t concatLen; /* total length of concatenated encoded non-gap seq */
-	int32_t C[UINT8_MAX + 1];
+	int32_t C[UINT8_MAX + 1]; /* cumulative count of each alphabet frequency, with C[0] as dummy position */
 
 	string csSeq; /* 1-based consensus seq with dummy position at 0 */
 	double* csIdentity; /* 1-based consensus identity */

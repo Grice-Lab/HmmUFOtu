@@ -11,7 +11,6 @@
 #include "HmmUFOtuDef.h"
 #include "HmmUFOtuConst.h"
 #include "HmmUFOtuEnv.h"
-#include "Alphabet.h"
 #include "DegenAlphabet.h"
 #include "IUPACNucl.h"
 #include "IUPACAmino.h"

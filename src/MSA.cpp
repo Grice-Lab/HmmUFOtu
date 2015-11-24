@@ -119,7 +119,7 @@ void MSA::updateCounts() {
 	for(unsigned i = 0; i < numSeq; ++i)
 		for(unsigned j = 0; j < csLen; ++j) {
 			char c = ::toupper(residualAt(i, j));
-			if(abc->isSymbolOrSynonymous(c))
+			if(abc->isSymbol(c))
 				resCount[j][abc->encode(c)]++;
 			else if(abc->isGap(c))
 				gapCount[j]++;

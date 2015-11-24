@@ -89,10 +89,11 @@ POST_UNINSTALL = :
 build_triplet = x86_64-unknown-linux-gnu
 host_triplet = x86_64-unknown-linux-gnu
 target_triplet = x86_64-unknown-linux-gnu
-noinst_PROGRAMS = alphabet_test1$(EXEEXT) dna_test1$(EXEEXT) \
-	nucl_test1$(EXEEXT) amino_test1$(EXEEXT) seqIO_test1$(EXEEXT) \
+noinst_PROGRAMS = dna_test1$(EXEEXT) nucl_test1$(EXEEXT) \
+	amino_test1$(EXEEXT) seqIO_test1$(EXEEXT) \
 	banded_align_known_seed_test1$(EXEEXT) MSAIO_test1$(EXEEXT) \
-	MSAIO_test2$(EXEEXT) FMIO_test1$(EXEEXT) FMIO_test2$(EXEEXT)
+	MSAIO_test2$(EXEEXT) FMIO_test1$(EXEEXT) FMIO_test2$(EXEEXT) \
+	banded_align_csfm_test1$(EXEEXT)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -132,12 +133,21 @@ MSAIO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 am_MSAIO_test2_OBJECTS = MSAIO_test2.$(OBJEXT)
 MSAIO_test2_OBJECTS = $(am_MSAIO_test2_OBJECTS)
 MSAIO_test2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
-am_alphabet_test1_OBJECTS = alphabet_test1.$(OBJEXT)
-alphabet_test1_OBJECTS = $(am_alphabet_test1_OBJECTS)
-alphabet_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 am_amino_test1_OBJECTS = amino_test1.$(OBJEXT)
 amino_test1_OBJECTS = $(am_amino_test1_OBJECTS)
 amino_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+am_banded_align_csfm_test1_OBJECTS =  \
+	banded_align_csfm_test1.$(OBJEXT)
+banded_align_csfm_test1_OBJECTS =  \
+	$(am_banded_align_csfm_test1_OBJECTS)
+banded_align_csfm_test1_DEPENDENCIES =  \
+	$(top_srcdir)/src/libHmmUFOtu.a \
+	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+	$(top_srcdir)/src/libcds/src/libcds.la
+banded_align_csfm_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(banded_align_csfm_test1_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_banded_align_known_seed_test1_OBJECTS =  \
 	banded_align_known_seed_test1.$(OBJEXT)
 banded_align_known_seed_test1_OBJECTS =  \
@@ -189,12 +199,12 @@ am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(FMIO_test1_SOURCES) $(FMIO_test2_SOURCES) \
 	$(MSAIO_test1_SOURCES) $(MSAIO_test2_SOURCES) \
-	$(alphabet_test1_SOURCES) $(amino_test1_SOURCES) \
+	$(amino_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) $(dna_test1_SOURCES) \
 	$(nucl_test1_SOURCES) $(seqIO_test1_SOURCES)
 DIST_SOURCES = $(FMIO_test1_SOURCES) $(FMIO_test2_SOURCES) \
 	$(MSAIO_test1_SOURCES) $(MSAIO_test2_SOURCES) \
-	$(alphabet_test1_SOURCES) $(amino_test1_SOURCES) \
+	$(amino_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) $(dna_test1_SOURCES) \
 	$(nucl_test1_SOURCES) $(seqIO_test1_SOURCES)
 am__can_run_installinfo = \
@@ -351,8 +361,6 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/libdivsufsort/include \
 -I$(top_srcdir)/src/libcds/include
 
-alphabet_test1_SOURCES = alphabet_test1.cpp
-alphabet_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 dna_test1_SOURCES = dna_test1.cpp
 dna_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 nucl_test1_SOURCES = nucl_test1.cpp
@@ -379,6 +387,12 @@ $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la
 
 FMIO_test2_LDFLAGS = -static
+banded_align_csfm_test1_SOURCES = banded_align_csfm_test1.cpp
+banded_align_csfm_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+$(top_srcdir)/src/libcds/src/libcds.la
+
+banded_align_csfm_test1_LDFLAGS = -static
 all: all-am
 
 .SUFFIXES:
@@ -438,13 +452,13 @@ MSAIO_test2$(EXEEXT): $(MSAIO_test2_OBJECTS) $(MSAIO_test2_DEPENDENCIES) $(EXTRA
 	@rm -f MSAIO_test2$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(MSAIO_test2_OBJECTS) $(MSAIO_test2_LDADD) $(LIBS)
 
-alphabet_test1$(EXEEXT): $(alphabet_test1_OBJECTS) $(alphabet_test1_DEPENDENCIES) $(EXTRA_alphabet_test1_DEPENDENCIES) 
-	@rm -f alphabet_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(alphabet_test1_OBJECTS) $(alphabet_test1_LDADD) $(LIBS)
-
 amino_test1$(EXEEXT): $(amino_test1_OBJECTS) $(amino_test1_DEPENDENCIES) $(EXTRA_amino_test1_DEPENDENCIES) 
 	@rm -f amino_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(amino_test1_OBJECTS) $(amino_test1_LDADD) $(LIBS)
+
+banded_align_csfm_test1$(EXEEXT): $(banded_align_csfm_test1_OBJECTS) $(banded_align_csfm_test1_DEPENDENCIES) $(EXTRA_banded_align_csfm_test1_DEPENDENCIES) 
+	@rm -f banded_align_csfm_test1$(EXEEXT)
+	$(AM_V_CXXLD)$(banded_align_csfm_test1_LINK) $(banded_align_csfm_test1_OBJECTS) $(banded_align_csfm_test1_LDADD) $(LIBS)
 
 banded_align_known_seed_test1$(EXEEXT): $(banded_align_known_seed_test1_OBJECTS) $(banded_align_known_seed_test1_DEPENDENCIES) $(EXTRA_banded_align_known_seed_test1_DEPENDENCIES) 
 	@rm -f banded_align_known_seed_test1$(EXEEXT)
@@ -472,8 +486,8 @@ include ./$(DEPDIR)/FMIO_test1.Po
 include ./$(DEPDIR)/FMIO_test2.Po
 include ./$(DEPDIR)/MSAIO_test1.Po
 include ./$(DEPDIR)/MSAIO_test2.Po
-include ./$(DEPDIR)/alphabet_test1.Po
 include ./$(DEPDIR)/amino_test1.Po
+include ./$(DEPDIR)/banded_align_csfm_test1.Po
 include ./$(DEPDIR)/banded_align_known_seed_test1.Po
 include ./$(DEPDIR)/dna_test1.Po
 include ./$(DEPDIR)/nucl_test1.Po

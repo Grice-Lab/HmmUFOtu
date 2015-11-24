@@ -11,13 +11,13 @@
 #include <map>
 #include <string>
 #include <stdexcept>
-#include "Alphabet.h"
+#include <stdint.h>
 
 namespace EGriceLab {
 using std::string;
 using std::map;
 
-class DegenAlphabet: public Alphabet {
+class DegenAlphabet {
 public:
 	/* Constructors */
 	/* customized constructors */
@@ -36,20 +36,61 @@ public:
 
 	/* Member methods */
 	/* Getters and Setters */
+	const string& getName() const {
+		return name;
+	}
+
+	const string& getSymbol() const {
+		return symbol;
+	}
+
+	string getSynonymous() const {
+		return synon;
+	}
+
 	const string& getGap() const {
 		return gap;
 	}
 
-	void setGap(const string& gap) {
-		this->gap = gap;
+	const int8_t* getInMap() const {
+		return sym_map;
 	}
 
-	/* test whether a char is a valid gap */
+	/* utility methods */
+	/* test whether a char is a symbol of this alphabet */
+	bool isSymbol(char c) const {
+		return sym_map[c] != invalid_sym;
+	}
+
+	/* encode a character to digital encoding
+	 * return an int within 0..size-1, or -1 (string::nsize) if not a valid symbol
+	 */
+	int8_t encode(char c) const {
+		return sym_map[c];
+	}
+
+	/* decode a digital encoding to the original symbol
+	 * return a char if within 0..length-1, or undefined behavior if not
+	 */
+	char decode(int8_t i) const {
+		return symbol[i];
+	}
+
+	/*
+	 * test whether a character is a valid gap
+	 * @return true if is a valid gap character
+	 */
 	bool isGap(char c) const {
 		return gap_map[c] != 0;
 	}
 
-	/* Get alphabet size w/ gaps */
+	int getSize() const {
+		return symbol.length();
+	}
+
+	/*
+	 * Get alphabet size w/ gaps
+	 */
 	int getSizeWithGap() const {
 		return getSize() + gap.length();
 	}
@@ -64,10 +105,6 @@ public:
 		return getDegenSize() + gap.length();
 	}
 
-	/* Get degenerative synonymous */
-	string getSynonymous() const {
-		return synon;
-	}
 
 	/* Get synonymous for a given symbol, or empty string if not exists */
 	string getSynonymous(char c) const {
@@ -76,32 +113,9 @@ public:
 		return "";
 	}
 
-	/* encode a character to digital encoding
-	 * synonymous is resolved randomly (you will need to call srand() in your main function once)
-	 * @param c  given character
-	 * @return value within 0..size-1, or a minus value if not a valid symbol
-	 */
-	virtual int8_t encode(char c) const {
-		return !isSynonymous(c) ? Alphabet::encode(c) : synon_map[c];
-	}
-
 	/* test whether a character is a degenerative synonymous */
 	bool isSynonymous(char c) const {
-		return synon_map[c] != invalid_synon;
-	}
-
-	/*
-	 *  test whether a character is a pure synonymous
-	 */
-	bool isPureSynonymous(char c) const {
-		return !isSymbol(c) && isSynonymous(c);
-	}
-
-	/*
-	 * test whether a character is a symbol or synonymous
-	 */
-	bool isSymbolOrSynonymous(char c) const {
-		return isSymbol(c) || isSynonymous(c);
+		return degen_map.find(c) != degen_map.end();
 	}
 
 	/* test whether a character is a valid symbol or synonymous */
@@ -115,13 +129,16 @@ public:
 	virtual char getComplementSymbol(char c) const = 0;
 
 private:
-	string synon; /* Expanded symbols + synonymous */
+	string name;
+	string symbol; /* symbols of this alphabet */
+	string synon; /* Expanded synonymous */
 	string gap; /* gap characters */
-	int8_t synon_map[INT8_MAX + 1]; /* internal map for synonymous only */
+	int8_t sym_map[INT8_MAX + 1]; /* internal map for symbols */
 	int8_t gap_map[INT8_MAX + 1]; /* internal map for gaps */
 	map<char, string> degen_map; // map for degenerative synonymous, including original symbols' self-mapping
 
-	static const int8_t invalid_synon = -2;
+	static const int8_t invalid_sym = -1;
+	//static const int8_t invalid_synon = -2;
 	//static const int8_t invalid_gap = -3;
 
 	/* friend operators */

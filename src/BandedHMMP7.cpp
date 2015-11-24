@@ -755,7 +755,7 @@ void EGriceLab::BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
 //		cerr << "i:" << i << " j:" << j << " k:" << k << endl;
 //		cerr << "vpath.L:" << vpath.L << " vpath.K:" << vpath.K << endl;
 
-		bool nonGap = nuclAbc->isSymbolOrSynonymous(*it) && !nuclAbc->isGap(*it);
+		bool nonGap = nuclAbc->isSymbol(*it) && !nuclAbc->isGap(*it);
 
 		if(from == 0 && nonGap)
 			from = i;

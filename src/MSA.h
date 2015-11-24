@@ -154,16 +154,7 @@ public:
 	 * @return  a newly constructed MSA pointer
 	 * @throws invalid_argument if alphabet or format is not known
 	 */
-	static MSA* loadMSAFile(const string& alphabet, const string& filename, const string& format);
-
-	/**
-	 * Load an MSA file in fasta format
-	 * @param filename  MSA file name
-	 * @return  a newly constructed MSA pointer
-	 * @throws invalid_argument if alphabet or format is not known
-	 *
-	 */
-	static MSA* loadFastaFile(const string& alphabet, const string& filename);
+	static MSA* load(std::istream& f);
 
 
 	/**
@@ -172,11 +163,32 @@ public:
 	 * @return  a newly constructed MSA pointer
 	 * @throws invalid_argument if alphabet or format is not known
 	 */
-	 static MSA* load(std::istream& f);
+	static MSA* loadMSAFile(const string& alphabet, const string& filename, const string& format);
 
-	 virtual ~MSA() {
-		 clear();
-	 }
+	/**
+	 * Load an MSA file in fasta format
+	 * @param filename  MSA file name
+	 * @return  a newly constructed MSA pointer
+	 * @throws invalid_argument if alphabet or format is not known
+	 */
+	static MSA* loadFastaFile(const string& alphabet, const string& filename);
+
+	/**
+	 * Save this MSA object to a given file
+	 * @param filename  filename to save to
+	 * @param format  MSA file format
+	 */
+	bool saveMSAFile(const string& filename, const string& format);
+
+	/**
+	 * Save this MSA object to a file in FASTA format
+	 * @param filename  filename to save to
+	 */
+	bool saveFastaFile(const string& filename);
+
+	virtual ~MSA() {
+		clear();
+	}
 
 private:
 	/* constructors */
@@ -246,6 +258,12 @@ inline MSA* MSA::loadMSAFile(const string& alphabet,
 	/* construct the CS, if it is not set bythe MSA file yet */
 	msa->calculateCS();
 	return msa;
+}
+
+inline bool MSA::saveMSAFile(const string& filename, const string& format) {
+	if(format == "fasta")
+		return MSA::saveFastaFile(filename);
+	else throw invalid_argument("Cannot save MSA to file, unsupported MSA file format " + format);
 }
 
 } /* namespace EGriceLab */

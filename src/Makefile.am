@@ -8,7 +8,6 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 noinst_LIBRARIES = libHmmUFOtu.a
 libHmmUFOtu_a_SOURCES = \
 Stats.cpp \
-Alphabet.cpp \
 DegenAlphabet.cpp \
 StringUtils.cpp \
 IUPACNucl.cpp \

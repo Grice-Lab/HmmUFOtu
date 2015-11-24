@@ -17,15 +17,20 @@ using std::string;
 struct CSLoc {
 	/* constructors */
 	/**
+	 * Default constructor
+	 */
+	CSLoc() : start(0), end(0), prob(0) { }
+
+	/**
 	 * Construct a CSLoc at given loc
 	 */
-	CSLoc(int start, int end, const string& CS, int rank = 1)
-		: start(start), end(end), CS(CS), rank(rank) { }
+	CSLoc(int start, int end, const string& CS, int prob = 0)
+		: start(start), end(end), CS(CS), prob(prob) { }
 
 	int start;
 	int end;
 	string CS;
-	int rank;
+	int prob;
 };
 
 }

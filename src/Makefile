@@ -111,12 +111,11 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libHmmUFOtu_a_AR = $(AR) $(ARFLAGS)
 libHmmUFOtu_a_LIBADD =
-am_libHmmUFOtu_a_OBJECTS = Stats.$(OBJEXT) Alphabet.$(OBJEXT) \
-	DegenAlphabet.$(OBJEXT) StringUtils.$(OBJEXT) \
-	IUPACNucl.$(OBJEXT) IUPACAmino.$(OBJEXT) DNA.$(OBJEXT) \
-	SeqCommons.$(OBJEXT) PrimarySeq.$(OBJEXT) SeqIO.$(OBJEXT) \
-	BandedHMMP7Bg.$(OBJEXT) BandedHMMP7.$(OBJEXT) MSA.$(OBJEXT) \
-	CSFMIndex.$(OBJEXT)
+am_libHmmUFOtu_a_OBJECTS = Stats.$(OBJEXT) DegenAlphabet.$(OBJEXT) \
+	StringUtils.$(OBJEXT) IUPACNucl.$(OBJEXT) IUPACAmino.$(OBJEXT) \
+	DNA.$(OBJEXT) SeqCommons.$(OBJEXT) PrimarySeq.$(OBJEXT) \
+	SeqIO.$(OBJEXT) BandedHMMP7Bg.$(OBJEXT) BandedHMMP7.$(OBJEXT) \
+	MSA.$(OBJEXT) CSFMIndex.$(OBJEXT)
 libHmmUFOtu_a_OBJECTS = $(am_libHmmUFOtu_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
@@ -364,7 +363,6 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 noinst_LIBRARIES = libHmmUFOtu.a
 libHmmUFOtu_a_SOURCES = \
 Stats.cpp \
-Alphabet.cpp \
 DegenAlphabet.cpp \
 StringUtils.cpp \
 IUPACNucl.cpp \
@@ -480,7 +478,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/Alphabet.Po
 include ./$(DEPDIR)/BandedHMMP7.Po
 include ./$(DEPDIR)/BandedHMMP7Bg.Po
 include ./$(DEPDIR)/CSFMIndex.Po

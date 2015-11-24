@@ -240,690 +240,6 @@ configure:6881: checking for ANSI C header files
 configure:6901: gcc -c -g -O2  conftest.c >&5
 configure:6901: $? = 0
 configure:6974: gcc -o conftest -g -O2   conftest.c  >&5
-configure:6974: $? = 0
-configure:6974: ./conftest
-configure:6974: $? = 0
-configure:6985: result: yes
-configure:6998: checking for sys/types.h
-configure:6998: gcc -c -g -O2  conftest.c >&5
-configure:6998: $? = 0
-configure:6998: result: yes
-configure:6998: checking for sys/stat.h
-configure:6998: gcc -c -g -O2  conftest.c >&5
-configure:6998: $? = 0
-configure:6998: result: yes
-configure:6998: checking for stdlib.h
-configure:6998: gcc -c -g -O2  conftest.c >&5
-configure:6998: $? = 0
-configure:6998: result: yes
-configure:6998: checking for string.h
-configure:6998: gcc -c -g -O2  conftest.c >&5
-configure:6998: $? = 0
-configure:6998: result: yes
-configure:6998: checking for memory.h
-configure:6998: gcc -c -g -O2  conftest.c >&5
-configure:6998: $? = 0
-configure:6998: result: yes
-configure:6998: checking for strings.h
-configure:6998: gcc -c -g -O2  conftest.c >&5
-configure:6998: $? = 0
-configure:6998: result: yes
-configure:6998: checking for inttypes.h
-configure:6998: gcc -c -g -O2  conftest.c >&5
-configure:6998: $? = 0
-configure:6998: result: yes
-configure:6998: checking for stdint.h
-configure:6998: gcc -c -g -O2  conftest.c >&5
-configure:6998: $? = 0
-configure:6998: result: yes
-configure:6998: checking for unistd.h
-configure:6998: gcc -c -g -O2  conftest.c >&5
-configure:6998: $? = 0
-configure:6998: result: yes
-configure:7012: checking for dlfcn.h
-configure:7012: gcc -c -g -O2  conftest.c >&5
-configure:7012: $? = 0
-configure:7012: result: yes
-configure:7216: checking for objdir
-configure:7231: result: .libs
-configure:7502: checking if gcc supports -fno-rtti -fno-exceptions
-configure:7520: gcc -c -g -O2  -fno-rtti -fno-exceptions conftest.c >&5
-cc1: warning: command line option '-fno-rtti' is valid for C++/ObjC++ but not for C
-configure:7524: $? = 0
-configure:7537: result: no
-configure:7864: checking for gcc option to produce PIC
-configure:7871: result: -fPIC -DPIC
-configure:7879: checking if gcc PIC flag -fPIC -DPIC works
-configure:7897: gcc -c -g -O2  -fPIC -DPIC -DPIC conftest.c >&5
-configure:7901: $? = 0
-configure:7914: result: yes
-configure:7943: checking if gcc static flag -static works
-configure:7971: result: no
-configure:7986: checking if gcc supports -c -o file.o
-configure:8007: gcc -c -g -O2  -o out/conftest2.o conftest.c >&5
-configure:8011: $? = 0
-configure:8033: result: yes
-configure:8041: checking if gcc supports -c -o file.o
-configure:8088: result: yes
-configure:8121: checking whether the gcc linker (/usr/bin/ld -m elf_x86_64) supports shared libraries
-configure:9274: result: yes
-configure:9311: checking whether -lc should be explicitly linked in
-configure:9319: gcc -c -g -O2  conftest.c >&5
-configure:9322: $? = 0
-configure:9337: gcc -shared  -fPIC -DPIC conftest.o  -v -Wl,-soname -Wl,conftest -o conftest 2\>\&1 \| /usr/bin/grep  -lc  \>/dev/null 2\>\&1
-configure:9340: $? = 0
-configure:9354: result: no
-configure:9514: checking dynamic linker characteristics
-configure:10025: gcc -o conftest -g -O2   -Wl,-rpath -Wl,/foo conftest.c  >&5
-configure:10025: $? = 0
-configure:10251: result: GNU/Linux ld.so
-configure:10358: checking how to hardcode library paths into programs
-configure:10383: result: immediate
-configure:10923: checking whether stripping libraries is possible
-configure:10928: result: yes
-configure:10963: checking if libtool supports shared libraries
-configure:10965: result: yes
-configure:10968: checking whether to build shared libraries
-configure:10989: result: yes
-configure:10992: checking whether to build static libraries
-configure:10996: result: yes
-configure:11034: checking target system type
-configure:11047: result: x86_64-unknown-linux-gnu
-configure:11076: checking src/HmmUFOtu.h usability
-configure:11076: gcc -c -g -O2  conftest.c >&5
-conftest.c:54:26: fatal error: src/HmmUFOtu.h: No such file or directory
-compilation terminated.
-configure:11076: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "HmmUFOtu"
-| #define PACKAGE_TARNAME "hmmufotu"
-| #define PACKAGE_VERSION "1.0"
-| #define PACKAGE_STRING "HmmUFOtu 1.0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define STDC_HEADERS 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_MEMORY_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_DLFCN_H 1
-| #define LT_OBJDIR ".libs/"
-| /* end confdefs.h.  */
-| #include <stdio.h>
-| #ifdef HAVE_SYS_TYPES_H
-| # include <sys/types.h>
-| #endif
-| #ifdef HAVE_SYS_STAT_H
-| # include <sys/stat.h>
-| #endif
-| #ifdef STDC_HEADERS
-| # include <stdlib.h>
-| # include <stddef.h>
-| #else
-| # ifdef HAVE_STDLIB_H
-| #  include <stdlib.h>
-| # endif
-| #endif
-| #ifdef HAVE_STRING_H
-| # if !defined STDC_HEADERS && defined HAVE_MEMORY_H
-| #  include <memory.h>
-| # endif
-| # include <string.h>
-| #endif
-| #ifdef HAVE_STRINGS_H
-| # include <strings.h>
-| #endif
-| #ifdef HAVE_INTTYPES_H
-| # include <inttypes.h>
-| #endif
-| #ifdef HAVE_STDINT_H
-| # include <stdint.h>
-| #endif
-| #ifdef HAVE_UNISTD_H
-| # include <unistd.h>
-| #endif
-| #include <src/HmmUFOtu.h>
-configure:11076: result: no
-configure:11076: checking src/HmmUFOtu.h presence
-configure:11076: gcc -E  conftest.c
-conftest.c:21:26: fatal error: src/HmmUFOtu.h: No such file or directory
-compilation terminated.
-configure:11076: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "HmmUFOtu"
-| #define PACKAGE_TARNAME "hmmufotu"
-| #define PACKAGE_VERSION "1.0"
-| #define PACKAGE_STRING "HmmUFOtu 1.0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define STDC_HEADERS 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_MEMORY_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_DLFCN_H 1
-| #define LT_OBJDIR ".libs/"
-| /* end confdefs.h.  */
-| #include <src/HmmUFOtu.h>
-configure:11076: result: no
-configure:11076: checking for src/HmmUFOtu.h
-configure:11076: result: no
-configure:11086: checking for stdbool.h that conforms to C99
-configure:11153: gcc -c -g -O2  conftest.c >&5
-configure:11153: $? = 0
-configure:11160: result: yes
-configure:11162: checking for _Bool
-configure:11162: gcc -c -g -O2  conftest.c >&5
-configure:11162: $? = 0
-configure:11162: gcc -c -g -O2  conftest.c >&5
-conftest.c: In function 'main':
-conftest.c:57:20: error: expected expression before ')' token
- if (sizeof ((_Bool)))
-                    ^
-configure:11162: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "HmmUFOtu"
-| #define PACKAGE_TARNAME "hmmufotu"
-| #define PACKAGE_VERSION "1.0"
-| #define PACKAGE_STRING "HmmUFOtu 1.0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define STDC_HEADERS 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_MEMORY_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_DLFCN_H 1
-| #define LT_OBJDIR ".libs/"
-| /* end confdefs.h.  */
-| #include <stdio.h>
-| #ifdef HAVE_SYS_TYPES_H
-| # include <sys/types.h>
-| #endif
-| #ifdef HAVE_SYS_STAT_H
-| # include <sys/stat.h>
-| #endif
-| #ifdef STDC_HEADERS
-| # include <stdlib.h>
-| # include <stddef.h>
-| #else
-| # ifdef HAVE_STDLIB_H
-| #  include <stdlib.h>
-| # endif
-| #endif
-| #ifdef HAVE_STRING_H
-| # if !defined STDC_HEADERS && defined HAVE_MEMORY_H
-| #  include <memory.h>
-| # endif
-| # include <string.h>
-| #endif
-| #ifdef HAVE_STRINGS_H
-| # include <strings.h>
-| #endif
-| #ifdef HAVE_INTTYPES_H
-| # include <inttypes.h>
-| #endif
-| #ifdef HAVE_STDINT_H
-| # include <stdint.h>
-| #endif
-| #ifdef HAVE_UNISTD_H
-| # include <unistd.h>
-| #endif
-| int
-| main ()
-| {
-| if (sizeof ((_Bool)))
-| 	    return 0;
-|   ;
-|   return 0;
-| }
-configure:11162: result: yes
-configure:11173: checking for inline
-configure:11189: gcc -c -g -O2  conftest.c >&5
-configure:11189: $? = 0
-configure:11197: result: inline
-configure:11215: checking for size_t
-configure:11215: gcc -c -g -O2  conftest.c >&5
-configure:11215: $? = 0
-configure:11215: gcc -c -g -O2  conftest.c >&5
-conftest.c: In function 'main':
-conftest.c:58:21: error: expected expression before ')' token
- if (sizeof ((size_t)))
-                     ^
-configure:11215: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "HmmUFOtu"
-| #define PACKAGE_TARNAME "hmmufotu"
-| #define PACKAGE_VERSION "1.0"
-| #define PACKAGE_STRING "HmmUFOtu 1.0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define STDC_HEADERS 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_MEMORY_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_DLFCN_H 1
-| #define LT_OBJDIR ".libs/"
-| #define HAVE__BOOL 1
-| /* end confdefs.h.  */
-| #include <stdio.h>
-| #ifdef HAVE_SYS_TYPES_H
-| # include <sys/types.h>
-| #endif
-| #ifdef HAVE_SYS_STAT_H
-| # include <sys/stat.h>
-| #endif
-| #ifdef STDC_HEADERS
-| # include <stdlib.h>
-| # include <stddef.h>
-| #else
-| # ifdef HAVE_STDLIB_H
-| #  include <stdlib.h>
-| # endif
-| #endif
-| #ifdef HAVE_STRING_H
-| # if !defined STDC_HEADERS && defined HAVE_MEMORY_H
-| #  include <memory.h>
-| # endif
-| # include <string.h>
-| #endif
-| #ifdef HAVE_STRINGS_H
-| # include <strings.h>
-| #endif
-| #ifdef HAVE_INTTYPES_H
-| # include <inttypes.h>
-| #endif
-| #ifdef HAVE_STDINT_H
-| # include <stdint.h>
-| #endif
-| #ifdef HAVE_UNISTD_H
-| # include <unistd.h>
-| #endif
-| int
-| main ()
-| {
-| if (sizeof ((size_t)))
-| 	    return 0;
-|   ;
-|   return 0;
-| }
-configure:11215: result: yes
-configure:11226: checking for int8_t
-configure:11226: gcc -c -g -O2  conftest.c >&5
-configure:11226: $? = 0
-configure:11226: gcc -c -g -O2  conftest.c >&5
-conftest.c: In function 'main':
-conftest.c:59:12: error: size of array 'test_array' is negative
- static int test_array [1 - 2 * !((int8_t) (((((int8_t) 1 << N) << N) - 1) * 2 + 1)
-            ^
-configure:11226: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "HmmUFOtu"
-| #define PACKAGE_TARNAME "hmmufotu"
-| #define PACKAGE_VERSION "1.0"
-| #define PACKAGE_STRING "HmmUFOtu 1.0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define STDC_HEADERS 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_MEMORY_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_DLFCN_H 1
-| #define LT_OBJDIR ".libs/"
-| #define HAVE__BOOL 1
-| /* end confdefs.h.  */
-| #include <stdio.h>
-| #ifdef HAVE_SYS_TYPES_H
-| # include <sys/types.h>
-| #endif
-| #ifdef HAVE_SYS_STAT_H
-| # include <sys/stat.h>
-| #endif
-| #ifdef STDC_HEADERS
-| # include <stdlib.h>
-| # include <stddef.h>
-| #else
-| # ifdef HAVE_STDLIB_H
-| #  include <stdlib.h>
-| # endif
-| #endif
-| #ifdef HAVE_STRING_H
-| # if !defined STDC_HEADERS && defined HAVE_MEMORY_H
-| #  include <memory.h>
-| # endif
-| # include <string.h>
-| #endif
-| #ifdef HAVE_STRINGS_H
-| # include <strings.h>
-| #endif
-| #ifdef HAVE_INTTYPES_H
-| # include <inttypes.h>
-| #endif
-| #ifdef HAVE_STDINT_H
-| # include <stdint.h>
-| #endif
-| #ifdef HAVE_UNISTD_H
-| # include <unistd.h>
-| #endif
-| 	        enum { N = 8 / 2 - 1 };
-| int
-| main ()
-| {
-| static int test_array [1 - 2 * !((int8_t) (((((int8_t) 1 << N) << N) - 1) * 2 + 1)
-| 		 < (int8_t) (((((int8_t) 1 << N) << N) - 1) * 2 + 2))];
-| test_array [0] = 0;
-| return test_array [0];
-| 
-|   ;
-|   return 0;
-| }
-configure:11226: result: yes
-configure:11237: checking for uint8_t
-configure:11237: gcc -c -g -O2  conftest.c >&5
-configure:11237: $? = 0
-configure:11237: result: yes
-configure:11251: checking for uint16_t
-configure:11251: gcc -c -g -O2  conftest.c >&5
-configure:11251: $? = 0
-configure:11251: result: yes
-configure:11264: checking for int32_t
-configure:11264: gcc -c -g -O2  conftest.c >&5
-configure:11264: $? = 0
-configure:11264: gcc -c -g -O2  conftest.c >&5
-conftest.c: In function 'main':
-conftest.c:60:53: warning: integer overflow in expression [-Woverflow]
-    < (int32_t) (((((int32_t) 1 << N) << N) - 1) * 2 + 2))];
-                                                     ^
-conftest.c:59:12: error: storage size of 'test_array' isn't constant
- static int test_array [1 - 2 * !((int32_t) (((((int32_t) 1 << N) << N) - 1) * 2 + 1)
-            ^
-configure:11264: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "HmmUFOtu"
-| #define PACKAGE_TARNAME "hmmufotu"
-| #define PACKAGE_VERSION "1.0"
-| #define PACKAGE_STRING "HmmUFOtu 1.0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define STDC_HEADERS 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_MEMORY_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_DLFCN_H 1
-| #define LT_OBJDIR ".libs/"
-| #define HAVE__BOOL 1
-| /* end confdefs.h.  */
-| #include <stdio.h>
-| #ifdef HAVE_SYS_TYPES_H
-| # include <sys/types.h>
-| #endif
-| #ifdef HAVE_SYS_STAT_H
-| # include <sys/stat.h>
-| #endif
-| #ifdef STDC_HEADERS
-| # include <stdlib.h>
-| # include <stddef.h>
-| #else
-| # ifdef HAVE_STDLIB_H
-| #  include <stdlib.h>
-| # endif
-| #endif
-| #ifdef HAVE_STRING_H
-| # if !defined STDC_HEADERS && defined HAVE_MEMORY_H
-| #  include <memory.h>
-| # endif
-| # include <string.h>
-| #endif
-| #ifdef HAVE_STRINGS_H
-| # include <strings.h>
-| #endif
-| #ifdef HAVE_INTTYPES_H
-| # include <inttypes.h>
-| #endif
-| #ifdef HAVE_STDINT_H
-| # include <stdint.h>
-| #endif
-| #ifdef HAVE_UNISTD_H
-| # include <unistd.h>
-| #endif
-| 	        enum { N = 32 / 2 - 1 };
-| int
-| main ()
-| {
-| static int test_array [1 - 2 * !((int32_t) (((((int32_t) 1 << N) << N) - 1) * 2 + 1)
-| 		 < (int32_t) (((((int32_t) 1 << N) << N) - 1) * 2 + 2))];
-| test_array [0] = 0;
-| return test_array [0];
-| 
-|   ;
-|   return 0;
-| }
-configure:11264: result: yes
-configure:11277: checking for stdlib.h
-configure:11277: result: yes
-configure:11287: checking for GNU libc compatible malloc
-configure:11311: gcc -o conftest -g -O2   conftest.c  >&5
-configure:11311: $? = 0
-configure:11311: ./conftest
-configure:11311: $? = 0
-configure:11321: result: yes
-configure:11385: checking for ranlib
-configure:11412: result: ranlib
-configure:11434: checking whether ln -s works
-configure:11438: result: yes
-configure:11461: checking for a BSD-compatible install
-configure:11529: result: /usr/bin/install -c
-configure:11540: checking whether build environment is sane
-configure:11595: result: yes
-configure:11743: checking for a thread-safe mkdir -p
-configure:11782: result: /usr/bin/mkdir -p
-configure:11785: checking whether make sets $(MAKE)
-configure:11807: result: yes
-configure:11837: checking for style of include used by make
-configure:11865: result: GNU
-configure:11899: checking whether make supports nested variables
-configure:11916: result: yes
-configure:12001: checking dependency style of gcc
-configure:12112: result: gcc3
-configure:12229: checking for g++
-configure:12245: found /usr/bin/g++
-configure:12256: result: g++
-configure:12283: checking for C++ compiler version
-configure:12292: g++ --version >&5
-g++ (GCC) 5.1.1 20150618 (Red Hat 5.1.1-4)
-Copyright (C) 2015 Free Software Foundation, Inc.
-This is free software; see the source for copying conditions.  There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-configure:12303: $? = 0
-configure:12292: g++ -v >&5
-Using built-in specs.
-COLLECT_GCC=g++
-COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-redhat-linux/5.1.1/lto-wrapper
-Target: x86_64-redhat-linux
-Configured with: ../configure --enable-bootstrap --enable-languages=c,c++,objc,obj-c++,fortran,ada,go,lto --prefix=/usr --mandir=/usr/share/man --infodir=/usr/share/info --with-bugurl=http://bugzilla.redhat.com/bugzilla --enable-shared --enable-threads=posix --enable-checking=release --enable-multilib --with-system-zlib --enable-__cxa_atexit --disable-libunwind-exceptions --enable-gnu-unique-object --enable-linker-build-id --with-linker-hash-style=gnu --enable-plugin --enable-initfini-array --disable-libgcj --with-default-libstdcxx-abi=c++98 --with-isl --enable-libmpx --enable-gnu-indirect-function --with-tune=generic --with-arch_32=i686 --build=x86_64-redhat-linux
-Thread model: posix
-gcc version 5.1.1 20150618 (Red Hat 5.1.1-4) (GCC) 
-configure:12303: $? = 0
-configure:12292: g++ -V >&5
-g++: error: unrecognized command line option '-V'
-g++: fatal error: no input files
-compilation terminated.
-configure:12303: $? = 1
-configure:12292: g++ -qversion >&5
-g++: error: unrecognized command line option '-qversion'
-g++: fatal error: no input files
-compilation terminated.
-configure:12303: $? = 1
-configure:12307: checking whether we are using the GNU C++ compiler
-configure:12326: g++ -c   conftest.cpp >&5
-configure:12326: $? = 0
-configure:12335: result: yes
-configure:12344: checking whether g++ accepts -g
-configure:12364: g++ -c -g  conftest.cpp >&5
-configure:12364: $? = 0
-configure:12405: result: yes
-configure:12446: checking how to run the C++ preprocessor
-configure:12473: g++ -E  conftest.cpp
-configure:12473: $? = 0
-configure:12487: g++ -E  conftest.cpp
-conftest.cpp:26:28: fatal error: ac_nonexistent.h: No such file or directory
-compilation terminated.
-configure:12487: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "HmmUFOtu"
-| #define PACKAGE_TARNAME "hmmufotu"
-| #define PACKAGE_VERSION "1.0"
-| #define PACKAGE_STRING "HmmUFOtu 1.0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define STDC_HEADERS 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_MEMORY_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_DLFCN_H 1
-| #define LT_OBJDIR ".libs/"
-| #define HAVE__BOOL 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_MALLOC 1
-| #define PACKAGE "hmmufotu"
-| #define VERSION "1.0"
-| /* end confdefs.h.  */
-| #include <ac_nonexistent.h>
-configure:12512: result: g++ -E
-configure:12532: g++ -E  conftest.cpp
-configure:12532: $? = 0
-configure:12546: g++ -E  conftest.cpp
-conftest.cpp:26:28: fatal error: ac_nonexistent.h: No such file or directory
-compilation terminated.
-configure:12546: $? = 1
-configure: failed program was:
-| /* confdefs.h */
-| #define PACKAGE_NAME "HmmUFOtu"
-| #define PACKAGE_TARNAME "hmmufotu"
-| #define PACKAGE_VERSION "1.0"
-| #define PACKAGE_STRING "HmmUFOtu 1.0"
-| #define PACKAGE_BUGREPORT ""
-| #define PACKAGE_URL ""
-| #define STDC_HEADERS 1
-| #define HAVE_SYS_TYPES_H 1
-| #define HAVE_SYS_STAT_H 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_STRING_H 1
-| #define HAVE_MEMORY_H 1
-| #define HAVE_STRINGS_H 1
-| #define HAVE_INTTYPES_H 1
-| #define HAVE_STDINT_H 1
-| #define HAVE_UNISTD_H 1
-| #define HAVE_DLFCN_H 1
-| #define LT_OBJDIR ".libs/"
-| #define HAVE__BOOL 1
-| #define HAVE_STDLIB_H 1
-| #define HAVE_MALLOC 1
-| #define PACKAGE "hmmufotu"
-| #define VERSION "1.0"
-| /* end confdefs.h.  */
-| #include <ac_nonexistent.h>
-configure:12715: checking for ld used by g++
-configure:12782: result: /usr/bin/ld -m elf_x86_64
-configure:12789: checking if the linker (/usr/bin/ld -m elf_x86_64) is GNU ld
-configure:12804: result: yes
-configure:12859: checking whether the g++ linker (/usr/bin/ld -m elf_x86_64) supports shared libraries
-configure:13864: result: yes
-configure:13900: g++ -c -g -O2  conftest.cpp >&5
-configure:13903: $? = 0
-configure:14423: checking for g++ option to produce PIC
-configure:14430: result: -fPIC -DPIC
-configure:14438: checking if g++ PIC flag -fPIC -DPIC works
-configure:14456: g++ -c -g -O2  -fPIC -DPIC -DPIC conftest.cpp >&5
-configure:14460: $? = 0
-configure:14473: result: yes
-configure:14496: checking if g++ static flag -static works
-configure:14524: result: no
-configure:14536: checking if g++ supports -c -o file.o
-configure:14557: g++ -c -g -O2  -o out/conftest2.o conftest.cpp >&5
-configure:14561: $? = 0
-configure:14583: result: yes
-configure:14588: checking if g++ supports -c -o file.o
-configure:14635: result: yes
-configure:14665: checking whether the g++ linker (/usr/bin/ld -m elf_x86_64) supports shared libraries
-configure:14701: result: yes
-configure:14842: checking dynamic linker characteristics
-configure:15513: result: GNU/Linux ld.so
-configure:15566: checking how to hardcode library paths into programs
-configure:15591: result: immediate
-configure:15633: checking dependency style of g++
-configure:15744: result: gcc3
-configure:15908: checking that generated files are newer than configure
-configure:15914: result: done
-configure:15941: creating ./config.status
-
-## ---------------------- ##
-## Running config.status. ##
-## ---------------------- ##
-
-This file was extended by HmmUFOtu config.status 1.0, which was
-generated by GNU Autoconf 2.69.  Invocation command line was
-
-  CONFIG_FILES    = 
-  CONFIG_HEADERS  = 
-  CONFIG_LINKS    = 
-  CONFIG_COMMANDS = 
-  $ ./config.status 
-
-on gricelabstation1.med.upenn.edu
-
-config.status:1072: creating Makefile
-config.status:1072: creating src/Makefile
-config.status:1072: creating test/Makefile
-config.status:1244: executing libtool commands
-config.status:1244: executing depfiles commands
 
 ## ---------------- ##
 ## Cache variables. ##
@@ -931,12 +247,6 @@ config.status:1244: executing depfiles commands
 
 ac_cv_build=x86_64-unknown-linux-gnu
 ac_cv_c_compiler_gnu=yes
-ac_cv_c_inline=inline
-ac_cv_c_int32_t=yes
-ac_cv_c_int8_t=yes
-ac_cv_c_uint16_t=yes
-ac_cv_c_uint8_t=yes
-ac_cv_cxx_compiler_gnu=yes
 ac_cv_env_CCC_set=
 ac_cv_env_CCC_value=
 ac_cv_env_CC_set=
@@ -963,73 +273,34 @@ ac_cv_env_host_alias_set=
 ac_cv_env_host_alias_value=
 ac_cv_env_target_alias_set=
 ac_cv_env_target_alias_value=
-ac_cv_func_malloc_0_nonnull=yes
-ac_cv_header_dlfcn_h=yes
-ac_cv_header_inttypes_h=yes
-ac_cv_header_memory_h=yes
-ac_cv_header_src_HmmUFOtu_h=no
-ac_cv_header_stdbool_h=yes
 ac_cv_header_stdc=yes
-ac_cv_header_stdint_h=yes
-ac_cv_header_stdlib_h=yes
-ac_cv_header_string_h=yes
-ac_cv_header_strings_h=yes
-ac_cv_header_sys_stat_h=yes
-ac_cv_header_sys_types_h=yes
-ac_cv_header_unistd_h=yes
 ac_cv_host=x86_64-unknown-linux-gnu
 ac_cv_objext=o
 ac_cv_path_EGREP='/usr/bin/grep -E'
 ac_cv_path_FGREP='/usr/bin/grep -F'
 ac_cv_path_GREP=/usr/bin/grep
 ac_cv_path_SED=/usr/bin/sed
-ac_cv_path_install='/usr/bin/install -c'
-ac_cv_path_mkdir=/usr/bin/mkdir
 ac_cv_prog_AWK=gawk
 ac_cv_prog_CPP='gcc -E'
-ac_cv_prog_CXXCPP='g++ -E'
 ac_cv_prog_ac_ct_AR=ar
 ac_cv_prog_ac_ct_CC=gcc
-ac_cv_prog_ac_ct_CXX=g++
 ac_cv_prog_ac_ct_OBJDUMP=objdump
 ac_cv_prog_ac_ct_RANLIB=ranlib
 ac_cv_prog_ac_ct_STRIP=strip
 ac_cv_prog_cc_c89=
 ac_cv_prog_cc_g=yes
-ac_cv_prog_cxx_g=yes
-ac_cv_prog_make_make_set=yes
-ac_cv_target=x86_64-unknown-linux-gnu
-ac_cv_type__Bool=yes
-ac_cv_type_size_t=yes
-am_cv_CC_dependencies_compiler_type=gcc3
-am_cv_CXX_dependencies_compiler_type=gcc3
-am_cv_make_support_nested_variables=yes
 am_cv_prog_cc_c_o=yes
 lt_cv_ar_at_file=@
-lt_cv_archive_cmds_need_lc=no
 lt_cv_deplibs_check_method=pass_all
 lt_cv_file_magic_cmd='$MAGIC_CMD'
 lt_cv_file_magic_test_file=
 lt_cv_ld_reload_flag=-r
 lt_cv_nm_interface='BSD nm'
-lt_cv_objdir=.libs
 lt_cv_path_LD=/usr/bin/ld
-lt_cv_path_LDCXX='/usr/bin/ld -m elf_x86_64'
 lt_cv_path_NM='/usr/bin/nm -B'
 lt_cv_path_mainfest_tool=no
-lt_cv_prog_compiler_c_o=yes
-lt_cv_prog_compiler_c_o_CXX=yes
-lt_cv_prog_compiler_pic='-fPIC -DPIC'
-lt_cv_prog_compiler_pic_CXX='-fPIC -DPIC'
-lt_cv_prog_compiler_pic_works=yes
-lt_cv_prog_compiler_pic_works_CXX=yes
-lt_cv_prog_compiler_rtti_exceptions=no
-lt_cv_prog_compiler_static_works=no
-lt_cv_prog_compiler_static_works_CXX=no
 lt_cv_prog_gnu_ld=yes
-lt_cv_prog_gnu_ldcxx=yes
 lt_cv_sharedlib_from_linklib_cmd='printf %s\n'
-lt_cv_shlibpath_overrides_runpath=no
 lt_cv_sys_global_symbol_pipe='sed -n -e '\''s/^.*[	 ]\([ABCDGIRSTW][ABCDGIRSTW]*\)[	 ][	 ]*\([_A-Za-z][_A-Za-z0-9]*\)$/\1 \2 \2/p'\'' | sed '\''/ __gnu_lto/d'\'''
 lt_cv_sys_global_symbol_to_c_name_address='sed -n -e '\''s/^: \([^ ]*\)[ ]*$/  {\"\1\", (void *) 0},/p'\'' -e '\''s/^[ABCDGIRSTW]* \([^ ]*\) \([^ ]*\)$/  {"\2", (void *) \&\2},/p'\'''
 lt_cv_sys_global_symbol_to_c_name_address_lib_prefix='sed -n -e '\''s/^: \([^ ]*\)[ ]*$/  {\"\1\", (void *) 0},/p'\'' -e '\''s/^[ABCDGIRSTW]* \([^ ]*\) \(lib[^ ]*\)$/  {"\2", (void *) \&\2},/p'\'' -e '\''s/^[ABCDGIRSTW]* \([^ ]*\) \([^ ]*\)$/  {"lib\2", (void *) \&\2},/p'\'''
@@ -1042,32 +313,32 @@ lt_cv_to_tool_file_cmd=func_convert_file_noop
 ## Output variables. ##
 ## ----------------- ##
 
-ACLOCAL='${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing aclocal-1.15'
-AMDEPBACKSLASH='\'
-AMDEP_FALSE='#'
+ACLOCAL=''
+AMDEPBACKSLASH=''
+AMDEP_FALSE=''
 AMDEP_TRUE=''
-AMTAR='$${TAR-tar}'
-AM_BACKSLASH='\'
-AM_DEFAULT_V='$(AM_DEFAULT_VERBOSITY)'
-AM_DEFAULT_VERBOSITY='1'
-AM_V='$(V)'
+AMTAR=''
+AM_BACKSLASH=''
+AM_DEFAULT_V=''
+AM_DEFAULT_VERBOSITY=''
+AM_V=''
 AR='ar'
-AUTOCONF='${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing autoconf'
-AUTOHEADER='${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing autoheader'
-AUTOMAKE='${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing automake-1.15'
+AUTOCONF=''
+AUTOHEADER=''
+AUTOMAKE=''
 AWK='gawk'
 CC='gcc'
-CCDEPMODE='depmode=gcc3'
+CCDEPMODE=''
 CFLAGS='-g -O2'
 CPP='gcc -E'
 CPPFLAGS=''
-CXX='g++'
-CXXCPP='g++ -E'
-CXXDEPMODE='depmode=gcc3'
-CXXFLAGS='-g -O2'
-CYGPATH_W='echo'
-DEFS='-DPACKAGE_NAME=\"HmmUFOtu\" -DPACKAGE_TARNAME=\"hmmufotu\" -DPACKAGE_VERSION=\"1.0\" -DPACKAGE_STRING=\"HmmUFOtu\ 1.0\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -DHAVE__BOOL=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DPACKAGE=\"hmmufotu\" -DVERSION=\"1.0\"'
-DEPDIR='.deps'
+CXX=''
+CXXCPP=''
+CXXDEPMODE=''
+CXXFLAGS=''
+CYGPATH_W=''
+DEFS=''
+DEPDIR=''
 DLLTOOL='false'
 DSYMUTIL=''
 DUMPBIN=''
@@ -1078,28 +349,28 @@ EGREP='/usr/bin/grep -E'
 EXEEXT=''
 FGREP='/usr/bin/grep -F'
 GREP='/usr/bin/grep'
-INSTALL_DATA='${INSTALL} -m 644'
-INSTALL_PROGRAM='${INSTALL}'
-INSTALL_SCRIPT='${INSTALL}'
-INSTALL_STRIP_PROGRAM='$(install_sh) -c -s'
+INSTALL_DATA=''
+INSTALL_PROGRAM=''
+INSTALL_SCRIPT=''
+INSTALL_STRIP_PROGRAM=''
 LD='/usr/bin/ld -m elf_x86_64'
 LDFLAGS=''
 LIBOBJS=''
 LIBS=''
-LIBTOOL='$(SHELL) $(top_builddir)/libtool'
+LIBTOOL=''
 LIPO=''
 LN_S='ln -s'
 LTLIBOBJS=''
-MAKEINFO='${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing makeinfo'
+MAKEINFO=''
 MANIFEST_TOOL=':'
-MKDIR_P='/usr/bin/mkdir -p'
+MKDIR_P=''
 NM='/usr/bin/nm -B'
 NMEDIT=''
 OBJDUMP='objdump'
 OBJEXT='o'
 OTOOL64=''
 OTOOL=''
-PACKAGE='hmmufotu'
+PACKAGE=''
 PACKAGE_BUGREPORT=''
 PACKAGE_NAME='HmmUFOtu'
 PACKAGE_STRING='HmmUFOtu 1.0'
@@ -1112,24 +383,24 @@ SED='/usr/bin/sed'
 SET_MAKE=''
 SHELL='/bin/sh'
 STRIP='strip'
-VERSION='1.0'
+VERSION=''
 ac_ct_AR='ar'
 ac_ct_CC='gcc'
-ac_ct_CXX='g++'
+ac_ct_CXX=''
 ac_ct_DUMPBIN=''
 am__EXEEXT_FALSE=''
-am__EXEEXT_TRUE='#'
-am__fastdepCC_FALSE='#'
+am__EXEEXT_TRUE=''
+am__fastdepCC_FALSE=''
 am__fastdepCC_TRUE=''
-am__fastdepCXX_FALSE='#'
+am__fastdepCXX_FALSE=''
 am__fastdepCXX_TRUE=''
-am__include='include'
+am__include=''
 am__isrc=''
-am__leading_dot='.'
-am__nodep='_no'
+am__leading_dot=''
+am__nodep=''
 am__quote=''
-am__tar='$${TAR-tar} chof - "$$tardir"'
-am__untar='$${TAR-tar} xf -'
+am__tar=''
+am__untar=''
 bindir='${exec_prefix}/bin'
 build='x86_64-unknown-linux-gnu'
 build_alias=''
@@ -1140,7 +411,7 @@ datadir='${datarootdir}'
 datarootdir='${prefix}/share'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
 dvidir='${docdir}'
-exec_prefix='${prefix}'
+exec_prefix='NONE'
 host='x86_64-unknown-linux-gnu'
 host_alias=''
 host_cpu='x86_64'
@@ -1149,26 +420,26 @@ host_vendor='unknown'
 htmldir='${docdir}'
 includedir='${prefix}/include'
 infodir='${datarootdir}/info'
-install_sh='${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/install-sh'
+install_sh=''
 libdir='${exec_prefix}/lib'
 libexecdir='${exec_prefix}/libexec'
 localedir='${datarootdir}/locale'
 localstatedir='${prefix}/var'
 mandir='${datarootdir}/man'
-mkdir_p='$(MKDIR_P)'
+mkdir_p=''
 oldincludedir='/usr/include'
 pdfdir='${docdir}'
-prefix='/usr/local'
+prefix='NONE'
 program_transform_name='s,x,x,'
 psdir='${docdir}'
 sbindir='${exec_prefix}/sbin'
 sharedstatedir='${prefix}/com'
 sysconfdir='${prefix}/etc'
-target='x86_64-unknown-linux-gnu'
+target=''
 target_alias=''
-target_cpu='x86_64'
-target_os='linux-gnu'
-target_vendor='unknown'
+target_cpu=''
+target_os=''
+target_vendor=''
 
 ## ----------- ##
 ## confdefs.h. ##
@@ -1181,75 +452,6 @@ target_vendor='unknown'
 #define PACKAGE_STRING "HmmUFOtu 1.0"
 #define PACKAGE_BUGREPORT ""
 #define PACKAGE_URL ""
-#define STDC_HEADERS 1
-#define HAVE_SYS_TYPES_H 1
-#define HAVE_SYS_STAT_H 1
-#define HAVE_STDLIB_H 1
-#define HAVE_STRING_H 1
-#define HAVE_MEMORY_H 1
-#define HAVE_STRINGS_H 1
-#define HAVE_INTTYPES_H 1
-#define HAVE_STDINT_H 1
-#define HAVE_UNISTD_H 1
-#define HAVE_DLFCN_H 1
-#define LT_OBJDIR ".libs/"
-#define HAVE__BOOL 1
-#define HAVE_STDLIB_H 1
-#define HAVE_MALLOC 1
-#define PACKAGE "hmmufotu"
-#define VERSION "1.0"
 
-configure: exit 0
-
-## ---------------------- ##
-## Running config.status. ##
-## ---------------------- ##
-
-This file was extended by HmmUFOtu config.status 1.0, which was
-generated by GNU Autoconf 2.69.  Invocation command line was
-
-  CONFIG_FILES    = 
-  CONFIG_HEADERS  = 
-  CONFIG_LINKS    = 
-  CONFIG_COMMANDS = 
-  $ ./config.status Makefile
-
-on gricelabstation1.med.upenn.edu
-
-config.status:1072: creating Makefile
-
-## ---------------------- ##
-## Running config.status. ##
-## ---------------------- ##
-
-This file was extended by HmmUFOtu config.status 1.0, which was
-generated by GNU Autoconf 2.69.  Invocation command line was
-
-  CONFIG_FILES    = 
-  CONFIG_HEADERS  = 
-  CONFIG_LINKS    = 
-  CONFIG_COMMANDS = 
-  $ ./config.status test/Makefile depfiles
-
-on gricelabstation1.med.upenn.edu
-
-config.status:1072: creating test/Makefile
-config.status:1244: executing depfiles commands
-
-## ---------------------- ##
-## Running config.status. ##
-## ---------------------- ##
-
-This file was extended by HmmUFOtu config.status 1.0, which was
-generated by GNU Autoconf 2.69.  Invocation command line was
-
-  CONFIG_FILES    = 
-  CONFIG_HEADERS  = 
-  CONFIG_LINKS    = 
-  CONFIG_COMMANDS = 
-  $ ./config.status test/Makefile depfiles
-
-on gricelabstation1.med.upenn.edu
-
-config.status:1072: creating test/Makefile
-config.status:1244: executing depfiles commands
+configure: caught signal 2
+configure: exit 1
