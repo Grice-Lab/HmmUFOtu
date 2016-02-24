@@ -4,6 +4,7 @@
  *  Created on: Nov 5, 2015
  *      Author: zhengqi
  */
+#include <algorithm>
 #include <stdexcept>
 #include <stdint.h>
 #include <cctype>
@@ -31,14 +32,14 @@ int32_t CSFMIndex::count(const string& pattern) const {
 	/* while there are possible occs and pattern not done */
     while (start <= end && i >= 1) {
       c = abc->encode(pattern[--i]); /* map pattern to our alphabet */
-      start = C[c] + RRR_bwt->rank(c, start - 1); /* LF Mapping */
-      end = C[c] + RRR_bwt->rank(c, end) - 1; /* LF Mapping */
+      start = C[c] + fwt_bwt->rank(c, start - 1); /* LF Mapping */
+      end = C[c] + fwt_bwt->rank(c, end) - 1; /* LF Mapping */
     }
     return start <= end ? end - start + 1 : 0;
 }
 
-vector<uint16_t> CSFMIndex::locate(const string& pattern) const {
-	vector<uint16_t> locs;
+vector<CSLoc> CSFMIndex::locate(const string& pattern) const {
+	vector<CSLoc> locs;
 	if(pattern.empty())
 		return locs; /* empty pattern matches to nothing */
     int32_t start = 1; /* starting range in M from p[m-1] */
@@ -46,45 +47,50 @@ vector<uint16_t> CSFMIndex::locate(const string& pattern) const {
 	/* while there are possible occs and pattern not done */
     for (string::const_reverse_iterator rit = pattern.rbegin(); rit != pattern.rend() && start <= end; ++rit) {
       int8_t c = abc->encode(*rit) + 1; /* map pattern to 1 .. size */
-      start = C[c] + RRR_bwt->rank(c, start - 1); /* LF Mapping */
-      end = C[c] + RRR_bwt->rank(c, end) - 1; /* LF Mapping */
+      start = C[c] + fwt_bwt->rank(c, start - 1); /* LF Mapping */
+      end = C[c] + fwt_bwt->rank(c, end) - 1; /* LF Mapping */
     }
 
     for(int32_t i = start; i <= end; ++i) {
-    	locs.push_back(csSA[i - 1]);
+    	int32_t csStart = csSA[i - 1];
+    	int32_t csEnd = csSA[i - 1 + pattern.length() - 1];
+    	locs.push_back(CSLoc(csStart, csEnd, extractCS(i, pattern.length())));
     }
     return locs;
 }
 
-uint16_t CSFMIndex::locateFirst(const string& pattern) const {
+CSLoc CSFMIndex::locateFirst(const string& pattern) const {
 	if(pattern.empty())
-		return 0; /* empty pattern matches to nothing */
+		return CSLoc(); /* empty pattern matches to nothing */
 	int32_t start = 1;
 	int32_t end = concatLen;
 	/* while there are possible occs and pattern not done */
 	for (string::const_reverse_iterator rit = pattern.rbegin(); rit != pattern.rend() && start <= end; ++rit) {
 		int8_t c = abc->encode(*rit) + 1; /* map pattern to 1 .. size */
-		start = C[c] + RRR_bwt->rank(c, start - 1); /* LF Mapping */
-		end = C[c] + RRR_bwt->rank(c, end) - 1; /* LF Mapping */
+		start = C[c] + fwt_bwt->rank(c, start - 1); /* LF Mapping */
+		end = C[c] + fwt_bwt->rank(c, end) - 1; /* LF Mapping */
 		//cerr << "start:" << start << " end:" << end << endl;
 	}
 
-	if(start <= end)
-		return csSA[start-1];
+	if(start <= end) {
+    	int32_t csStart = csSA[start - 1];
+    	int32_t csEnd = csSA[start - 1 + pattern.length() - 1];
+		return CSLoc(csStart, csEnd, extractCS(start, pattern.length()));
+	}
 	else
-		return 0;
+		return CSLoc();
 }
 
-uint16_t CSFMIndex::locateOne(const string& pattern) const {
+CSLoc CSFMIndex::locateOne(const string& pattern) const {
 	if(pattern.empty())
-		return 0; /* empty pattern matches to nothing */
+		return CSLoc(); /* empty pattern matches to nothing */
     int32_t start = 1;
     int32_t end = concatLen;
 	/* while there are possible occs and pattern not done */
     for (string::const_reverse_iterator rit = pattern.rbegin(); rit != pattern.rend() && start <= end; ++rit) {
     	int8_t c = abc->encode(*rit) + 1; /* map pattern to 1 .. size */
-    	start = C[c] + RRR_bwt->rank(c, start - 1); /* LF Mapping */
-    	end = C[c] + RRR_bwt->rank(c, end) - 1; /* LF Mapping */
+    	start = C[c] + fwt_bwt->rank(c, start - 1); /* LF Mapping */
+    	end = C[c] + fwt_bwt->rank(c, end) - 1; /* LF Mapping */
     	//cerr << "start:" << start << " end:" << end << endl;
     }
     if(start <= end) {
@@ -93,10 +99,12 @@ uint16_t CSFMIndex::locateOne(const string& pattern) const {
     	//uint8_t c = RRR_bwt->access(i);
     	//int32_t j = C[c] + RRR_bwt->rank(c, i) - 1; /* LF-mapping */
     	//cerr << "i:" << i << " c:" << abc->decode(c) << " j:" << j << " csSA:" << csSA[j] << endl;
-    	return csSA[i-1];
+    	int32_t csStart = csSA[i - 1];
+    	int32_t csEnd = csSA[i - 1 + pattern.length() - 1];
+    	return CSLoc(csStart, csEnd, extractCS(i, pattern.length()));
     }
     else
-    	return 0;
+    	return CSLoc();
 }
 
 bool CSFMIndex::save(ofstream& f) const {
@@ -116,7 +124,8 @@ bool CSFMIndex::save(ofstream& f) const {
 	f.write((char*) csIdentity, (csLen + 1) * sizeof(double));
 	f.write((char*) csSA, (concatLen + 1) * sizeof(uint16_t));
 
-	RRR_bwt->save(f);
+	fwt_bwt->save(f);
+	rev_bwt->save(f);
 
 	return f.good();
 }
@@ -150,26 +159,28 @@ CSFMIndex* CSFMIndex::load(ifstream& f) {
     idx->csSA = new uint16_t[idx->concatLen + 1];
 	f.read((char*) idx->csSA, (idx->concatLen + 1) * sizeof(uint16_t));
 
-	idx->RRR_bwt = WaveletTreeNoptrs::load(f);
+	idx->fwt_bwt = WaveletTreeNoptrs::load(f);
+	idx->rev_bwt = WaveletTreeNoptrs::load(f);
 
 	return idx;
 }
 
 CSFMIndex::CSFMIndex() : abc(NULL), gapCh('\0'), csLen(0),
 		concatLen(0), C() /* zero-initiation */, csIdentity(), /* zero-initiation */
-		csSA(NULL), RRR_bwt(NULL) {
+		csSA(NULL), fwt_bwt(NULL), rev_bwt(NULL) {
 }
 
 CSFMIndex::~CSFMIndex() {
 	//delete[] concatSeq;
 	delete[] csIdentity;
 	delete[] csSA;
-	delete[] RRR_bwt;
+	delete[] fwt_bwt;
+	delete[] rev_bwt;
 }
 
 CSFMIndex* CSFMIndex::build(const MSA* msa) {
-	if(!(msa->getCSLen() <= UINT16_MAX + 1))
-		throw invalid_argument("CSFMIndex cannot handle MSA with consensus length longer than " + UINT16_MAX + 1);
+	if(!(msa->getCSLen() <= UINT16_MAX))
+		throw invalid_argument("CSFMIndex cannot handle MSA with consensus length longer than " + UINT16_MAX);
 	CSFMIndex* csFM = new CSFMIndex; // allocate an empty object
 	//cerr << "FM initiated" << endl;
 	/* set basic info */
@@ -182,7 +193,6 @@ CSFMIndex* CSFMIndex::build(const MSA* msa) {
 	for(unsigned j = 0; j < csFM->csLen; ++j)
 		csFM->csIdentity[j + 1] = msa->identityAt(j);
 
-	//printVerboseInfo("basic info built");
 	const int32_t N = csFM->concatLen + 1;
 
 	/* construct the concatSeq and aux data */
@@ -216,17 +226,20 @@ CSFMIndex* CSFMIndex::build(const MSA* msa) {
       prev = tmp;
     }
 
+	/* construct the fwd index */
     /* construct SA */
     saidx_t errno;
     int32_t* SA = new int32_t[N];
 	errno = divsufsort(concatSeq, SA, N);
 	if(errno != 0)
-		throw runtime_error("Error: Cannot build suffix-array on concatednated seq");
+		throw runtime_error("Error: Cannot build suffix-array on forward concatenated seq");
 
     /* construct primary index that map loc on SA/FM-indx to CS index */
     csFM->csSA = new uint16_t[N];
     for(int32_t i = 0; i < N; ++i)/* check each SA pos */
     	csFM->csSA[i] = concat2CS[SA[i]];
+
+    delete[] concat2CS; // delete concat2CS once csSA is built
 
     /* construct BWT and index */
 	uint8_t* X_bwt = new uint8_t[N];
@@ -237,22 +250,37 @@ CSFMIndex* CSFMIndex::build(const MSA* msa) {
             X_bwt[i] = '\0'; // null terminal
         else X_bwt[i] = concatSeq[SA[i] - 1];
 
-	//cerr << "BWT transformation done" << endl;
-
 	/* construct RRR_compressed BWT */
     Mapper* map = new MapperNone(); /* smart ptr no delete necessary */
 	BitSequenceBuilder* bsb = new BitSequenceBuilderRRR(RRR_SAMPLE_RATE); /* smart ptr no delete necessary */
 
-    csFM->RRR_bwt = new WaveletTreeNoptrs((uint32_t *) X_bwt, N,
+    csFM->fwt_bwt = new WaveletTreeNoptrs((uint32_t *) X_bwt, N,
+    		sizeof(uint8_t) * 8, bsb, map, false); // don't free the X_bwt yet, re-use later
+
+	cerr << "Forward index built" << endl;
+
+	/* construct the rev index */
+	std::reverse(concatSeq, concatSeq + N - 1); // re-use the concatSeq memory
+
+    /* construct SA */
+	errno = divsufsort(concatSeq, SA, N); // re-use the SA
+	if(errno != 0)
+		throw runtime_error("Error: Cannot build suffix-array on reverse concatenated seq");
+
+    /* construct BWT and index, re-use X-bwt */
+    for(int32_t i = 0; i < N; ++i)
+        if(SA[i] == 0) // matches to the null
+            X_bwt[i] = '\0'; // null terminal
+        else X_bwt[i] = concatSeq[SA[i] - 1];
+
+	/* construct RRR_compressed BWT, re-use memory */
+    csFM->rev_bwt = new WaveletTreeNoptrs((uint32_t *) X_bwt, N,
     		sizeof(uint8_t) * 8, bsb, map, true);
 
-	//cerr << "RRR transformation done" << endl;
-
-    //cerr << "csSA built" << endl;
-    /* Delete local arrays */
-    delete[] concat2CS;
-    //cerr << "concat2CS deleted" << endl;
+	cerr << "Reverse index built" << endl;
     //delete[] X_bwt; /* X_bwt already deleted during WaveletTreeNoptrs construction */
+
+	delete[] concatSeq;
     delete[] SA;
 
 	return csFM;
@@ -263,9 +291,9 @@ string CSFMIndex::extractCS(int32_t start, int32_t len) const {
 	if(len == 0)
 		return csSeq; // return empty CS
 	for(int32_t i = start; i < start + len; ++i) {
-		if(i > 0 && csSA[i] -csSA[i - 1] > 1) // there are gaps between this two location
+		if(i > 0 && csSA[i] - csSA[i - 1] > 1) // there are gaps between this two location
 			csSeq.append(csSA[i] - csSA[i - 1] - 1, gapCh);
-		csSeq.push_back(abc->decode(RRR_bwt->access(i)));
+		csSeq.push_back(abc->decode(fwt_bwt->access(i)));
 	}
 	return csSeq;
 }

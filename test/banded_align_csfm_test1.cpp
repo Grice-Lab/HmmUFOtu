@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
 		int seed_len = seed.length();
 		seed.removeGaps();
 		//cerr << seed.getSeq() << endl;
-		seed_start = idx->locateOne(seed.getSeq());
-		seed_end = seed_start + seed_len - 1;
+		const CSLoc& loc = idx->locateOne(seed.getSeq());
+		cerr << "CS: start:" << loc.start << " end:" << loc.end << " CS:" << loc.CS << endl;
 
 		//cerr << "known_start:" << known_start << " known_end:" << known_end << endl;
 		//cerr << "seed_start:" << seed_start << " seed_end:" << seed_end << endl;
@@ -85,8 +85,8 @@ int main(int argc, char *argv[]) {
 		//cerr << "vpath.start:" << vpath.start << " vpath.end:" << vpath.end << endl;
 	/*cerr << "constructed the ViterbiAlignPath" << endl;*/
 
-		if(seed_start > 0 && seed_end > 0)
-			hmm.addKnownAlignPath(vpath, CSLoc(seed_start, seed_end, seed_CS), seed_from, seed_to);
+		if(loc.start > 0 && loc.end > 0)
+			hmm.addKnownAlignPath(vpath, loc, seed_from, seed_to);
 		//cerr << "set the known path" << endl;
 
 		hmm.calcViterbiScores(vscore, vpath);

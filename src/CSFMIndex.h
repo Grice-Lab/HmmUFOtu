@@ -11,6 +11,7 @@
 #include <vector>
 #include <fstream>
 #include "MSA.h"
+#include "BandedHMMCommons.h"
 #include "divsufsort.h"
 #include "WaveletTreeNoptrs.h"
 #include "Array.h"
@@ -57,21 +58,21 @@ public:
 	 * @param pattern  the un-coded pattern
 	 * @return  a vector of 1-based consensus locations
 	 */
-	vector<uint16_t> locate(const string& pattern) const;
+	vector<CSLoc> locate(const string& pattern) const;
 
 	/**
 	 * Locate the consensus sequence positions of given pattern
 	 * @param pattern  the un-coded pattern
 	 * @return  a random CS position
 	 */
-	uint16_t locateOne(const string& pattern) const;
+	CSLoc locateOne(const string& pattern) const;
 
 	/**
 	 * Locate the consensus sequence positions of given pattern
 	 * @param pattern  the un-coded pattern
 	 * @return  the first CS position on SA order
 	 */
-	uint16_t locateFirst(const string& pattern) const;
+	CSLoc locateFirst(const string& pattern) const;
 
 	static const unsigned RRR_SAMPLE_RATE = 8; /* usa a dense RRR sample rate for maximum efficiency */
 
@@ -91,6 +92,13 @@ private:
 	 */
 	string extractCS(int32_t start, int32_t len) const;
 
+	/**
+	 * Transfer loc to reverse orientation on concatSeq
+	 * @param loc location on this current direction
+	 * return location on the reverse direction
+	 */
+	int32_t reverseLoc(int32_t loc);
+
 	const DegenAlphabet* abc;
 	char gapCh;
 	uint16_t csLen; /* consensus length */
@@ -101,8 +109,13 @@ private:
 	string csSeq; /* 1-based consensus seq with dummy position at 0 */
 	double* csIdentity; /* 1-based consensus identity */
 	uint16_t* csSA; /* 1-based index for mapping position from SA to consensus-seq */
-	cds_static::WaveletTreeNoptrs* RRR_bwt; /* Wavelet-Tree transformed BWT string */
+	cds_static::WaveletTreeNoptrs* fwt_bwt; /* Wavelet-Tree transformed BWT string for forward concatSeq */
+	cds_static::WaveletTreeNoptrs* rev_bwt; /* Wavelet-Tree transformed BWT string for reverse concatSeq */
 };
+
+inline int32_t CSFMIndex::reverseLoc(int32_t loc) {
+	return concatLen - 1 - loc;
+}
 
 } /* namespace EGriceLab */
 
