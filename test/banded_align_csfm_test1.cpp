@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 		seed.removeGaps();
 		//cerr << seed.getSeq() << endl;
 		const CSLoc& loc = idx->locateOne(seed.getSeq());
-		cerr << "CS: start:" << loc.start << " end:" << loc.end << " CS:" << loc.CS << endl;
+		//cerr << "CS: start:" << loc.start << " end:" << loc.end << " CS:" << loc.CS << endl;
 
 		//cerr << "known_start:" << known_start << " known_end:" << known_end << endl;
 		//cerr << "seed_start:" << seed_start << " seed_end:" << seed_end << endl;

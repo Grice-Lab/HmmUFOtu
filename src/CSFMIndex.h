@@ -14,7 +14,8 @@
 #include "BandedHMMCommons.h"
 #include "divsufsort.h"
 #include "WaveletTreeNoptrs.h"
-#include "Array.h"
+#include "BitSequence.h"
+//#include "Array.h"
 
 namespace EGriceLab {
 
@@ -74,7 +75,9 @@ public:
 	 */
 	CSLoc locateFirst(const string& pattern) const;
 
-	static const unsigned RRR_SAMPLE_RATE = 8; /* usa a dense RRR sample rate for maximum efficiency */
+	static const unsigned SA_SAMPLE_RATE = 4;  /* sample rate for SA */
+	static const unsigned RRR_SAMPLE_RATE = 8; /* RRR sample rate for BWT */
+	static const char sepCh = '\0';
 
 private:
 	/* private default constructor */
@@ -84,38 +87,36 @@ private:
 	CSFMIndex& operator=(const CSFMIndex& other);
 
 	/* private functions */
+	/*
+	 * Access a given SA loc, either by directly searching the stored value or the next sampled value
+	 * @param i  1-index on SA
+	 * @return  1-index on concatSeq
+	 */
+	uint32_t accessSA(uint32_t i) const;
+
 	/**
 	 * Extract consensus sequence of given region at concatSeq location
 	 * @param start  start on BWT string
 	 * @param len  length of BWT string
 	 * @return the CS of this region, with gaps filled with default gap characters
 	 */
-	string extractCS(int32_t start, int32_t len) const;
-
-	/**
-	 * Transfer loc to reverse orientation on concatSeq
-	 * @param loc location on this current direction
-	 * return location on the reverse direction
-	 */
-	int32_t reverseLoc(int32_t loc);
+	string extractCS(int32_t start, const string& pattern) const;
 
 	const DegenAlphabet* abc;
 	char gapCh;
 	uint16_t csLen; /* consensus length */
 	//uint8_t* concatSeq; /* concatenated alphabet-encoded non-Gap seq */
-	int32_t concatLen; /* total length of concatenated encoded non-gap seq */
+	int32_t concatLen; /* total length of concatenated encoded non-gap seq, plus null separators between each individual seq */
 	int32_t C[UINT8_MAX + 1]; /* cumulative count of each alphabet frequency, with C[0] as dummy position */
 
 	string csSeq; /* 1-based consensus seq with dummy position at 0 */
 	double* csIdentity; /* 1-based consensus identity */
-	uint16_t* csSA; /* 1-based index for mapping position from SA to consensus-seq */
-	cds_static::WaveletTreeNoptrs* fwt_bwt; /* Wavelet-Tree transformed BWT string for forward concatSeq */
-	cds_static::WaveletTreeNoptrs* rev_bwt; /* Wavelet-Tree transformed BWT string for reverse concatSeq */
-};
 
-inline int32_t CSFMIndex::reverseLoc(int32_t loc) {
-	return concatLen - 1 - loc;
-}
+	uint16_t* concat2CS; /* 1-based concatSeq pos to CS pos, 0 for gap pos on CS */
+	uint32_t* saSampled; /* 1-based sampled SA of concatSeq */
+	cds_static::BitSequence* saIdx; /* 1-based bit index for telling whether this SA position is sampled */
+	cds_static::WaveletTreeNoptrs* bwt; /* Wavelet-Tree transformed BWT string for forward concatSeq */
+};
 
 } /* namespace EGriceLab */
 

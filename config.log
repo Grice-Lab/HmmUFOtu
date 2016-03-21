@@ -658,10 +658,14 @@ configure:11251: checking for uint16_t
 configure:11251: gcc -c -g -O2  conftest.c >&5
 configure:11251: $? = 0
 configure:11251: result: yes
-configure:11264: checking for int32_t
-configure:11264: gcc -c -g -O2  conftest.c >&5
-configure:11264: $? = 0
-configure:11264: gcc -c -g -O2  conftest.c >&5
+configure:11263: checking for uint32_t
+configure:11263: gcc -c -g -O2  conftest.c >&5
+configure:11263: $? = 0
+configure:11263: result: yes
+configure:11277: checking for int32_t
+configure:11277: gcc -c -g -O2  conftest.c >&5
+configure:11277: $? = 0
+configure:11277: gcc -c -g -O2  conftest.c >&5
 conftest.c: In function 'main':
 conftest.c:60:53: warning: integer overflow in expression [-Woverflow]
     < (int32_t) (((((int32_t) 1 << N) << N) - 1) * 2 + 2))];
@@ -669,7 +673,7 @@ conftest.c:60:53: warning: integer overflow in expression [-Woverflow]
 conftest.c:59:12: error: storage size of 'test_array' isn't constant
  static int test_array [1 - 2 * !((int32_t) (((((int32_t) 1 << N) << N) - 1) * 2 + 1)
             ^
-configure:11264: $? = 1
+configure:11277: $? = 1
 configure: failed program was:
 | /* confdefs.h */
 | #define PACKAGE_NAME "HmmUFOtu"
@@ -737,45 +741,45 @@ configure: failed program was:
 |   ;
 |   return 0;
 | }
-configure:11264: result: yes
-configure:11277: checking for stdlib.h
 configure:11277: result: yes
-configure:11287: checking for GNU libc compatible malloc
-configure:11311: gcc -o conftest -g -O2   conftest.c  >&5
-configure:11311: $? = 0
-configure:11311: ./conftest
-configure:11311: $? = 0
-configure:11321: result: yes
-configure:11385: checking for ranlib
-configure:11412: result: ranlib
-configure:11434: checking whether ln -s works
-configure:11438: result: yes
-configure:11461: checking for a BSD-compatible install
-configure:11529: result: /usr/bin/install -c
-configure:11540: checking whether build environment is sane
-configure:11595: result: yes
-configure:11743: checking for a thread-safe mkdir -p
-configure:11782: result: /usr/bin/mkdir -p
-configure:11785: checking whether make sets $(MAKE)
-configure:11807: result: yes
-configure:11837: checking for style of include used by make
-configure:11865: result: GNU
-configure:11899: checking whether make supports nested variables
-configure:11916: result: yes
-configure:12001: checking dependency style of gcc
-configure:12112: result: gcc3
-configure:12229: checking for g++
-configure:12245: found /usr/bin/g++
-configure:12256: result: g++
-configure:12283: checking for C++ compiler version
-configure:12292: g++ --version >&5
+configure:11290: checking for stdlib.h
+configure:11290: result: yes
+configure:11300: checking for GNU libc compatible malloc
+configure:11324: gcc -o conftest -g -O2   conftest.c  >&5
+configure:11324: $? = 0
+configure:11324: ./conftest
+configure:11324: $? = 0
+configure:11334: result: yes
+configure:11398: checking for ranlib
+configure:11425: result: ranlib
+configure:11447: checking whether ln -s works
+configure:11451: result: yes
+configure:11474: checking for a BSD-compatible install
+configure:11542: result: /usr/bin/install -c
+configure:11553: checking whether build environment is sane
+configure:11608: result: yes
+configure:11756: checking for a thread-safe mkdir -p
+configure:11795: result: /usr/bin/mkdir -p
+configure:11798: checking whether make sets $(MAKE)
+configure:11820: result: yes
+configure:11850: checking for style of include used by make
+configure:11878: result: GNU
+configure:11912: checking whether make supports nested variables
+configure:11929: result: yes
+configure:12014: checking dependency style of gcc
+configure:12125: result: gcc3
+configure:12242: checking for g++
+configure:12258: found /usr/bin/g++
+configure:12269: result: g++
+configure:12296: checking for C++ compiler version
+configure:12305: g++ --version >&5
 g++ (GCC) 5.3.1 20151207 (Red Hat 5.3.1-2)
 Copyright (C) 2015 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-configure:12303: $? = 0
-configure:12292: g++ -v >&5
+configure:12316: $? = 0
+configure:12305: g++ -v >&5
 Using built-in specs.
 COLLECT_GCC=g++
 COLLECT_LTO_WRAPPER=/usr/libexec/gcc/x86_64-redhat-linux/5.3.1/lto-wrapper
@@ -783,32 +787,32 @@ Target: x86_64-redhat-linux
 Configured with: ../configure --enable-bootstrap --enable-languages=c,c++,objc,obj-c++,fortran,ada,go,lto --prefix=/usr --mandir=/usr/share/man --infodir=/usr/share/info --with-bugurl=http://bugzilla.redhat.com/bugzilla --enable-shared --enable-threads=posix --enable-checking=release --enable-multilib --with-system-zlib --enable-__cxa_atexit --disable-libunwind-exceptions --enable-gnu-unique-object --enable-linker-build-id --with-linker-hash-style=gnu --enable-plugin --enable-initfini-array --disable-libgcj --with-default-libstdcxx-abi=gcc4-compatible --with-isl --enable-libmpx --enable-gnu-indirect-function --with-tune=generic --with-arch_32=i686 --build=x86_64-redhat-linux
 Thread model: posix
 gcc version 5.3.1 20151207 (Red Hat 5.3.1-2) (GCC) 
-configure:12303: $? = 0
-configure:12292: g++ -V >&5
+configure:12316: $? = 0
+configure:12305: g++ -V >&5
 g++: error: unrecognized command line option '-V'
 g++: fatal error: no input files
 compilation terminated.
-configure:12303: $? = 1
-configure:12292: g++ -qversion >&5
+configure:12316: $? = 1
+configure:12305: g++ -qversion >&5
 g++: error: unrecognized command line option '-qversion'
 g++: fatal error: no input files
 compilation terminated.
-configure:12303: $? = 1
-configure:12307: checking whether we are using the GNU C++ compiler
-configure:12326: g++ -c   conftest.cpp >&5
-configure:12326: $? = 0
-configure:12335: result: yes
-configure:12344: checking whether g++ accepts -g
-configure:12364: g++ -c -g  conftest.cpp >&5
-configure:12364: $? = 0
-configure:12405: result: yes
-configure:12446: checking how to run the C++ preprocessor
-configure:12473: g++ -E  conftest.cpp
-configure:12473: $? = 0
-configure:12487: g++ -E  conftest.cpp
+configure:12316: $? = 1
+configure:12320: checking whether we are using the GNU C++ compiler
+configure:12339: g++ -c   conftest.cpp >&5
+configure:12339: $? = 0
+configure:12348: result: yes
+configure:12357: checking whether g++ accepts -g
+configure:12377: g++ -c -g  conftest.cpp >&5
+configure:12377: $? = 0
+configure:12418: result: yes
+configure:12459: checking how to run the C++ preprocessor
+configure:12486: g++ -E  conftest.cpp
+configure:12486: $? = 0
+configure:12500: g++ -E  conftest.cpp
 conftest.cpp:26:28: fatal error: ac_nonexistent.h: No such file or directory
 compilation terminated.
-configure:12487: $? = 1
+configure:12500: $? = 1
 configure: failed program was:
 | /* confdefs.h */
 | #define PACKAGE_NAME "HmmUFOtu"
@@ -836,13 +840,13 @@ configure: failed program was:
 | #define VERSION "1.0"
 | /* end confdefs.h.  */
 | #include <ac_nonexistent.h>
-configure:12512: result: g++ -E
-configure:12532: g++ -E  conftest.cpp
-configure:12532: $? = 0
-configure:12546: g++ -E  conftest.cpp
+configure:12525: result: g++ -E
+configure:12545: g++ -E  conftest.cpp
+configure:12545: $? = 0
+configure:12559: g++ -E  conftest.cpp
 conftest.cpp:26:28: fatal error: ac_nonexistent.h: No such file or directory
 compilation terminated.
-configure:12546: $? = 1
+configure:12559: $? = 1
 configure: failed program was:
 | /* confdefs.h */
 | #define PACKAGE_NAME "HmmUFOtu"
@@ -870,39 +874,39 @@ configure: failed program was:
 | #define VERSION "1.0"
 | /* end confdefs.h.  */
 | #include <ac_nonexistent.h>
-configure:12715: checking for ld used by g++
-configure:12782: result: /usr/bin/ld -m elf_x86_64
-configure:12789: checking if the linker (/usr/bin/ld -m elf_x86_64) is GNU ld
-configure:12804: result: yes
-configure:12859: checking whether the g++ linker (/usr/bin/ld -m elf_x86_64) supports shared libraries
-configure:13864: result: yes
-configure:13900: g++ -c -g -O2  conftest.cpp >&5
-configure:13903: $? = 0
-configure:14423: checking for g++ option to produce PIC
-configure:14430: result: -fPIC -DPIC
-configure:14438: checking if g++ PIC flag -fPIC -DPIC works
-configure:14456: g++ -c -g -O2  -fPIC -DPIC -DPIC conftest.cpp >&5
-configure:14460: $? = 0
-configure:14473: result: yes
-configure:14496: checking if g++ static flag -static works
-configure:14524: result: no
-configure:14536: checking if g++ supports -c -o file.o
-configure:14557: g++ -c -g -O2  -o out/conftest2.o conftest.cpp >&5
-configure:14561: $? = 0
-configure:14583: result: yes
-configure:14588: checking if g++ supports -c -o file.o
-configure:14635: result: yes
-configure:14665: checking whether the g++ linker (/usr/bin/ld -m elf_x86_64) supports shared libraries
-configure:14701: result: yes
-configure:14842: checking dynamic linker characteristics
-configure:15513: result: GNU/Linux ld.so
-configure:15566: checking how to hardcode library paths into programs
-configure:15591: result: immediate
-configure:15633: checking dependency style of g++
-configure:15744: result: gcc3
-configure:15908: checking that generated files are newer than configure
-configure:15914: result: done
-configure:15941: creating ./config.status
+configure:12728: checking for ld used by g++
+configure:12795: result: /usr/bin/ld -m elf_x86_64
+configure:12802: checking if the linker (/usr/bin/ld -m elf_x86_64) is GNU ld
+configure:12817: result: yes
+configure:12872: checking whether the g++ linker (/usr/bin/ld -m elf_x86_64) supports shared libraries
+configure:13877: result: yes
+configure:13913: g++ -c -g -O2  conftest.cpp >&5
+configure:13916: $? = 0
+configure:14436: checking for g++ option to produce PIC
+configure:14443: result: -fPIC -DPIC
+configure:14451: checking if g++ PIC flag -fPIC -DPIC works
+configure:14469: g++ -c -g -O2  -fPIC -DPIC -DPIC conftest.cpp >&5
+configure:14473: $? = 0
+configure:14486: result: yes
+configure:14509: checking if g++ static flag -static works
+configure:14537: result: no
+configure:14549: checking if g++ supports -c -o file.o
+configure:14570: g++ -c -g -O2  -o out/conftest2.o conftest.cpp >&5
+configure:14574: $? = 0
+configure:14596: result: yes
+configure:14601: checking if g++ supports -c -o file.o
+configure:14648: result: yes
+configure:14678: checking whether the g++ linker (/usr/bin/ld -m elf_x86_64) supports shared libraries
+configure:14714: result: yes
+configure:14855: checking dynamic linker characteristics
+configure:15526: result: GNU/Linux ld.so
+configure:15579: checking how to hardcode library paths into programs
+configure:15604: result: immediate
+configure:15646: checking dependency style of g++
+configure:15757: result: gcc3
+configure:15921: checking that generated files are newer than configure
+configure:15927: result: done
+configure:15954: creating ./config.status
 
 ## ---------------------- ##
 ## Running config.status. ##
@@ -935,6 +939,7 @@ ac_cv_c_inline=inline
 ac_cv_c_int32_t=yes
 ac_cv_c_int8_t=yes
 ac_cv_c_uint16_t=yes
+ac_cv_c_uint32_t=yes
 ac_cv_c_uint8_t=yes
 ac_cv_cxx_compiler_gnu=yes
 ac_cv_env_CCC_set=
