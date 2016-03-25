@@ -5,7 +5,8 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/libcds/include
 
 noinst_PROGRAMS = dna_test1   nucl_test1 amino_test1   \
-seqIO_test1    banded_align_known_seed_test1 \
+seqIO_test1 bHMM_IO_test1 \
+banded_align_known_seed_test1 \
 MSAIO_test1    MSAIO_test2 \
 FMIO_test1     FMIO_test2 \
 banded_align_csfm_test1 \
@@ -22,6 +23,9 @@ amino_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 
 seqIO_test1_SOURCES = seqIO_test1.cpp
 seqIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+
+bHMM_IO_test1_SOURCES = bHMM_IO_test1.cpp
+bHMM_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 
 banded_align_known_seed_test1_SOURCES = banded_align_known_seed_test1.cpp
 banded_align_known_seed_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
