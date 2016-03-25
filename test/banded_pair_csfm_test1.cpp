@@ -42,23 +42,27 @@ int main(int argc, char *argv[]) {
 	// process each training read
 	string line;
 	char id[64];
-	int seed_start, seed_end, known_start, known_end, seed_from, seed_to;
-	int seq_start, seq_end;
-	char seed_CS[4096], seq_CS[4096];
+	int seq_start, seq_end, fwd_seed_from, fwd_seed_to, rev_seed_from, rev_seed_to;
+	char fwd_seed_CS[4096], rev_seed_CS[4096], seq_CS[4096];
 	getline(in, line); // ignore header line
 	out << line << "\tknown_CS_start\tknown_CS_end\tknown_hmm_start\tknown_hmm_end\tbHmm_start\tbHmm_end\tCS_start\tCS_end" << endl;
 	BandedHMMP7::ViterbiScores vscore = hmm.initViterbiScores(); // construct an empty score object
 	BandedHMMP7::ViterbiAlignPath vpath = hmm.initViterbiAlignPath(0); // a reusable object
 
 	while(getline(in, line)) {
-		sscanf(line.c_str(), "%s\t%*s\t%d\t%d\t%d\t%d\t%d\t%d\t%s\t%s", id, &known_start, &known_end,
-				&seq_start, &seq_end, &seed_from, &seed_to, seed_CS, seq_CS);
+		sscanf(line.c_str(), "%*s\t%*s\t%*d\t%*d\t%*s\t%*s\t%*d\t%*d\t%d\t%d\t%s\t%d\t%d\t%s\t%d\t%d\t%s\t%s",
+				&seq_start, &seq_end, id,
+				&fwd_seed_from, &fwd_seed_to, fwd_seed_CS,
+				&rev_seed_from, &rev_seed_to, rev_seed_CS,
+				seq_CS);
 		// Determine seed_start and seed_end
-		PrimarySeq seed(hmm.getNuclAbc(), id, seed_CS);
-		//int seed_len = seed.length();
-		seed.removeGaps();
-		//cerr << seed.getSeq() << endl;
-		const CSLoc& loc = idx->locateOne(seed.getSeq());
+		PrimarySeq fwd_seed(hmm.getNuclAbc(), id, fwd_seed_CS);
+		PrimarySeq rev_seed(hmm.getNuclAbc(), id, rev_seed_CS);
+		fwd_seed.removeGaps();
+		rev_seed.removeGaps();
+
+		const CSLoc& fwd_loc = idx->locateOne(fwd_seed.getSeq());
+		const CSLoc& rev_loc = idx->locateOne(rev_seed.getSeq());
 		//cerr << "CS: start:" << loc.start << " end:" << loc.end << " CS:" << loc.CS << endl;
 
 		//cerr << "known_start:" << known_start << " known_end:" << known_end << endl;
@@ -85,8 +89,10 @@ int main(int argc, char *argv[]) {
 		//cerr << "vpath.start:" << vpath.start << " vpath.end:" << vpath.end << endl;
 	/*cerr << "constructed the ViterbiAlignPath" << endl;*/
 
-		if(loc.start > 0 && loc.end > 0)
-			hmm.addKnownAlignPath(vpath, loc, seed_from, seed_to);
+		if(fwd_loc.start > 0 && fwd_loc.end > 0)
+			hmm.addKnownAlignPath(vpath, fwd_loc, fwd_seed_from, fwd_seed_to);
+		if(rev_loc.start > 0 && rev_loc.end > 0)
+			hmm.addKnownAlignPath(vpath, rev_loc, rev_seed_from, rev_seed_to);
 		//cerr << "set the known path" << endl;
 
 		hmm.calcViterbiScores(vscore, vpath);

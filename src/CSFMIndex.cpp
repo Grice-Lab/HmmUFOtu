@@ -50,7 +50,7 @@ vector<CSLoc> CSFMIndex::locate(const string& pattern) const {
     }
 
     for(int32_t i = start; i <= end; ++i) {
-    	uint32_t concatStart = accessSA(i) - 1;
+    	uint32_t concatStart = accessSA(i);
     	int32_t csStart = concat2CS[concatStart];
     	int32_t csEnd = concat2CS[concatStart + pattern.length() - 1];
     	locs.push_back(CSLoc(csStart, csEnd, extractCS(concatStart, pattern)));
@@ -72,7 +72,7 @@ CSLoc CSFMIndex::locateFirst(const string& pattern) const {
 	}
 
 	if(start <= end) {
-		uint32_t concatStart = accessSA(start) - 1;
+		uint32_t concatStart = accessSA(start);
     	int32_t csStart = concat2CS[concatStart];
     	int32_t csEnd = concat2CS[concatStart + pattern.length() - 1];
 		return CSLoc(csStart, csEnd, extractCS(concatStart, pattern));
@@ -94,7 +94,7 @@ CSLoc CSFMIndex::locateOne(const string& pattern) const {
     }
     if(start <= end) {
     	int32_t i = start + rand() % (end - start + 1);
-    	uint32_t concatStart = accessSA(i) - 1; // sample a random position
+    	uint32_t concatStart = accessSA(i); // sample a random position
     	int32_t csStart = concat2CS[concatStart];
     	int32_t csEnd = concat2CS[concatStart + pattern.length() - 1];
     	return CSLoc(csStart, csEnd, extractCS(concatStart, pattern));
