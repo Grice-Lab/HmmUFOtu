@@ -243,7 +243,7 @@ ostream& operator<<(ostream& os, const BandedHMMP7& hmm) {
 		}
 		/* write insert emission line */
 		for(MatrixXf::Index i = 0; i != hmm.E_I_log.rows(); ++i)
-			hmm.E_I_log(i, k) != BandedHMMP7::infV ? os << "\t\t" << hmm.E_I_log(i, k) : os << "\t\t*";
+			hmm.E_I_log(i, k) != BandedHMMP7::infV ? os << "\t\t" << -hmm.E_I_log(i, k) : os << "\t\t*";
 		os << endl;
 		/* write state transition line */
 		hmm.T_MM_log(k, k + 1) != BandedHMMP7::infV ? os << "\t\t" << -hmm.T_MM_log(k, k + 1) : os << "\t\t*";
@@ -866,7 +866,7 @@ float EGriceLab::BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, Viterbi
 }
 
 std::string EGriceLab::BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
-		ViterbiAlignPath& vpath) const {
+		const ViterbiAlignPath& vpath) const {
 	assert(vs.seq != NULL);
 	string aSeq;
 	int profileNLen = vpath.alnStart - 1;
@@ -879,7 +879,8 @@ std::string EGriceLab::BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
 	int CHalf = std::min(profileCLen / 2, seqCLen / 2);
 	for(int i = 0; i < NHalf; ++i) /* put half the N residues at the beginning of the N' */
 		aSeq.push_back(vs.seq->charAt(i - 1));
-	aSeq.append(profileNLen - 2 * NHalf, '-'); /* add the middle gaps, if any */
+	if(profileNLen > 2 * NHalf)
+		aSeq.append(profileNLen - 2 * NHalf, '-'); /* add the middle gaps, if any */
 	for(int i = profileNLen - NHalf; i < profileNLen; ++i) /* put half the N residues at the beginning */
 		aSeq.push_back(vs.seq->charAt(i - 1)); /* put half the N residues at the end of the N' */
 

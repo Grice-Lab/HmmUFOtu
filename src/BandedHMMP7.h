@@ -61,8 +61,6 @@ public:
 
 	/**
 	 * A nested class storing public accessible Viterbi Scoring matrices
-	 * Note object of this class depends on the life-span of the DigitalSeq
-	 * No operations allowed if DigitalSeq is not initialized
 	 */
 	class ViterbiScores {
 	public:
@@ -323,7 +321,7 @@ public:
 	 * @param vpath  a ViterbiAlignPath of the DP values by one of the calcViterbiScores methods
 	 * @return  the global aligned sequence of the query seq, i.e. "AC--GTCGA---ACGNC---";
 	 */
-	string buildGlobalAlignSeq(const ViterbiScores& vs, ViterbiAlignPath& vpath) const;
+	string buildGlobalAlignSeq(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
 
 private:
 	string version; // version of the program generated this hmm file, default is progName-progVersion
