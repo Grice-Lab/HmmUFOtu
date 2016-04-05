@@ -13,6 +13,7 @@
 #include <iostream>
 #include <cstdlib>
 #include "DegenAlphabet.h"
+#include "PrimarySeq.h"
 
 namespace EGriceLab {
 using std::string;
@@ -28,21 +29,26 @@ using std::ostream;
 class DigitalSeq: public std::basic_string<int> {
 public:
 	/* constructors */
-	/* Constructor a DigitalSeq with given alphabet, name and string
+	/** Construct a DigitalSeq with given alphabet, name and string
 	 * @param dgAbc  A DegenAlphabet
 	 * @param name  name of this ds
 	 * @param str  string of this ds, non-symbol characters will be discarded; synomynous will be resolved randomly
 	 * (you need to call srand() in the main function)
 	 * ignore any non-symbol, non-synoymous characters in the string
 	 */
-	DigitalSeq(const DegenAlphabet& dgAbc, const string& name, const string& str = "");
+	DigitalSeq(const DegenAlphabet* abc, const string& name, const string& str = "");
+
+	/**
+	 Construct a DigitalSeq from a PrimrarySeq
+	 */
+	DigitalSeq(const PrimarySeq& seq);
 
 	/* virtual destructor */
 	virtual ~DigitalSeq() { }
 
 	/* Getters and Setters */
-	const Alphabet& getAbc() const {
-		return *abc;
+	const DegenAlphabet* getAbc() const {
+		return abc;
 	}
 
 	const string& getName() const {
@@ -85,19 +91,6 @@ public:
 	 */
 	DigitalSeq& append(const string& str);
 
-	/* static IO utility methods */
-	/**
-	 * read next DigialSeq record into given object from fasta file, override any previous record
-	 * return the istream for testing the status
-	 */
-	static istream& readFASTANext(DigitalSeq& ds, istream& is);
-
-	/**
-	 * read next DigialSeq record into given object from fastq file, override any previous record
-	 * return the istream for testing the status
-	 */
-	static istream& readFASTQNext(DigitalSeq& ds, istream& is);
-
 private:
 	const DegenAlphabet* const abc;
 	string name;
@@ -123,28 +116,28 @@ inline DigitalSeq operator+(const DigitalSeq& lhs, const DigitalSeq& rhs) {
  * operator!= implemented based on operator==
  */
 inline bool operator!=(const DigitalSeq& lhs, const DigitalSeq& rhs) {
-	return !operator==(lhs, rhs);
+	return !(lhs == rhs);
 }
 
 /*
  * operator<= implemented based on operator== and operator<
  */
 inline bool operator<=(const DigitalSeq& lhs, const DigitalSeq& rhs) {
-	return operator<(lhs, rhs) || operator==(lhs, rhs);
+	return lhs < rhs || lhs == rhs;
 }
 
 /*
  * operator> implemented based on operator<=
  */
 inline bool operator>(const DigitalSeq& lhs, const DigitalSeq& rhs) {
-	return !operator<=(lhs, rhs);
+	return !(lhs <= rhs);
 }
 
 /*
  * operator>= implemented based on operator<
  */
 inline bool operator>=(const DigitalSeq& lhs, const DigitalSeq& rhs) {
-	return !operator<(lhs, rhs);
+	return !(lhs < rhs);
 }
 
 } /* namespace EGriceLab */
