@@ -29,19 +29,20 @@ using std::ostream;
 class DigitalSeq: public std::basic_string<int> {
 public:
 	/* constructors */
+	/** default constructor, do nothing */
+	DigitalSeq() : abc(NULL) { }
+
 	/** Construct a DigitalSeq with given alphabet, name and string
 	 * @param dgAbc  A DegenAlphabet
 	 * @param name  name of this ds
-	 * @param str  string of this ds, non-symbol characters will be discarded; synomynous will be resolved randomly
-	 * (you need to call srand() in the main function)
-	 * ignore any non-symbol, non-synoymous characters in the string
+	 * @param str  string of this ds
 	 */
 	DigitalSeq(const DegenAlphabet* abc, const string& name, const string& str = "");
 
 	/**
 	 Construct a DigitalSeq from a PrimrarySeq
 	 */
-	DigitalSeq(const PrimarySeq& seq);
+	explicit DigitalSeq(const PrimarySeq& seq);
 
 	/* virtual destructor */
 	virtual ~DigitalSeq() { }
