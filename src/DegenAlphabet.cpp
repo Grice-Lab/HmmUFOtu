@@ -18,12 +18,13 @@ using namespace std;
 DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const string& synon_str,
 			const map<char, string>& my_map, const string& gap) :
 				name(name), symbol(EGriceLab::remove_dup_chars(sym_str)),
-				synon(EGriceLab::remove_dup_chars(synon_str)), degen_map(my_map), gap(gap), gap_map() /* zero-initiation */ {
+				synon(EGriceLab::remove_dup_chars(synon_str)), degen_map(my_map), gap(gap) {
 	assert(symbol.length() <= INT8_MAX + 1);
 	assert(synon.length() == degen_map.size());
+	!gap.empty() ? gapCh = gap[0] : DEFAULT_GAP_CHAR;
 
 	// init the sym_map
-	std::fill_n(sym_map, INT8_MAX + 1, invalid_sym);
+	std::fill_n(sym_map, INT8_MAX + 1, INVALID_SYM);
 	// set the symbol map
 	for(int8_t i = 0; i != symbol.length(); ++i)
 		sym_map[symbol[i]] = i;
@@ -32,9 +33,9 @@ DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const st
 	for(map<char, string>::const_iterator it = degen_map.begin(); it != degen_map.end(); ++it)
 		sym_map[it->first] = encode(it->second[::rand() % it->second.length()]); /* set synom map to a random symbol coding */
 
-	// set the gap_map
+	// set the gap_sym
 	for(string::const_iterator it = gap.begin(); it != gap.end(); ++it)
-		gap_map[*it] = 1;
+		sym_map[*it] = GAP_SYM;
 }
 
 bool operator==(const DegenAlphabet& lhs, const DegenAlphabet& rhs) {

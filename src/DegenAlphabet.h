@@ -57,23 +57,25 @@ public:
 	}
 
 	/* utility methods */
-	/* test whether a char is a symbol of this alphabet */
+	/* test whether a char is a symbol or synonymous */
 	bool isSymbol(char c) const {
-		return sym_map[c] != invalid_sym;
+		return sym_map[c] >= 0;
 	}
 
 	/* encode a character to digital encoding
-	 * return an int within 0..size-1, or -1 (string::nsize) if not a valid symbol
+	 * return an int within 0..size-1, or -2 if a gap, or -1 if other invalid symbol
 	 */
 	int8_t encode(char c) const {
 		return sym_map[c];
 	}
 
 	/* decode a digital encoding to the original symbol
-	 * return a char if within 0..length-1, or undefined behavior if not
+	 * return a char if within 0..length-1,
+	 * or gapCh if is gap_sym,
+	 * or undefined behavior if other invalid values
 	 */
 	char decode(int8_t i) const {
-		return symbol[i];
+		return i == GAP_SYM ? gapCh : symbol[i];
 	}
 
 	/*
@@ -81,7 +83,7 @@ public:
 	 * @return true if is a valid gap character
 	 */
 	bool isGap(char c) const {
-		return gap_map[c] != 0;
+		return sym_map[c] == GAP_SYM;
 	}
 
 	int getSize() const {
@@ -118,9 +120,9 @@ public:
 		return degen_map.find(c) != degen_map.end();
 	}
 
-	/* test whether a character is a valid symbol or synonymous */
+	/* test whether a character is a valid symbol or gap */
 	bool isValid(char c) const {
-		return isSymbol(c) || isSynonymous(c) || isGap(c);
+		return sym_map[c] != INVALID_SYM;
 	}
 
 	/* pure virtual member method to be overridden by subclass */
@@ -133,13 +135,14 @@ private:
 	string symbol; /* symbols of this alphabet */
 	string synon; /* Expanded synonymous */
 	string gap; /* gap characters */
+	char gapCh; /* representative gap char */
 	int8_t sym_map[INT8_MAX + 1]; /* internal map for symbols */
-	int8_t gap_map[INT8_MAX + 1]; /* internal map for gaps */
-	map<char, string> degen_map; // map for degenerative synonymous, including original symbols' self-mapping
+	//int8_t gap_map[INT8_MAX + 1]; /* internal map for gaps */
+	map<char, string> degen_map; // map for degenerative synonymous
 
-	static const int8_t invalid_sym = -1;
-	//static const int8_t invalid_synon = -2;
-	//static const int8_t invalid_gap = -3;
+	static const int8_t INVALID_SYM = -1;
+	static const int8_t GAP_SYM = -2; /* encoded gap symbol */
+	static const char DEFAULT_GAP_CHAR = '-';
 
 	/* friend operators */
 	friend bool operator==(const DegenAlphabet& lhs, const DegenAlphabet& rhs);
