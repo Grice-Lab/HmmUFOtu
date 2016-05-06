@@ -12,7 +12,7 @@
 namespace EGriceLab {
 using namespace std;
 
-PhyloTree::PhyloTree(const PhyloTree& tOther) : root(NULL) {
+PhyloTree::PhyloTree(const PhyloTree& tOther) : root(NULL), abc(tOther.abc) {
 	/* do a DFS copy of the tree edges starting from root */
 	stack<PhyloTreeNode*> S; // using a stack to do non-recursive DFS
 	set<PhyloTreeNode*> copied; // using a set to determine whether this node has been copied
@@ -71,6 +71,79 @@ PhyloTree::~PhyloTree() {
 			v = NULL;
 		}
 	}
+}
+
+set<const PhyloTree::PhyloTreeNode*> PhyloTree::dfsNodes(const PhyloTree::PhyloTreeNode* node) const {
+	assert(isRooted());
+	/* Do a DFS explore of the tree */
+	stack<const PhyloTreeNode*> S; // using a stack to do non-recursive DFS
+	set<const PhyloTreeNode*> visited; // using a set to determine whether this node has been visited
+	S.push(node);
+	while(!S.empty()) {
+		PhyloTreeNode* v = S.pop();
+		if(!visited.find(v)) { // this node has not been visited
+			visited.insert(v);
+			if(!v->isLeaf()) {
+				S.push(v->childL);
+				S.push(v->childR);
+			}
+		}
+	}
+	return visited;
+}
+
+set<const PhyloTree::PhyloTreeNode*> PhyloTree::dfsNodes() const {
+	return dfsNodes(root);
+}
+
+set<const PhyloTree::PhyloTreeNode*> PhyloTree::dfsLeaves(const PhyloTree::PhyloTreeNode* node) const {
+	/* Do a DFS explore of the tree */
+	stack<const PhyloTreeNode*> S; // using a stack to do non-recursive DFS
+	set<const PhyloTreeNode*> visited; // using a set to determine whether this node has been visited
+	set<const PhyloTreeNode*> leaves;
+	S.push(node);
+	while(!S.empty()) {
+		PhyloTreeNode* v = S.pop();
+		if(!visited.find(v)) { // this node has not been visited
+			visited.insert(v);
+			if(!v->isLeaf()) {
+				S.push(v->childL);
+				S.push(v->childR);
+			}
+			else
+				leaves.insert(v);
+		}
+	}
+	return leaves;
+}
+
+set<const PhyloTree::PhyloTreeNode*> PhyloTree::dfsLeaves() const {
+	return dfsLeaves(root);
+}
+
+set<const PhyloTree::PhyloTreeNode*> PhyloTree::dfsTips(const PhyloTree::PhyloTreeNode* node) const {
+	/* Do a DFS explore of the tree */
+	stack<const PhyloTreeNode*> S; // using a stack to do non-recursive DFS
+	set<const PhyloTreeNode*> visited; // using a set to determine whether this node has been visited
+	set<const PhyloTreeNode*> tips;
+	S.push(node);
+	while(!S.empty()) {
+		PhyloTreeNode* v = S.pop();
+		if(!visited.find(v)) { // this node has not been visited
+			visited.insert(v);
+			if(!v->isLeaf()) {
+				S.push(v->childL);
+				S.push(v->childR);
+			}
+			if(v->isTip())
+				tips.insert(v);
+		}
+	}
+	return tips;
+}
+
+set<const PhyloTree::PhyloTreeNode*> PhyloTree::dfsTips() const {
+	return dfsTips(root);
 }
 
 } /* namespace EGriceLab */
