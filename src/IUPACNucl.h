@@ -37,7 +37,7 @@ public:
 	}
 	/**
 	 * Get the complement char of given symbol
-	 * @return the complement symbol, or '\0' if not a valid symbol
+	 * @return the complement symbol, or leave unchanged if not defined
 	 */
 	char getComplementSymbol(char c) const {
 		return compl_map[c];

@@ -28,8 +28,11 @@ map<char, string> IUPACNucl::init_IUPAC_map() {
 	return IUPAC_map;
 }
 
-IUPACNucl::IUPACNucl() : EGriceLab::DegenAlphabet("IUPACNucl", "ACGT", "UMRWSYKVHDBN", init_IUPAC_map()),
-		compl_map() /* zero-initialization */ {
+IUPACNucl::IUPACNucl() : EGriceLab::DegenAlphabet("IUPACNucl", "ACGT", "UMRWSYKVHDBN", init_IUPAC_map()) {
+	/* init compl_map with self complementary */
+	for(int8_t i = 0; i <= INT8_MAX; ++i)
+		compl_map[i] = i;
+	/* override DNA complements */
 	compl_map['A'] = 'T';
 	compl_map['T'] = 'A';
 	compl_map['C'] = 'G';

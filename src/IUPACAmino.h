@@ -38,10 +38,10 @@ public:
 	}
 	/**
 	 * Get the complement char of given symbol
-	 * @return '\0' since amino acids don't have complementary symbols
+	 * @return unchanged amino acids don't have complementary symbols
 	 */
 	char getComplementSymbol(char c) const {
-		return '\0';
+		return c;
 	}
 
 private:
