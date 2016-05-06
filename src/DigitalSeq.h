@@ -26,13 +26,13 @@ using std::ostream;
  * Also note that a DigitalSeq's life is dependent on the life-span of the underlying alphabet; no automatic memory
  * management is carried out
  */
-class DigitalSeq: public std::basic_string<int> {
+class DigitalSeq: public std::basic_string<int8_t> {
 public:
 	/* constructors */
 	/** default constructor, do nothing */
 	DigitalSeq() : abc(NULL) { }
 
-	/** Construct a DigitalSeq with given alphabet, name and string
+	/** Construct a DigitalSeq with given alphabet, name and string, invalid chars ignored
 	 * @param dgAbc  A DegenAlphabet
 	 * @param name  name of this ds
 	 * @param str  string of this ds

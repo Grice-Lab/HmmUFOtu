@@ -16,7 +16,8 @@ namespace EGriceLab {
 DigitalSeq::DigitalSeq(const DegenAlphabet* abc, const string& name, const string& str) :
 				abc(abc), name(name) {
 	for(string::const_iterator it = str.begin(); it != str.end(); ++it)
-		push_back(abc->encode(toupper(*it))); // use encoded values
+		if(abc->isValid(::toupper(*it)))
+			push_back(abc->encode(::toupper(*it))); // use encoded values
 }
 
 string DigitalSeq::toString() const {
@@ -29,10 +30,10 @@ string DigitalSeq::toString() const {
 DigitalSeq EGriceLab::DigitalSeq::revcom() const {
 	if(!abc->hasComplement())
 		throw std::invalid_argument("Sequence alphabet " + abc->getName() + " does not support reverse-complement");
-	DigitalSeq revSeq(abc, name); // make an empty copy with same DegebAlphabet and name
-	for(DigitalSeq::const_iterator it = begin(); it != end(); ++it)
-		revSeq.push_back(abc->encode(abc->getComplementSymbol(abc->decode(*it))));
-	return revSeq;
+	DigitalSeq revcomSeq(abc, name); // make an empty copy with same DegebAlphabet and name
+	for(DigitalSeq::const_reverse_iterator rit = rbegin(); rit != rend(); ++rit)
+		revcomSeq.push_back(abc->encode(abc->getComplementSymbol(abc->decode(*rit))));
+	return revcomSeq;
 }
 
 string DigitalSeq::join(const string& sep) {
@@ -47,7 +48,8 @@ string DigitalSeq::join(const string& sep) {
 
 DigitalSeq& EGriceLab::DigitalSeq::append(const string& str) {
 	for(string::const_iterator it = str.begin(); it != str.end(); ++it)
-		push_back(abc->encode(::toupper(*it)));
+		if(abc->isValid(::toupper(*it)))
+			push_back(abc->encode(::toupper(*it)));
 	return *this;
 }
 
