@@ -67,7 +67,7 @@ public:
 	 * Prune this MSA by removing all gapped site
 	 * @return the modified MSA object
 	 */
-	MSA& prune(const string& gaps = "-._");
+	MSA& prune();
 
 	/**
 	 * get the total length of this MSA
@@ -156,7 +156,6 @@ public:
 	 */
 	static MSA* load(std::istream& f);
 
-
 	/**
 	 * Load an MSA binary file
 	 * @param f  the binary input
@@ -197,7 +196,7 @@ private:
 	 * @throw invalid_argument if the alphabet is not known
 	 */
 	explicit MSA(const string& alphabet = "dna") : alphabet(alphabet), abc(SeqCommons::getAlphabetByName(alphabet)),
-		numSeq(0), csLen(0), totalNumGap(0), resCount(NULL), gapCount(NULL) {  }
+		numSeq(0), csLen(0), totalNumGap(0), isPruned(false), resCount(NULL), gapCount(NULL) {  }
 
 	/* Disable copy and assignment constructors */
 	MSA(const MSA& other);
@@ -217,6 +216,7 @@ private:
 	//vector<string> ids;
 	string concatMSA; // concatenated MSA
 	string CS;        // Consensus Sequence
+	bool isPruned; // flag for whether this MS is pruned
 	unsigned **resCount; /* Residual count matrix w/ csLen * alphabet-size dimension */
 	unsigned *gapCount; /* gap count array w/ CSLen length */
 };

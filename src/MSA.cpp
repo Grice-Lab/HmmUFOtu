@@ -35,14 +35,16 @@ double MSA::percentGapAt(unsigned j) const {
 	return gapCount[j] / static_cast<double>(numSeq);
 }
 
-MSA& MSA::prune(const string& gaps) {
+MSA& MSA::prune() {
+	if(isPruned)
+		return *this;
 	if(numSeq == 0)
 		return *this;
 	vector<unsigned> pruningSites;
 	for(unsigned j = 0; j < csLen; ++j) {
 		unsigned numGap = 0;
 		for(unsigned i = 0; i < numSeq; ++i)
-			if(gaps.find(concatMSA[i * csLen + j]) == string::npos)
+			if(abc->isGap(concatMSA[i * csLen + j]))
 				numGap++;
 		if(numGap == numSeq)
 			pruningSites.push_back(j);
@@ -59,6 +61,7 @@ MSA& MSA::prune(const string& gaps) {
 			CS.erase(*rit, 1);
 	/* rebuild the counts */
 	updateCounts();
+	isPruned = true;
 	return *this;
 }
 
