@@ -45,27 +45,17 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 	int k = 0; // pos on the profile
 	while (getline(is, line)) {
 		if (line == "//") {/* end of profile */
-			// reverse the signs
+			/* finalize transition matrices */
+			for(int k = 0; k <= hmm.K; ++k) {
+				hmm.Tmat_log[k] = - hmm.Tmat_log[k];
+				hmm.Tmat[k] = hmm.Tmat_log[k].array().exp();
+			}
+			/* finalize emission matrices */
+			hmm.E_M_log = -hmm.E_M_log;
 			hmm.E_I_log = -hmm.E_I_log;
-
-			hmm.T_MM_log = -hmm.T_MM_log;
-			hmm.T_MI_log = -hmm.T_MI_log;
-			hmm.T_MD_log = -hmm.T_MD_log;
-			hmm.T_IM_log = -hmm.T_IM_log;
-			hmm.T_II_log = -hmm.T_II_log;
-			hmm.T_DM_log = -hmm.T_DM_log;
-			hmm.T_DD_log = -hmm.T_DD_log;
-
-			// set the non-log matrices
 			hmm.E_M = hmm.E_M_log.array().exp();
 			hmm.E_I = hmm.E_I_log.array().exp();
-			hmm.T_MM = hmm.T_MM_log.array().exp();
-			hmm.T_MI = hmm.T_MI_log.array().exp();
-			hmm.T_MD = hmm.T_MD_log.array().exp();
-			hmm.T_IM = hmm.T_IM_log.array().exp();
-			hmm.T_II = hmm.T_II_log.array().exp();
-			hmm.T_DM = hmm.T_DM_log.array().exp();
-			hmm.T_DD = hmm.T_DD_log.array().exp();
+			hmm.adjustProfileLocalMode();
 			hmm.wingRetract();
 			return is;
 		}
@@ -97,7 +87,7 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 					throw invalid_argument(
 							"Not allowed alphabet '" + abc
 									+ "' in the HMM input file! Must be DNA");
-				assert(hmm.nuclAbc->getSymbol() == "ACGT");
+				assert(hmm.abc->getSymbol() == "ACGT");
 				hmm.setHeaderOpt(tag, "DNA");
 			} else if (tag == "STATS") {
 				string mode;
@@ -107,6 +97,7 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 				string val;
 				getline(iss, val);
 				hmm.setHeaderOpt(tag, BandedHMMP7::trim(val));
+
 			} else if(tag == "HMM") { /* HMM TAG */
 				string tmp;
 				getline(is, tmp); /* ignore the next line too */
@@ -123,8 +114,8 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 			if (tag == "COMPO" || BandedHMMP7::isInteger(tag)) { // A compo line can be treated as position 0
 				assert((tag == "COMPO" && k == 0) || atoi(tag.c_str()) == k);
 				/* process current emission line */
-				VectorXf emitFreq = VectorXf(hmm.nuclAbc->getSize());
-				for (VectorXf::Index i = 0; i < emitFreq.size(); ++i)
+				Vector4f emitFreq;
+				for (Vector4f::Index i = 0; i < emitFreq.size(); ++i)
 					iss >> emitFreq(i);
 				if (tag == "COMPO") { // COMPO line
 					emitFreq = (-emitFreq).array().exp();
@@ -132,7 +123,7 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 					hmm.hmmBg.setBgFreq(emitFreq);
 				} else {
 					/* Mk emission line */
-					hmm.E_M_log.col(k) = -emitFreq;
+					hmm.E_M_log.col(k) = emitFreq;
 					/* Make sure the MAP tag is set */
 					string val;
 					if(hmm.getHeaderOpt("MAP") != "yes") {
@@ -165,13 +156,13 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 				for (MatrixXf::Index i = 0; i < hmm.E_I_log.rows(); ++i)
 					is >> hmm.E_I_log(i, k);
 				/* process the following state K transition line */
-					is >> tmp; hmm.T_MM_log(k, k+ 1) = tmp != "*" ? atof(tmp.c_str()) : BandedHMMP7::inf;  // Mk -> Mk+1
-					is >> tmp; hmm.T_MI_log(k, k) = tmp != "*" ? atof(tmp.c_str()) : BandedHMMP7::inf;     // Mk -> Ik
-					is >> tmp; hmm.T_MD_log(k, k + 1) = tmp != "*" ? atof(tmp.c_str()) : BandedHMMP7::inf; // Mk -> Dk+1
-					is >> tmp; hmm.T_IM_log(k, k + 1) = tmp != "*" ? atof(tmp.c_str()): BandedHMMP7::inf;  // Ik -> Mk+1
-					is >> tmp; hmm.T_II_log(k, k) = tmp != "*" ? atof(tmp.c_str()) : BandedHMMP7::inf;     // Ik -> Ik
-					is >> tmp; hmm.T_DM_log(k, k + 1) = tmp != "*" ? atof(tmp.c_str()) : BandedHMMP7::inf; // Dk -> Mk+1
-					is >> tmp; hmm.T_DD_log(k, k + 1) = tmp != "*" ? atof(tmp.c_str()) : BandedHMMP7::inf; // Dk -> Dk+1
+					is >> tmp; hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Mk -> Mk+1
+					is >> tmp; hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::I) = hmm.hmmValueOf(tmp);  // Mk -> Ik
+					is >> tmp; hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::D) = hmm.hmmValueOf(tmp);  // Mk -> Dk+1
+					is >> tmp; hmm.Tmat_log[k](BandedHMMP7::I, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Ik -> Mk+1
+					is >> tmp; hmm.Tmat_log[k](BandedHMMP7::I, BandedHMMP7::I) = hmm.hmmValueOf(tmp);  // Ik -> Ik
+					is >> tmp; hmm.Tmat_log[k](BandedHMMP7::D, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Dk -> Mk+1
+					is >> tmp; hmm.Tmat_log[k](BandedHMMP7::D, BandedHMMP7::D) = hmm.hmmValueOf(tmp);  // Dk -> Dk+1
 			} /* combo line section or match state line section */
 			else { // non-COMPO begin state line (M0)
 				assert(k == 0);
@@ -180,40 +171,91 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 				for (MatrixXf::Index i = 0; i < hmm.E_I_log.rows(); ++i)
 					is >> hmm.E_I_log(i, k);
 				/* process the B state K transition line */
-				is >> tmp; hmm.T_MM_log(k, k + 1) = tmp != "*" ? atof(tmp.c_str()) : BandedHMMP7::inf; // Mk -> Mk+1
-				is >> tmp; hmm.T_MI_log(k, k) = tmp != "*" ? atof(tmp.c_str()) : BandedHMMP7::inf;     // Mk -> Ik
-				is >> tmp; hmm.T_MD_log(k, k + 1) = tmp != "*" ? atof(tmp.c_str()) : BandedHMMP7::inf; // Mk -> Dk+1
-				is >> tmp; hmm.T_IM_log(k, k + 1) = tmp != "*" ? atof(tmp.c_str()): BandedHMMP7::inf;  // Ik -> Mk+1
-				is >> tmp; hmm.T_II_log(k, k) = tmp != "*" ? atof(tmp.c_str()) : BandedHMMP7::inf;     // Ik -> Ik
-				is >> tmp; hmm.T_DM_log(k, k + 1) = tmp != "*" ? atof(tmp.c_str()) : BandedHMMP7::inf; // Dk -> Mk+1
-				is >> tmp; hmm.T_DD_log(k, k + 1) = tmp != "*" ? atof(tmp.c_str()) : BandedHMMP7::inf; // Dk -> Dk+1
+				is >> tmp; hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Mk -> Mk+1
+				is >> tmp; hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::I) = hmm.hmmValueOf(tmp);  // Mk -> Ik
+				is >> tmp; hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::D) = hmm.hmmValueOf(tmp);  // Mk -> Dk+1
+				is >> tmp; hmm.Tmat_log[k](BandedHMMP7::I, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Ik -> Mk+1
+				is >> tmp; hmm.Tmat_log[k](BandedHMMP7::I, BandedHMMP7::I) = hmm.hmmValueOf(tmp);  // Ik -> Ik
+				is >> tmp; hmm.Tmat_log[k](BandedHMMP7::D, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Dk -> Mk+1
+				is >> tmp; hmm.Tmat_log[k](BandedHMMP7::D, BandedHMMP7::D) = hmm.hmmValueOf(tmp);  // Dk -> Dk+1
 			}
 			k++;
 		} /* end of main section */
 	} /* end of each line */
-	// reverse the signs
-	hmm.E_I_log = -hmm.E_I_log;
-
-	hmm.T_MM_log = -hmm.T_MM_log;
-	hmm.T_MI_log = -hmm.T_MI_log;
-	hmm.T_MD_log = -hmm.T_MD_log;
-	hmm.T_IM_log = -hmm.T_IM_log;
-	hmm.T_II_log = -hmm.T_II_log;
-	hmm.T_DM_log = -hmm.T_DM_log;
-	hmm.T_DD_log = -hmm.T_DD_log;
-
-	// set the non-log matrices
-	hmm.E_M = hmm.E_M_log.array().exp();
-	hmm.E_I = hmm.E_I_log.array().exp();
-	hmm.T_MM = hmm.T_MM_log.array().exp();
-	hmm.T_MI = hmm.T_MI_log.array().exp();
-	hmm.T_MD = hmm.T_MD_log.array().exp();
-	hmm.T_IM = hmm.T_IM_log.array().exp();
-	hmm.T_II = hmm.T_II_log.array().exp();
-	hmm.T_DM = hmm.T_DM_log.array().exp();
-	hmm.T_DD = hmm.T_DD_log.array().exp();
-	hmm.wingRetract();
+	// somehow the hmm file reached end without '//'
+	is.setstate(std::ios::failbit);
 	return is;
+}
+
+BandedHMMP7* BandedHMMP7::build(const MSA* msa, double symfrac, const string& name) {
+	if(msa->getMSALen() == 0)
+		throw invalid_argument("Empty MSA encountered");
+	if(!(symfrac > 0 && symfrac < 1))
+		throw invalid_argument("symfrac must between 0 and 1");
+	/* determine the bHMM size */
+	unsigned csLen = msa->getCSLen();
+	unsigned k = 0;
+	int cs2ProfileIdx[kMaxProfile + 1]; // MAP index from consensus index -> profile index
+	int profile2CSIdx[kMaxCS + 1]; // MAP index from profile index -> consensus index
+	for(int i = 0; i <= kMaxProfile; ++i)
+		cs2ProfileIdx[i] = 0;
+	for(int i = 1; i <= kMaxCS; ++i)
+		profile2CSIdx[i] = 0;
+
+	for(unsigned j = 0; j < csLen; ++j) {
+		if(msa->identityAt(j) >= symfrac)
+			profile2CSIdx[++k] = j + 1; /* all index are 1-based */
+		cs2ProfileIdx[j+1] = k;
+	}
+	BandedHMMP7 hmm("name", k, msa->getAbc()); /* construct an empty hmm */
+	/* copy the index */
+	std::copy(cs2ProfileIdx, cs2ProfileIdx + kMaxProfile, hmm.cs2ProfileIdx);
+	std::copy(profile2CSIdx, profile2CSIdx + kMaxCS, hmm.profile2CSIdx);
+	VectorXf bgEmitFreq(hmm.getNuclAbc()->getSize()); // overall emission freq
+	/* train the hmm model, all index are 1-based */
+	for(unsigned j = 1; j <= csLen; ++j) {
+		unsigned k = hmm.cs2ProfileIdx[j];
+		bool isPos = hmm.cs2ProfileIdx[j] != hmm.cs2ProfileIdx[j - 1];
+		bool isPosN = j < csLen ? hmm.cs2ProfileIdx[j+1] != hmm.cs2ProfileIdx[j] : false;
+		for(unsigned i = 1; i <= msa->getNumSeq(); ++i) {
+			int8_t b = msa->decodeAt(i - 1, j - 1);
+			p7_state s = isPos & b >= 0 ? M : isPos & b < 0 ? D : !isPos & b >= 0 ? I : E;
+			/* update emission frequencies */
+			if(s == M) {
+				/* update emission freqs */
+				hmm.E_M(b, 0)++; /* M0 as the COMPO freq */
+				hmm.E_M(b, k)++;
+			}
+			else if(s == I) { /* an insertion emission */
+				hmm.E_I(b, k)++; /* k can be 0 */
+			}
+			else { } // ignored
+			/* update transition frequencies */
+			if(j < csLen) { // transition doesn't exist for last residuals
+				int8_t bN = msa->decodeAt(i - 1, j);
+				p7_state sN = isPosN & bN >= 0 ? M : isPosN & bN < 0 ? D : !isPos & b >= 0 ? I : E;
+				hmm.Tmat[k](s, sN)++;
+			}
+		}
+	}
+	/* normalize emission matrices */
+	for(Matrix4f::Index k = 0; k <= hmm.K; ++k) {
+		hmm.E_M.col(k) /= hmm.E_M.col(k).sum();
+		hmm.E_I.col(k) /= hmm.E_I.col(k).sum();
+	}
+	/* rowwise normalization of transition matrices */
+	for(int k = 1; k <= hmm.K; ++k) {
+		for(Matrix3f::Index i = 0; i < BandedHMMP7::kNM; ++i)
+			hmm.Tmat[k].row(i) /= hmm.Tmat[i].row(i).sum();
+	}
+	/* set bgFreq */
+	hmm.hmmBg.setBgFreq(hmm.E_M.col(0));
+	hmm.setSpEmissionFreq(hmm.E_M.col(0));
+	/* set log matrices */
+	hmm.E_M_log = hmm.E_M.array().log();
+	hmm.E_I_log = hmm.E_I.array().log();
+	for(int k = 1; k <= hmm.K; ++k)
+		hmm.Tmat_log[k] = hmm.Tmat[k].array().log();
 }
 
 ostream& operator<<(ostream& os, const BandedHMMP7& hmm) {
@@ -246,13 +288,13 @@ ostream& operator<<(ostream& os, const BandedHMMP7& hmm) {
 			hmm.E_I_log(i, k) != BandedHMMP7::infV ? os << "\t\t" << -hmm.E_I_log(i, k) : os << "\t\t*";
 		os << endl;
 		/* write state transition line */
-		hmm.T_MM_log(k, k + 1) != BandedHMMP7::infV ? os << "\t\t" << -hmm.T_MM_log(k, k + 1) : os << "\t\t*";
-		hmm.T_MI_log(k, k) != BandedHMMP7::infV ? os << "\t\t" << -hmm.T_MI_log(k, k) : os << "\t*";
-		hmm.T_MD_log(k, k + 1) != BandedHMMP7::infV ? os << "\t\t" << -hmm.T_MD_log(k, k + 1) : os << "\t*";
-		hmm.T_IM_log(k, k + 1) != BandedHMMP7::infV ? os << "\t\t" << -hmm.T_IM_log(k, k + 1) : os << "\t*";
-		hmm.T_II_log(k, k) != BandedHMMP7::infV ? os << "\t\t" << -hmm.T_II_log(k, k) : os << "\t*";
-		hmm.T_DM_log(k, k + 1) != BandedHMMP7::infV ? os << "\t\t" << -hmm.T_DM_log(k, k + 1) : os << "\t*";
-		hmm.T_DD_log(k, k + 1) != BandedHMMP7::infV ? os << "\t\t" << -hmm.T_DD_log(k, k + 1) : os << "\t*";
+		hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::M) != BandedHMMP7::infV ? os << "\t\t" << -hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::M) : os << "\t\t*";
+		hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::I) != BandedHMMP7::infV ? os << "\t\t" << -hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::I) : os << "\t\t*";
+		hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::D) != BandedHMMP7::infV ? os << "\t\t" << -hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::D) : os << "\t\t*";
+		hmm.Tmat_log[k](BandedHMMP7::I, BandedHMMP7::M) != BandedHMMP7::infV ? os << "\t\t" << -hmm.Tmat_log[k](BandedHMMP7::I, BandedHMMP7::M) : os << "\t\t*";
+		hmm.Tmat_log[k](BandedHMMP7::I, BandedHMMP7::I) != BandedHMMP7::infV ? os << "\t\t" << -hmm.Tmat_log[k](BandedHMMP7::I, BandedHMMP7::I) : os << "\t\t*";
+		hmm.Tmat_log[k](BandedHMMP7::D, BandedHMMP7::M) != BandedHMMP7::infV ? os << "\t\t" << -hmm.Tmat_log[k](BandedHMMP7::D, BandedHMMP7::M) : os << "\t\t*";
+		hmm.Tmat_log[k](BandedHMMP7::D, BandedHMMP7::D) != BandedHMMP7::infV ? os << "\t\t" << -hmm.Tmat_log[k](BandedHMMP7::D, BandedHMMP7::D) : os << "\t\t*";
 		os << endl;
 	}
 	os << "//" << endl;
@@ -276,9 +318,9 @@ string BandedHMMP7::trim(const string& str, const string& whitespace) {
  }*/
 
 EGriceLab::BandedHMMP7::BandedHMMP7() :
-		version(progName + "-" + progVersion), name("NULL"), K(0), nuclAbc(
-				SeqCommons::nuclAbc), hmmBg(0), transInit(false), emisInit(false),
-				spInit(false), limitInit(false), indexInit(false), wingRetracted(false) {
+		version(progName + "-" + progVersion), name("NULL"), K(0),
+		abc(SeqCommons::nuclAbc), hmmBg(0), transInit(false), emisInit(false),
+		spInit(false), limitInit(false), indexInit(false), wingRetracted(false) {
 	/* Assert IEE559 at construction time */
 	assert(numeric_limits<float>::is_iec559);
 	/* set mandatory tags */
@@ -288,10 +330,12 @@ EGriceLab::BandedHMMP7::BandedHMMP7() :
 	setHeaderOpt("ALPH", "DNA");
 }
 
-EGriceLab::BandedHMMP7::BandedHMMP7(const string& name, int K, const IUPACNucl* abc) :
-		version(progName + "-" + progVersion), name(name), K(K), nuclAbc(abc),
+EGriceLab::BandedHMMP7::BandedHMMP7(const string& name, int K, const DegenAlphabet* abc) :
+		version(progName + "-" + progVersion), name(name), K(K), abc(abc),
 		hmmBg(K), transInit(false), emisInit(false),
 				spInit(false), limitInit(false), indexInit(false), wingRetracted(false) {
+	if(!(abc->getName() == "IUPACNucl" && abc->getSize() == 4))
+		throw invalid_argument("BandedHMMP7 only supports DNA alphabet");
 	/* Assert IEE559 at construction time */
 	assert(numeric_limits<float>::is_iec559);
 	init_transition_params();
@@ -303,7 +347,7 @@ EGriceLab::BandedHMMP7::BandedHMMP7(const string& name, int K, const IUPACNucl* 
 	setSpEmissionFreq(hmmBg.getBgEmitPr()); // Use bg emission freq by default
 	/* set mandatory tags */
 	setHeaderOpt("HMMER3/f", progName + "-" + progVersion);
-	setHeaderOpt("NAME", "NULL");
+	setHeaderOpt("NAME", name);
 	string size_s;
 	ostringstream os(size_s);
 	os << K;
@@ -329,30 +373,27 @@ void EGriceLab::BandedHMMP7::setSequenceMode(enum align_mode mode) {
 		T_SP(N, N) = T_SP(C, C) = 0;
 		break;
 	case LOCAL:
-		T_SP(N, N) = T_SP(C, C) = 1 - hmmBg.getBgTransPr();
+		T_SP(N, N) = T_SP(C, C) = hmmBg.getBgTransPr();
 		break;
 	case NGCL:
 		T_SP(N, N) = 0;
-		T_SP(C, C) = 1 - hmmBg.getBgTransPr();
+		T_SP(C, C) = hmmBg.getBgTransPr();
 		break;
 	case CGNL:
-		T_SP(N, N) = 1 - hmmBg.getBgTransPr();
+		T_SP(N, N) = hmmBg.getBgTransPr();
 		T_SP(C, C) = 0;
 		break;
 	default:
-		cerr
-				<< "Unknown seqAlign type, must be one of 'GLOBAL', 'LOCAL', 'NGCL' or 'CGNL'"
-				<< endl;
-		abort();
+		break; // do nothing
 	}
-	T_SP(N, B) = 1 - T_SP(N, N);
-	T_SP(E, C) = 1; // always exit from E->C
+	T_SP(N, B) = 1.0 - T_SP(N, N);
+	T_SP(E, C) = 1.0; // always exit from E->C
 	T_SP_log = T_SP.array().log(); // Eigen3 handle array to matrix assignment automatically
 }
 
-void EGriceLab::BandedHMMP7::setSpEmissionFreq(const VectorXf& freq) {
+void EGriceLab::BandedHMMP7::setSpEmissionFreq(const Vector4f& freq) {
 	E_SP.col(N) = E_SP.col(C) = freq / freq.sum(); // re-do normalization, even if already done
-	E_SP.col(B) = E_SP.col(E) = VectorXf::Zero(nuclAbc->getSize()); // no emission for state B and E
+	E_SP.col(B) = E_SP.col(E) = Vector4f::Zero(); // no emission for state B and E
 	E_SP_log = E_SP.array().log();
 }
 
@@ -363,34 +404,28 @@ void EGriceLab::BandedHMMP7::init_transition_params() {
 	 * state 0 serves as the B state
 	 * state K + 1 serve as E state
 	 */
-	T_MM = T_MM_log = MatrixXf(K + 2, K + 2);
-	T_II = T_II_log = MatrixXf(K + 2, K + 2);
-	T_DD = T_DD_log = MatrixXf(K + 2, K + 2);
-
-	T_IM = T_IM_log = MatrixXf(K + 2, K + 2);
-	T_MI = T_MI_log = MatrixXf(K + 2, K + 2);
-
-	T_DM = T_DM_log = MatrixXf(K + 2, K + 2);
-	T_MD = T_MD_log = MatrixXf(K + 2, K + 2);
-
-	T_MM_retract = T_MM_retract_log = MatrixXf(K + 2, K + 2);
+	/* initiate transition matrices */
+	Tmat = vector<Matrix3f>(K + 1);
+	Tmat_log = vector<Matrix3f>(K + 1);
 	transInit = true;
 }
 
 void EGriceLab::BandedHMMP7::init_emission_params() {
 	if (emisInit) // already initialized
 		return;
-	/* state 0 serves as B state and will not be used */
-	E_M = E_M_log = MatrixXf(nuclAbc->getSize(), K + 1);
-	E_I = E_I_log = MatrixXf(nuclAbc->getSize(), K + 1);
+	/* state 0 serves as B state */
+	E_M = E_M_log = Matrix4Xf(4, K + 1);
+	E_I = E_I_log = Matrix4Xf(4, K + 1);
 	emisInit = true;
 }
 
 void EGriceLab::BandedHMMP7::init_special_params() {
 	if (spInit) // already initialized
 		return;
-	E_SP = E_SP_log = MatrixXf(nuclAbc->getSize(), kNSP);
-	T_SP = T_SP_log = MatrixXf(kNSP, kNSP);
+	entryPr = entryPr_log = VectorXf(K + 1);
+	exitPr = exitPr_log = VectorXf(K + 1);
+	E_SP = E_SP_log = Matrix4Xf(4, kNS);
+	T_SP = T_SP_log = MatrixXf(kNS, kNS);
 	spInit = true;
 }
 
@@ -420,49 +455,35 @@ void EGriceLab::BandedHMMP7::init_index() {
 
 void EGriceLab::BandedHMMP7::enableProfileLocalMode() {
 	/* set entering probabilities */
-	T_MM(0, 0) = T_MM(0, K + 1) = 0; // B->B, B->E not allowed
-	T_MM.row(0).segment(1, K).setConstant((1.0 - hmmBg.getBgTransPr()) / K); /* B->M1..MK equal probability */
-
-
-	T_MI.block(0, 1, 1, K + 1).setConstant(0); // B -> I1..IK+1 not allowed; B->I0 leave as is
-
-	T_MD(0, 0) = T_MD(0, K + 1) = 0; // B->B, B->E not allowed
-	T_MD(0, 1) = hmmBg.getBgTransPr() / K; // B->D1 as background probability
-	T_MD.row(0).segment(2, K - 1).setConstant(0); // B -> D2...DK not allowed
-
-	T_IM.row(0).setConstant(0); // no I0 state
-	T_II.row(0).setConstant(0); // no I0 state
-	T_DM.row(0).setConstant(0); // no D0 state
-	T_DD.row(0).setConstant(0); // no D0 state
+	entryPr(0) = 0; // B->B not allowed
+	entryPr.segment(1, K).setConstant(1 - hmmBg.getBgTransPr()); /* B->M1..MK equal probability */
 
 	/* set exiting probabilities */
-	T_MM(K + 1, K + 1) = 0; // E->E not allowed
-	T_MM.col(K + 1).segment(1, K).setConstant((1.0 - hmmBg.getBgTransPr()) / K); /* M1..MK ->E equal probability */
+	exitPr(0) = 0; // B->E not allowed
+	exitPr.segment(1, K).setConstant(1 - hmmBg.getBgTransPr()); /* M1..MK ->E equal probability */
 
-	T_MI.col(K + 1).setConstant(0); // no IK+1 state
-	T_MD.col(K + 1).setConstant(0); // no DK+1 state
-
-	T_IM.col(K + 1).setConstant(0); // I0..IK+1 -> E not allowed
-	T_II.col(K + 1).setConstant(0); // no IK+1 state
-
-	T_DM(0, K + 1) = T_DM(K + 1, K + 1) = 0; // D0 -> E and DK+1 -> E not allowed
-	T_DM(K, K + 1) = hmmBg.getBgTransPr() / K; // DK -> E as background probability
-	T_DM.block(1, K + 1, K - 1, 1).setConstant(0); // D1..DK-1 -> E not allowed
-
-	T_DD.col(K + 1).setConstant(0); // no DK+1 state
-
-	/* set log version */
-	T_MM_log.row(0) = T_MM.row(0).array().log();
-	T_MI_log.row(0) = T_MI.row(0).array().log();
-	T_MD_log.row(0) = T_MD.row(0).array().log();
-	T_IM_log.row(0) = T_IM.row(0).array().log();
-	T_II_log.row(0) = T_II.row(0).array().log();
-	T_DM_log.row(0) = T_DM.row(0).array().log();
-	T_DD_log.row(0) = T_DD.row(0).array().log();
+	/* set log versions */
+	entryPr_log = entryPr.array().log();
+	exitPr_log = exitPr.array().log();
 }
+
+void EGriceLab::BandedHMMP7::adjustProfileLocalMode() {
+	/* adjust entering probabilities */
+	entryPr(0) = 0; // B->B not allowed
+	entryPr.segment(1, K).setConstant(Tmat[0](M, M)); /* B->M1..MK equal probability */
+
+	/* set exiting probabilities */
+	exitPr(0) = 0; // B->E not allowed
+	exitPr.segment(1, K).setConstant(Tmat[K](M, M)); /* M1..MK ->E equal probability */
+
+	/* set log versions */
+	entryPr_log = entryPr.array().log();
+	exitPr_log = exitPr.array().log();
+}
+
 EGriceLab::BandedHMMP7::ViterbiScores EGriceLab::BandedHMMP7::initViterbiScores(
 		const PrimarySeq& seq) const {
-	assert(nuclAbc == seq.getDegenAlphabet());
+	assert(abc == seq.getDegenAlphabet());
 	ViterbiScores vs(seq);
 
 	return resetViterbiScores(vs, seq);
@@ -543,36 +564,41 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 /*	vs.DP_M = vs.DP_I = vs.DP_D = MatrixXf::Constant(L + 1, K + 1, -numeric_limits<float>::infinity());*/
 	/* vs.DP_M(0, 0) = 0; */
 	/* Initialize the M(,0), the B state */
+	for (int i = 0; i <= L; ++i)
+		vs.DP_M(i, 0) = i <= 1 ? 0 /* no N-N loop */ : T_SP_log(N, N) * (i - 1); /* N->N loops */
+	vs.DP_M.col(0).array() += T_SP_log(N, B); /* N->B */
+
+	/* calculate I0, a special case */
 	for (int i = 1; i <= L; ++i)
-		if(i == 1) /* No N->N loop */
-			vs.DP_M(i, 0) = 0;
-		else
-			vs.DP_M(i, 0) = T_SP_log(N, N) * (i - 1); /* (i-1) N state circles */
-	vs.DP_M.col(0).array() += T_SP_log(N, B); /* N->B transition */
+		vs.DP_I(i, 0) = E_I_log(vs.seq->encodeAt(i - 1), 0) + std::max(
+					static_cast<float> (vs.DP_M(i - 1, 0) + Tmat_log[0](M, I)), // B->I0
+					static_cast<float> (vs.DP_I(i - 1, 0) + Tmat_log[0](I, I))); // I0->I0
 	/* Full Dynamic-Programming at row-first order */
 	for (int j = 1; j <= K; ++j) {
 		for (int i = 1; i <= L; ++i) {
 			vs.DP_M(i, j) = E_M_log(vs.seq->encodeAt(i-1), j) + EGriceLab::BandedHMMP7::max(
-							static_cast<float> (vs.DP_M(i, 0) + T_MM_retract_log(0, j)), // from M(i,0), the B state
-							static_cast<float> (vs.DP_M(i - 1, j - 1) + T_MM_retract_log(j - 1, j)), // from Mi-1,j-1
-							static_cast<float> (vs.DP_I(i - 1, j - 1) + T_IM_log(j - 1, j)), // from Ii-1,j-1
-							static_cast<float> (vs.DP_D(i - 1, j - 1) + T_DM_log(j - 1, j))); // from Di-1,j-1
+					static_cast<float> (vs.DP_M(i - 1, 0) + entryPr_log(j)), // from the B state
+					static_cast<float> (vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), // from Mi-1,j-1
+					static_cast<float> (vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), // from Ii-1,j-1
+					static_cast<float> (vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); // from Di-1,j-1
 			vs.DP_I(i, j) = E_I_log(vs.seq->encodeAt(i - 1), j) + std::max(
-							static_cast<float> (vs.DP_M(i - 1, j) + T_MI_log(j, j)), // from Mi-1,j
-							static_cast<float> (vs.DP_I(i - 1, j) + T_II_log(j, j))); // from Ii-1,j
+							static_cast<float> (vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), // from Mi-1,j
+							static_cast<float> (vs.DP_I(i - 1, j) + Tmat_log[j](I, I))); // from Ii-1,j
 			vs.DP_D(i, j) = std::max(
-							static_cast<float> (vs.DP_M(i, j - 1) + T_MD_log(j - 1, j)), // from Mi,j-1
-							static_cast<float> (vs.DP_D(i, j - 1) + T_DD_log(j - 1, j))); // from Di,j-1
+					static_cast<float> (vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), // from Mi,j-1
+					static_cast<float> (vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D))); // from Di,j-1
 		}
 	}
-	vs.S = vs.DP_M; // final Viterbi scores, copied from the calculated DP_M;
-	for (int j = 1; j <= K; j++)
-		vs.S.col(j).array() += T_MM_retract_log(j, K + 1); // add M->E transition
+	vs.S.resize(L + 1, K + 2); // column K+1 represent the exit from IK state
+	vs.S.leftCols(K + 1) = vs.DP_M;; // 0..K columns copied from the calculated DP_M
+	vs.S.col(K + 1) = vs.DP_I.col(K);
+	vs.S.col(0).setConstant(infV); /* S(,0) is not useful */
+	// add M-E exit probabilities
+	vs.S.leftCols(K + 1).rowwise() += exitPr_log.transpose();
+	vs.S.col(K + 1).array() += Tmat_log[K](I, M); // IK->E
 	vs.S.array() += T_SP_log(E, C); // add E->C transition
-	for (int i = 1; i < L; ++i)
+	for (int i = 1; i < L; ++i) // S(L,) doesn't have a C-> loop
 		vs.S.row(i).array() += T_SP_log(C, C) * (L - i); // add L-i C->C circles
-	vs.S.col(0).setConstant(infV); // set the B state scores to infV
-
 }
 
 void EGriceLab::BandedHMMP7::calcViterbiScores(
@@ -593,15 +619,15 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 	/* vs.DP_M(0, 0) = 0; */
 /*	cerr << "DP matrices initialized" << endl;*/
 	/* Initialize the M(,0), the B state */
-	for (int i = 1; i <= L; i++)
-		if(i == 1) // no N->N loop if entering from 1
-			vs.DP_M(i, 0) = 0;
-		else
-			vs.DP_M(i, 0) = T_SP_log(N, N) * (i - 1); /* (i-1) N states */
-
-	vs.DP_M.col(0).array() += T_SP_log(N, B); /* N->B transition */
-	//cerr << "M(,0)" << endl << vs.DP_M.col(0) << endl;
-/*	cerr << "M(,0) initialized" << endl;*/
+	for (int i = 1; i < L; i++)
+		vs.DP_M(i, 0) = i == 1 ? 0 /* no N->N loop */ : T_SP_log(N, N) * (i - 1); /* N->N loops */
+	vs.DP_M.col(0).array() += T_SP_log(N, B); /* N->B */
+	// cerr << "M(,0) initialized" << vs.DP_M.col(0).transpose() << endl;
+	/* calculate I0, a special case */
+	for (int i = 1; i <= L; ++i)
+		vs.DP_I(i, 0) = E_I_log(vs.seq->encodeAt(i - 1), 0) + std::max(
+					static_cast<float> (vs.DP_M(i - 1, 0) + Tmat_log[0](M, I)), // B->I0
+					static_cast<float> (vs.DP_I(i - 1, 0) + Tmat_log[0](I, I))); // I0->I0
 	/* process each known path upstream and themselves */
 	for(vector<int>::size_type n = 0; n < vpath.N; ++n) {
 		/* Determine banded boundaries */
@@ -620,26 +646,18 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 		for (int j = up_start; j <= vpath.start[n]; ++j) {
 			for (int i = up_from; i <= vpath.from[n]; ++i) {
 				vs.DP_M(i, j) = E_M_log(vs.seq->encodeAt(i - 1), j)
-							+ EGriceLab::BandedHMMP7::max(
-									static_cast<float>(vs.DP_M(i, 0) + T_MM_retract_log(0, j)), // from Mi,0, the B state
-									static_cast<float>(vs.DP_M(i - 1, j - 1)
-											+ T_MM_retract_log(j - 1, j)), // from Mi-1,j-1
-											static_cast<float>(vs.DP_I(i - 1, j - 1)
-													+ T_IM_log(j - 1, j)), // from Ii-1,j-1
-													static_cast<float>(vs.DP_D(i - 1, j - 1)
-															+ T_DM_log(j - 1, j))); // from Di-1,j-1
+						+ EGriceLab::BandedHMMP7::max(
+								static_cast<float>(vs.DP_M(i, 0) + entryPr_log(j)), // from B state
+								static_cast<float>(vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), // from Mi-1,j-1
+								static_cast<float>(vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), // from Ii-1,j-1
+								static_cast<float>(vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); // from Di-1,j-1
 				vs.DP_I(i, j) = E_I_log(vs.seq->encodeAt(i - 1), j)
-							+ std::max(
-									static_cast<float>(vs.DP_M(i - 1, j)
-											+ T_MI_log(j, j)), // from Mi-1,j
-											static_cast<float>(vs.DP_I(i - 1, j)
-													+ T_II_log(j, j))); // from Ii-1,j
-				vs.DP_D(i, j) =
-						std::max(
-								static_cast<float>(vs.DP_M(i, j - 1)
-										+ T_MD_log(j - 1, j)), // from Mi,j-1
-										static_cast<float>(vs.DP_D(i, j - 1)
-												+ T_DD_log(j - 1, j))); // from Di,j-1
+								+ std::max(
+										static_cast<float>(vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), // from Mi-1,j
+										static_cast<float>(vs.DP_I(i - 1, j) + Tmat_log[j](I, I))); // from Ii-1,j
+				vs.DP_D(i, j) =	std::max(
+						static_cast<float>(vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), // from Mi,j-1
+						static_cast<float>(vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D))); // from Di,j-1
 			}
 		}
 		/* Fill the score of the known alignment path */
@@ -649,87 +667,63 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 				if(!(dist <= vpath.numIns[n] && dist >= -vpath.numDel[n]))
 					continue;
 				vs.DP_M(i, j) = E_M_log(vs.seq->encodeAt(i - 1), j)
-							+ EGriceLab::BandedHMMP7::max(
-									static_cast<float>(vs.DP_M(i, 0) + T_MM_retract_log(0, j)), // from M(,0), the B state
-									static_cast<float>(vs.DP_M(i - 1, j - 1)
-											+ T_MM_retract_log(j - 1, j)), // from Mi-1,j-1
-											static_cast<float>(vs.DP_I(i - 1, j - 1)
-													+ T_IM_log(j - 1, j)), // from Ii-1,j-1
-													static_cast<float>(vs.DP_D(i - 1, j - 1)
-															+ T_DM_log(j - 1, j))); // from Di-1,j-1
+						+ EGriceLab::BandedHMMP7::max(
+								static_cast<float>(vs.DP_M(i, 0) + entryPr_log(j)), // from B state
+								static_cast<float>(vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), // from Mi-1,j-1
+								static_cast<float>(vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), // from Ii-1,j-1
+								static_cast<float>(vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); // from Di-1,j-1
 				vs.DP_I(i, j) = E_I_log(vs.seq->encodeAt(i - 1), j)
-							+ std::max(
-									static_cast<float>(vs.DP_M(i - 1, j)
-											+ T_MI_log(j, j)), // from Mi-1,j
-											static_cast<float>(vs.DP_I(i - 1, j)
-													+ T_II_log(j, j))); // from Ii-1,j
-				vs.DP_D(i, j) =
-						std::max(
-								static_cast<float>(vs.DP_M(i, j - 1)
-										+ T_MD_log(j - 1, j)), // from Mi,j-1
-										static_cast<float>(vs.DP_D(i, j - 1)
-												+ T_DD_log(j - 1, j))); // from Di,j-1
+						+ std::max(
+								static_cast<float>(vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), // from Mi-1,j
+								static_cast<float>(vs.DP_I(i - 1, j) + Tmat_log[j](I, I))); // from Ii-1,j
+				vs.DP_D(i, j) = std::max(
+						static_cast<float>(vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), // from Mi,j-1
+						static_cast<float>(vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D))); // from Di,j-1
 			}
 		}
 		// assert(i == vpath.to + 1 && j == vpath.end + 1);
-	} /* end of each known path segment
+	} /* end of each known path segment */
+//	cerr << "known path aligned" << endl;
 	/* Dynamic programming of the remaining downstream of the known paths, if any */
 	int last_end = vpath.end[vpath.N - 1];
 	int last_to = vpath.to[vpath.N - 1];
 	int downQLen = L - last_to;
 	int down_end = last_end + downQLen * (1 + kMaxGapFrac);
 	int down_to = last_to + downQLen * (1 + kMaxGapFrac);
+	if(down_end > K)
+		down_end = K;
+	if(down_to > L)
+		down_to = L;
 
-	for (int j = last_end; j <= down_end && j <= K; ++j) {
-		for (int i = last_to; i <= down_to && i <= L; ++i) {
-			vs.DP_M(i, j) = E_M_log(vs.seq->encodeAt(i - 1), j) + EGriceLab::BandedHMMP7::max(
+	for (int j = last_end; j <= down_end; ++j) {
+		for (int i = last_to; i <= down_to; ++i) {
+			vs.DP_M(i, j) = E_M_log(vs.seq->encodeAt(i - 1), j) +
+					EGriceLab::BandedHMMP7::max(
 							// from Mi,0, the B state is not possible
-							static_cast<float>(vs.DP_M(i - 1, j - 1)
-									+ T_MM_retract_log(j - 1, j)), // from Mi-1,j-1
-							static_cast<float>(vs.DP_I(i - 1, j - 1)
-									+ T_IM_log(j - 1, j)), // from Ii-1,j-1
-							static_cast<float>(vs.DP_D(i - 1, j - 1)
-									+ T_DM_log(j - 1, j))); // from Di-1,j-1
-			vs.DP_I(i, j) = E_I_log(vs.seq->encodeAt(i - 1), j) + std::max(
-							static_cast<float>(vs.DP_M(i - 1, j)
-									+ T_MI_log(j, j)), // from Mi-1,j
-							static_cast<float>(vs.DP_I(i - 1, j)
-									+ T_II_log(j, j))); // from Ii-1,j
-			vs.DP_D(i, j) =
+							static_cast<float>(vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), // from Mi-1,j-1
+							static_cast<float>(vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), // from Ii-1,j-1
+							static_cast<float>(vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); // from Di-1,j-1
+			vs.DP_I(i, j) = E_I_log(vs.seq->encodeAt(i - 1), j) +
 					std::max(
-							static_cast<float>(vs.DP_M(i, j - 1)
-									+ T_MD_log(j - 1, j)), // from Mi,j-1
-							static_cast<float>(vs.DP_D(i, j - 1)
-									+ T_DD_log(j - 1, j))); // from Di,j-1
+							static_cast<float>(vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), // from Mi-1,j
+							static_cast<float>(vs.DP_I(i - 1, j) + Tmat_log[j](I, I))); // from Ii-1,j
+			vs.DP_D(i, j) = std::max(
+							static_cast<float>(vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), // from Mi,j-1
+							static_cast<float>(vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D))); // from Di,j-1
 		}
 	}
-	//cerr << "downstream done " << vpath.end + 1 << "-" << down_end << " " << vpath.to + 1 << "-" << down_to << endl;
-	vs.S = vs.DP_M; // final Viterbi scores, copied from the calculated DP_M;*/
-/*	cerr << "vs assigned" << endl;*/
-
-	for (int j = 1; j <= K; j++)
-		vs.S.col(j).array() += T_MM_retract_log(j, K + 1); /* add M->E transition */
-/*	if(vs.ds.getName() == "r131")
-		cerr << "S(L,):" << endl << vs.S.row(L) << endl;
-	cerr << "M->E added" << endl;*/
-
+//	cerr << "downstream done" << endl;
+	vs.S.resize(L + 1, K + 2); // column K+1 represent the exit from IK state
+	vs.S.leftCols(K + 1) = vs.DP_M;; // 0..K columns copied from the calculated DP_M
+	vs.S.col(K + 1) = vs.DP_I.col(K);
+	//vs.S.col(K + 1).setConstant(infV);
+	vs.S.col(0).setConstant(infV);
+	// add M-E exit probabilities
+	vs.S.leftCols(K + 1).rowwise() += exitPr_log.transpose();
+	vs.S.col(K + 1).array() += Tmat_log[K](I, M); // IK->E
 	vs.S.array() += T_SP_log(E, C); // add E->C transition
-/*	if(vs.ds.getName() == "r131")
-		cerr << "S(L,):" << endl << vs.S.row(L) << endl;
-	cerr << "E->C added" << endl;*/
-
 	for (int i = 1; i < L; ++i)
-		vs.S.row(i).array() += T_SP_log(C, C) * (L - i); // L-i C->C circles
-/*	if(vs.ds.getName() == "r131")
-		cerr << "S(L,):" << endl << vs.S.row(L) << endl;
-	cerr << "C-C circles added" << endl;*/
-
-	vs.S.col(0).setConstant(infV); // set the B state scores to infV
-	/*cerr << "DP_M:" << endl << vs.DP_M << endl;
-	cerr << "DP_I:" << endl << vs.DP_I << endl;
-	cerr << "DP_D:" << endl << vs.DP_D << endl;
-	cerr << "S:" << endl << vs.S << endl;*/
-	return;
+		vs.S.row(i).array() += T_SP_log(C, C) * (L - i); // add L-i C->C circles
 }
 
 void EGriceLab::BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
@@ -755,7 +749,7 @@ void EGriceLab::BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
 //		cerr << "i:" << i << " j:" << j << " k:" << k << endl;
 //		cerr << "vpath.L:" << vpath.L << " vpath.K:" << vpath.K << endl;
 
-		bool nonGap = nuclAbc->isSymbol(*it) && !nuclAbc->isGap(*it);
+		bool nonGap = abc->isSymbol(*it);
 
 		if(from == 0 && nonGap)
 			from = i;
@@ -792,67 +786,68 @@ void EGriceLab::BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
 
 float EGriceLab::BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath& vpath) const {
 	assert(vs.seq != NULL);
-	assert(vs.S.rows() == vpath.L + 1 && vs.S.cols() == vpath.K + 1);
+	assert(vs.S.rows() == vpath.L + 1 && vs.S.cols() == K + 2);
 	MatrixXf::Index maxRow, maxCol;
 	float maxScore = vs.S.maxCoeff(&maxRow, &maxCol);
 	if(maxScore == infV)
 		return maxScore; // max score not found, do nothing
 	/* do trace back in the vScore matrix */
-	int i = maxRow, j = maxCol;
-	vpath.alnStart = vpath.alnEnd = maxCol;
+	char s = maxCol <= K ? 'M' : 'I'; // exiting state either M1..K or IK
+	int i = maxRow;
+	int j = maxCol <= K ? maxCol : K;
+	vpath.alnStart = maxCol <= K ? maxCol : K;
+	vpath.alnEnd = maxCol <= K ? maxCol : K;
 	vpath.alnFrom = vpath.alnTo = maxRow;
-	//cerr << "maxRow:" << maxRow << " maxCol:" << maxCol << " maxScore:" << maxScore << " maxEnd:" << getCSLoc(maxCol) << endl;
+	//cerr << "id:" << vs.seq->getId() << " maxRow:" << maxRow << " maxCol:" << maxCol << " maxScore:" << maxScore << " maxEnd:" << getCSLoc(maxCol) << endl;
 
-	char s = 'M'; // current state (p7 always found maximum at M state)
 	vpath.alnPath.push_back('E'); // ends with E
 	while(i >= 0 && j >= 0) {
 		//vpath.TRACE(i, j) = s;
 		vpath.alnPath.push_back(s);
 		if(j == 0) {
-			//cerr << "i:" << i << " j:" << j << " s:" << decode(B) << ":" << static_cast<float> (vs.DP_M(i, j)) << endl;
+		//	cerr << "i:" << i << " j:" << j << " s:" << decode(B) << ":" << static_cast<float> (vs.DP_M(i, j)) << endl;
 			break;
 		}
 		// update the status
 		if(s == 'M') {
-			//cerr << "i:" << i << " j:" << j << " s:" << decode(s) << ":" << static_cast<float> (vs.DP_M(i, j));
+			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<float> (vs.DP_M(i, j));
 			vpath.alnStart--;
 			vpath.alnFrom--;
 			s = BandedHMMP7::whichMax(
-					static_cast<float> (vs.DP_M(i, 0) + T_MM_retract_log(0, j)), /* from M(i, 0), the B-state */
-					static_cast<float> (vs.DP_M(i - 1, j - 1) + T_MM_retract_log(j - 1, j)), /* from M(i-1,j-1) */
-					static_cast<float> (vs.DP_I(i - 1, j - 1) + T_IM_log(j - 1, j)), /* from I(i-1,j-1) */
-					static_cast<float> (vs.DP_D(i - 1, j - 1) + T_DM_log(j - 1, j))); /* from D(i-1,j-1) */
-			//cerr << "->" << decode(s) << endl;
+					static_cast<float> (vs.DP_M(i, 0) + entryPr_log(j)), /* from B-state */
+					static_cast<float> (vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), /* from M(i-1,j-1) */
+					static_cast<float> (vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), /* from I(i-1,j-1) */
+					static_cast<float> (vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); /* from D(i-1,j-1) */
+			//cerr << "->" << s << endl;
 			if(s == 'B')
 				j = 0; // jump to B state
 			else { // M, I or D state
 				i--;
 				j--;
 			}
-
 		}
 		else if(s == 'I') {
-			//cerr << "i:" << i << " j:" << j << " s:" << decode(s) << ":" << static_cast<float> (vs.DP_I(i, j));
+			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<float> (vs.DP_I(i, j));
 			vpath.alnFrom--;
 			s = BandedHMMP7::whichMax(
-					static_cast<float> (vs.DP_M(i - 1, j) + T_MI_log(j, j)), /* from M(i-1,j) */
-					static_cast<float> (vs.DP_I(i - 1, j) + T_MI_log(j, j)), /* from I(i-1,j) */
+					static_cast<float> (vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), /* from M(i-1,j) */
+					static_cast<float> (vs.DP_I(i - 1, j) + Tmat_log[j](I, I)), /* from I(i-1,j) */
 					"MI");
-			//cerr << "->" << decode(s) << endl;
+			//cerr << "->" << s << endl;
 			i--;
 		}
 		else if(s == 'D') {
 			vpath.alnStart--;
-			//cerr << "i:" << i << " j:" << j << " s:" << decode(s) << ":" << static_cast<float> (vs.DP_D(i, j));
+			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<float> (vs.DP_D(i, j));
 			s = BandedHMMP7::whichMax(
-					static_cast<float> (vs.DP_M(i, j - 1) + T_MD_log(j - 1, j)), /* from M(i,j-1) */
-					static_cast<float> (vs.DP_D(i, j - 1) + T_DD_log(j - 1, j)), /* from D(i,j-1) */
+					static_cast<float> (vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), /* from M(i,j-1) */
+					static_cast<float> (vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D)), /* from D(i,j-1) */
 					"MD");
-			//cerr << "->" << decode(s) << endl;
+			//cerr << "->" << s << endl;
 			j--;
 		}
 		else { // B state found
-			//cerr << "i:" << i << " j:" << j << " s:" << decode(s) << ":" << static_cast<float> (vs.DP_M(i, j)) << endl;
+			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<float> (vs.DP_M(i, j)) << endl;
 			break;
 		}
 		//cerr << "vpath.alnStart:" << vpath.alnStart + 1 << " vpath.alnEnd:" << vpath.alnEnd << endl;
@@ -884,7 +879,7 @@ std::string EGriceLab::BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
 	for(int i = profileNLen - NHalf; i < profileNLen; ++i) /* put half the N residues at the beginning */
 		aSeq.push_back(vs.seq->charAt(i - 1)); /* put half the N residues at the end of the N' */
 
-	/* place aligned residules */
+	/* place aligned residues */
 	int i = vpath.alnFrom;
 	for(string::const_iterator it = vpath.alnPath.begin(); it != vpath.alnPath.end(); ++it) {
 		switch(*it) {
@@ -899,10 +894,10 @@ std::string EGriceLab::BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
 			break; // do nothing
 		}
 	}
-	for(int i = vpath.alnTo; i < vpath.alnTo + CHalf; ++i) /* put half the N residues at the begining of the N' */
+	for(int i = vpath.alnTo; i < vpath.alnTo + CHalf; ++i) /* put half the N residues at the beginning of the N' */
 		aSeq.push_back(vs.seq->charAt(i - 1));
 	aSeq.append(profileCLen - 2 * CHalf, '-'); /* add the middle gaps, if any */
-	for(int i = vpath.K - NHalf; i < vpath.K; ++i) /* put half the N residues at the begining */
+	for(int i = vpath.K - NHalf; i < vpath.K; ++i) /* put half the N residues at the beginning */
 		aSeq.push_back(vs.seq->charAt(i - 1)); /* put half the N residues at the end of the N' */
 	return aSeq;
 }
@@ -910,30 +905,39 @@ std::string EGriceLab::BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
 void EGriceLab::BandedHMMP7::wingRetract() {
 	if(wingRetracted) // already wing-retracted
 		return;
-	T_MM_retract = T_MM; // copy the transition
-	/* retract entering probabilities B->Mj */
+	/* retract entering probabilities */
+	/* increase the B->Mj probability by adding the chain B->D1->D2->...->Dj-1->Mj */
 	for(MatrixXf::Index j = 2; j <= K; ++j) {
 		float logP = 0; // additional retract probability in log-scale
-		logP += T_MD_log(0, 1); // B->D1
+		logP += Tmat_log[0](M, D); // B->D1 (M0->D1)
 		for(MatrixXf::Index i = 1; i < j - 1; ++i)
-			logP += T_DD_log(i, i + 1); // Di->Di+1
-		logP += T_DM_log(j - 1, j); // Dj-1->Mj
-		T_MM_retract(0, j) += exp(logP); // retract B->D1->D2...Dj-1->Mj to B->Mj
-		if(T_MM_retract(0, j) > 1)
-			T_MM_retract(0, j) = 1;
+			logP += Tmat_log[i](D, D); // Di->Di+1
+		logP += Tmat_log[j-1](D, M); // Dj-1->Mj
+		assert(logP < 0);
+		entryPr(j) += ::exp(logP); // retract B->D1->D2...Dj-1->Mj to B->Mj
+		if(entryPr(j) > 1)
+			entryPr(j) = 1;
 	}
-	/* retract exiting probabilities Mi -> E */
+	/* retract exiting probabilities */
+	/* increase the Mj->E probability by adding the chain Mj->Dj+1->Dj+2->...->DK->E */
 	for(MatrixXf::Index i = 1; i <= K - 1; ++i) {
 		float logP = 0; // additional retract probability in log-scale
-		logP += T_MD_log(i, i + 1); // Mi -> Di+1
+		logP += Tmat_log[i](M, D); // Mj -> Di+1
 		for(MatrixXf::Index j = i + 1; j < K; ++j)
-			logP += T_DD_log(j, j + 1); // Dj->Dj+1
-		logP += T_DM_log(K, K + 1); // DK -> E
-		T_MM_retract(i, K + 1) += exp(logP); // retract Mi->Di+1->Di+2...->DK->E to Mi->E
-		if(T_MM_retract(i, K + 1) > 1)
-			T_MM_retract(i, K + 1) = 1;
+			logP += Tmat_log[j](D, D); // Dj->Dj+1
+		logP += Tmat_log[K](D, M); // DK -> E (DK->MK+1)
+		assert(logP < 0);
+		exitPr(i) += ::exp(logP); // retract Mj->Dj+1->Dj+2...->DK->E to Mj->E
+		if(exitPr(i) > 1)
+			exitPr(i) = 1;
 	}
-	T_MM_retract_log = T_MM_retract.array().log();
+	/* set transition matrices */
+	/* reset log transition matrices */
+//	cerr << "entry before retract: " << entryPr_log.transpose() << endl;
+	entryPr_log = entryPr.array().log();
+	exitPr_log = exitPr.array().log();
+//	cerr << "entry after retract: " << entryPr_log.transpose() << endl;
+
 	wingRetracted = true;
 }
 

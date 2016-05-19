@@ -6,7 +6,6 @@
  */
 
 #include <string>
-#include <iostream>
 #include "IUPACNucl.h"
 
 namespace EGriceLab {
@@ -30,7 +29,7 @@ map<char, string> IUPACNucl::init_IUPAC_map() {
 
 IUPACNucl::IUPACNucl() : EGriceLab::DegenAlphabet("IUPACNucl", "ACGT", "UMRWSYKVHDBN", init_IUPAC_map()) {
 	/* init compl_map with self complementary */
-	for(int8_t i = 0; i <= INT8_MAX; ++i)
+	for(int8_t i = 0; i != INT8_MAX; ++i)
 		compl_map[i] = i;
 	/* override DNA complements */
 	compl_map['A'] = 'T';

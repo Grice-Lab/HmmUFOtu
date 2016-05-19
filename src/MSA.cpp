@@ -22,7 +22,6 @@ char MSA::CSResidualAt(unsigned j) const {
 		throw out_of_range("CS pos is out of range");
 
 	return CS.empty() ? '\0' /* not calculated yet */ : CS[j];
-
 }
 
 double MSA::identityAt(unsigned j) const {

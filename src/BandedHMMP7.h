@@ -20,6 +20,7 @@
 #include "BandedHMMP7Bg.h"
 #include "BandedHMMCommons.h"
 #include "PrimarySeq.h"
+#include "MSA.h"
 
 namespace EGriceLab {
 using std::string;
@@ -28,6 +29,10 @@ using std::ostream;
 using std::vector;
 using std::map;
 using std::deque;
+using Eigen::Matrix3f;
+using Eigen::Matrix4Xf;
+using Eigen::Matrix4f;
+
 /**
  * Banded plan7 HMM for 16S rRNA profile alignment
  * Similar to HMMER, the global profile includes N, B, M, I, D, E, C states
@@ -44,20 +49,26 @@ public:
 	/**
 	 * Construct a BandedHMMP7 with given length
 	 */
-	BandedHMMP7(const string& name, int K, const IUPACNucl* abc = SeqCommons::nuclAbc);
+	BandedHMMP7(const string& name, int K, const DegenAlphabet* abc = SeqCommons::nuclAbc);
 
 	/* nested members */
 	/* enum members of all P7 states
+	 * M: match
+	 * I: insertion
+	 * D: deletion
 	 * N: N or 5'
+	 * C: C or 3'
 	 * B: begin state
 	 * E: end state
-	 * J: joint state
-	 * C: C or 3'
-	 * M: match
-	 * I: insertionint
-	 * D: deletion
 	 */
-	enum p7_state { N, B, E, C, M, I, D };
+	enum p7_state { M, I, D, N, C, B, E };
+
+	enum align_mode {
+		GLOBAL,
+		LOCAL,
+		NGCL /* N' global C' local */,
+		CGNL /* C' global N' local */
+	};
 
 	/**
 	 * A nested class storing public accessible Viterbi Scoring matrices
@@ -128,20 +139,13 @@ public:
 	static const int kMaxCS = UINT16_MAX + 1;
 	static const float kMaxGapFrac; // maximum gap fraction comparing to the profile
 
-	enum align_mode {
-		GLOBAL,
-		LOCAL,
-		NGCL /* N' global C' local */,
-		CGNL /* C' global N' local */
-	};
-
 	/* member functions */
 	/* Getters and Setters */
 	/**
 	 * Get the alphabet
 	 */
-	const IUPACNucl* getNuclAbc() const {
-		return nuclAbc;
+	const DegenAlphabet* getNuclAbc() const {
+		return abc;
 	}
 
 	/**
@@ -207,7 +211,7 @@ public:
 	/**
 	 * Set the special state N and C emission frequencies. No emission for state B and E
 	 */
-	void setSpEmissionFreq(const VectorXf& freq);
+	void setSpEmissionFreq(const Vector4f& freq);
 
 	/**
 	 * Get the profile location given a index of the original multiple alignment
@@ -323,10 +327,13 @@ public:
 	 */
 	string buildGlobalAlignSeq(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
 
+	/* static member methods */
+	static BandedHMMP7* build(const MSA* msa, double symfrac, const string& name = "unnamed");
+
 private:
 	string version; // version of the program generated this hmm file, default is progName-progVersion
 	string name; // profile name
-	const IUPACNucl* nuclAbc; // Nucleotide alphabet
+	const DegenAlphabet* abc; // Nucleotide alphabet
 	int K; // profile length
 	BandedHMMP7Bg hmmBg; // background HMMP7 profile
 	vector<string> headNames; // all header names, if set
@@ -337,53 +344,51 @@ private:
 
 	/* Transition probability matrices */
 	/*
-	 * Note that M0 is the B state and MK+1 is the E state
+	 * Note that index 0 indicating B state,
+	 * and index 1 indicating E state
 	 */
-	MatrixXf T_MM; /* transition probabilities between M states.*/
-	MatrixXf T_II; /* transition probabilities between I states */
-	MatrixXf T_DD; /* transition probabilities between D states */
-
-	MatrixXf T_IM; /* transition probabilities from I to M */
-	MatrixXf T_MI; /* transition probabilities from M to I */
-
-	MatrixXf T_DM; /* transition probabilities from D to M */
-	MatrixXf T_MD; /* transition probabilities from M to D */
+	vector<Matrix3f> Tmat;
 
 	/* Emission probability matrices */
-	MatrixXf E_M; /* emission probabilities from Mk node */
-	MatrixXf E_I; /* emission probabilities from Ik node */
+	Matrix4Xf E_M; /* emission probabilities from Mk node */
+	Matrix4Xf E_I; /* emission probabilities from Ik node */
 	/* No emission from D state */
 
-	/* By tuning TSP, ENTRY and EXIT probabilities,
-	 * we can control the alignment type regarding to the both the profile and sequence.
-	 * For 16S rRNA profile-HMM, alignment to profile is always apparently local, as:
-	 * M0->Mk === 1/K
-	 * Mk->MK+1 === 1/K
-	 * Alignment with respect to the sequence can be:
-	 * global: T(N,N) = T(C,C) = 0
-	 * local: T(N,N) = T(C,C) = T(G,G)
-	 * or partial global/local as above combinations
-	 */
-	MatrixXf E_SP; /* Emission probabilities from special_states sp node */
+	Matrix4Xf E_SP; /* Emission probabilities from special_states sp node */
 	MatrixXf T_SP; /* log transition probabilities between special states N, B, E, and C */
 
-	/* Log transition probabilities, and log emission probabilities, stored as a duplicate copy for speed */
-	MatrixXf T_MM_log, T_II_log, T_DD_log;
-	MatrixXf T_IM_log, T_MI_log;
-	MatrixXf T_DM_log, T_MD_log;
-	MatrixXf E_M_log, E_I_log;
+	/* Entry and exiting probabilities */
+	VectorXf entryPr;
+	VectorXf exitPr;
+	/* By tuning T_SP, entryPr and exitPr probabilities,
+	 * we can control the alignment type regarding to the both the profile and sequence.
+	 * For 16S rRNA profile-HMM, alignment to profile is always apparently local, as:
+	 * entryPr[k] === 1/K
+	 * exitPr[k] === 1/K
+	 * Alignment with respect to the sequence can be:
+	 * global: T_SP(N,N) = T_SP(C,C) = 0
+	 * local: T_SP(N,N) = T_SP(C,C) = T_SP(G,G)
+	 * or partial global/local as above combinations
+	 */
 
-	MatrixXf E_SP_log;
+	/* Log transition probabilities, and log emission probabilities, stored as a duplicate copy for speed */
+	vector<Matrix3f> Tmat_log;
+
+	Matrix4Xf E_M_log;
+	Matrix4Xf E_I_log;
+
+	Matrix4Xf E_SP_log;
 	MatrixXf T_SP_log;
-/*	VectorXf ENTRY_BM_log;
-	VectorXf EXIT_ME_log;*/
+
+	VectorXf entryPr_log;
+	VectorXf exitPr_log;
 
 	/* Special wing retracted T_MM transition probabilities,
 	 * by adding the B->D1->...->Dk-1 to the B->Mk probability
 	 * and adding the Dk+1->Dk+2->...->E to the Mk->E probabitity
 	 */
-	MatrixXf T_MM_retract;
-	MatrixXf T_MM_retract_log;
+	//MatrixXf T_MM_retract;
+	//MatrixXf T_MM_retract_log;
 
 	/* Banded HMM limits */
 	VectorXi gapBeforeLimit; /* Maximum allowed insertions before given position 1..K, with 0 as dummy position */
@@ -425,9 +430,14 @@ private:
 	void init_index();
 
 	/**
-	 * set the profile alignment always at global mode by setting the ENTRY_BM and the EXIT_ME values
+	 * set the profile alignment to local mode by setting entry and exit probabilities
 	 */
 	void enableProfileLocalMode();
+
+	/**
+	 * adjust the profile local mode probabilities to accommodate to the learned probabilities
+	 */
+	void adjustProfileLocalMode();
 
 	/**
 	 * test whether given viterbi align path is valid
@@ -466,54 +476,16 @@ private:
 
 	/**
 	 * decode the p7_state enum to human-readable characters
-	 * throw invalid_argument exception if not a valid state
+	 * return null char of not a defined state
 	 */
-	static char decode(p7_state state) {
-		switch(state) {
-		case N:
-			return 'N';
-		case B:
-			return 'B';
-		case E:
-			return 'E';
-		case M:
-			return 'M';
-		case I:
-			return 'I';
-		case D:
-			return 'D';
-		case C:
-			return 'C';
-		default:
-			throw std::invalid_argument("Invalid state encountered");
-		}
-	}
+	static char decode(p7_state state);
 
 	/**
 	 * encode the human-readable characters to p7_state enum
 	 * throw invalid_argument exception if not a valid state
 	 *
 	 */
-	static p7_state encode(char c) {
-		switch(c) {
-		case 'N':
-			return N;
-		case 'B':
-			return B;
-		case 'E':
-			return E;
-		case 'M':
-			return M;
-		case 'I':
-			return I;
-		case 'D':
-			return D;
-		case 'C':
-			return C;
-		default:
-			throw std::invalid_argument("Invalid state encountered");;
-		}
-	}
+	static p7_state encode(char c);
 
 	/**
 	 * calculate the distance to the diagnal of a square starting at (from, start)
@@ -594,6 +566,9 @@ private:
 		return states[idx];
 	}
 
+	/* convert an hmm coded string to value */
+	static float hmmValueOf(const string& s);
+
 	/* non-member operators */
 	/**
 	 * utility function for output an alignment path to a human readable string
@@ -610,6 +585,51 @@ private:
 	friend ostream& operator<<(ostream& os, const BandedHMMP7& hmm);
 }; /* BandedHMMP7 */
 
+inline char BandedHMMP7::decode(p7_state state) {
+	switch(state) {
+	case M:
+		return 'M';
+	case I:
+		return 'I';
+	case D:
+		return 'D';
+	case N:
+		return 'N';
+	case C:
+		return 'C';
+	case B:
+		return 'B';
+	case E:
+		return 'E';
+	default:
+		return '\0';
+	}
+}
+
+inline BandedHMMP7::p7_state BandedHMMP7::encode(char c) {
+	switch(c) {
+	case 'M':
+		return M;
+	case 'I':
+		return I;
+	case 'D':
+		return D;
+	case 'N':
+		return N;
+	case 'C':
+		return C;
+	case 'B':
+		return B;
+	case 'E':
+		return E;
+	default:
+		throw std::invalid_argument("Invalid state encountered");;
+	}
+}
+
+inline float BandedHMMP7::hmmValueOf(const string& s) {
+	return s != "*" ? ::atof(s.c_str()) : BandedHMMP7::inf;
+}
 
 } /* namespace EGriceLab */
 

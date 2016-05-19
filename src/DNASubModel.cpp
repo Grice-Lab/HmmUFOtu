@@ -63,7 +63,7 @@ Matrix4d DNASubModel::estimateSubRateGojobori(const PhyloTree* tree) {
 	return freq;
 }
 
-Matrix4d updateParams2Seq(const PhyloTree::PhyloTreeNode* seq1, const PhyloTree::PhyloTreeNode* seq2) {
+Matrix4d DNASubModel::updateParams2Seq(const PhyloTree::PhyloTreeNode* seq1, const PhyloTree::PhyloTreeNode* seq2) {
 	assert(seq1->seq.getAbc() == seq2->seq.getAbc() || *(seq1->seq.getAbc()) == *(seq2->seq.getAbc()));
 	assert(seq1->seq.length() == seq2->seq.length());
 	Matrix4d freq = Matrix4d::Zero();
@@ -75,7 +75,7 @@ Matrix4d updateParams2Seq(const PhyloTree::PhyloTreeNode* seq1, const PhyloTree:
 	return freq;
 }
 
-Matrix4d updateParams3Seq(const PhyloTree::PhyloTreeNode* outer,
+Matrix4d DNASubModel::updateParams3Seq(const PhyloTree::PhyloTreeNode* outer,
 		const PhyloTree::PhyloTreeNode* seq1, const PhyloTree::PhyloTreeNode* seq2) {
 	assert(outer->seq.getAbc() == seq1->seq.getAbc() && outer->seq.getAbc() == seq2->seq.getAbc() ||
 			*(outer->seq.getAbc()) == *(seq1->seq.getAbc()) && *(outer->seq.getAbc()) == *(seq2->seq.getAbc()));

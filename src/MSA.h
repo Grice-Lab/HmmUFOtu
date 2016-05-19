@@ -90,6 +90,14 @@ public:
 	char residualAt(unsigned i, unsigned j) const;
 
 	/**
+	 * Get the decoded residual at given seq and CS pos
+	 * @param i  seq position
+	 * @param j  CS position
+	 * @return  decoded value between 0..alphabetSize - 1 at this pos
+	 */
+	int8_t decodeAt(unsigned i, unsigned j) const;
+
+	/**
 	 * Test whether a given residual is a gap
 	 * @param i  seq position
 	 * @param j  CS position
@@ -230,9 +238,13 @@ inline unsigned long MSA::getMSANonGapLen() const {
 }
 
 inline char MSA::residualAt(unsigned i, unsigned j) const {
-	if(!(i >= 0 && i < numSeq && j >= 0 && j < csLen))
-		throw out_of_range("residual is out of range");
+/*	if(!(i >= 0 && i < numSeq && j >= 0 && j < csLen))
+		throw out_of_range("residual is out of range");*/
 	return concatMSA[i * csLen + j];
+}
+
+inline int8_t MSA::decodeAt(unsigned i, unsigned j) const {
+	return abc->decode(residualAt(i, j));
 }
 
 inline string MSA::seqAt(unsigned i) const {

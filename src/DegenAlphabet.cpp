@@ -11,6 +11,7 @@
 #include <cassert>
 #include "DegenAlphabet.h"
 #include "StringUtils.h"
+#include <iostream>
 
 namespace EGriceLab {
 using namespace std;

@@ -6,6 +6,8 @@
  */
 
 #include <cassert>
+#include <stack>
+#include <set>
 #include "GTR.h"
 
 namespace EGriceLab {
@@ -20,19 +22,7 @@ Matrix4d GTR::Pr(double t, double r) const {
 	return U * X * U_inv;
 }
 
-void GTR::updateEigenParams() {
-	// Decoposite Q with EigenSover
-	EigenSolver<Matrix4d> es(Q);
-	if(es.info() != Success) {
-		cerr << "Rate Matrix Q cannot be solved for Eigen values" << endl;
-		abort();
-	}
-	Qlambda = es.eigenvalues();
-	U = es.eigenvectors();
-	U_inv = U.inverse();
-}
-
-void GTR::initParam() {
+void GTR::updateParam(const Matrix4d& freq) {
 	/* normalization constant */
 	double Z = alpha + beta + gamma + delta + epsilon + eta;
 	assert(Z > 0);
@@ -48,6 +38,18 @@ void GTR::initParam() {
 	R(C, G) = R(G, C) = delta;
 	R(C, T) = R(T, C) = epsilon;
 	R(G, T) = R(T, G) = eta;
+}
+
+void GTR::updateEigenParams() {
+	// Decoposite Q with EigenSover
+	EigenSolver<Matrix4d> es(Q);
+	if(es.info() != Success) {
+		cerr << "Rate Matrix Q cannot be solved for Eigen values" << endl;
+		abort();
+	}
+	Qlambda = es.eigenvalues();
+	U = es.eigenvectors();
+	U_inv = U.inverse();
 }
 
 } /* namespace EGriceLab */

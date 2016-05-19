@@ -27,7 +27,7 @@ public:
 	 * constructor with given size
 	 */
 	explicit BandedHMMP7Bg(int size, const IUPACNucl* abc = SeqCommons::nuclAbc)
-	: K(size), nuclAbc(abc), bgFreq(abc->getSize()) {
+	: K(size), nuclAbc(abc) {
 		init_bgFreq();
 		init_transPr();
 	}
@@ -49,14 +49,14 @@ public:
 	/*
 	 * return the background emission vector at G state
 	 */
-	VectorXf getBgEmitPr() const {
+	Vector4f getBgEmitPr() const {
 		return bgFreq;
 	}
 
 	/*
 	 * return the background emission vector at G state in log scale
 	 */
-	VectorXf getBgEmitLogPr() const {
+	Vector4f getBgEmitLogPr() const {
 		return bgFreq.array().log();
 	}
 
@@ -75,7 +75,7 @@ public:
 	 * set the background nucleotide frequencies using observed frequencies or count
 	 * @param freq  the observed frequencies or count of each nucleotide
 	 */
-	void setBgFreq(const VectorXf& q);
+	void setBgFreq(const Vector4f& q);
 
 private:
 	/* private member functions */
@@ -85,7 +85,7 @@ private:
 
 	int K; // profile size
 	const IUPACNucl* nuclAbc;
-	VectorXf bgFreq; // null background frequencies of each nuclotide bases
+	Vector4f bgFreq; // null background frequencies of each nuclotide bases
 	float transGG; // null transition distribution of G->G and G->F
 	//static const float kTerminal = 0.05f;
 };

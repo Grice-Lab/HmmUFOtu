@@ -28,8 +28,8 @@ public:
 	 */
 	Matrix4d Pr(double t, double r = 1.0) const;
 
-	/** virtual method to initiate rate parameters R from the free parameters */
-	virtual void initParam();
+	/** prepare rate parameters R */
+	virtual void updateParam(const Matrix4d& freq);
 
 private:
 	static const string name;
