@@ -30,8 +30,12 @@ double MSA::identityAt(unsigned j) const {
 	return max(resCount[j], abc->getSize()) / static_cast<double>(numSeq);
 }
 
-double MSA::percentGapAt(unsigned j) const {
+double MSA::gapFrac(unsigned j) const {
 	return gapCount[j] / static_cast<double>(numSeq);
+}
+
+double MSA::symFrac(unsigned j) const {
+	return sum(resCount[j], abc->getSize()) / static_cast<double>(numSeq);
 }
 
 MSA& MSA::prune() {
@@ -141,6 +145,7 @@ bool MSA::save(ostream& f) {
 	f.write((const char*) &totalNumGap, sizeof(unsigned long));
 	f.write((const char*) &nCS, sizeof(string::size_type));
 	f.write(CS.c_str(), nCS + 1); /* write the null terminal */
+	f.write((const char*) &isPruned, sizeof(bool));
 //	cerr << "CS written" << endl;
 	/* write concatMSA */
 	f.write(concatMSA.c_str(), concatMSA.length() + 1);
@@ -173,6 +178,8 @@ MSA* MSA::load(istream& f) {
 	f.read(buf, nCS + 1);
 	msa->CS.assign(buf, nCS); /* read the null terminal */
 	delete[] buf;
+	f.read((char*) &msa->isPruned, sizeof(bool));
+
 	/* read concatMSA */
 	buf = new char[msa->numSeq * msa->csLen + 1];
 	f.read(buf, msa->numSeq * msa->csLen + 1);

@@ -90,12 +90,12 @@ public:
 	char residualAt(unsigned i, unsigned j) const;
 
 	/**
-	 * Get the decoded residual at given seq and CS pos
+	 * Get the encoded residual at given seq and CS pos
 	 * @param i  seq position
 	 * @param j  CS position
-	 * @return  decoded value between 0..alphabetSize - 1 at this pos
+	 * @return  encoded value between 0..alphabetSize - 1 at this pos
 	 */
-	int8_t decodeAt(unsigned i, unsigned j) const;
+	int8_t encodeAt(unsigned i, unsigned j) const;
 
 	/**
 	 * Test whether a given residual is a gap
@@ -136,11 +136,18 @@ public:
 	double identityAt(unsigned j) const;
 
 	/**
-	 * Get the percent of gaps of at given pos
-	 * @param j  CS posotion
-	 * @return  frection of gaps at this pos
+	 * Get the fraction of gaps of at given pos
+	 * @param j  CS position
+	 * @return  fraction of gaps at this pos
 	 */
-	double percentGapAt(unsigned j) const;
+	double gapFrac(unsigned j) const;
+
+	/**
+	 * Get the fraction of symbols of at given pos
+	 * @param j  CS position
+	 * @return  fraction of gaps at this pos
+	 */
+	double symFrac(unsigned j) const;
 
 	/**
 	 * Update the count matrices of this object
@@ -243,8 +250,8 @@ inline char MSA::residualAt(unsigned i, unsigned j) const {
 	return concatMSA[i * csLen + j];
 }
 
-inline int8_t MSA::decodeAt(unsigned i, unsigned j) const {
-	return abc->decode(residualAt(i, j));
+inline int8_t MSA::encodeAt(unsigned i, unsigned j) const {
+	return abc->encode(concatMSA[i * csLen + j]);
 }
 
 inline string MSA::seqAt(unsigned i) const {

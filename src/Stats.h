@@ -143,6 +143,14 @@ inline int bpe(int n) {
 	return shift;
 }
 
+template <typename T>
+T sum(const T* arr, size_t n) {
+	T sum = 0;
+	for(const T* ptr = arr; ptr != arr + n; ++ptr)
+		sum += *ptr;
+	return sum;
+}
+
 } /* namespace EGriceLab */
 
 #endif /* STATS_H_ */
