@@ -1,13 +1,14 @@
-SUBDIRS = libdivsufsort  libcds
+SUBDIRS = libdivsufsort  libcds  math
 
 AM_CXXFLAGS = -I$(top_srcdir)/src \
+-I$(top_srcdir)/src/math \
 -I$(top_srcdir)/src/libdivsufsort/include \
 -I$(top_srcdir)/src/libcds/include
 
 # Build a convenient library
 noinst_LIBRARIES = libHmmUFOtu.a
 libHmmUFOtu_a_SOURCES = \
-Stats.cpp \
+EGMath.a \
 DegenAlphabet.cpp \
 StringUtils.cpp \
 IUPACNucl.cpp \

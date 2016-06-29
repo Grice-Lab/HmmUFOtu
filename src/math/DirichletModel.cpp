@@ -9,6 +9,10 @@
 
 namespace EGriceLab {
 namespace Math {
+using namespace std;
+using namespace Eigen;
 
 } /* namespace Math */
 } /* namespace EGriceLab */
+
+

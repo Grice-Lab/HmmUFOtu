@@ -16,6 +16,9 @@
 #include <cmath>
 
 namespace EGriceLab {
+
+namespace Math {
+
 using std::map;
 using std::vector;
 
@@ -130,6 +133,40 @@ bool is_element(T x, vector<T> vec) {
 }
 
 /**
+ * A template method to count how many times a value x is in a given array
+ * The mapped_type of the map must support comparison (operator=)
+ * @param x  value to be checked
+ * @param array  array to be checked
+ * @param n  array size
+ * @return number of times x is in array
+ */
+template <typename T>
+size_t count_element(T x, const T* arr, size_t n) {
+	size_t count = 0;
+	for(const T* ptr = arr; ptr != arr + n; ++ptr)
+		if(*ptr == x)
+			count++;
+	return count;
+}
+
+/**
+ * A template method to count how many times a value x is in not a given array
+ * The mapped_type of the map must support comparison (operator!=)
+ * @param x  value to be checked
+ * @param array  array to be checked
+ * @param n  array size
+ * @return number of times x is not in array
+ */
+template <typename T>
+size_t count_not_element(T x, const T* arr, size_t n) {
+	size_t count = 0;
+	for(const T* ptr = arr; ptr != arr + n; ++ptr)
+		if(*ptr != x)
+			count++;
+	return count;
+}
+
+/**
  * calculate bit-per-element for an given alphabet
  * @param n  maximum number to encode
  * @return bits required to encode this numbers upto this value, or -1 if size is zero or negative
@@ -143,6 +180,13 @@ inline int bpe(int n) {
 	return shift;
 }
 
+/**
+ * A template method to calculate the sum of an array
+ * The mapped_type of the map must support operator +=
+ * @param arr  array
+ * @param n  array size
+ * @return the sum of the array
+ */
 template <typename T>
 T sum(const T* arr, size_t n) {
 	T sum = 0;
@@ -150,6 +194,32 @@ T sum(const T* arr, size_t n) {
 		sum += *ptr;
 	return sum;
 }
+
+/**
+ * A template method to calculate the weighted sum of an array
+ * The mapped_type of the map must support operator +=
+ * @param arr  array
+ * @param w  weight
+ * @param n  array size
+ * @return the sum of the array
+ */
+template <typename T>
+double sum(const T* arr, const double* w, size_t n) {
+	double sum = 0;
+	for(size_t i = 0; i != n; ++i)
+		sum += arr[i] * w[i];
+	return sum;
+}
+
+inline void normalize(double* arr, size_t n, double C = 1.0) {
+	if(n == 0)
+		return;
+	double s = sum(arr, n);
+	for(double* ptr = arr; ptr != arr + n; ++ptr)
+		*ptr /= s * C;
+}
+
+} /* namespace Math */
 
 } /* namespace EGriceLab */
 

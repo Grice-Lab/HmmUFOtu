@@ -21,15 +21,22 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
+	cerr << "File opened" << endl;
 	MSA* msa = MSA::load(in);
 	if(!in.good()) {
 		cerr << "Unable to load MSA database" << endl;
 		return -1;
 	}
+	else {
+		cerr << "MSA database loaded" << endl;
+	}
 
 	if(!msa->save(out)) {
 		cerr << "Unable to save MSA database" << endl;
 		return -1;
+	}
+	else {
+		cerr << "MSA database saved" << endl;
 	}
 
 	return 0;

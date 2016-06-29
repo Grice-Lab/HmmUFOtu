@@ -64,5 +64,13 @@ bool endsWith(const string& str, const string& suffix);
  */
 bool endsWith(const string& str, const string& prefix);
 
+/**
+ * Get basename of a path/filename, trim all leading path and optionally tailing suffix, if any
+ * @param @path  pathname
+ * @param @suffix  suffix of filename
+ * @return a new string with directory path and suffix trimmed
+ */
+string basename(string path, string suffix = "");
+
 } /* namespace EGriceLab */
 #endif /* STRINGUTILS_H_ */

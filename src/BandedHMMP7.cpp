@@ -114,8 +114,8 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 			if (tag == "COMPO" || BandedHMMP7::isInteger(tag)) { // A compo line can be treated as position 0
 				assert((tag == "COMPO" && k == 0) || atoi(tag.c_str()) == k);
 				/* process current emission line */
-				Vector4f emitFreq;
-				for (Vector4f::Index i = 0; i < emitFreq.size(); ++i)
+				Vector4d emitFreq;
+				for (Vector4d::Index i = 0; i < emitFreq.size(); ++i)
 					iss >> emitFreq(i);
 				if (tag == "COMPO") { // COMPO line
 					emitFreq = (-emitFreq).array().exp();
@@ -153,7 +153,7 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 					}
 				}
 				/* process the following Ik emission line */
-				for (MatrixXf::Index i = 0; i < hmm.E_I_log.rows(); ++i)
+				for (MatrixXd::Index i = 0; i < hmm.E_I_log.rows(); ++i)
 					is >> hmm.E_I_log(i, k);
 				/* process the following state K transition line */
 					is >> tmp; hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Mk -> Mk+1
@@ -168,7 +168,7 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 				assert(k == 0);
 				string tmp;
 				/* process the BEGIN insert emission line */
-				for (MatrixXf::Index i = 0; i < hmm.E_I_log.rows(); ++i)
+				for (MatrixXd::Index i = 0; i < hmm.E_I_log.rows(); ++i)
 					is >> hmm.E_I_log(i, k);
 				/* process the B state K transition line */
 				is >> tmp; hmm.Tmat_log[k](BandedHMMP7::M, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Mk -> Mk+1
@@ -187,13 +187,14 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 	return is;
 }
 
-BandedHMMP7* BandedHMMP7::build(const MSA* msa, double symfrac, const string& name) {
+BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac, const string& name) {
 	if(msa->getMSALen() == 0)
 		throw invalid_argument("Empty MSA encountered");
 	if(!(symfrac > 0 && symfrac < 1))
 		throw invalid_argument("symfrac must between 0 and 1");
 	/* determine the bHMM size */
-	unsigned csLen = msa->getCSLen();
+	const unsigned L = msa->getCSLen();
+	const unsigned N = msa->getNumSeq();
 	unsigned k = 0;
 	int cs2ProfileIdx[kMaxProfile + 1]; // MAP index from consensus index -> profile index
 	int profile2CSIdx[kMaxCS + 1]; // MAP index from profile index -> consensus index
@@ -202,60 +203,98 @@ BandedHMMP7* BandedHMMP7::build(const MSA* msa, double symfrac, const string& na
 	for(int i = 1; i <= kMaxCS; ++i)
 		profile2CSIdx[i] = 0;
 
-	for(unsigned j = 0; j < csLen; ++j) {
-		if(msa->identityAt(j) >= symfrac)
+	for(unsigned j = 0; j < L; ++j) {
+		if(msa->symFrac(j, true) >= symfrac)
 			profile2CSIdx[++k] = j + 1; /* all index are 1-based */
 		cs2ProfileIdx[j+1] = k;
 	}
-	BandedHMMP7 hmm("name", k, msa->getAbc()); /* construct an empty hmm */
+	const int K = k;
+	const int csStart = profile2CSIdx[1];
+	const int csEnd = profile2CSIdx[K];
+
+	BandedHMMP7 hmm(msa->getName(), K, msa->getAbc()); /* construct an empty hmm */
+	/* reset transition and emisison matrices */
+	hmm.reset_transition_params();
+	hmm.reset_emission_params();
 	/* copy the index */
 	std::copy(cs2ProfileIdx, cs2ProfileIdx + kMaxProfile, hmm.cs2ProfileIdx);
 	std::copy(profile2CSIdx, profile2CSIdx + kMaxCS, hmm.profile2CSIdx);
-	VectorXf bgEmitFreq(hmm.getNuclAbc()->getSize()); // overall emission freq
+
+	vector<unsigned> seqStart(N + 1, 0); // seq start
+	vector<unsigned> seqEnd(N + 1, 0); // seq end
+
 	/* train the hmm model, all index are 1-based */
-	for(unsigned j = 1; j <= csLen; ++j) {
-		unsigned k = hmm.cs2ProfileIdx[j];
-		bool isPos = hmm.cs2ProfileIdx[j] != hmm.cs2ProfileIdx[j - 1];
-		bool isPosN = j < csLen ? hmm.cs2ProfileIdx[j+1] != hmm.cs2ProfileIdx[j] : false;
-		for(unsigned i = 1; i <= msa->getNumSeq(); ++i) {
-			int8_t b = msa->decodeAt(i - 1, j - 1);
-			p7_state s = isPos & b >= 0 ? M : isPos & b < 0 ? D : !isPos & b >= 0 ? I : E;
+	for(unsigned j = 1; j <= L; ++j) {
+		unsigned k = cs2ProfileIdx[j];
+		for(unsigned i = 1; i <= N; ++i) {
+			int8_t b = msa->encodeAt(i - 1, j - 1);
+			p7_state sm = determineMatchingState(cs2ProfileIdx, j, b);
+			if(sm == P)
+				continue; // ignore this base
+//			cerr << "j:" << j << " k:" << k << " i:" << i << " sm:" << sm << endl;
+			if(seqStart[i] == 0 && b >= 0)
+				seqStart[i] = j;
+			if(b >= 0)
+				seqEnd[i] = j;
 			/* update emission frequencies */
-			if(s == M) {
-				/* update emission freqs */
+			if(sm == M) {
+//				cerr << "i:" << i << " j:" << j << " b:" << (int) b << " db:" << hmm.abc->decode(b) << " k:" << k << endl;
 				hmm.E_M(b, 0)++; /* M0 as the COMPO freq */
 				hmm.E_M(b, k)++;
 			}
-			else if(s == I) { /* an insertion emission */
-				hmm.E_I(b, k)++; /* k can be 0 */
+			else if(sm == I) {
+//				cerr << "i:" << i << " j:" << j << " b:" << (int) b << " db:" << hmm.abc->decode(b) << " k:" << k << endl;
+				hmm.E_I(b, k)++;
 			}
-			else { } // ignored
+			else { } // no emission
+
 			/* update transition frequencies */
-			if(j < csLen) { // transition doesn't exist for last residuals
-				int8_t bN = msa->decodeAt(i - 1, j);
-				p7_state sN = isPosN & bN >= 0 ? M : isPosN & bN < 0 ? D : !isPos & b >= 0 ? I : E;
-				hmm.Tmat[k](s, sN)++;
+			unsigned jN;
+			p7_state smN;
+			/* find the next non P loc on this seq */
+			for(jN = j + 1; jN <= L; ++jN) {
+				int8_t bN = msa->encodeAt(i - 1, jN - 1);
+				p7_state smN = determineMatchingState(cs2ProfileIdx, jN, bN);
+				if(smN != P)
+					break;
 			}
-		}
+			if(!(jN <= L && smN != P)) // no jN found
+				break;
+			unsigned kN = cs2ProfileIdx[jN];
+			if(!(sm == I && smN == D || sm == D && smN == I)) // no I->D or D->I allowed
+				hmm.Tmat[k](sm, smN)++;
+		} // end each seq
+	} // end each loc
+	/* update B->M1/I0/D1 and MK/IK/DK->E frequencies */
+	for(unsigned i = 1; i <= N; ++i) {
+		unsigned start = seqStart[i];
+		unsigned end = seqEnd[i];
+		if(start > csStart)
+			start = csStart;
+		if(end < csEnd)
+			end = csEnd;
+		int8_t bStart = msa->encodeAt(i - 1, start - 1);
+		p7_state smStart = determineMatchingState(cs2ProfileIdx, start, bStart);
+		hmm.Tmat[0](M, smStart)++;
+		int8_t bEnd = msa->encodeAt(i - 1, end - 1);
+		p7_state smEnd = determineMatchingState(cs2ProfileIdx, end, bEnd);
+		hmm.Tmat[K](smEnd, M)++;
 	}
-	/* normalize emission matrices */
-	for(Matrix4f::Index k = 0; k <= hmm.K; ++k) {
-		hmm.E_M.col(k) /= hmm.E_M.col(k).sum();
-		hmm.E_I.col(k) /= hmm.E_I.col(k).sum();
-	}
-	/* rowwise normalization of transition matrices */
-	for(int k = 1; k <= hmm.K; ++k) {
-		for(Matrix3f::Index i = 0; i < BandedHMMP7::kNM; ++i)
-			hmm.Tmat[k].row(i) /= hmm.Tmat[i].row(i).sum();
-	}
+
+	cerr << "E_I:" << endl << hmm.E_I << endl;
+	/* normalize matrices */
+	hmm.normalize_transition_params();
+	hmm.normalize_emission_params();
 	/* set bgFreq */
 	hmm.hmmBg.setBgFreq(hmm.E_M.col(0));
 	hmm.setSpEmissionFreq(hmm.E_M.col(0));
 	/* set log matrices */
 	hmm.E_M_log = hmm.E_M.array().log();
 	hmm.E_I_log = hmm.E_I.array().log();
-	for(int k = 1; k <= hmm.K; ++k)
+	for(int k = 0; k <= hmm.K; ++k)
 		hmm.Tmat_log[k] = hmm.Tmat[k].array().log();
+
+	return hmm;
 }
 
 ostream& operator<<(ostream& os, const BandedHMMP7& hmm) {
@@ -284,7 +323,7 @@ ostream& operator<<(ostream& os, const BandedHMMP7& hmm) {
 			os << endl;
 		}
 		/* write insert emission line */
-		for(MatrixXf::Index i = 0; i != hmm.E_I_log.rows(); ++i)
+		for(MatrixXd::Index i = 0; i != hmm.E_I_log.rows(); ++i)
 			hmm.E_I_log(i, k) != BandedHMMP7::infV ? os << "\t\t" << -hmm.E_I_log(i, k) : os << "\t\t*";
 		os << endl;
 		/* write state transition line */
@@ -391,9 +430,9 @@ void EGriceLab::BandedHMMP7::setSequenceMode(enum align_mode mode) {
 	T_SP_log = T_SP.array().log(); // Eigen3 handle array to matrix assignment automatically
 }
 
-void EGriceLab::BandedHMMP7::setSpEmissionFreq(const Vector4f& freq) {
+void EGriceLab::BandedHMMP7::setSpEmissionFreq(const Vector4d& freq) {
 	E_SP.col(N) = E_SP.col(C) = freq / freq.sum(); // re-do normalization, even if already done
-	E_SP.col(B) = E_SP.col(E) = Vector4f::Zero(); // no emission for state B and E
+	E_SP.col(B) = E_SP.col(E) = Vector4d::Zero(); // no emission for state B and E
 	E_SP_log = E_SP.array().log();
 }
 
@@ -402,11 +441,10 @@ void EGriceLab::BandedHMMP7::init_transition_params() {
 		return;
 	/*
 	 * state 0 serves as the B state
-	 * state K + 1 serve as E state
 	 */
 	/* initiate transition matrices */
-	Tmat = vector<Matrix3f>(K + 1);
-	Tmat_log = vector<Matrix3f>(K + 1);
+	Tmat = vector<Matrix3d>(K + 1);
+	Tmat_log = vector<Matrix3d>(K + 1);
 	transInit = true;
 }
 
@@ -414,19 +452,80 @@ void EGriceLab::BandedHMMP7::init_emission_params() {
 	if (emisInit) // already initialized
 		return;
 	/* state 0 serves as B state */
-	E_M = E_M_log = Matrix4Xf(4, K + 1);
-	E_I = E_I_log = Matrix4Xf(4, K + 1);
+	E_M = E_M_log = Matrix4Xd(4, K + 1);
+	E_I = E_I_log = Matrix4Xd(4, K + 1);
 	emisInit = true;
 }
 
 void EGriceLab::BandedHMMP7::init_special_params() {
 	if (spInit) // already initialized
 		return;
-	entryPr = entryPr_log = VectorXf(K + 1);
-	exitPr = exitPr_log = VectorXf(K + 1);
-	E_SP = E_SP_log = Matrix4Xf(4, kNS);
-	T_SP = T_SP_log = MatrixXf(kNS, kNS);
+	entryPr = entryPr_log = VectorXd(K + 1);
+	exitPr = exitPr_log = VectorXd(K + 1);
+	E_SP = E_SP_log = Matrix4Xd(4, kNS);
+	T_SP = T_SP_log = MatrixXd(kNS, kNS);
 	spInit = true;
+}
+
+void EGriceLab::BandedHMMP7::reset_transition_params() {
+	/*
+	 * state 0 serves as the B state
+	 */
+	for(int k = 0; k <= K; ++k) {
+		Tmat[k].setZero();
+		Tmat_log[k].fill(BandedHMMP7::infV);
+	}
+}
+
+void EGriceLab::BandedHMMP7::reset_emission_params() {
+	/* state 0 serves as B state */
+	E_M.setZero();
+	E_I.setZero();
+	E_M_log.fill(BandedHMMP7::infV);
+	E_I_log.fill(BandedHMMP7::infV);
+}
+
+void EGriceLab::BandedHMMP7::normalize_transition_params() {
+	/*
+	 * state 0 serves as the B state
+	 */
+	for(int k = 0; k <= K; ++k) {
+		for(int i = 0; i < BandedHMMP7::kNM; ++i) {
+			double C = Tmat[k].row(i).sum();
+			double pseudoC = BandedHMMP7::pseudoCount(C);
+			Tmat[k].row(i).array() += pseudoC / Tmat[k].cols();
+			Tmat[k].row(i) /= C + pseudoC;
+		}
+		Tmat_log[k] = Tmat[k].array().log();
+	}
+
+}
+
+void EGriceLab::BandedHMMP7::normalize_emission_params() {
+	/* state 0 serves as B state */
+	for(int k = 0; k <= K; ++k) {
+		double emC = E_M.col(k).sum();
+		double eiC = E_I.col(k).sum();
+		if(emC > 0) {
+			double emPseudo = BandedHMMP7::pseudoCount(emC);
+			E_M.col(k).array() += emPseudo / E_M.rows();
+			E_M.col(k) /= emC + emPseudo;
+		}
+		else {
+			E_M.col(k).fill(1.0 / E_M.rows()); /* Nothing observed, use constants */
+		}
+
+		if(eiC > 0) {
+			double eiPseudo = BandedHMMP7::pseudoCount(eiC);
+			E_I.col(k).array() += eiPseudo / E_I.rows();
+			E_I.col(k) /= eiC + eiPseudo;
+		}
+		else {
+			E_I.col(k).fill(1.0 / E_I.rows()); /* Nothing observed, use constants */
+		}
+	}
+	E_M_log = E_M.array().log();
+	E_I_log = E_I.array().log();
 }
 
 void EGriceLab::BandedHMMP7::init_limits() {
@@ -496,7 +595,7 @@ EGriceLab::BandedHMMP7::ViterbiScores& EGriceLab::BandedHMMP7::resetViterbiScore
 	vs.seq = &seq; // swap the pointer value but leave the pointing object untouched
 	const int L = vs.seq->length();
 	/* Use -Inf as initial values for Viterbi matrices */
-/*	vs.DP_M = vs.DP_I = vs.DP_D = vs.S = MatrixXf::Constant(L + 1, K + 1,
+/*	vs.DP_M = vs.DP_I = vs.DP_D = vs.S = MatrixXd::Constant(L + 1, K + 1,
 			-numeric_limits<float>::infinity());*/
 	/* set dimension */
 	vs.DP_M.resize(L + 1, K + 1);
@@ -514,10 +613,10 @@ EGriceLab::BandedHMMP7::ViterbiScores& EGriceLab::BandedHMMP7::resetViterbiScore
 		ViterbiScores& vs) const {
 	int L = vs.ds.length();
 	 Use 0 as initial values for forward-backward matricies
-	vs.F_M = vs.F_I = vs.F_D = MatrixXf::Zero(L + 1, K + 1);
-	vs.B_M = vs.B_I = vs.B_D = MatrixXf::Zero(L + 1, K + 1);
+	vs.F_M = vs.F_I = vs.F_D = MatrixXd::Zero(L + 1, K + 1);
+	vs.B_M = vs.B_I = vs.B_D = MatrixXd::Zero(L + 1, K + 1);
 	 Use 1 as default scaling factor value
-	vs.SV_M = vs.SV_I = vs.SV_D = VectorXf::Constant(L + 1, 1);
+	vs.SV_M = vs.SV_I = vs.SV_D = VectorXd::Constant(L + 1, 1);
 }*/
 
 /*void EGriceLab::BandedHMMP7::resetTraceScores(ViterbiScores& vs) const {
@@ -561,7 +660,7 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 	assert(vs.seq != NULL);
 	assert(wingRetracted); // make sure wing is retracted
 	const int L = vs.seq->length();
-/*	vs.DP_M = vs.DP_I = vs.DP_D = MatrixXf::Constant(L + 1, K + 1, -numeric_limits<float>::infinity());*/
+/*	vs.DP_M = vs.DP_I = vs.DP_D = MatrixXd::Constant(L + 1, K + 1, -numeric_limits<float>::infinity());*/
 	/* vs.DP_M(0, 0) = 0; */
 	/* Initialize the M(,0), the B state */
 	for (int i = 0; i <= L; ++i)
@@ -787,7 +886,7 @@ void EGriceLab::BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
 float EGriceLab::BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath& vpath) const {
 	assert(vs.seq != NULL);
 	assert(vs.S.rows() == vpath.L + 1 && vs.S.cols() == K + 2);
-	MatrixXf::Index maxRow, maxCol;
+	MatrixXd::Index maxRow, maxCol;
 	float maxScore = vs.S.maxCoeff(&maxRow, &maxCol);
 	if(maxScore == infV)
 		return maxScore; // max score not found, do nothing
@@ -907,10 +1006,10 @@ void EGriceLab::BandedHMMP7::wingRetract() {
 		return;
 	/* retract entering probabilities */
 	/* increase the B->Mj probability by adding the chain B->D1->D2->...->Dj-1->Mj */
-	for(MatrixXf::Index j = 2; j <= K; ++j) {
+	for(MatrixXd::Index j = 2; j <= K; ++j) {
 		float logP = 0; // additional retract probability in log-scale
 		logP += Tmat_log[0](M, D); // B->D1 (M0->D1)
-		for(MatrixXf::Index i = 1; i < j - 1; ++i)
+		for(MatrixXd::Index i = 1; i < j - 1; ++i)
 			logP += Tmat_log[i](D, D); // Di->Di+1
 		logP += Tmat_log[j-1](D, M); // Dj-1->Mj
 		assert(logP < 0);
@@ -920,10 +1019,10 @@ void EGriceLab::BandedHMMP7::wingRetract() {
 	}
 	/* retract exiting probabilities */
 	/* increase the Mj->E probability by adding the chain Mj->Dj+1->Dj+2->...->DK->E */
-	for(MatrixXf::Index i = 1; i <= K - 1; ++i) {
+	for(MatrixXd::Index i = 1; i <= K - 1; ++i) {
 		float logP = 0; // additional retract probability in log-scale
 		logP += Tmat_log[i](M, D); // Mj -> Di+1
-		for(MatrixXf::Index j = i + 1; j < K; ++j)
+		for(MatrixXd::Index j = i + 1; j < K; ++j)
 			logP += Tmat_log[j](D, D); // Dj->Dj+1
 		logP += Tmat_log[K](D, M); // DK -> E (DK->MK+1)
 		assert(logP < 0);

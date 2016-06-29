@@ -27,6 +27,7 @@ int main(int argc, char *argv[]) {
 		cerr << "Unable to load MSA database" << endl;
 		return -1;
 	}
+	cerr << msa->getNumSeq() << " x " << msa->getCSLen() << endl;
 
 	BandedHMMP7 hmm = BandedHMMP7::build(msa, 0.5);
 

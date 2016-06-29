@@ -14,6 +14,7 @@
 #include <eigen3/Eigen/Dense>
 #include <cmath>
 #include <cstdio>
+#include <climits>
 #include <stdint.h> /* for fixed size integers */
 #include <iostream>
 #include "HmmUFOtuConst.h"
@@ -29,9 +30,9 @@ using std::ostream;
 using std::vector;
 using std::map;
 using std::deque;
-using Eigen::Matrix3f;
-using Eigen::Matrix4Xf;
-using Eigen::Matrix4f;
+using Eigen::Matrix3d;
+using Eigen::Matrix4Xd;
+using Eigen::Matrix4d;
 
 /**
  * Banded plan7 HMM for 16S rRNA profile alignment
@@ -61,7 +62,7 @@ public:
 	 * B: begin state
 	 * E: end state
 	 */
-	enum p7_state { M, I, D, N, C, B, E };
+	enum p7_state { M, I, D, N, C, B, E, P /* non-exist phantom state */ };
 
 	enum align_mode {
 		GLOBAL,
@@ -84,29 +85,29 @@ public:
 
 		const PrimarySeq* seq; // a pointer to a const DigitalSeq
 		/* Viterbi log-odd scoring matrices */
-		MatrixXf DP_M;  /* the log-odds scores of the best path matching the subsequence X1..i
+		MatrixXd DP_M;  /* the log-odds scores of the best path matching the subsequence X1..i
 							to the profile submodel up to the column j, ending with xi being emitted by Mj*/
-		MatrixXf DP_I;  /* the log-odds scores of the best path matching the subsequence Xi..i
+		MatrixXd DP_I;  /* the log-odds scores of the best path matching the subsequence Xi..i
 							to the profile submodel up to the ending in xi being emitted by Ij */
-		MatrixXf DP_D;  /* the log-odds score of the best path ending in Dj, and xi being the last character emitted before Dj).*/
+		MatrixXd DP_D;  /* the log-odds score of the best path ending in Dj, and xi being the last character emitted before Dj).*/
 
-		MatrixXf S;     /*  the Dynamic-Programming scoring matrix storing the whole ViterbiScores (log-odds)
+		MatrixXd S;     /*  the Dynamic-Programming scoring matrix storing the whole ViterbiScores (log-odds)
 		of all combinations of i in 0..L and j in 0..K */
 
 		/* Forward algorithm probability matrices */
-		/*MatrixXf F_M;*/  /* forward probability of all alignments up to xi and ends in Mj */
-		/*MatrixXf F_I;*/  /* forward probability of all alignments up to xi and ends in Ij */
-		/*MatrixXf F_D;*/ /* forward probability of all alignments up to xi and ends in Dj */
+		/*MatrixXd F_M;*/  /* forward probability of all alignments up to xi and ends in Mj */
+		/*MatrixXd F_I;*/  /* forward probability of all alignments up to xi and ends in Ij */
+		/*MatrixXd F_D;*/ /* forward probability of all alignments up to xi and ends in Dj */
 
 		/* Backward algorithm probability matrices*/
-		/*MatrixXf B_M;*/ /* backward probability of all alignments up to xi and ends in Mj */
-		/*MatrixXf B_I;*/ /* backward probability of all alignments up to xi and ends in Ij */
-		/*MatrixXf B_D;*/ /* backward probability of all alignments up to xi and ends in Dj */
+		/*MatrixXd B_M;*/ /* backward probability of all alignments up to xi and ends in Mj */
+		/*MatrixXd B_I;*/ /* backward probability of all alignments up to xi and ends in Ij */
+		/*MatrixXd B_D;*/ /* backward probability of all alignments up to xi and ends in Dj */
 
 		/* Forward-backward scaling vectors to prevent numeric underflow */
-/*		VectorXf SV_M;
-		VectorXf SV_I;
-		VectorXf SV_D;*/
+/*		VectorXd SV_M;
+		VectorXd SV_I;
+		VectorXd SV_D;*/
 
 	};
 
@@ -211,7 +212,7 @@ public:
 	/**
 	 * Set the special state N and C emission frequencies. No emission for state B and E
 	 */
-	void setSpEmissionFreq(const Vector4f& freq);
+	void setSpEmissionFreq(const Vector4d& freq);
 
 	/**
 	 * Get the profile location given a index of the original multiple alignment
@@ -328,7 +329,7 @@ public:
 	string buildGlobalAlignSeq(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
 
 	/* static member methods */
-	static BandedHMMP7* build(const MSA* msa, double symfrac, const string& name = "unnamed");
+	static BandedHMMP7 build(const MSA* msa, double symfrac, const string& name = "unnamed");
 
 private:
 	string version; // version of the program generated this hmm file, default is progName-progVersion
@@ -345,21 +346,21 @@ private:
 	/* Transition probability matrices */
 	/*
 	 * Note that index 0 indicating B state,
-	 * and index 1 indicating E state
+	 * and index K indicating E state
 	 */
-	vector<Matrix3f> Tmat;
+	vector<Matrix3d> Tmat;
 
 	/* Emission probability matrices */
-	Matrix4Xf E_M; /* emission probabilities from Mk node */
-	Matrix4Xf E_I; /* emission probabilities from Ik node */
+	Matrix4Xd E_M; /* emission probabilities from Mk node */
+	Matrix4Xd E_I; /* emission probabilities from Ik node */
 	/* No emission from D state */
 
-	Matrix4Xf E_SP; /* Emission probabilities from special_states sp node */
-	MatrixXf T_SP; /* log transition probabilities between special states N, B, E, and C */
+	Matrix4Xd E_SP; /* Emission probabilities from special_states sp node */
+	MatrixXd T_SP; /* log transition probabilities between special states N, B, E, and C */
 
 	/* Entry and exiting probabilities */
-	VectorXf entryPr;
-	VectorXf exitPr;
+	VectorXd entryPr;
+	VectorXd exitPr;
 	/* By tuning T_SP, entryPr and exitPr probabilities,
 	 * we can control the alignment type regarding to the both the profile and sequence.
 	 * For 16S rRNA profile-HMM, alignment to profile is always apparently local, as:
@@ -372,23 +373,23 @@ private:
 	 */
 
 	/* Log transition probabilities, and log emission probabilities, stored as a duplicate copy for speed */
-	vector<Matrix3f> Tmat_log;
+	vector<Matrix3d> Tmat_log;
 
-	Matrix4Xf E_M_log;
-	Matrix4Xf E_I_log;
+	Matrix4Xd E_M_log;
+	Matrix4Xd E_I_log;
 
-	Matrix4Xf E_SP_log;
-	MatrixXf T_SP_log;
+	Matrix4Xd E_SP_log;
+	MatrixXd T_SP_log;
 
-	VectorXf entryPr_log;
-	VectorXf exitPr_log;
+	VectorXd entryPr_log;
+	VectorXd exitPr_log;
 
 	/* Special wing retracted T_MM transition probabilities,
 	 * by adding the B->D1->...->Dk-1 to the B->Mk probability
 	 * and adding the Dk+1->Dk+2->...->E to the Mk->E probabitity
 	 */
-	//MatrixXf T_MM_retract;
-	//MatrixXf T_MM_retract_log;
+	//MatrixXd T_MM_retract;
+	//MatrixXd T_MM_retract_log;
 
 	/* Banded HMM limits */
 	VectorXi gapBeforeLimit; /* Maximum allowed insertions before given position 1..K, with 0 as dummy position */
@@ -420,6 +421,29 @@ private:
 	void init_special_params();
 
 	/**
+	 * Reset profile transition probability matrices
+	 * use 0 for normal matrices and -inf for log matrices
+	 */
+	void reset_transition_params();
+
+	/**
+	 * Reset profile emission probability matrices
+	 * use 0 for normal matrices and -inf for log matrices
+	 */
+	void reset_emission_params();
+
+	/**
+	 * Normalize profile transition probability matrices
+	 */
+	void normalize_transition_params();
+
+	/**
+	 * Normalize profile emission probability matrices
+	 * use 0 for normal matrices and -inf for log matrices
+	 */
+	void normalize_emission_params();
+
+	/**
 	 * Initialize the banded HMM limits as well as their elements
 	 */
 	void init_limits();
@@ -428,6 +452,7 @@ private:
 	 * Initialize the profile loc index
 	 */
 	void init_index();
+
 
 	/**
 	 * set the profile alignment to local mode by setting entry and exit probabilities
@@ -493,6 +518,21 @@ private:
 	static int diagnalDist(int i, int j, int from, int start) {
 		return (i - from) - (j - start);
 	}
+
+	/**
+	 * Determine the p7 matching state (M, I, D) on a consensus sequence
+	 */
+	static p7_state determineMatchingState(const int* cs2ProfileIdx, int loc, int8_t base) {
+		bool isPos = cs2ProfileIdx[loc] != cs2ProfileIdx[loc - 1];
+		return isPos && base >= 0 ? M : isPos && base < 0 ? D : !isPos && base >= 0 ? I : P;
+	}
+
+/*	*
+	 * Determine the p7 special state (M, I, D) on a consensus sequence
+
+	static p7_state determineSpecialState(int csStart, int csEnd, int loc) {
+		return loc < csStart ? B : loc > csEnd ? E : M;
+	}*/
 
 	/* trace back methods to tell which state the current max is coming from */
 	/**
@@ -569,6 +609,15 @@ private:
 	/* convert an hmm coded string to value */
 	static float hmmValueOf(const string& s);
 
+//public:
+	/*
+	 * Get pseudo-count of a given value
+	 * current implementation use sqrt of the observed count
+	 */
+	static double pseudoCount(double x) {
+		return std::sqrt(x);
+	}
+
 	/* non-member operators */
 	/**
 	 * utility function for output an alignment path to a human readable string
@@ -601,8 +650,10 @@ inline char BandedHMMP7::decode(p7_state state) {
 		return 'B';
 	case E:
 		return 'E';
+	case P:
+		return P;
 	default:
-		return '\0';
+		return CHAR_MAX;
 	}
 }
 
@@ -622,6 +673,8 @@ inline BandedHMMP7::p7_state BandedHMMP7::encode(char c) {
 		return B;
 	case 'E':
 		return E;
+	case 'P':
+		return P;
 	default:
 		throw std::invalid_argument("Invalid state encountered");;
 	}

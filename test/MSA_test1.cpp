@@ -6,7 +6,7 @@ using namespace std;
 using namespace EGriceLab;
 int main(int argc, char *argv[]) {
 	if(argc != 3) {
-		cerr << "Usage:  " << argv[0] << " DB-INFILE DB-OUTFILE" << endl;
+		cerr << "Usage:  " << argv[0] << " DB-INFILE OUTFILE" << endl;
 		return -1;
 	}
 
@@ -27,10 +27,10 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	if(!msa->save(out)) {
-		cerr << "Unable to save MSA database" << endl;
-		return -1;
-	}
+	out << "pos\tidentity\tsym_frac\tgap_frac" << endl;
+	for(unsigned j = 0; j != msa->getCSLen(); ++j)
+		out << j << "\t" << msa->identityAt(j) << "\t" <<
+			msa->symFrac(j) << "\t" << msa->gapFrac(j) << endl;
 
 	return 0;
 }

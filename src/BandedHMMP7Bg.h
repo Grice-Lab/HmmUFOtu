@@ -49,14 +49,14 @@ public:
 	/*
 	 * return the background emission vector at G state
 	 */
-	Vector4f getBgEmitPr() const {
+	Vector4d getBgEmitPr() const {
 		return bgFreq;
 	}
 
 	/*
 	 * return the background emission vector at G state in log scale
 	 */
-	Vector4f getBgEmitLogPr() const {
+	Vector4d getBgEmitLogPr() const {
 		return bgFreq.array().log();
 	}
 
@@ -75,7 +75,7 @@ public:
 	 * set the background nucleotide frequencies using observed frequencies or count
 	 * @param freq  the observed frequencies or count of each nucleotide
 	 */
-	void setBgFreq(const Vector4f& q);
+	void setBgFreq(const Vector4d& q);
 
 private:
 	/* private member functions */
@@ -85,7 +85,7 @@ private:
 
 	int K; // profile size
 	const IUPACNucl* nuclAbc;
-	Vector4f bgFreq; // null background frequencies of each nuclotide bases
+	Vector4d bgFreq; // null background frequencies of each nuclotide bases
 	float transGG; // null transition distribution of G->G and G->F
 	//static const float kTerminal = 0.05f;
 };

@@ -74,38 +74,41 @@ int main(int argc, char *argv[]) {
 		int hmm_start = hmm.getProfileLoc(seq_start);
 		int hmm_end = hmm.getProfileLoc(seq_end);
 
-//		cerr << "id:" << id << " length:" << seq.length() << endl;
-//		cerr << "constructed the seq" << endl;
+		//cerr << "constructed the seq" << endl;
 		PrimarySeq seq(hmm.getNuclAbc(), id, seq_CS);
 		seq.removeGaps();
+		//cerr << "id:" << id << " length:" << seq.length() << endl;
+
 		hmm.resetViterbiScores(vscore, seq);
-		/*cerr << "constructed the ViterbiScore" << endl;*/
+		//cerr << "constructed the ViterbiScore" << endl;
 
 		hmm.resetViterbiAlignPath(vpath, seq.length());
-		//cerr << "vpath.start:" << vpath.start << " vpath.end:" << vpath.end << endl;
+//		cerr << "vpath.start:" << vpath.start << " vpath.end:" << vpath.end << endl;
 	/*cerr << "constructed the ViterbiAlignPath" << endl;*/
 
 		if(loc.start > 0 && loc.end > 0)
 			hmm.addKnownAlignPath(vpath, loc, seed_from, seed_to);
-		//cerr << "set the known path" << endl;
+//		cerr << "set the known path" << endl;
 
 		hmm.calcViterbiScores(vscore, vpath);
 		//hmm.calcViterbiScores(vscore);
-		//cerr << "Bhmm aligned" << endl;
+//		cerr << "Bhmm aligned" << endl;
+		//if(vscore.seq->getId() == "r18")
+			//cerr << vscore.DP_M << endl;
 
 		float maxScore = hmm.buildViterbiTrace(vscore, vpath);
 		if(maxScore == BandedHMMP7::infV) {
 			cerr << id << " no maxScore" << endl;
 			continue;
 		}
-		//cerr << "back traced" << endl;
+//		cerr << "back traced" << endl;
 
-/*		string align = hmm.buildGlobalAlignSeq(vscore, vpath);*/
+//		string align = hmm.buildGlobalAlignSeq(vscore, vpath);
 		// output
 		out << line << "\t" << seq_start << "\t" << seq_end << "\t" << hmm_start << "\t" << hmm_end << "\t" <<
 				vpath.alnStart << "\t" << vpath.alnEnd << "\t" <<
-				hmm.getCSLoc(vpath.alnStart) << "\t" << hmm.getCSLoc(vpath.alnEnd) << endl;
-				// "\t" << vpath.alnPath << endl;
+				hmm.getCSLoc(vpath.alnStart) << "\t" << hmm.getCSLoc(vpath.alnEnd) << //endl;
+				 "\t" << vpath.alnPath << endl;
 	}
 
 	in.close();

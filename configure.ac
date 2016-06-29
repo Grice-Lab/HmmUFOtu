@@ -22,6 +22,6 @@ AM_INIT_AUTOMAKE()
 AC_PROG_CXX
 AC_CONFIG_MACRO_DIR([m4])
 
-AC_CONFIG_FILES(Makefile src/Makefile test/Makefile)
+AC_CONFIG_FILES(Makefile src/Makefile src/math/Makefile test/Makefile)
 AC_OUTPUT
 

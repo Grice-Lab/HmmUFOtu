@@ -90,9 +90,11 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = dna_test1$(EXEEXT) nucl_test1$(EXEEXT) \
-	amino_test1$(EXEEXT) seqIO_test1$(EXEEXT) \
-	banded_align_known_seed_test1$(EXEEXT) MSAIO_test1$(EXEEXT) \
-	MSAIO_test2$(EXEEXT) FMIO_test1$(EXEEXT) FMIO_test2$(EXEEXT) \
+	amino_test1$(EXEEXT) bHMM_IO_test1$(EXEEXT) \
+	bHMM_train_test1$(EXEEXT) seqIO_test1$(EXEEXT) \
+	bHMM_IO_test1$(EXEEXT) banded_align_known_seed_test1$(EXEEXT) \
+	MSAIO_test1$(EXEEXT) MSAIO_test2$(EXEEXT) MSA_test1$(EXEEXT) \
+	FMIO_test1$(EXEEXT) FMIO_test2$(EXEEXT) \
 	banded_align_csfm_test1$(EXEEXT) \
 	banded_pair_csfm_test1$(EXEEXT)
 subdir = test
@@ -134,9 +136,18 @@ MSAIO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 am_MSAIO_test2_OBJECTS = MSAIO_test2.$(OBJEXT)
 MSAIO_test2_OBJECTS = $(am_MSAIO_test2_OBJECTS)
 MSAIO_test2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+am_MSA_test1_OBJECTS = MSA_test1.$(OBJEXT)
+MSA_test1_OBJECTS = $(am_MSA_test1_OBJECTS)
+MSA_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 am_amino_test1_OBJECTS = amino_test1.$(OBJEXT)
 amino_test1_OBJECTS = $(am_amino_test1_OBJECTS)
 amino_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+am_bHMM_IO_test1_OBJECTS = bHMM_IO_test1.$(OBJEXT)
+bHMM_IO_test1_OBJECTS = $(am_bHMM_IO_test1_OBJECTS)
+bHMM_IO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+am_bHMM_train_test1_OBJECTS = bHMM_train_test1.$(OBJEXT)
+bHMM_train_test1_OBJECTS = $(am_bHMM_train_test1_OBJECTS)
+bHMM_train_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 am_banded_align_csfm_test1_OBJECTS =  \
 	banded_align_csfm_test1.$(OBJEXT)
 banded_align_csfm_test1_OBJECTS =  \
@@ -209,13 +220,17 @@ am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(FMIO_test1_SOURCES) $(FMIO_test2_SOURCES) \
 	$(MSAIO_test1_SOURCES) $(MSAIO_test2_SOURCES) \
-	$(amino_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
+	$(MSA_test1_SOURCES) $(amino_test1_SOURCES) \
+	$(bHMM_IO_test1_SOURCES) $(bHMM_train_test1_SOURCES) \
+	$(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) \
 	$(banded_pair_csfm_test1_SOURCES) $(dna_test1_SOURCES) \
 	$(nucl_test1_SOURCES) $(seqIO_test1_SOURCES)
 DIST_SOURCES = $(FMIO_test1_SOURCES) $(FMIO_test2_SOURCES) \
 	$(MSAIO_test1_SOURCES) $(MSAIO_test2_SOURCES) \
-	$(amino_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
+	$(MSA_test1_SOURCES) $(amino_test1_SOURCES) \
+	$(bHMM_IO_test1_SOURCES) $(bHMM_train_test1_SOURCES) \
+	$(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) \
 	$(banded_pair_csfm_test1_SOURCES) $(dna_test1_SOURCES) \
 	$(nucl_test1_SOURCES) $(seqIO_test1_SOURCES)
@@ -381,12 +396,18 @@ amino_test1_SOURCES = amino_test1.cpp
 amino_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 seqIO_test1_SOURCES = seqIO_test1.cpp
 seqIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+bHMM_IO_test1_SOURCES = bHMM_IO_test1.cpp
+bHMM_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+bHMM_train_test1_SOURCES = bHMM_train_test1.cpp
+bHMM_train_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 banded_align_known_seed_test1_SOURCES = banded_align_known_seed_test1.cpp
 banded_align_known_seed_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 MSAIO_test1_SOURCES = MSAIO_test1.cpp
 MSAIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 MSAIO_test2_SOURCES = MSAIO_test2.cpp
 MSAIO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+MSA_test1_SOURCES = MSA_test1.cpp
+MSA_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 FMIO_test1_SOURCES = FMIO_test1.cpp
 FMIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
@@ -470,9 +491,21 @@ MSAIO_test2$(EXEEXT): $(MSAIO_test2_OBJECTS) $(MSAIO_test2_DEPENDENCIES) $(EXTRA
 	@rm -f MSAIO_test2$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(MSAIO_test2_OBJECTS) $(MSAIO_test2_LDADD) $(LIBS)
 
+MSA_test1$(EXEEXT): $(MSA_test1_OBJECTS) $(MSA_test1_DEPENDENCIES) $(EXTRA_MSA_test1_DEPENDENCIES) 
+	@rm -f MSA_test1$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(MSA_test1_OBJECTS) $(MSA_test1_LDADD) $(LIBS)
+
 amino_test1$(EXEEXT): $(amino_test1_OBJECTS) $(amino_test1_DEPENDENCIES) $(EXTRA_amino_test1_DEPENDENCIES) 
 	@rm -f amino_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(amino_test1_OBJECTS) $(amino_test1_LDADD) $(LIBS)
+
+bHMM_IO_test1$(EXEEXT): $(bHMM_IO_test1_OBJECTS) $(bHMM_IO_test1_DEPENDENCIES) $(EXTRA_bHMM_IO_test1_DEPENDENCIES) 
+	@rm -f bHMM_IO_test1$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(bHMM_IO_test1_OBJECTS) $(bHMM_IO_test1_LDADD) $(LIBS)
+
+bHMM_train_test1$(EXEEXT): $(bHMM_train_test1_OBJECTS) $(bHMM_train_test1_DEPENDENCIES) $(EXTRA_bHMM_train_test1_DEPENDENCIES) 
+	@rm -f bHMM_train_test1$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(bHMM_train_test1_OBJECTS) $(bHMM_train_test1_LDADD) $(LIBS)
 
 banded_align_csfm_test1$(EXEEXT): $(banded_align_csfm_test1_OBJECTS) $(banded_align_csfm_test1_DEPENDENCIES) $(EXTRA_banded_align_csfm_test1_DEPENDENCIES) 
 	@rm -f banded_align_csfm_test1$(EXEEXT)
@@ -508,7 +541,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FMIO_test2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSAIO_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSAIO_test2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSA_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amino_test1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bHMM_IO_test1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bHMM_train_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/banded_align_csfm_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/banded_align_known_seed_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/banded_pair_csfm_test1.Po@am__quote@

@@ -1,0 +1,2 @@
+autoscan: warning: missing AC_CHECK_FUNCS([sqrt]) wanted by: 
+	src/BandedHMMP7.h:618

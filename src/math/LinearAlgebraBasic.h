@@ -15,11 +15,14 @@ namespace EGriceLab {
 namespace Math {
 
 using Eigen::VectorXd;
+using Eigen::MatrixBase;
 
 /**
  * Normalize a vector
  */
-VectorXd normalize(const VectorXd& v) {
+VectorXd normalize(const VectorXd& v, double norm = 0) {
+	if(norm == 0)
+		norm = v.sum();
 	return v / v.sum();
 }
 

@@ -22,11 +22,11 @@ void EGriceLab::BandedHMMP7Bg::setSize(int size) {
 }
 
 void EGriceLab::BandedHMMP7Bg::init_bgFreq() {
-	bgFreq = Vector4f::Ones(); // all equal frequencies
+	bgFreq = Vector4d::Ones(); // all equal frequencies
 	bgFreq /= bgFreq.sum();
 }
 
-void EGriceLab::BandedHMMP7Bg::setBgFreq(const Vector4f& q) {
+void EGriceLab::BandedHMMP7Bg::setBgFreq(const Vector4d& q) {
 	assert(q.size() == bgFreq.size() && q.minCoeff() >= 0 && q.sum() > 0);
 	bgFreq = q / q.sum(); // re-normalize, even if already normalized
 }

@@ -7,8 +7,8 @@
 
 #include <algorithm>
 #include <cctype>
-#include "StringUtils.h"
 #include <iostream>
+#include "StringUtils.h"
 
 namespace EGriceLab {
 
@@ -54,6 +54,23 @@ bool startsWith(const string& str, const string& prefix) {
 	if(str.length() < prefix.length())
 		return false;
 	return str.substr(0, prefix.length()) == prefix;
+}
+
+string basename(string path, string suffix) {
+	/* trim directory path*/
+	path.erase(0, path.find_last_of('/') + 1); /* erase prefix, could be empty (0 length) */
+	if(!suffix.empty()) { /* suffix specified */
+		if(suffix[0] != '.')
+			suffix = '.' + suffix;
+		if(path.length() > suffix.length() && path.substr(path.length() - suffix.length()) == suffix) /* suffix exists */
+			path.erase(path.length() - suffix.length());
+	}
+	else { /* trim any suffix */
+		size_t sufStart = path.find_last_of('.');
+		if(sufStart != string::npos)
+			path.erase(sufStart);
+	}
+	return path;
 }
 
 } /* namespace EGriceLab */

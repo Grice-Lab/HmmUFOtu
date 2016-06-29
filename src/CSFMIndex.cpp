@@ -10,7 +10,7 @@
 #include <cctype>
 #include <cstdlib>
 #include "CSFMIndex.h"
-#include "Stats.h"
+//#include "Stats.h"
 #include "BitSequenceBuilder.h"
 #include "BitSequenceBuilderRRR.h"
 #include "Mapper.h"
@@ -237,10 +237,10 @@ CSFMIndex* CSFMIndex::build(const MSA* msa) {
     }
 
     /* construct SA */
-    saidx_t errno;
+    saidx_t errn;
     int32_t* SA = new int32_t[N];
-	errno = divsufsort(concatSeq, SA, N);
-	if(errno != 0)
+	errn = divsufsort(concatSeq, SA, N);
+	if(errn != 0)
 		throw runtime_error("Error: Cannot build suffix-array on forward concatenated seq");
 
     /* construct the saSampled and saIdx */

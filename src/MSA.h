@@ -11,7 +11,9 @@
 #include <vector>
 #include <iostream>
 #include <stdexcept>
+#include <eigen3/Eigen/Dense>
 #include "SeqCommons.h"
+#include "StringUtils.h"
 
 namespace EGriceLab {
 using std::string;
@@ -20,6 +22,11 @@ using std::ifstream;
 using std::ofstream;
 using std::out_of_range;
 using std::invalid_argument;
+using Eigen::MatrixXi;
+using Eigen::MatrixXd;
+using Eigen::VectorXi;
+using Eigen::VectorXd;
+using Eigen::Map;
 
 /**
  * A class for Multiple Sequence Alignment
@@ -36,6 +43,14 @@ public:
 
 	const DegenAlphabet* getAbc() const {
 		return abc;
+	}
+
+	const string& getName() const {
+		return name;
+	}
+
+	void setName(const string& name) {
+		this->name = name;
 	}
 
 	const string& getConcatMsa() const {
@@ -145,14 +160,45 @@ public:
 	/**
 	 * Get the fraction of symbols of at given pos
 	 * @param j  CS position
-	 * @return  fraction of gaps at this pos
+	 * @return  fraction of symbols at this pos
 	 */
 	double symFrac(unsigned j) const;
 
 	/**
+	 * Get the fraction of symbols of at given pos
+	 * @param j  CS position
+	 * @return  weighted fraction of symbols at this pos
+	 */
+	double symWFrac(unsigned j) const;
+
+	/**
+	 * Get the symbol frequency at given pos
+	 * @param j  CS position
+	 * @return  frequency count of symbols at this pos
+	 */
+	VectorXd symFreq(unsigned j) const;
+
+	/**
+	 * Get the weighted symbol frequency at given pos
+	 * @param j  CS position
+	 * @return  weighted frequency count of symbols at this pos
+	 */
+	VectorXd symWFreq(unsigned j) const;
+
+	/**
 	 * Update the count matrices of this object
 	 */
-	void updateCounts();
+	void updateRawCounts();
+
+	/**
+	 * Update the seqWeight of this object
+	 */
+	void updateSeqWeight();
+
+	/**
+	 * Update the count matrices of this object
+	 */
+	void updateWeightedCounts();
 
 	/**
 	 * Save this MSA object to a binary file
@@ -204,6 +250,7 @@ public:
 		clear();
 	}
 
+
 private:
 	/* constructors */
 	/**
@@ -211,7 +258,10 @@ private:
 	 * @throw invalid_argument if the alphabet is not known
 	 */
 	explicit MSA(const string& alphabet = "dna") : alphabet(alphabet), abc(SeqCommons::getAlphabetByName(alphabet)),
-		numSeq(0), csLen(0), totalNumGap(0), isPruned(false), resCount(NULL), gapCount(NULL) {  }
+		numSeq(0), csLen(0), totalNumGap(0), isPruned(false),
+		resCountBuf(NULL), gapCountBuf(NULL), seqWeightBuf(NULL), resWCountBuf(NULL), gapWCountBuf(NULL),
+		resCount(NULL, 0, 0), gapCount(NULL, 0), seqWeight(NULL, 0), resWCount(NULL, 0, 0), gapWCount(NULL, 0)
+	{  }
 
 	/* Disable copy and assignment constructors */
 	MSA(const MSA& other);
@@ -220,11 +270,21 @@ private:
 	/* Clear the heap memories */
 	void clear();
 
+	/* reset count values */
+	void resetRawCount();
+
+	/* reset seq weights */
+	void resetSeqWeight();
+
+	/* reset weighted count values */
+	void resetWeightedCount();
+
 	/* calculate the CS if not provided by the MSA file */
 	void calculateCS();
 
 	string alphabet;
 	const DegenAlphabet* abc;
+	string name;
 	unsigned numSeq; /* number of sequences */
 	unsigned csLen;  /* consensus seq length */
 	unsigned long totalNumGap;
@@ -232,8 +292,21 @@ private:
 	string concatMSA; // concatenated MSA
 	string CS;        // Consensus Sequence
 	bool isPruned; // flag for whether this MS is pruned
-	unsigned **resCount; /* Residual count matrix w/ csLen * alphabet-size dimension */
-	unsigned *gapCount; /* gap count array w/ CSLen length */
+
+	/* raw matrix/vector buffers for residual & gap count */
+	int *resCountBuf; /* raw buffer for Residual count */
+	int *gapCountBuf; /* raw buffer for gap count */
+	double *seqWeightBuf; /* raw buffer for sequence weight */
+	double *resWCountBuf; /* raw buffer for weighted residual count */
+	double *gapWCountBuf; /* raw buffer for weighted gap count */
+
+	/* matrix/vector for residual & gap count */
+	Map<MatrixXi> resCount; /* Residual count matrix w/ alphabet-size X CSLen dimension */
+	Map<VectorXi> gapCount; /* gap count array w/ CSLen length */
+	Map<VectorXd> seqWeight; /* Sequence weight for each seq w/ numSeq length */
+	Map<MatrixXd> resWCount; /* weighted residual count matrix w/ alphabet-size X CSLen dimension */
+	Map<VectorXd> gapWCount; /* weighted gap count array w/ CSLen length */
+
 };
 
 inline unsigned long MSA::getMSALen() const {
@@ -251,7 +324,7 @@ inline char MSA::residualAt(unsigned i, unsigned j) const {
 }
 
 inline int8_t MSA::encodeAt(unsigned i, unsigned j) const {
-	return abc->encode(concatMSA[i * csLen + j]);
+	return abc->encode(::toupper(concatMSA[i * csLen + j]));
 }
 
 inline string MSA::seqAt(unsigned i) const {
@@ -267,6 +340,14 @@ inline string MSA::alignAt(unsigned j) const {
 	return aln;
 }
 
+inline VectorXd MSA::symFreq(unsigned j) const {
+	return resCount.col(j).cast<double>();
+}
+
+inline VectorXd MSA::symWFreq(unsigned j) const {
+	return resWCount.col(j);
+}
+
 inline MSA* MSA::loadMSAFile(const string& alphabet,
 		const string& filename, const string& format) {
 	MSA* msa = NULL;
@@ -274,7 +355,7 @@ inline MSA* MSA::loadMSAFile(const string& alphabet,
 		msa = loadFastaFile(alphabet, filename);
 	else
 		throw invalid_argument("Unsupported MSA file format '" + format + "'");
-	/* construct the CS, if it is not set bythe MSA file yet */
+	/* construct the CS, if it is not set by the MSA file yet */
 	msa->calculateCS();
 	return msa;
 }

@@ -8,7 +8,9 @@
 #include "Stats.h"
 
 namespace EGriceLab {
+namespace Math {
 using namespace std;
 
+} /* namespace Math */
 } /* namespace EGriceLab */
 

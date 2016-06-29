@@ -111,7 +111,7 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libHmmUFOtu_a_AR = $(AR) $(ARFLAGS)
 libHmmUFOtu_a_LIBADD =
-am_libHmmUFOtu_a_OBJECTS = Stats.$(OBJEXT) DegenAlphabet.$(OBJEXT) \
+am_libHmmUFOtu_a_OBJECTS = DegenAlphabet.$(OBJEXT) \
 	StringUtils.$(OBJEXT) IUPACNucl.$(OBJEXT) IUPACAmino.$(OBJEXT) \
 	DNA.$(OBJEXT) SeqCommons.$(OBJEXT) PrimarySeq.$(OBJEXT) \
 	SeqIO.$(OBJEXT) BandedHMMP7Bg.$(OBJEXT) BandedHMMP7.$(OBJEXT) \
@@ -353,8 +353,9 @@ target_vendor = unknown
 top_build_prefix = ../
 top_builddir = ..
 top_srcdir = ..
-SUBDIRS = libdivsufsort  libcds
+SUBDIRS = libdivsufsort  libcds  math
 AM_CXXFLAGS = -I$(top_srcdir)/src \
+-I$(top_srcdir)/src/math \
 -I$(top_srcdir)/src/libdivsufsort/include \
 -I$(top_srcdir)/src/libcds/include
 
@@ -362,7 +363,7 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 # Build a convenient library
 noinst_LIBRARIES = libHmmUFOtu.a
 libHmmUFOtu_a_SOURCES = \
-Stats.cpp \
+EGMath.a \
 DegenAlphabet.cpp \
 StringUtils.cpp \
 IUPACNucl.cpp \
@@ -490,7 +491,6 @@ include ./$(DEPDIR)/MSA.Po
 include ./$(DEPDIR)/PrimarySeq.Po
 include ./$(DEPDIR)/SeqCommons.Po
 include ./$(DEPDIR)/SeqIO.Po
-include ./$(DEPDIR)/Stats.Po
 include ./$(DEPDIR)/StringUtils.Po
 
 .cpp.o:
