@@ -115,7 +115,7 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 				assert((tag == "COMPO" && k == 0) || atoi(tag.c_str()) == k);
 				/* process current emission line */
 				Vector4d emitFreq;
-				for (Vector4d::Index i = 0; i < emitFreq.size(); ++i)
+				for (Vector4d::Index i = 0; i < 4; ++i)
 					iss >> emitFreq(i);
 				if (tag == "COMPO") { // COMPO line
 					emitFreq = (-emitFreq).array().exp();
@@ -204,7 +204,7 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac, const string& nam
 		profile2CSIdx[i] = 0;
 
 	for(unsigned j = 0; j < L; ++j) {
-		if(msa->symFrac(j, true) >= symfrac)
+		if(msa->symWFrac(j) >= symfrac)
 			profile2CSIdx[++k] = j + 1; /* all index are 1-based */
 		cs2ProfileIdx[j+1] = k;
 	}

@@ -17,10 +17,16 @@ int main(int argc, char *argv[]) {
 	}
 
 	MSA* msa = MSA::loadMSAFile("dna", argv[1], argv[2]);
+	cerr << "MSA loaded" << endl;
+
+	msa->prune();
+	cerr << "MSA pruned" << endl;
+
 	if(!msa->save(out)) {
 		cerr << "Unable to save MSA database" << endl;
 		return -1;
 	}
+	cerr << "MSA saved" << endl;
 
 	return 0;
 }

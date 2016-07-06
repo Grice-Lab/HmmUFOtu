@@ -74,7 +74,7 @@ public:
 	}
 
 	unsigned long getTotalNumGap() const {
-		return totalNumGap;
+		return gapCount.sum();
 	}
 
 	/* member methods */
@@ -258,7 +258,7 @@ private:
 	 * @throw invalid_argument if the alphabet is not known
 	 */
 	explicit MSA(const string& alphabet = "dna") : alphabet(alphabet), abc(SeqCommons::getAlphabetByName(alphabet)),
-		numSeq(0), csLen(0), totalNumGap(0), isPruned(false),
+		numSeq(0), csLen(0), isPruned(false),
 		resCountBuf(NULL), gapCountBuf(NULL), seqWeightBuf(NULL), resWCountBuf(NULL), gapWCountBuf(NULL),
 		resCount(NULL, 0, 0), gapCount(NULL, 0), seqWeight(NULL, 0), resWCount(NULL, 0, 0), gapWCount(NULL, 0)
 	{  }
@@ -287,7 +287,6 @@ private:
 	string name;
 	unsigned numSeq; /* number of sequences */
 	unsigned csLen;  /* consensus seq length */
-	unsigned long totalNumGap;
 	//vector<string> ids;
 	string concatMSA; // concatenated MSA
 	string CS;        // Consensus Sequence
@@ -314,7 +313,7 @@ inline unsigned long MSA::getMSALen() const {
 }
 
 inline unsigned long MSA::getMSANonGapLen() const {
-	return getMSALen() - totalNumGap;
+	return getMSALen() - getTotalNumGap();
 }
 
 inline char MSA::residualAt(unsigned i, unsigned j) const {

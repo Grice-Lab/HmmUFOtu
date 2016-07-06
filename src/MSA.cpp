@@ -6,9 +6,10 @@
  */
 
 #include <fstream>
-#include <map>
 #include <cstdlib>
 #include <cctype>
+#include <set>
+#include <algorithm>
 #include "MSA.h"
 #include "Stats.h"
 #include "LinearAlgebraBasic.h"
@@ -53,25 +54,42 @@ MSA& MSA::prune() {
 		return *this;
 	if(numSeq == 0)
 		return *this;
-	vector<unsigned> pruningSites;
-	for(unsigned j = 0; j < csLen; ++j) {
-		unsigned numGap = 0;
-		for(unsigned i = 0; i < numSeq; ++i)
-			if(abc->isGap(concatMSA[i * csLen + j]))
-				numGap++;
-		if(numGap == numSeq)
-			pruningSites.push_back(j);
-	}
+	set<unsigned> pruningSites;
+	for(unsigned j = 0; j < csLen; ++j)
+		if(resCount.col(j).sum() == 0) // no residual at this site
+			pruningSites.insert(j);
+
 	if(pruningSites.empty()) /* nothing to do */
 		return *this;
-	/* pruning concatMSA backward */
-	for(unsigned i = numSeq; i > 0; i--)
-		for(vector<unsigned>::const_reverse_iterator rit = pruningSites.rbegin(); rit != pruningSites.rend(); ++rit)
-			concatMSA.erase((i-1) * csLen + *rit, 1);
+
+	/* construct the pruned concatMSA */
+	string prunedMSA;
+	prunedMSA.reserve(concatMSA.length() - numSeq * pruningSites.size());
+	/* copy the concatMSA to prunedMSA, ignore pruned sites */
+	for(string::size_type i = 0; i != concatMSA.length(); ++i)
+		if(pruningSites.find(i % csLen) == pruningSites.end()) // this is not a pruning site
+			prunedMSA.push_back(concatMSA[i]);
+	/* swap the storage */
+	concatMSA.swap(prunedMSA);
+
 	/* pruning the known CS, if exist */
-	if(!CS.empty())
-		for(vector<unsigned>::const_reverse_iterator rit = pruningSites.rbegin(); rit != pruningSites.rend(); ++rit)
-			CS.erase(*rit, 1);
+	if(!CS.empty()) {
+		string prunedCS;
+		prunedCS.reserve(CS.length() - pruningSites.size());
+		/* copy the CS to prunedCS, ignore pruned sites */
+		for(string::size_type j = 0; j != CS.length(); ++j)
+			if(pruningSites.find(j) == pruningSites.end()) // this is not a pruning site
+				prunedCS.push_back(CS[j]);
+		/* swap the storage */
+		CS.swap(prunedCS);
+	}
+
+	/* update index */
+	csLen -= pruningSites.size();
+
+	/* destroy old counts */
+	clear();
+
 	/* rebuild the counts */
 	updateRawCounts();
 	updateSeqWeight();
@@ -92,7 +110,6 @@ MSA* MSA::loadFastaFile(const string& alphabet, const string& filename) {
 			throw ios_base::failure("Not a valid fasta alignment file where not all sequences have the same length!");
 		msa->csLen = seq.length(); /* update csLen */
 		msa->numSeq++;
-		msa->totalNumGap += seq.numGap();
 		//ids.push_back(seq.getId());
 		msa->concatMSA.append(seq.getSeq());
 	}
@@ -110,6 +127,11 @@ void MSA::clear() {
 	delete[] seqWeightBuf;
 	delete[] resWCountBuf;
 	delete[] gapWCountBuf;
+	resCountBuf = NULL;
+	gapCountBuf = NULL;
+	seqWeightBuf = NULL;
+	resWCountBuf = NULL;
+	gapWCountBuf = NULL;
 }
 
 void MSA::resetRawCount() {
@@ -216,7 +238,7 @@ void MSA::updateWeightedCounts() {
 			if(abc->isSymbol(c))
 				resWCount(abc->encode(c), j) += seqWeight(i);
 			else if(abc->isGap(c))
-				gapWCount(j) += seqWeight(j);
+				gapWCount(j) += seqWeight(i);
 			else { } // do nothing
 		}
 }
@@ -234,7 +256,6 @@ bool MSA::save(ostream& f) {
 //	cerr << "alphabet written" << endl;
 	f.write((const char*) &numSeq, sizeof(unsigned));
 	f.write((const char*) &csLen, sizeof(unsigned));
-	f.write((const char*) &totalNumGap, sizeof(unsigned long));
 	f.write((const char*) &nCS, sizeof(string::size_type));
 	f.write(CS.c_str(), nCS + 1); /* write the null terminal */
 	f.write((const char*) &isPruned, sizeof(bool));
@@ -274,7 +295,6 @@ MSA* MSA::load(istream& f) {
 
 	f.read((char*) &msa->numSeq, sizeof(unsigned));
 	f.read((char*) &msa->csLen, sizeof(unsigned));
-	f.read((char*) &msa->totalNumGap, sizeof(unsigned long));
 	f.read((char*) &nCS, sizeof(string::size_type));
 	buf = new char[nCS + 1];
 	f.read(buf, nCS + 1);
