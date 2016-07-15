@@ -211,6 +211,9 @@ double sum(const T* arr, const double* w, size_t n) {
 	return sum;
 }
 
+/**
+ * normalize a given double array
+ */
 inline void normalize(double* arr, size_t n, double C = 1.0) {
 	if(n == 0)
 		return;
