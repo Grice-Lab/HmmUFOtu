@@ -14,7 +14,9 @@ MSAIO_test1    MSAIO_test2     MSA_test1 \
 FMIO_test1     FMIO_test2 \
 banded_align_csfm_test1 \
 banded_pair_csfm_test1 \
-dm_density_train1
+dm_density_train1 \
+dm_mixture_train1 \
+dm_mixture_train2
 
 dna_test1_SOURCES = dna_test1.cpp
 dna_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
@@ -76,3 +78,17 @@ $(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la
 dm_density_train1_LDFLAGS = -static
+
+dm_mixture_train1_SOURCES = dm_mixture_train1.cpp
+dm_mixture_train1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/math/libEGMath.a \
+$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+$(top_srcdir)/src/libcds/src/libcds.la
+dm_mixture_train1_LDFLAGS = -static
+
+dm_mixture_train2_SOURCES = dm_mixture_train2.cpp
+dm_mixture_train2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/math/libEGMath.a \
+$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+$(top_srcdir)/src/libcds/src/libcds.la
+dm_mixture_train1_LDFLAGS = -static

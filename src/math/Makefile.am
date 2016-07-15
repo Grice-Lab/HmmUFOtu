@@ -7,4 +7,5 @@ AM_CXXFLAGS = -I$(top_srcdir)/math
 lib_LIBRARIES = libEGMath.a
 libEGMath_a_SOURCES = Stats.cpp  LinearAlgebraBasic.cpp \
 DirichletModel.cpp \
-DirichletDensity.cpp
+DirichletDensity.cpp \
+DirichletMixture.cpp

@@ -15771,6 +15771,18 @@ fi
 
 
 
+for ac_func in sqrt
+do :
+  ac_fn_c_check_func "$LINENO" "sqrt" "ac_cv_func_sqrt"
+if test "x$ac_cv_func_sqrt" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_SQRT 1
+_ACEOF
+
+fi
+done
+
+
 ac_config_files="$ac_config_files Makefile src/Makefile src/math/Makefile test/Makefile"
 
 cat >confcache <<\_ACEOF
