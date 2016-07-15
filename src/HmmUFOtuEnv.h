@@ -12,7 +12,7 @@
 
 namespace EGriceLab {
 /* per-application variables */
-static int verbose = 0;
+extern int verbose;
 
 void printVerboseInfo(const std::string& message) {
 	if(verbose > 0)
