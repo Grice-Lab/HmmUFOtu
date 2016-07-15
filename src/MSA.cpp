@@ -20,6 +20,8 @@ namespace EGriceLab {
 using namespace std;
 using namespace Math;
 
+const double MSA::NAT2BIT = ::log(2);
+
 char MSA::CSResidualAt(unsigned j) const {
 	if(!(j >= 0 && j < csLen)) // check range once
 		throw out_of_range("CS pos is out of range");
@@ -92,6 +94,7 @@ MSA& MSA::prune() {
 
 	/* rebuild the counts */
 	updateRawCounts();
+	updateEntropy();
 	updateSeqWeight();
 	updateWeightedCounts();
 	isPruned = true;
@@ -115,6 +118,7 @@ MSA* MSA::loadFastaFile(const string& alphabet, const string& filename) {
 	}
 	assert(msa->concatMSA.length() == msa->numSeq * msa->csLen);
 	msa->updateRawCounts();
+	msa->updateEntropy();
 	msa->updateSeqWeight();
 	msa->updateWeightedCounts();
 	msa->calculateCS();
@@ -125,11 +129,13 @@ void MSA::clear() {
 	delete[] resCountBuf;
 	delete[] gapCountBuf;
 	delete[] seqWeightBuf;
+	delete[] posEntropyBuf;
 	delete[] resWCountBuf;
 	delete[] gapWCountBuf;
 	resCountBuf = NULL;
 	gapCountBuf = NULL;
 	seqWeightBuf = NULL;
+	posEntropyBuf = NULL;
 	resWCountBuf = NULL;
 	gapWCountBuf = NULL;
 }
@@ -147,6 +153,16 @@ void MSA::resetRawCount() {
 	/* reset count to zero */
 	resCount.setZero();
 	gapCount.setZero();
+}
+
+void MSA::resetEntropy() {
+	/* Initiate raw buffers and associated them to the Eigen maps */
+	if(posEntropyBuf == NULL) {
+		posEntropyBuf = new double[csLen];
+		new (&posEntropy) Map<VectorXd>(posEntropyBuf, csLen); /* replacement constructor */
+	}
+	/* reset count to zero */
+	posEntropy.setZero();
 }
 
 void MSA::resetSeqWeight() {
@@ -206,7 +222,24 @@ void MSA::updateRawCounts() {
 		}
 }
 
-void MSA::updateSeqWeight() {
+void MSA::updateEntropy() {
+	/* reset old data */
+	resetEntropy();
+	VectorXd b = resFreq();
+	int K = abc->getSize();
+	/* calculate raw posEntropies */
+	for(unsigned j = 0; j != csLen; ++j) {
+		double entropy = 0;
+		for(int i = 0; i != K; ++i) {
+			int c = resCount(i, j);
+			if(c > 0) // no-zero
+				entropy += c * ::log(c);
+		}
+		posEntropy(j) = NAT2BIT * entropy; // use bit
+	}
+}
+
+void MSA::updateSeqWeight(double ere) {
 	/* reset old data */
 	resetSeqWeight();
 	/* Get a pssw weight matrix */
@@ -224,8 +257,11 @@ void MSA::updateSeqWeight() {
 		}
 		seqWeight(i) = w;
 	}
-	/* normalize in place */
-	seqWeight /= numSeq;
+	/* normalize seqWeights according to the effective number of seqs */
+	double z = ere / posEntropy.minCoeff();
+	seqWeight *= numSeq * z / seqWeight.sum();
+	/* adjust the entropy */
+	posEntropy *= z;
 }
 
 void MSA::updateWeightedCounts() {
@@ -268,6 +304,8 @@ bool MSA::save(ostream& f) {
 	f.write((const char*) gapCountBuf, sizeof(int) * csLen);
 	/* write seq weights */
 	f.write((const char*) seqWeightBuf, sizeof(double) * numSeq);
+	/* write pos entropy */
+	f.write((const char*) posEntropyBuf, sizeof(double) * csLen);
 	/* write weighted counts */
 	f.write((const char*) resWCountBuf, sizeof(double) * abc->getSize() * csLen);
 	f.write((const char*) gapWCountBuf, sizeof(double) * csLen);
@@ -315,6 +353,9 @@ MSA* MSA::load(istream& f) {
 	/* Read seq weights */
 	msa->seqWeightBuf = new double[msa->numSeq];
 	f.read((char*) msa->seqWeightBuf, sizeof(double) * msa->numSeq);
+	/* Read pos entropy */
+	msa->posEntropyBuf = new double[msa->csLen];
+	f.read((char*) msa->posEntropyBuf, sizeof(double) * msa->csLen);
 	/* Read weighted counts */
 	msa->resWCountBuf = new double[msa->abc->getSize() * msa->csLen];
 	f.read((char*) msa->resWCountBuf, sizeof(double) * msa->abc->getSize() * msa->csLen);

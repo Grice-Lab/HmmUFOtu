@@ -22,6 +22,8 @@ int main(int argc, char *argv[]) {
 	msa->prune();
 	cerr << "MSA pruned" << endl;
 
+	cerr << "Effective seqNum:" << msa->getEffectSeqNum() << endl;
+
 	if(!msa->save(out)) {
 		cerr << "Unable to save MSA database" << endl;
 		return -1;

@@ -26,6 +26,10 @@ int main(int argc, char *argv[]) {
 		cerr << "Unable to load MSA database" << endl;
 		return -1;
 	}
+	msa->prune();
+	cerr << "MSA pruned" << endl;
+
+	cerr << "Effective seqNum:" << msa->getEffectSeqNum() << endl;
 
 	out << "pos\tidentity\tsym_frac\tgap_frac" << endl;
 	for(unsigned j = 0; j != msa->getCSLen(); ++j)

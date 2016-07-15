@@ -12,6 +12,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <eigen3/Eigen/Dense>
+#include <cmath>
 #include "SeqCommons.h"
 #include "StringUtils.h"
 
@@ -186,14 +187,41 @@ public:
 	VectorXd symWFreq(unsigned j) const;
 
 	/**
+	 * Get the relative entropy (or information content) at given pos
+	 * @param j  CS position
+	 * @return  entropy calculated with weighted count
+	 */
+	double entropyAt(unsigned j) const;
+
+	/**
+	 * Get the residual frequency of each base of the entire MSA
+	 */
+	VectorXd resFreq() const;
+
+	/**
+	 * Get the weighted residual frequency of each base of the entire MSA
+	 */
+	VectorXd resWFreq() const;
+
+	/**
+	 * Get the effective number of sequence of this MSA as the sum of the seq weights
+	 */
+	double getEffectSeqNum() const;
+
+	/**
 	 * Update the count matrices of this object
 	 */
 	void updateRawCounts();
 
 	/**
+	 * Update entropy of the PSSM
+	 */
+	void updateEntropy();
+
+	/**
 	 * Update the seqWeight of this object
 	 */
-	void updateSeqWeight();
+	void updateSeqWeight(double ere = DEFAULT_ENTROPY_PER_BASE);
 
 	/**
 	 * Update the count matrices of this object
@@ -259,8 +287,12 @@ private:
 	 */
 	explicit MSA(const string& alphabet = "dna") : alphabet(alphabet), abc(SeqCommons::getAlphabetByName(alphabet)),
 		numSeq(0), csLen(0), isPruned(false),
-		resCountBuf(NULL), gapCountBuf(NULL), seqWeightBuf(NULL), resWCountBuf(NULL), gapWCountBuf(NULL),
-		resCount(NULL, 0, 0), gapCount(NULL, 0), seqWeight(NULL, 0), resWCount(NULL, 0, 0), gapWCount(NULL, 0)
+		resCountBuf(NULL), gapCountBuf(NULL),
+		seqWeightBuf(NULL), posEntropyBuf(NULL),
+		resWCountBuf(NULL), gapWCountBuf(NULL),
+		resCount(NULL, 0, 0), gapCount(NULL, 0),
+		seqWeight(NULL, 0), posEntropy(NULL, 0),
+		resWCount(NULL, 0, 0), gapWCount(NULL, 0)
 	{  }
 
 	/* Disable copy and assignment constructors */
@@ -272,6 +304,9 @@ private:
 
 	/* reset count values */
 	void resetRawCount();
+
+	/* reset entropy */
+	void resetEntropy();
 
 	/* reset seq weights */
 	void resetSeqWeight();
@@ -296,6 +331,7 @@ private:
 	int *resCountBuf; /* raw buffer for Residual count */
 	int *gapCountBuf; /* raw buffer for gap count */
 	double *seqWeightBuf; /* raw buffer for sequence weight */
+	double *posEntropyBuf; /* raw buffer for position entropy (in bits) */
 	double *resWCountBuf; /* raw buffer for weighted residual count */
 	double *gapWCountBuf; /* raw buffer for weighted gap count */
 
@@ -303,9 +339,14 @@ private:
 	Map<MatrixXi> resCount; /* Residual count matrix w/ alphabet-size X CSLen dimension */
 	Map<VectorXi> gapCount; /* gap count array w/ CSLen length */
 	Map<VectorXd> seqWeight; /* Sequence weight for each seq w/ numSeq length */
+	Map<VectorXd> posEntropy; /* Position entropy of the PSSM (in bits) */
 	Map<MatrixXd> resWCount; /* weighted residual count matrix w/ alphabet-size X CSLen dimension */
 	Map<VectorXd> gapWCount; /* weighted gap count array w/ CSLen length */
 
+	/* static members */
+public:
+	static const double DEFAULT_ENTROPY_PER_BASE = 2;
+	static const double NAT2BIT;
 };
 
 inline unsigned long MSA::getMSALen() const {
@@ -346,6 +387,25 @@ inline VectorXd MSA::symFreq(unsigned j) const {
 inline VectorXd MSA::symWFreq(unsigned j) const {
 	return resWCount.col(j);
 }
+
+inline double MSA::entropyAt(unsigned j) const {
+	return posEntropy(j);
+}
+
+inline VectorXd MSA::resFreq() const {
+	VectorXd freq = resCount.rowwise().sum().cast<double>();
+	return freq / freq.sum();
+}
+
+inline VectorXd MSA::resWFreq() const {
+	VectorXd freq = resWCount.rowwise().sum();
+	return freq / freq.sum();
+}
+
+inline double MSA::getEffectSeqNum() const {
+	return seqWeight.sum();
+}
+
 
 inline MSA* MSA::loadMSAFile(const string& alphabet,
 		const string& filename, const string& format) {
