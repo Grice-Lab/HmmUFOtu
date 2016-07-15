@@ -9,7 +9,6 @@
 #define SRC_DIRICHLETDENSITY_H_
 
 #include "DirichletModel.h"
-#include "LinearAlgebraBasic.h"
 
 namespace EGriceLab {
 namespace Math {
@@ -21,12 +20,11 @@ public:
 /*	DirichletDensity();*/
 
 	/* construct a Dirichlet density with given categories and optionally estimated alpha */
-	explicit DirichletDensity(int K, double alphaEst = DEFAULT_ALPHA):
+	explicit DirichletDensity(int K):
 		DirichletModel(K), w(K), alpha(K) /* initiate w and alpha to correct size */ {
 		assert(K >= MIN_K);
-		assert(alphaEst > 0);
-		alpha.setConstant(alphaEst);
-		w = alpha.array().log();
+		alpha.setConstant(DEFAULT_ALPHA);
+		w.setConstant(DEFAULT_WEIGHT);
 	}
 
 	/* destructor, do nothing */
@@ -37,21 +35,30 @@ public:
 	 * Calculate the posterior probability given this model an observed frequency
 	 * implement the base case abstract method
 	 */
-	virtual VectorXd postP(const VectorXd& freq) const;
+	virtual VectorXd meanPostP(const VectorXd& freq) const;
 
 	/**
 	 * Calculate the negative gradient of the weights (exp(parameters))
 	 * using current parameters and observed data
 	 */
-	virtual VectorXd expGradient(const MatrixXd& data) const;
+	VectorXd weightGradient(const MatrixXd& data) const;
+
+	/**
+	 * Initiate the Dirichlet parameters using momenth-matching method
+	 * Implement the base class method
+	 */
+	virtual void momentInit(MatrixXd data);
 
 	/**
 	 * Do a maximum likelihood training of all parameters given a training data,
 	 * with M columns each an observed frequency vector of length and K (K * M matrix)
+	 * implment the base class method
+	 * @return  cost at trained parameters, or NAN if anything went wrong
 	 */
-	virtual void trainML(const MatrixXd& data,
-			double eta = DEFAULT_ETA, double epsilonCost = DEFAULT_EPSILON_COST,
-			double epsilonParams = DEFAULT_EPSILON_PARAMS, int maxIt = MAX_ITERATION);
+	virtual double trainML(const MatrixXd& data,
+			double eta = DEFAULT_ETA, int maxIt = MAX_ITERATION,
+			double epsilonCost = DEFAULT_EPSILON_COST,
+			double epsilonParams = DEFAULT_EPSILON_PARAMS);
 
 	/**
 	 * Calculate the log PDF of observing a data using this model
@@ -59,7 +66,6 @@ public:
 	 */
 	virtual double lpdf(const VectorXd& freq) const;
 
-private:
 	/* implement base class private method */
 	virtual ostream& print(ostream& out) const;
 	virtual istream& read(istream& in);
@@ -71,6 +77,7 @@ private:
 
 public:
 	static const double DEFAULT_ALPHA = 1;
+	static const double DEFAULT_WEIGHT = 0;
 };
 
 } /* namespace Math */

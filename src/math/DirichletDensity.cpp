@@ -7,65 +7,68 @@
 
 #include <boost/math/special_functions/digamma.hpp>
 #include <iostream>
+#include <cmath>
 #include "DirichletDensity.h"
 
 namespace EGriceLab {
 namespace Math {
 
 using namespace std;
+using namespace Eigen;
 using boost::math::digamma;
 
-VectorXd DirichletDensity::postP(const VectorXd& freq) const {
+VectorXd DirichletDensity::meanPostP(const VectorXd& freq) const {
 	return (freq + alpha) / (freq.sum() + alpha.sum());
 }
 
-VectorXd DirichletDensity::expGradient(const MatrixXd& data) const {
+VectorXd DirichletDensity::weightGradient(const MatrixXd& data) const {
 	int K = getK();
 	VectorXd grad(K);
 	double alphaSum = alpha.sum();
 	MatrixXd::Index M = data.cols();
-	VectorXd nSum = data.colwise().sum();
-	for(int k = 0; k < K; ++k) {
+	RowVectorXd nSum = data.colwise().sum();
+	for(int i = 0; i < K; ++i) {
 		double S = 0;
 		for(MatrixXd::Index t = 0; t < M; ++t) {
-			S += digamma(static_cast<double> (data(k, t)) + static_cast<double> (alpha(k)) )
+			S += digamma(static_cast<double> (data(i, t)) + static_cast<double> (alpha(i)) )
 					- digamma(static_cast<double> (nSum(t)) + alphaSum);
 		}
-		grad(k) = alpha(k) * (M * ( digamma(alphaSum) - digamma(static_cast<double> (alpha(k))) ) + S);
+		grad(i) = alpha(i) * (M * ( digamma(alphaSum) - digamma(static_cast<double> (alpha(i))) ) + S);
 	}
 	return grad;
 }
 
-void DirichletDensity::trainML(const MatrixXd& data, double eta, double epsilonCost, double epsilonParams, int maxIt) {
+double DirichletDensity::trainML(const MatrixXd& data, double eta, int maxIt, double epsilonCost, double epsilonParams) {
+	/* initiate the parameters using moment-matctching */
+	momentInit(data);
 	double c = cost(data);
 	for(int it = 0; maxIt <= 0 || it < maxIt; ++it) { // infinite loop to be terminated within
-//		cerr << "alpha: " << alpha.transpose() << endl;
-		VectorXd expGrad = expGradient(data);
-//		cerr << "wGrad:" << expGrad.transpose() << endl;
+		VectorXd wGrad = weightGradient(data);
+//		cerr << "wGrad:" << wGrad.transpose() << endl;
 		/* update weight and parameters */
-		w += eta * expGrad;
+		w += eta * wGrad;
 		VectorXd alphaOld(alpha);
 		alpha = w.array().exp();
 		/* check the new parameters for over-fitting */
 		if((alpha.array() == 0).any()) {
 			cerr << "Potential over-fitting detected. Please choose another MSA training set" << endl;
-			abort();
+			return NAN;
 		}
-//		cerr << "alpha: " << alpha.transpose() << endl;
 		/* calculate new cost */
 		double cNew = cost(data);
-		double deltaC = ::fabs(cNew - c);
+		double deltaC = c - cNew;
 //		fprintf(stderr, "c:%lg cNew:%lg deltaC:%lg\n", c, cNew, deltaC);
-		/* termination check */
-		if(alpha.isApprox(alphaOld, epsilonParams) && deltaC < epsilonCost)
-			break;
 		c = cNew;
+		/* termination check */
+		if(alpha.isApprox(alphaOld, epsilonParams) && deltaC >= 0 && deltaC < epsilonCost)
+			break;
 	}
+	return c;
 }
 
 double DirichletDensity::lpdf(const VectorXd& freq) const {
 	assert(freq.size() == alpha.size());
-	int K = alpha.size();
+	int K = getK();
 	/* constant part */
 	double freqNorm = freq.sum();
 	double alphaNorm = alpha.sum();
@@ -84,6 +87,38 @@ ostream& DirichletDensity::print(ostream& out) const {
 	out << "Dirichlet Density Model" << endl;
 	out << "K: " << getK() << endl;
 	out << "alpha: " << alpha.transpose() << endl;
+}
+
+void DirichletDensity::momentInit(MatrixXd data) {
+	int K = getK();
+	int M = data.cols();
+	if(M < 2)
+		return; /* too few freq to estimate */
+
+	/* Normalize the column sum, so the observed data follows Dirichlet-Multinomial distribution */
+	double N = data.colwise().sum().maxCoeff();
+	for(int t = 0; t < M; ++t)
+		data.col(t) *= N / data.col(t).sum();
+
+//	cerr << "Calculating moments" << endl;
+	/* calculate the Mean (1st-moment) and Var (2nd-moment) of the observed counts */
+	VectorXd dataMean = data.rowwise().mean();
+	VectorXd dataVar = (data.colwise() - dataMean).rowwise().squaredNorm() / (M - 1);
+	/* calculate parameter concentration using E(0) and Var(0) */
+	double alphaNorm = 0;
+	// try each k
+	for(int i = 0; i < K; ++i) {
+		alphaNorm = (dataVar(i) - N * dataMean(i) + 1) / (dataMean(i) - 1 / N - dataVar(i));
+		if(alphaNorm > 0) // a good estimation
+			break;
+	}
+//	cerr << "alphaNorm:" << alphaNorm << endl;
+
+	if(alphaNorm <= 0) // do not use moment initiate
+		return;
+	/* calculate parameters */
+	alpha = dataMean * alphaNorm / N;
+	w = alpha.array().log();
 }
 
 istream& DirichletDensity::read(istream& in) {
