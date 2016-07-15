@@ -10,6 +10,7 @@
 
 #include <cassert>
 #include <cfloat>
+#include <stdexcept>
 #include <iostream>
 #include <eigen3/Eigen/Dense>
 
@@ -39,22 +40,23 @@ public:
 	 * An abstract method to calculate the posterior probabilities of category
 	 * given the parameters and an observed frequency
 	 */
-	virtual VectorXd postP(const VectorXd& freq) const = 0;
+	virtual VectorXd meanPostP(const VectorXd& freq) const = 0;
+
+	/**
+	 * Initiate the Dirichlet parameters using momenth-matching method,
+	 * to get a good starting estimate
+	 */
+	virtual void momentInit(MatrixXd data) = 0;
 
 	/**
 	 * Do a maximum likelihood training of all underlying parameters given a training data,
 	 * with M columns each an observed frequency vector, and K rows
+	 * return NAN if anything went wrong
 	 */
-	virtual void trainML(const MatrixXd& data,
-			double eta = DEFAULT_ETA, double epsilonCost = DEFAULT_EPSILON_COST,
-			double epsilonParams = DEFAULT_EPSILON_PARAMS, int maxIt = MAX_ITERATION) = 0;
-
-	/**
-	 * Calculate the negative gradient of the Dirichlet parameters
-	 * using current parameters and observed data at (unbound) exponential scale
-	 * Exponential scale is used because the Dirichlet parameters must be strictly positive.
-	 */
-	virtual VectorXd expGradient(const MatrixXd& data) const = 0;
+	virtual double trainML(const MatrixXd& data,
+			double eta = DEFAULT_ETA, int maxIt = MAX_ITERATION,
+			double epsilonCost = DEFAULT_EPSILON_COST,
+			double epsilonParams = DEFAULT_EPSILON_PARAMS) = 0;
 
 	/**
 	 * Calculate the logPDF of observing a data using this model
@@ -91,11 +93,11 @@ private:
 	int K; // number of parameters
 
 public:
-	static const double DEFAULT_ETA = 0.05; // default step width relative to the gradient used in ML parameter training
+	static const double DEFAULT_ETA = 0.0001; // default step width relative to the gradient used in ML parameter training
 	static const int MIN_K = 2; // minimum number of categories
 //	static const double DEFAULT_EPSILON = FLT_EPSILON;
-	static const double DEFAULT_EPSILON_COST = 1e-10;
-	static const double DEFAULT_EPSILON_PARAMS = 1e-4;
+	static const double DEFAULT_EPSILON_COST = 1e-6;
+	static const double DEFAULT_EPSILON_PARAMS = 1e-6;
 	static const int MAX_ITERATION = 0;
 };
 
