@@ -18,8 +18,8 @@ using namespace std;
 
 DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const string& synon_str,
 			const map<char, string>& my_map, const string& gap) :
-				name(name), symbol(EGriceLab::remove_dup_chars(sym_str)),
-				synon(EGriceLab::remove_dup_chars(synon_str)), degen_map(my_map), gap(gap) {
+				name(name), symbol(StringUtils::remove_dup_chars(sym_str)),
+				synon(StringUtils::remove_dup_chars(synon_str)), degen_map(my_map), gap(gap) {
 	assert(symbol.length() <= INT8_MAX + 1);
 	assert(synon.length() == degen_map.size());
 	!gap.empty() ? gapCh = gap[0] : DEFAULT_GAP_CHAR;

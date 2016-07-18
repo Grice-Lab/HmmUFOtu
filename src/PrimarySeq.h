@@ -164,7 +164,7 @@ public:
 	 * @return the modified object
 	 */
 	PrimarySeq& toUpper() {
-		EGriceLab::toUpper(seq);
+		StringUtils::toUpper(seq);
 		return *this;
 	}
 
@@ -173,7 +173,7 @@ public:
 	 * @return the modified object
 	 */
 	PrimarySeq& toLower() {
-		EGriceLab::toLower(seq);
+		StringUtils::toLower(seq);
 		return *this;
 	}
 
@@ -262,7 +262,7 @@ inline int PrimarySeq::qScoreAt(string::size_type pos) const {
 
 inline bool operator==(const PrimarySeq& lhs, const PrimarySeq& rhs) {
 	return *lhs.abc == *rhs.abc && lhs.id == rhs.id
-			&& toUpper(lhs.seq) == toUpper(rhs.seq);
+			&& StringUtils::toUpper(lhs.seq) == StringUtils::toUpper(rhs.seq);
 }
 
 inline bool operator!=(const PrimarySeq& lhs, const PrimarySeq& rhs) {

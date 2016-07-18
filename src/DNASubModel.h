@@ -89,9 +89,9 @@ inline void DNASubModel::initFreq() {
 }
 
 inline Matrix4d DNASubModel::estimateSubRate(const PhyloTree *tree, const string& method) {
-	if(toLower(method) == "goldman")
+	if(StringUtils::toLower(method) == "goldman")
 		return estimateSubRateGoldman(tree);
-	else if(toLower(method) == "gojobori")
+	else if(StringUtils::toLower(method) == "gojobori")
 		return estimateSubRateGojobori(tree);
 	else {
 		std::cerr << "Unknown parameter estimation method " << method << std::endl;

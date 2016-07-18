@@ -12,7 +12,7 @@
 
 namespace EGriceLab {
 
-string remove_dup_chars(const string& str) {
+string StringUtils::remove_dup_chars(const string& str) {
 	string newStr;
 	for(string::const_iterator it = str.begin(); it != str.end(); ++it)
 		if(newStr.find(*it) == string::npos) // not exist
@@ -20,43 +20,43 @@ string remove_dup_chars(const string& str) {
 	return newStr;
 }
 
-string toUpper(const string& str) {
+string StringUtils::toUpper(const string& str) {
 	string newStr; // make a new copy
-	newStr.resize(str.length());
+	newStr.reserve(str.length());
 	transform(str.begin(), str.end(), newStr.begin(), ::toupper);
 	return newStr;
 }
 
-string& toUpper(string& str) {
+string& StringUtils::toUpper(string& str) {
 	transform(str.begin(), str.end(), str.begin(), ::toupper);
 	return str;
 }
 
-string toLower(const string& str) {
+string StringUtils::toLower(const string& str) {
 	string newStr; // make a new copy
-	newStr.resize(str.length());
+	newStr.reserve(str.length());
 	transform(str.begin(), str.end(), newStr.begin(), ::tolower);
 	return newStr;
 }
 
-string& toLower(string& str) {
+string& StringUtils::toLower(string& str) {
 	transform(str.begin(), str.end(), str.begin(), ::tolower);
 	return str;
 }
 
-bool endsWith(const string& str, const string& suffix) {
+bool StringUtils::endsWith(const string& str, const string& suffix) {
 	if(str.length() < suffix.length())
 		return false;
 	return str.substr(str.length() - suffix.length()) == suffix;
 }
 
-bool startsWith(const string& str, const string& prefix) {
+bool StringUtils::startsWith(const string& str, const string& prefix) {
 	if(str.length() < prefix.length())
 		return false;
 	return str.substr(0, prefix.length()) == prefix;
 }
 
-string basename(string path, string suffix) {
+string StringUtils::basename(string path, string suffix) {
 	/* trim directory path*/
 	path.erase(0, path.find_last_of('/') + 1); /* erase prefix, could be empty (0 length) */
 	if(!suffix.empty()) { /* suffix specified */
