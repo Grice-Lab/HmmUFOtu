@@ -21,7 +21,7 @@ using std::vector;
 
 class CommandOptions {
 public:
-	CommandOptions(int argc, const char** argv);
+	CommandOptions(int argc, char** argv);
 
 	bool hasOpt(const string& name) const {
 		return opts.find(name) != opts.end();

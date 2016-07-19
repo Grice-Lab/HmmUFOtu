@@ -9,7 +9,7 @@
 
 namespace EGriceLab {
 
-CommandOptions::CommandOptions(int argc, const char** argv) {
+CommandOptions::CommandOptions(int argc, char** argv) {
 	/* parse options */
 	for(int i = 1; i < argc; ++i) {
 		if(*argv[i] == '-') { /* a tag name */
