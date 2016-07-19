@@ -87,6 +87,7 @@ ostream& DirichletDensity::print(ostream& out) const {
 	out << "Dirichlet Density Model" << endl;
 	out << "K: " << getK() << endl;
 	out << "alpha: " << alpha.transpose().format(FULL_FORMAT) << endl;
+	return out;
 }
 
 void DirichletDensity::momentInit(MatrixXd data) {

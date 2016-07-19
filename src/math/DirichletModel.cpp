@@ -12,7 +12,7 @@ namespace Math {
 using namespace std;
 using namespace Eigen;
 
-const DirichletModel::eigenFmt(Eigen::FullPrecision);
+const IOFormat DirichletModel::FULL_FORMAT(Eigen::FullPrecision);
 
 } /* namespace Math */
 } /* namespace EGriceLab */
