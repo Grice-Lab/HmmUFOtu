@@ -21,6 +21,7 @@ using std::istream;
 using std::ostream;
 using Eigen::VectorXd;
 using Eigen::MatrixXd;
+using Eigen::IOFormat;
 
 class DirichletModel {
 public:
@@ -92,6 +93,7 @@ public:
 private:
 	int K; // number of parameters
 
+	/* static members */
 public:
 	static const double DEFAULT_ETA = 0.0001; // default step width relative to the gradient used in ML parameter training
 	static const int MIN_K = 2; // minimum number of categories
@@ -99,6 +101,7 @@ public:
 	static const double DEFAULT_EPSILON_COST = 1e-6;
 	static const double DEFAULT_EPSILON_PARAMS = 1e-6;
 	static const int MAX_ITERATION = 0;
+	static const IOFormat FULL_FORMAT; /* default output format for eigen objects */
 };
 
 inline ostream& operator<<(ostream& out, DirichletModel& dm) {

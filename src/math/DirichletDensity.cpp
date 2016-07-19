@@ -86,7 +86,7 @@ double DirichletDensity::lpdf(const VectorXd& freq) const {
 ostream& DirichletDensity::print(ostream& out) const {
 	out << "Dirichlet Density Model" << endl;
 	out << "K: " << getK() << endl;
-	out << "alpha: " << alpha.transpose() << endl;
+	out << "alpha: " << alpha.transpose().format(FULL_FORMAT) << endl;
 }
 
 void DirichletDensity::momentInit(MatrixXd data) {
@@ -99,8 +99,6 @@ void DirichletDensity::momentInit(MatrixXd data) {
 	double N = data.colwise().sum().maxCoeff();
 	for(int t = 0; t < M; ++t)
 		data.col(t) *= N / data.col(t).sum();
-
-//	cerr << "Calculating moments" << endl;
 	/* calculate the Mean (1st-moment) and Var (2nd-moment) of the observed counts */
 	VectorXd dataMean = data.rowwise().mean();
 	VectorXd dataVar = (data.colwise() - dataMean).rowwise().squaredNorm() / (M - 1);

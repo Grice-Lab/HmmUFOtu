@@ -183,7 +183,7 @@ ostream& DirichletMixture::print(ostream& out) const {
 	out << "K: " << getK() << " L:" << L << endl;
 	out << "Mixture coefficient q:" << endl << q << endl;
 	for(int j = 0; j < L; ++j)
-		out << "Component " << j << " alpha:" << alpha.col(j).transpose() << endl;
+		out << "Component " << j << " alpha:" << alpha.col(j).transpose().format(FULL_FORMAT) << endl;
 	return out;
 }
 
