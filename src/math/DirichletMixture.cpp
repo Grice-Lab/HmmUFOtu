@@ -243,8 +243,10 @@ istream& DirichletMixture::read(istream& in) {
 	string line;
 	int K;
 	std::getline(in, line);
-	if(line != FILE_HEADER)
+	if(line != FILE_HEADER) {
+		in.setstate(ios_base::failbit);
 		return in;
+	}
 	std::getline(in, line);
 	sscanf(line.c_str(), "K: %d L: %d", &K, &L); /* Read K */
 	/* set fields */
