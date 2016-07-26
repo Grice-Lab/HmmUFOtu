@@ -25,8 +25,8 @@ using Eigen::IOFormat;
 
 class DirichletModel {
 public:
-	/* default constructor disabled */
-/*	DirichletModel(): K(MIN_K) { }*/
+	/* default constructor, do nothing */
+	DirichletModel(): K(MIN_K) { }
 
 	/* construct a Dirichlet model with given categories */
 	explicit DirichletModel(int K): K(K) {
@@ -88,6 +88,10 @@ public:
 	/* getters and setters */
 	int getK() const {
 		return K;
+	}
+
+	void setK(int k) {
+		K = k;
 	}
 
 private:

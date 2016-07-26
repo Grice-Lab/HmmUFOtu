@@ -8,16 +8,19 @@
 #ifndef SRC_DIRICHLETDENSITY_H_
 #define SRC_DIRICHLETDENSITY_H_
 
+#include <string>
 #include "DirichletModel.h"
 
 namespace EGriceLab {
 namespace Math {
 
+using std::string;
+
 class DirichletDensity: public DirichletModel {
 public:
 	/* constructors */
-	/* default constructor disabled */
-/*	DirichletDensity();*/
+	/* default constructor, do nothing */
+	DirichletDensity() { }
 
 	/* construct a Dirichlet density with given categories and optionally estimated alpha */
 	explicit DirichletDensity(int K):
@@ -78,6 +81,7 @@ private:
 public:
 	static const double DEFAULT_ALPHA = 1;
 	static const double DEFAULT_WEIGHT = 0;
+	static const string FILE_HEADER;
 };
 
 } /* namespace Math */

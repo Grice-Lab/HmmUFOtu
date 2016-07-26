@@ -17,6 +17,9 @@ using namespace std;
 using namespace Eigen;
 using boost::math::digamma;
 
+/* static variable definition */
+const string DirichletDensity::FILE_HEADER = "Dirichlet Density Model";
+
 VectorXd DirichletDensity::meanPostP(const VectorXd& freq) const {
 	return (freq + alpha) / (freq.sum() + alpha.sum());
 }
@@ -84,9 +87,10 @@ double DirichletDensity::lpdf(const VectorXd& freq) const {
 }
 
 ostream& DirichletDensity::print(ostream& out) const {
-	out << "Dirichlet Density Model" << endl;
+	out << FILE_HEADER << endl;
 	out << "K: " << getK() << endl;
-	out << "alpha: " << alpha.transpose().format(FULL_FORMAT) << endl;
+	out << "alpha: " << endl;
+	out << alpha.transpose().format(FULL_FORMAT) << endl;
 	return out;
 }
 
@@ -121,6 +125,22 @@ void DirichletDensity::momentInit(MatrixXd data) {
 }
 
 istream& DirichletDensity::read(istream& in) {
+	string line;
+	int K;
+	std::getline(in, line);
+	if(line != FILE_HEADER)
+		return in;
+	std::getline(in, line);
+	sscanf(line.c_str(), "K: %d", &K); /* Read K */
+	/* set fields */
+	setK(K);
+	alpha.resize(K);
+	w.resize(K);
+
+	std::getline(in, line); /* ignore alpha line */
+	for(VectorXd::Index i = 0; i < K; ++i)
+		in >> alpha(i);
+	w = alpha.array().log();
 	return in;
 }
 

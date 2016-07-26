@@ -19,6 +19,9 @@ using namespace std;
 using namespace Eigen;
 using boost::math::digamma;
 
+/* static variable definition */
+const string DirichletMixture::FILE_HEADER = "Dirichlet Mixture Model";
+
 /* private comparator functions */
 struct MyFreqComparator {
 	MyFreqComparator(const MatrixXd& data) : data(data) { }
@@ -179,11 +182,12 @@ VectorXd DirichletMixture::compPostP(const VectorXd& data) const {
 }
 
 ostream& DirichletMixture::print(ostream& out) const {
-	out << "Dirichlet Mixture Model" << endl;
+	out << FILE_HEADER << endl;
 	out << "K: " << getK() << " L:" << L << endl;
-	out << "Mixture coefficient q:" << endl << q << endl;
-	for(int j = 0; j < L; ++j)
-		out << "Component " << j << " alpha:" << alpha.col(j).transpose().format(FULL_FORMAT) << endl;
+	out << "Mixture coefficients:" << endl;
+	out << q.transpose().format(FULL_FORMAT) << endl;
+	out << "alpha:" << endl;
+	out << alpha.format(FULL_FORMAT) << endl;
 	return out;
 }
 
@@ -236,6 +240,27 @@ void DirichletMixture::momentInit(MatrixXd data) {
 }
 
 istream& DirichletMixture::read(istream& in) {
+	string line;
+	int K;
+	std::getline(in, line);
+	if(line != FILE_HEADER)
+		return in;
+	std::getline(in, line);
+	sscanf(line.c_str(), "K: %d L: %d", &K, &L); /* Read K */
+	/* set fields */
+	setK(K);
+	q.resize(L);
+	alpha.resize(K, L);
+	w.resize(K, L);
+
+	std::getline(in, line); /* ignore mixture coefficients line */
+	for(VectorXd::Index j = 0; j < L; ++j) /* read q */
+		in >> q(j);
+	std::getline(in, line); /* ignore alpha line */
+	for(MatrixXd::Index i = 0; i < K; ++i)
+		for(MatrixXd::Index j = 0; j < L; ++j)
+			in >> alpha(i, j);
+	w = alpha.array().log();
 	return in;
 }
 
