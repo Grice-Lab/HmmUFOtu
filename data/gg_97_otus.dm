@@ -1,0 +1,30 @@
+Match emission:
+Dirichlet Density Model
+K: 4
+alpha: 
+0.2834579672576323 0.2646098063781691 0.3049070729926165 0.2565740788095311
+
+Insert emission:
+Dirichlet Density Model
+K: 4
+alpha: 
+ 0.395963098612131 0.3591286392227081 0.4202384965181375 0.3762049503830046
+
+Match transition:
+Dirichlet Density Model
+K: 3
+alpha: 
+  36.35206422953112 0.01136580730713933  0.2712629948330521
+
+Insert transition:
+Dirichlet Density Model
+K: 2
+alpha: 
+0.008675139972634076  0.07377662175841296
+
+Delete transition:
+Dirichlet Density Model
+K: 2
+alpha: 
+0.5368994828739693  2.531051387325459
+
