@@ -29,10 +29,26 @@ char MSA::CSResidualAt(unsigned j) const {
 	return CS.empty() ? '\0' /* not calculated yet */ : CS[j];
 }
 
+char MSA::CSBaseAt(unsigned j) const {
+	if(!(j >= 0 && j < csLen)) // check range once
+		throw out_of_range("CS pos is out of range");
+
+	MatrixXd::Index max;
+	VectorXd freq = resWCount.col(j);
+	freq.maxCoeff(&max);
+	return abc->decode(max);
+}
+
 double MSA::identityAt(unsigned j) const {
 	if(!(j >= 0 && j < csLen)) // check range once
 		throw out_of_range("CS pos is out of range");
 	return resCount.col(j).maxCoeff() / static_cast<double>(numSeq);
+}
+
+double MSA::wIdentityAt(unsigned j) const {
+	if(!(j >= 0 && j < csLen)) // check range once
+		throw out_of_range("CS pos is out of range");
+	return resWCount.col(j).maxCoeff() / getEffectSeqNum();
 }
 
 double MSA::gapFrac(unsigned j) const {
@@ -103,7 +119,7 @@ MSA& MSA::prune() {
 
 MSA* MSA::loadFastaFile(const string& alphabet, const string& filename) {
 	MSA* msa = new MSA(alphabet);
-	msa->setName(basename(filename));
+	msa->setName(StringUtils::basename(filename));
 	SeqIO seqIn(filename, alphabet, "fasta");
 	while(seqIn.hasNext()) {
 		const PrimarySeq& seq = seqIn.nextSeq();
@@ -196,9 +212,9 @@ void MSA::calculateCS() {
 	CS.clear();
 	for(unsigned j = 0; j < csLen; ++j) {
 		char csRes;
-		if(resCount.col(j).maxCoeff() >= gapCount(j)) { /* consensus is not a gap */
+		if(resWCount.col(j).maxCoeff() >= gapWCount(j)) { /* consensus is not a gap */
 			MatrixXi::Index maxRow;
-			resCount.col(j).maxCoeff(&maxRow);
+			resWCount.col(j).maxCoeff(&maxRow);
 			csRes = abc->decode(maxRow);
 		}
 		else

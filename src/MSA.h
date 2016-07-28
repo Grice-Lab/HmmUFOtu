@@ -145,11 +145,32 @@ public:
 	char CSResidualAt(unsigned j) const;
 
 	/**
+	 * Get the consensus non-gap residual at given pos
+	 * @param j  CS position
+	 * @return the consensus base as the most frequent one
+	 */
+	char CSBaseAt(unsigned j) const;
+
+	/**
 	 * Get the identity of aligned residuals at given pos
-	 * @param j  CS posotion
+	 * @param j  CS position
 	 * @return  identity that is the frection of residuals that match to the consensus one
 	 */
 	double identityAt(unsigned j) const;
+
+	/**
+	 * Get the weighted identity of aligned residuals at given pos
+	 * @param j  CS position
+	 * @return  weighted identity that is the fraction of residuals that match to the consensus one
+	 */
+	double wIdentityAt(unsigned j) const;
+
+	/**
+	 * Get the weight of the ith seq
+	 * @param i  seq index
+	 * @return  weight of the ith seq
+	 */
+	double getSeqWeight(unsigned i) const;
 
 	/**
 	 * Get the fraction of gaps of at given pos
@@ -378,6 +399,10 @@ inline string MSA::alignAt(unsigned j) const {
 	for(unsigned i = 0; i < numSeq; ++i)
 		aln.push_back(concatMSA[i * csLen + j]);
 	return aln;
+}
+
+inline double MSA::getSeqWeight(unsigned i) const {
+	return seqWeight(i);
 }
 
 inline VectorXd MSA::symFreq(unsigned j) const {

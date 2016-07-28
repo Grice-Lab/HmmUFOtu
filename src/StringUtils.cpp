@@ -22,7 +22,7 @@ string StringUtils::remove_dup_chars(const string& str) {
 
 string StringUtils::toUpper(const string& str) {
 	string newStr; // make a new copy
-	newStr.reserve(str.length());
+	newStr.resize(str.length());
 	transform(str.begin(), str.end(), newStr.begin(), ::toupper);
 	return newStr;
 }
@@ -34,7 +34,7 @@ string& StringUtils::toUpper(string& str) {
 
 string StringUtils::toLower(const string& str) {
 	string newStr; // make a new copy
-	newStr.reserve(str.length());
+	newStr.resize(str.length());
 	transform(str.begin(), str.end(), newStr.begin(), ::tolower);
 	return newStr;
 }

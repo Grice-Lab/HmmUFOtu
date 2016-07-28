@@ -14,6 +14,7 @@ namespace EGriceLab {
 using std::string;
 
 class StringUtils {
+public:
 	/**
 	 * remove duplicate characters in a string
 	 * @param str  target string
