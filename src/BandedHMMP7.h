@@ -22,6 +22,7 @@
 #include "BandedHMMCommons.h"
 #include "PrimarySeq.h"
 #include "MSA.h"
+#include "DirichletModel.h"
 
 namespace EGriceLab {
 using std::string;
@@ -33,6 +34,7 @@ using std::deque;
 using Eigen::Matrix3d;
 using Eigen::Matrix4Xd;
 using Eigen::Matrix4d;
+using Math::DirichletModel;
 
 /**
  * Banded plan7 HMM for 16S rRNA profile alignment
@@ -130,15 +132,15 @@ public:
 	};
 
 	/* static and enum members */
-	static const float inf; // inf
-	static const float infV; // -inf
+	static const double inf; // inf
+	static const double infV; // -inf
 	static const int kNM; // number of matching states
 	static const int kNSP; // number of special states
 	static const int kNS; // number of total states
 	static const string HMM_TAG;
 	static const int kMaxProfile = UINT16_MAX + 1;
 	static const int kMaxCS = UINT16_MAX + 1;
-	static const float kMaxGapFrac; // maximum gap fraction comparing to the profile
+	static const double kMaxGapFrac; // maximum gap fraction comparing to the profile
 
 	/* member functions */
 	/* Getters and Setters */
@@ -318,7 +320,7 @@ public:
 	 * @param vpath  a ViterbiAlignPath of the DP values by one of the calcViterbiScores methods
 	 * @return  a track string of the entire sequence match, with same length as profile length
 	 */
-	float buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath& vpath) const;
+	double buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath& vpath) const;
 
 	/**
 	 * Build the global alignment string using calculated scores and backtrace path
@@ -329,7 +331,10 @@ public:
 	string buildGlobalAlignSeq(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
 
 	/* static member methods */
-	static BandedHMMP7 build(const MSA* msa, double symfrac, const string& name = "unnamed");
+	static BandedHMMP7 build(const MSA* msa, double symfrac,
+			const DirichletModel& dmME, const DirichletModel& dmIE,
+			const DirichletModel& dmMT, const DirichletModel& dmIT, const DirichletModel& dmDT,
+			const string& name = "unnamed");
 
 private:
 	string version; // version of the program generated this hmm file, default is progName-progVersion
@@ -435,13 +440,13 @@ private:
 	/**
 	 * Normalize profile transition probability matrices
 	 */
-	void normalize_transition_params();
+//	void normalize_transition_params();
 
 	/**
 	 * Normalize profile emission probability matrices
 	 * use 0 for normal matrices and -inf for log matrices
 	 */
-	void normalize_emission_params();
+//	void normalize_emission_params();
 
 	/**
 	 * Initialize the banded HMM limits as well as their elements
@@ -477,12 +482,12 @@ private:
 
 	/* Private static utility functions */
 	/** Get the maximum of three values */
-	static float max(float Vm, float Vi, float Vj) {
+	static double max(double Vm, double Vi, double Vj) {
 		return std::max(Vm, std::max(Vi, Vj));
 	}
 
 	/** Get the maximum of four values */
-	static float max(float Vb, float Vm, float Vi, float Vj) {
+	static double max(double Vb, double Vm, double Vi, double Vj) {
 		return std::max(Vb, max(Vm, Vi, Vj));
 	}
 
@@ -538,10 +543,10 @@ private:
 	/**
 	 * four possibility version of whichMax
 	 */
-	static char whichMax(float probB, float probM, float probI, float probD, const string& states = "BMID") {
+	static char whichMax(double probB, double probM, double probI, double probD, const string& states = "BMID") {
 		assert(states.length() == 4);
 		string::size_type idx = 0;
-		float max = infV;
+		double max = infV;
 		if(probB > max) {
 			idx = 0;
 			max = probB;
@@ -566,10 +571,10 @@ private:
 	/**
 	 * three possibility version of whichMax
 	 */
-	/*static p7_state whichMax(float probM, float probI, float probD, const string& states = "MID") {
+	/*static p7_state whichMax(double probM, double probI, double probD, const string& states = "MID") {
 		assert(states.length() == 3);
 		string::size_type idx = 0;
-		float max = infV;
+		double max = infV;
 		if(probM > max) {
 			idx = 1;
 			max = probM;
@@ -590,10 +595,10 @@ private:
 	/**
 	 * two possibility version of whichMax
 	 */
-	static char whichMax(float probM, float probID, const string& states) {
+	static char whichMax(double probM, double probID, const string& states) {
 		assert(states.length() == 2);
 		string::size_type idx = 0;
-		float max = -std::numeric_limits<float>::infinity();
+		double max = infV;
 		if(probM > max) {
 			idx = 0;
 			max = probM;
@@ -607,7 +612,7 @@ private:
 	}
 
 	/* convert an hmm coded string to value */
-	static float hmmValueOf(const string& s);
+	static double hmmValueOf(const string& s);
 
 //public:
 	/*
@@ -680,7 +685,7 @@ inline BandedHMMP7::p7_state BandedHMMP7::encode(char c) {
 	}
 }
 
-inline float BandedHMMP7::hmmValueOf(const string& s) {
+inline double BandedHMMP7::hmmValueOf(const string& s) {
 	return s != "*" ? ::atof(s.c_str()) : BandedHMMP7::inf;
 }
 

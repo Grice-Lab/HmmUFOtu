@@ -16,6 +16,7 @@
 #include <sstream>
 #include <algorithm>
 #include "BandedHMMP7.h"
+#include "LinearAlgebraBasic.h"
 
 namespace EGriceLab {
 using namespace std;
@@ -27,11 +28,11 @@ const int BandedHMMP7::kNS =  kNM + kNSP; // number of total states
 /*const int BandedHMMP7::kMaxProfile = 10000; // up-to 10K 16S rRNA profile*/
 string HMM_TAG =
 		"HMM\t\tA\tC\tG\tT\n\t\tm->m\tm->i\tm->d\ti->m\ti->i\td->m\td->d";
-const float BandedHMMP7::inf = std::numeric_limits<float>::infinity();
+const double BandedHMMP7::inf = std::numeric_limits<double>::infinity();
 
-const float BandedHMMP7::infV = -inf;
+const double BandedHMMP7::infV = -inf;
 
-const float BandedHMMP7::kMaxGapFrac = 0.2; // default at class level
+const double BandedHMMP7::kMaxGapFrac = 0.2; // default at class level
 
 ostream& operator<<(ostream& os, const deque<BandedHMMP7::p7_state> path) {
 	for(deque<BandedHMMP7::p7_state>::const_iterator it = path.begin(); it != path.end(); ++it)
@@ -187,7 +188,10 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 	return is;
 }
 
-BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac, const string& name) {
+BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
+		const DirichletModel& dmME, const DirichletModel& dmIE,
+		const DirichletModel& dmMT, const DirichletModel& dmIT, const DirichletModel& dmDT,
+		const string& name) {
 	if(msa->getMSALen() == 0)
 		throw invalid_argument("Empty MSA encountered");
 	if(!(symfrac > 0 && symfrac < 1))
@@ -228,6 +232,7 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac, const string& nam
 		unsigned k = cs2ProfileIdx[j];
 		for(unsigned i = 1; i <= N; ++i) {
 			int8_t b = msa->encodeAt(i - 1, j - 1);
+			double w = msa->getSeqWeight(i - 1); /* use weighted count */
 			p7_state sm = determineMatchingState(cs2ProfileIdx, j, b);
 			if(sm == P)
 				continue; // ignore this base
@@ -239,12 +244,12 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac, const string& nam
 			/* update emission frequencies */
 			if(sm == M) {
 //				cerr << "i:" << i << " j:" << j << " b:" << (int) b << " db:" << hmm.abc->decode(b) << " k:" << k << endl;
-				hmm.E_M(b, 0)++; /* M0 as the COMPO freq */
-				hmm.E_M(b, k)++;
+				hmm.E_M(b, 0) += w; /* M0 as the COMPO freq */
+				hmm.E_M(b, k) += w;
 			}
 			else if(sm == I) {
 //				cerr << "i:" << i << " j:" << j << " b:" << (int) b << " db:" << hmm.abc->decode(b) << " k:" << k << endl;
-				hmm.E_I(b, k)++;
+				hmm.E_I(b, k) += w;
 			}
 			else { } // no emission
 
@@ -259,14 +264,15 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac, const string& nam
 					break;
 			}
 			if(!(jN <= L && smN != P)) // no jN found
-				break;
+				continue;
 			unsigned kN = cs2ProfileIdx[jN];
 			if(!(sm == I && smN == D || sm == D && smN == I)) // no I->D or D->I allowed
-				hmm.Tmat[k](sm, smN)++;
+				hmm.Tmat[k](sm, smN) += w;
 		} // end each seq
 	} // end each loc
 	/* update B->M1/I0/D1 and MK/IK/DK->E frequencies */
 	for(unsigned i = 1; i <= N; ++i) {
+		double w = msa->getSeqWeight(i - 1);
 		unsigned start = seqStart[i];
 		unsigned end = seqEnd[i];
 		if(start > csStart)
@@ -275,16 +281,42 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac, const string& nam
 			end = csEnd;
 		int8_t bStart = msa->encodeAt(i - 1, start - 1);
 		p7_state smStart = determineMatchingState(cs2ProfileIdx, start, bStart);
-		hmm.Tmat[0](M, smStart)++;
+		hmm.Tmat[0](M, smStart) += w;
 		int8_t bEnd = msa->encodeAt(i - 1, end - 1);
 		p7_state smEnd = determineMatchingState(cs2ProfileIdx, end, bEnd);
-		hmm.Tmat[K](smEnd, M)++;
+		hmm.Tmat[K](smEnd, M) += w;
 	}
 
-	cerr << "E_I:" << endl << hmm.E_I << endl;
-	/* normalize matrices */
-	hmm.normalize_transition_params();
-	hmm.normalize_emission_params();
+	/* get posterial emission and transition probabilities using Drichlet Models */
+	for(int j = 0; j <= K; ++j) {
+//		cerr << "EM observed: " <<  hmm.E_M.col(j).transpose() << endl;
+		if(j > 0)
+			hmm.E_M.col(j) = dmME.meanPostP(hmm.E_M.col(j)); /* do not use Dirichelet prior for COMPO emission */
+//		cerr << "EM postP: " <<  hmm.E_M.col(j).transpose() << endl;
+
+		hmm.E_I.col(j) = dmIE.meanPostP(hmm.E_I.col(j));
+		VectorXd mt = dmMT.meanPostP(hmm.Tmat[j].row(M));
+		VectorXd it = dmIT.meanPostP(hmm.Tmat[j].row(I).segment(M, 2));
+		VectorXd dt(2); /* store observed dtFreq */
+		dt(0) = hmm.Tmat[j](D, M);
+		dt(1) = hmm.Tmat[j](D, D);
+		cerr << "DT observed: " << dt << endl;
+		dt = dmDT.meanPostP(dt); /* override with postP */
+		cerr << "DT postP: " <<  dt << endl;
+
+		hmm.Tmat[j].row(M) = mt;
+		hmm.Tmat[j].row(I).segment(0, 2) = it;
+		hmm.Tmat[j](D, M) = dt(0);
+		hmm.Tmat[j](D, D) = dt(1);
+	}
+	/* get COMPO Match emission */
+	hmm.E_M.col(0) = EGriceLab::Math::normalize(hmm.E_M.col(0));
+	/* set special transition probabilities */
+	hmm.Tmat[0](D, M) = 1;
+	hmm.Tmat[0](D, D) = 0;
+	hmm.Tmat[K](D, M) = 1;
+	hmm.Tmat[K](D, D) = 0;
+
 	/* set bgFreq */
 	hmm.hmmBg.setBgFreq(hmm.E_M.col(0));
 	hmm.setSpEmissionFreq(hmm.E_M.col(0));
@@ -293,6 +325,11 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac, const string& nam
 	hmm.E_I_log = hmm.E_I.array().log();
 	for(int k = 0; k <= hmm.K; ++k)
 		hmm.Tmat_log[k] = hmm.Tmat[k].array().log();
+	/* set special transition probabilities */
+	hmm.Tmat_log[0](D, M) = 0;
+	hmm.Tmat_log[0](D, D) = infV;
+	hmm.Tmat_log[K](D, M) = 0;
+	hmm.Tmat_log[K](D, D) = infV;
 
 	return hmm;
 }
@@ -361,7 +398,7 @@ EGriceLab::BandedHMMP7::BandedHMMP7() :
 		abc(SeqCommons::nuclAbc), hmmBg(0), transInit(false), emisInit(false),
 		spInit(false), limitInit(false), indexInit(false), wingRetracted(false) {
 	/* Assert IEE559 at construction time */
-	assert(numeric_limits<float>::is_iec559);
+	assert(numeric_limits<double>::is_iec559);
 	/* set mandatory tags */
 	setHeaderOpt("HMMER3/f", progName + "-" + progVersion);
 	setHeaderOpt("NAME", "NULL");
@@ -376,7 +413,7 @@ EGriceLab::BandedHMMP7::BandedHMMP7(const string& name, int K, const DegenAlphab
 	if(!(abc->getName() == "IUPACNucl" && abc->getSize() == 4))
 		throw invalid_argument("BandedHMMP7 only supports DNA alphabet");
 	/* Assert IEE559 at construction time */
-	assert(numeric_limits<float>::is_iec559);
+	assert(numeric_limits<double>::is_iec559);
 	init_transition_params();
 	init_emission_params();
 	init_special_params();
@@ -485,10 +522,10 @@ void EGriceLab::BandedHMMP7::reset_emission_params() {
 	E_I_log.fill(BandedHMMP7::infV);
 }
 
-void EGriceLab::BandedHMMP7::normalize_transition_params() {
-	/*
+/*void EGriceLab::BandedHMMP7::normalize_transition_params() {
+
 	 * state 0 serves as the B state
-	 */
+
 	for(int k = 0; k <= K; ++k) {
 		for(int i = 0; i < BandedHMMP7::kNM; ++i) {
 			double C = Tmat[k].row(i).sum();
@@ -499,10 +536,10 @@ void EGriceLab::BandedHMMP7::normalize_transition_params() {
 		Tmat_log[k] = Tmat[k].array().log();
 	}
 
-}
+}*/
 
-void EGriceLab::BandedHMMP7::normalize_emission_params() {
-	/* state 0 serves as B state */
+/*void EGriceLab::BandedHMMP7::normalize_emission_params() {
+	 state 0 serves as B state
 	for(int k = 0; k <= K; ++k) {
 		double emC = E_M.col(k).sum();
 		double eiC = E_I.col(k).sum();
@@ -512,7 +549,7 @@ void EGriceLab::BandedHMMP7::normalize_emission_params() {
 			E_M.col(k) /= emC + emPseudo;
 		}
 		else {
-			E_M.col(k).fill(1.0 / E_M.rows()); /* Nothing observed, use constants */
+			E_M.col(k).fill(1.0 / E_M.rows());  Nothing observed, use constants
 		}
 
 		if(eiC > 0) {
@@ -521,12 +558,12 @@ void EGriceLab::BandedHMMP7::normalize_emission_params() {
 			E_I.col(k) /= eiC + eiPseudo;
 		}
 		else {
-			E_I.col(k).fill(1.0 / E_I.rows()); /* Nothing observed, use constants */
+			E_I.col(k).fill(1.0 / E_I.rows());  Nothing observed, use constants
 		}
 	}
 	E_M_log = E_M.array().log();
 	E_I_log = E_I.array().log();
-}
+}*/
 
 void EGriceLab::BandedHMMP7::init_limits() {
 	if (limitInit) // already initialized
@@ -596,7 +633,7 @@ EGriceLab::BandedHMMP7::ViterbiScores& EGriceLab::BandedHMMP7::resetViterbiScore
 	const int L = vs.seq->length();
 	/* Use -Inf as initial values for Viterbi matrices */
 /*	vs.DP_M = vs.DP_I = vs.DP_D = vs.S = MatrixXd::Constant(L + 1, K + 1,
-			-numeric_limits<float>::infinity());*/
+			-numeric_limits<double>::infinity());*/
 	/* set dimension */
 	vs.DP_M.resize(L + 1, K + 1);
 	vs.DP_I.resize(L + 1, K + 1);
@@ -660,7 +697,7 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 	assert(vs.seq != NULL);
 	assert(wingRetracted); // make sure wing is retracted
 	const int L = vs.seq->length();
-/*	vs.DP_M = vs.DP_I = vs.DP_D = MatrixXd::Constant(L + 1, K + 1, -numeric_limits<float>::infinity());*/
+/*	vs.DP_M = vs.DP_I = vs.DP_D = MatrixXd::Constant(L + 1, K + 1, -numeric_limits<double>::infinity());*/
 	/* vs.DP_M(0, 0) = 0; */
 	/* Initialize the M(,0), the B state */
 	for (int i = 0; i <= L; ++i)
@@ -670,22 +707,22 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 	/* calculate I0, a special case */
 	for (int i = 1; i <= L; ++i)
 		vs.DP_I(i, 0) = E_I_log(vs.seq->encodeAt(i - 1), 0) + std::max(
-					static_cast<float> (vs.DP_M(i - 1, 0) + Tmat_log[0](M, I)), // B->I0
-					static_cast<float> (vs.DP_I(i - 1, 0) + Tmat_log[0](I, I))); // I0->I0
+					static_cast<double> (vs.DP_M(i - 1, 0) + Tmat_log[0](M, I)), // B->I0
+					static_cast<double> (vs.DP_I(i - 1, 0) + Tmat_log[0](I, I))); // I0->I0
 	/* Full Dynamic-Programming at row-first order */
 	for (int j = 1; j <= K; ++j) {
 		for (int i = 1; i <= L; ++i) {
 			vs.DP_M(i, j) = E_M_log(vs.seq->encodeAt(i-1), j) + EGriceLab::BandedHMMP7::max(
-					static_cast<float> (vs.DP_M(i - 1, 0) + entryPr_log(j)), // from the B state
-					static_cast<float> (vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), // from Mi-1,j-1
-					static_cast<float> (vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), // from Ii-1,j-1
-					static_cast<float> (vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); // from Di-1,j-1
+					static_cast<double> (vs.DP_M(i - 1, 0) + entryPr_log(j)), // from the B state
+					static_cast<double> (vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), // from Mi-1,j-1
+					static_cast<double> (vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), // from Ii-1,j-1
+					static_cast<double> (vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); // from Di-1,j-1
 			vs.DP_I(i, j) = E_I_log(vs.seq->encodeAt(i - 1), j) + std::max(
-							static_cast<float> (vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), // from Mi-1,j
-							static_cast<float> (vs.DP_I(i - 1, j) + Tmat_log[j](I, I))); // from Ii-1,j
+							static_cast<double> (vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), // from Mi-1,j
+							static_cast<double> (vs.DP_I(i - 1, j) + Tmat_log[j](I, I))); // from Ii-1,j
 			vs.DP_D(i, j) = std::max(
-					static_cast<float> (vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), // from Mi,j-1
-					static_cast<float> (vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D))); // from Di,j-1
+					static_cast<double> (vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), // from Mi,j-1
+					static_cast<double> (vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D))); // from Di,j-1
 		}
 	}
 	vs.S.resize(L + 1, K + 2); // column K+1 represent the exit from IK state
@@ -725,8 +762,8 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 	/* calculate I0, a special case */
 	for (int i = 1; i <= L; ++i)
 		vs.DP_I(i, 0) = E_I_log(vs.seq->encodeAt(i - 1), 0) + std::max(
-					static_cast<float> (vs.DP_M(i - 1, 0) + Tmat_log[0](M, I)), // B->I0
-					static_cast<float> (vs.DP_I(i - 1, 0) + Tmat_log[0](I, I))); // I0->I0
+					static_cast<double> (vs.DP_M(i - 1, 0) + Tmat_log[0](M, I)), // B->I0
+					static_cast<double> (vs.DP_I(i - 1, 0) + Tmat_log[0](I, I))); // I0->I0
 	/* process each known path upstream and themselves */
 	for(vector<int>::size_type n = 0; n < vpath.N; ++n) {
 		/* Determine banded boundaries */
@@ -746,17 +783,17 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 			for (int i = up_from; i <= vpath.from[n]; ++i) {
 				vs.DP_M(i, j) = E_M_log(vs.seq->encodeAt(i - 1), j)
 						+ EGriceLab::BandedHMMP7::max(
-								static_cast<float>(vs.DP_M(i, 0) + entryPr_log(j)), // from B state
-								static_cast<float>(vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), // from Mi-1,j-1
-								static_cast<float>(vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), // from Ii-1,j-1
-								static_cast<float>(vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); // from Di-1,j-1
+								static_cast<double>(vs.DP_M(i, 0) + entryPr_log(j)), // from B state
+								static_cast<double>(vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), // from Mi-1,j-1
+								static_cast<double>(vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), // from Ii-1,j-1
+								static_cast<double>(vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); // from Di-1,j-1
 				vs.DP_I(i, j) = E_I_log(vs.seq->encodeAt(i - 1), j)
 								+ std::max(
-										static_cast<float>(vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), // from Mi-1,j
-										static_cast<float>(vs.DP_I(i - 1, j) + Tmat_log[j](I, I))); // from Ii-1,j
+										static_cast<double>(vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), // from Mi-1,j
+										static_cast<double>(vs.DP_I(i - 1, j) + Tmat_log[j](I, I))); // from Ii-1,j
 				vs.DP_D(i, j) =	std::max(
-						static_cast<float>(vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), // from Mi,j-1
-						static_cast<float>(vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D))); // from Di,j-1
+						static_cast<double>(vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), // from Mi,j-1
+						static_cast<double>(vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D))); // from Di,j-1
 			}
 		}
 		/* Fill the score of the known alignment path */
@@ -767,17 +804,17 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 					continue;
 				vs.DP_M(i, j) = E_M_log(vs.seq->encodeAt(i - 1), j)
 						+ EGriceLab::BandedHMMP7::max(
-								static_cast<float>(vs.DP_M(i, 0) + entryPr_log(j)), // from B state
-								static_cast<float>(vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), // from Mi-1,j-1
-								static_cast<float>(vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), // from Ii-1,j-1
-								static_cast<float>(vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); // from Di-1,j-1
+								static_cast<double>(vs.DP_M(i, 0) + entryPr_log(j)), // from B state
+								static_cast<double>(vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), // from Mi-1,j-1
+								static_cast<double>(vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), // from Ii-1,j-1
+								static_cast<double>(vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); // from Di-1,j-1
 				vs.DP_I(i, j) = E_I_log(vs.seq->encodeAt(i - 1), j)
 						+ std::max(
-								static_cast<float>(vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), // from Mi-1,j
-								static_cast<float>(vs.DP_I(i - 1, j) + Tmat_log[j](I, I))); // from Ii-1,j
+								static_cast<double>(vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), // from Mi-1,j
+								static_cast<double>(vs.DP_I(i - 1, j) + Tmat_log[j](I, I))); // from Ii-1,j
 				vs.DP_D(i, j) = std::max(
-						static_cast<float>(vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), // from Mi,j-1
-						static_cast<float>(vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D))); // from Di,j-1
+						static_cast<double>(vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), // from Mi,j-1
+						static_cast<double>(vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D))); // from Di,j-1
 			}
 		}
 		// assert(i == vpath.to + 1 && j == vpath.end + 1);
@@ -799,16 +836,16 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 			vs.DP_M(i, j) = E_M_log(vs.seq->encodeAt(i - 1), j) +
 					EGriceLab::BandedHMMP7::max(
 							// from Mi,0, the B state is not possible
-							static_cast<float>(vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), // from Mi-1,j-1
-							static_cast<float>(vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), // from Ii-1,j-1
-							static_cast<float>(vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); // from Di-1,j-1
+							static_cast<double>(vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), // from Mi-1,j-1
+							static_cast<double>(vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), // from Ii-1,j-1
+							static_cast<double>(vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); // from Di-1,j-1
 			vs.DP_I(i, j) = E_I_log(vs.seq->encodeAt(i - 1), j) +
 					std::max(
-							static_cast<float>(vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), // from Mi-1,j
-							static_cast<float>(vs.DP_I(i - 1, j) + Tmat_log[j](I, I))); // from Ii-1,j
+							static_cast<double>(vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), // from Mi-1,j
+							static_cast<double>(vs.DP_I(i - 1, j) + Tmat_log[j](I, I))); // from Ii-1,j
 			vs.DP_D(i, j) = std::max(
-							static_cast<float>(vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), // from Mi,j-1
-							static_cast<float>(vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D))); // from Di,j-1
+							static_cast<double>(vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), // from Mi,j-1
+							static_cast<double>(vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D))); // from Di,j-1
 		}
 	}
 //	cerr << "downstream done" << endl;
@@ -883,11 +920,11 @@ void EGriceLab::BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
 	}
 }
 
-float EGriceLab::BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath& vpath) const {
+double EGriceLab::BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath& vpath) const {
 	assert(vs.seq != NULL);
 	assert(vs.S.rows() == vpath.L + 1 && vs.S.cols() == K + 2);
 	MatrixXd::Index maxRow, maxCol;
-	float maxScore = vs.S.maxCoeff(&maxRow, &maxCol);
+	double maxScore = vs.S.maxCoeff(&maxRow, &maxCol);
 	if(maxScore == infV)
 		return maxScore; // max score not found, do nothing
 	/* do trace back in the vScore matrix */
@@ -904,19 +941,19 @@ float EGriceLab::BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, Viterbi
 		//vpath.TRACE(i, j) = s;
 		vpath.alnPath.push_back(s);
 		if(j == 0) {
-		//	cerr << "i:" << i << " j:" << j << " s:" << decode(B) << ":" << static_cast<float> (vs.DP_M(i, j)) << endl;
+		//	cerr << "i:" << i << " j:" << j << " s:" << decode(B) << ":" << static_cast<double> (vs.DP_M(i, j)) << endl;
 			break;
 		}
 		// update the status
 		if(s == 'M') {
-			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<float> (vs.DP_M(i, j));
+			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<double> (vs.DP_M(i, j));
 			vpath.alnStart--;
 			vpath.alnFrom--;
 			s = BandedHMMP7::whichMax(
-					static_cast<float> (vs.DP_M(i, 0) + entryPr_log(j)), /* from B-state */
-					static_cast<float> (vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), /* from M(i-1,j-1) */
-					static_cast<float> (vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), /* from I(i-1,j-1) */
-					static_cast<float> (vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); /* from D(i-1,j-1) */
+					static_cast<double> (vs.DP_M(i, 0) + entryPr_log(j)), /* from B-state */
+					static_cast<double> (vs.DP_M(i - 1, j - 1) + Tmat_log[j-1](M, M)), /* from M(i-1,j-1) */
+					static_cast<double> (vs.DP_I(i - 1, j - 1) + Tmat_log[j-1](I, M)), /* from I(i-1,j-1) */
+					static_cast<double> (vs.DP_D(i - 1, j - 1) + Tmat_log[j-1](D, M))); /* from D(i-1,j-1) */
 			//cerr << "->" << s << endl;
 			if(s == 'B')
 				j = 0; // jump to B state
@@ -926,27 +963,27 @@ float EGriceLab::BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, Viterbi
 			}
 		}
 		else if(s == 'I') {
-			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<float> (vs.DP_I(i, j));
+			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<double> (vs.DP_I(i, j));
 			vpath.alnFrom--;
 			s = BandedHMMP7::whichMax(
-					static_cast<float> (vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), /* from M(i-1,j) */
-					static_cast<float> (vs.DP_I(i - 1, j) + Tmat_log[j](I, I)), /* from I(i-1,j) */
+					static_cast<double> (vs.DP_M(i - 1, j) + Tmat_log[j](M, I)), /* from M(i-1,j) */
+					static_cast<double> (vs.DP_I(i - 1, j) + Tmat_log[j](I, I)), /* from I(i-1,j) */
 					"MI");
 			//cerr << "->" << s << endl;
 			i--;
 		}
 		else if(s == 'D') {
 			vpath.alnStart--;
-			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<float> (vs.DP_D(i, j));
+			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<double> (vs.DP_D(i, j));
 			s = BandedHMMP7::whichMax(
-					static_cast<float> (vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), /* from M(i,j-1) */
-					static_cast<float> (vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D)), /* from D(i,j-1) */
+					static_cast<double> (vs.DP_M(i, j - 1) + Tmat_log[j-1](M, D)), /* from M(i,j-1) */
+					static_cast<double> (vs.DP_D(i, j - 1) + Tmat_log[j-1](D, D)), /* from D(i,j-1) */
 					"MD");
 			//cerr << "->" << s << endl;
 			j--;
 		}
 		else { // B state found
-			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<float> (vs.DP_M(i, j)) << endl;
+			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<double> (vs.DP_M(i, j)) << endl;
 			break;
 		}
 		//cerr << "vpath.alnStart:" << vpath.alnStart + 1 << " vpath.alnEnd:" << vpath.alnEnd << endl;
@@ -1007,7 +1044,7 @@ void EGriceLab::BandedHMMP7::wingRetract() {
 	/* retract entering probabilities */
 	/* increase the B->Mj probability by adding the chain B->D1->D2->...->Dj-1->Mj */
 	for(MatrixXd::Index j = 2; j <= K; ++j) {
-		float logP = 0; // additional retract probability in log-scale
+		double logP = 0; // additional retract probability in log-scale
 		logP += Tmat_log[0](M, D); // B->D1 (M0->D1)
 		for(MatrixXd::Index i = 1; i < j - 1; ++i)
 			logP += Tmat_log[i](D, D); // Di->Di+1
@@ -1020,7 +1057,7 @@ void EGriceLab::BandedHMMP7::wingRetract() {
 	/* retract exiting probabilities */
 	/* increase the Mj->E probability by adding the chain Mj->Dj+1->Dj+2->...->DK->E */
 	for(MatrixXd::Index i = 1; i <= K - 1; ++i) {
-		float logP = 0; // additional retract probability in log-scale
+		double logP = 0; // additional retract probability in log-scale
 		logP += Tmat_log[i](M, D); // Mj -> Di+1
 		for(MatrixXd::Index j = i + 1; j < K; ++j)
 			logP += Tmat_log[j](D, D); // Dj->Dj+1
