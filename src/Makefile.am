@@ -9,6 +9,7 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 noinst_LIBRARIES = libHmmUFOtu.a
 libHmmUFOtu_a_SOURCES = \
 EGMath.a \
+CommandOptions.cpp \
 DegenAlphabet.cpp \
 StringUtils.cpp \
 IUPACNucl.cpp \
@@ -23,6 +24,20 @@ MSA.cpp \
 CSFMIndex.cpp
 
 # Build the executables
-bin_PROGRAMS=HmmUFOtu
-HmmUFOtu_SOURCES=HmmUFOtu.cpp HmmUFOtu.a
+bin_PROGRAMS=hmmufotu hmmufotu-train-dm hmmufotu-train
 
+hmmufotu_SOURCES=HmmUFOtu.cpp
+hmmufotu_LDADD = libHmmUFOtu.a \
+$(srcdir)/math/libEGMath.a
+hmmufotu_LDFLAGS = -static
+
+hmmufotu_train_dm_SOURCES=hmmufotu-train-dm.cpp
+hmmufotu_train_dm_LDADD = libHmmUFOtu.a \
+$(srcdir)/math/libEGMath.a
+hmmufotu_train_dm_LDFLAGS = -static
+
+hmmufotu_train_SOURCES = hmmufotu-train.cpp
+hmmufotu_train_LDADD = libHmmUFOtu.a \
+$(srcdir)/math/libEGMath.a
+hmmufotu_train_CPPFLAGS = -DDATA=$(pkgdatadir)
+hmmufotu_train_LDFLAGS = -static

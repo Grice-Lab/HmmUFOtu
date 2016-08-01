@@ -19,35 +19,44 @@ using namespace EGriceLab::Math;
 
 static const int DEFAULT_QM = 1;
 static const double DEFAULT_SYMFRAC = 0.5;
+static const int MAX_NUM_COMPO = 4;
+static const int MAX_ITER = 0;
 
 /**
  * Print the usage information of this program
  */
 void printUsage(const string& progName) {
-	cerr << "Usage:    " << progName << "  <MSA-INFILE> [options]" << endl
-		 << "Options:    -o FILE    : write output to FILE instead of stdout" << endl
-		 << "            -qM INT    : number of Dirichlet Mixture model components for match state emissions [" << DEFAULT_QM << "]" << endl
-		 << "            -symfrac   : conservation threshold for an MSA site to be considered as a Match state [" << DEFAULT_SYMFRAC << "]" << endl;
+	cerr << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
+		 << "Options:    MSA-FILE     : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
+		 << "            -o FILE      : write output to FILE instead of stdout" << endl
+		 << "            -qM INT      : number of Dirichlet Mixture model components for match state emissions [" << DEFAULT_QM << "]" << endl
+		 << "            -symfrac     : conservation threshold for an MSA site to be considered as a Match state [" << DEFAULT_SYMFRAC << "]" << endl
+		 << "            --max-it INT : maximum iteration allowed in gradient descent training, 0 for no limit [" << MAX_ITER << "]" << endl
+		 << "            -h|--help    : print this help and exit" << endl;
 }
-
-static const int MAX_NUM_COMPO = 4;
 
 int main(int argc, char* argv[]) {
 	ifstream in;
-	filebuf* fb; /* only be used when -o specified */
-	ostream out(NULL);
+	ofstream of;
 	int qM = DEFAULT_QM;
 	double symfrac = DEFAULT_SYMFRAC;
+	int maxIter = MAX_ITER;
 	string infn;
+	string outfn;
 	string fmt;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
+	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
+		printUsage(argv[0]);
+		return 0;
+	}
 	if(cmdOpts.numMainOpts() != 1) {
 		cerr << "Error:" << endl;
 		printUsage(argv[0]);
 		return -1;
 	}
+
 	infn = cmdOpts.getMainOpt(0);
 	in.open(infn.c_str());
 	if(!in.is_open()) {
@@ -56,27 +65,36 @@ int main(int argc, char* argv[]) {
 	}
 
 	if(cmdOpts.hasOpt("-o")) {
-		fb->open(cmdOpts.getOpt("-o").c_str(), ios::out);
-		if(!fb->is_open()) {
-			cerr << "Unable to write to '" << cmdOpts.getOpt("-o") << "'" << endl;
+		outfn = cmdOpts.getOpt("-o");
+		cerr << "Re-directing output to " << outfn << endl;
+		of.open(outfn.c_str());
+		if(!of.is_open()) {
+			cerr << "Unable to write to '" << outfn << "'" << endl;
 			return -1;
 		}
-		out.rdbuf(fb);
 	}
-	else
-		out.rdbuf(cout.rdbuf());
+
+	ostream& out = outfn.empty() ? cout : of;
 
 	if(cmdOpts.hasOpt("-qM"))
-		qM = atoi(cmdOpts.getOpt("-qM").c_str());
+		qM = ::atoi(cmdOpts.getOpt("-qM").c_str());
 	if(!(qM > 0 && qM < MAX_NUM_COMPO)) {
 		cerr << "-qM must between 1 and " << MAX_NUM_COMPO << endl;
 		return -1;
 	}
 
 	if(cmdOpts.hasOpt("-symfrac"))
-		symfrac = atof(cmdOpts.getOpt("-symfrac").c_str());
+		symfrac = ::atof(cmdOpts.getOpt("-symfrac").c_str());
 	if(!(symfrac >= 0 && symfrac <= 1)) {
 		cerr << "-symfrac must between 0 and 1" << endl;
+		return -1;
+	}
+
+	if(cmdOpts.hasOpt("--max-it"))
+		maxIter = ::atoi(cmdOpts.getOpt("--max-it").c_str());
+	if(maxIter < 0) {
+		cerr << "--max-it must be a non-negative integer" << endl;
+		return -1;
 	}
 
 	/* guess input format */
@@ -118,12 +136,14 @@ int main(int argc, char* argv[]) {
 
 	cerr << "Dirichlet models initiated" << endl;
 
+	const unsigned L = msa->getCSLen();
+	const unsigned N = msa->getNumSeq();
 	/* Prepare training data */
-	Matrix4Xd dataME(K, msa->getCSLen());
-	Matrix4Xd dataIE(K, msa->getCSLen());
-	Matrix3Xd dataMT = Matrix3Xd::Zero(3, msa->getCSLen()); /* M->M, M->I and M->D */
-	Matrix2Xd dataIT = Matrix2Xd::Zero(2, msa->getCSLen()); /* I->M, I->I and I->D */
-	Matrix2Xd dataDT = Matrix2Xd::Zero(2, msa->getCSLen()); /* D->M, D->I and D->D */
+	Matrix4Xd dataME(K, L);
+	Matrix4Xd dataIE(K, L);
+	Matrix3Xd dataMT = Matrix3Xd::Zero(3, L); /* M->M, M->I and M->D */
+	Matrix2Xd dataIT = Matrix2Xd::Zero(2, L); /* I->M and I->I */
+	Matrix2Xd dataDT = Matrix2Xd::Zero(2, L); /* D->M and D->D */
 
 	int cME = 0;
 	int cIE = 0;
@@ -131,7 +151,7 @@ int main(int argc, char* argv[]) {
 	int cIT = 0;
 	int cDT = 0;
 
-	for(int j = 0; j < msa->getCSLen(); ++j) {
+	for(int j = 0; j < L; ++j) {
 		if(msa->symWFrac(j) >= symfrac) /* match state emission */
 			dataME.col(cME++) = msa->symWFreq(j);
 		else
@@ -141,13 +161,15 @@ int main(int argc, char* argv[]) {
 	dataIE.conservativeResize(K, cIE);
 	cerr << "Emission training data prepared" << endl;
 
-	const unsigned L = msa->getCSLen();
 	for(int j = 0; j < L - 1; ++j) {
 		bool matchFlag = msa->symWFrac(j) >= symfrac;
-		for(int i = 0; i < msa->getNumSeq(); ++i) {
+		for(int i = 0; i < N; ++i) {
+//			cerr << "seqStart:" << msa->seqStart(i) << " seqEnd:" << msa->seqEnd(i) << endl;
+//			if(j < msa->seqStart(i) || j > msa->seqEnd(i)) /* ignore 5' and 3' hanging gaps */
+//				continue;
 			double w = msa->getSeqWeight(i);
 			bool resFlag = msa->encodeAt(i, j) >= 0;
-			if(!matchFlag && !resFlag) /* ignore phentome positions */
+			if(!matchFlag && !resFlag) /* ignore phantom positions */
 				continue;
 			/* search to next non-phentome position */
 			bool matchFlagN = false;
@@ -187,30 +209,33 @@ int main(int argc, char* argv[]) {
 				else { } // ignore other cases
 			}
 			else { }
-		}
+		} /* end each seq */
 		if((dataMT.col(cMT).array() != 0).any())
 			cMT++;
 		if((dataIT.col(cIT).array() != 0).any())
 			cIT++;
 		if((dataDT.col(cDT).array() != 0).any())
 			cDT++;
-	}
-	cerr << "cMT:" << cMT << " cIT:" << cIT << " cDT:" << cDT << endl;
+	} /* end each position */
+
+	cerr << "cMT:" << cMT << endl;
+	cerr << "cIT:" << cIT << endl;
+	cerr << "cDT:" << cDT << endl;
+	cerr << "dataMT:" << dataMT.rowwise().sum() << endl;
 	dataMT.conservativeResize(3, cMT);
 	dataIT.conservativeResize(2, cIT);
 	dataDT.conservativeResize(2, cDT);
-	cerr << "Transition training data prepared" << endl;
 
 	/* train DM models */
-	double costME = dmME->trainML(dataME);
+	double costME = dmME->trainML(dataME, maxIter);
 	cerr << "Match emission model trained" << endl;
-	double costIE = dmIE->trainML(dataIE);
+	double costIE = dmIE->trainML(dataIE, maxIter);
 	cerr << "Insert emission model trained" << endl;
-	double costMT = dmMT->trainML(dataMT);
+	double costMT = dmMT->trainML(dataMT, maxIter);
 	cerr << "Match transition model trained" << endl;
-	double costIT = dmIT->trainML(dataIT);
+	double costIT = dmIT->trainML(dataIT, maxIter);
 	cerr << "Insert transition model trained" << endl;
-	double costDT = dmDT->trainML(dataDT);
+	double costDT = dmDT->trainML(dataDT, maxIter);
 	cerr << "Delete transition model trained" << endl;
 
 	/* output */

@@ -87,24 +87,24 @@ public:
 
 		const PrimarySeq* seq; // a pointer to a const DigitalSeq
 		/* Viterbi log-odd scoring matrices */
-		MatrixXd DP_M;  /* the log-odds scores of the best path matching the subsequence X1..i
+		MatrixXd DP_M;  /* the cost of the best path matching the subsequence X1..i
 							to the profile submodel up to the column j, ending with xi being emitted by Mj*/
-		MatrixXd DP_I;  /* the log-odds scores of the best path matching the subsequence Xi..i
+		MatrixXd DP_I;  /* the cost of the best path matching the subsequence Xi..i
 							to the profile submodel up to the ending in xi being emitted by Ij */
-		MatrixXd DP_D;  /* the log-odds score of the best path ending in Dj, and xi being the last character emitted before Dj).*/
+		MatrixXd DP_D;  /* the lcost of the best path ending in Dj, and xi being the last character emitted before Dj).*/
 
 		MatrixXd S;     /*  the Dynamic-Programming scoring matrix storing the whole ViterbiScores (log-odds)
 		of all combinations of i in 0..L and j in 0..K */
 
-		/* Forward algorithm probability matrices */
-		/*MatrixXd F_M;*/  /* forward probability of all alignments up to xi and ends in Mj */
-		/*MatrixXd F_I;*/  /* forward probability of all alignments up to xi and ends in Ij */
-		/*MatrixXd F_D;*/ /* forward probability of all alignments up to xi and ends in Dj */
+		/* Forward algorithm cost matrices */
+		/*MatrixXd F_M;*/  /* forward cost of all alignments up to xi and ends in Mj */
+		/*MatrixXd F_I;*/  /* forward cost of all alignments up to xi and ends in Ij */
+		/*MatrixXd F_D;*/ /* forward cost of all alignments up to xi and ends in Dj */
 
-		/* Backward algorithm probability matrices*/
-		/*MatrixXd B_M;*/ /* backward probability of all alignments up to xi and ends in Mj */
-		/*MatrixXd B_I;*/ /* backward probability of all alignments up to xi and ends in Ij */
-		/*MatrixXd B_D;*/ /* backward probability of all alignments up to xi and ends in Dj */
+		/* Backward algorithm cost matrices*/
+		/*MatrixXd B_M;*/ /* backward cost of all alignments up to xi and ends in Mj */
+		/*MatrixXd B_I;*/ /* backward cost of all alignments up to xi and ends in Ij */
+		/*MatrixXd B_D;*/ /* backward cost of all alignments up to xi and ends in Dj */
 
 		/* Forward-backward scaling vectors to prevent numeric underflow */
 /*		VectorXd SV_M;
@@ -138,9 +138,10 @@ public:
 	static const int kNSP; // number of special states
 	static const int kNS; // number of total states
 	static const string HMM_TAG;
-	static const int kMaxProfile = UINT16_MAX + 1;
-	static const int kMaxCS = UINT16_MAX + 1;
-	static const double kMaxGapFrac; // maximum gap fraction comparing to the profile
+	static const int kMinProfile = UINT16_MAX + 1;
+	static const int kMinCS = UINT16_MAX + 1;
+	static const double kMinGapFrac = 0.2; // minimum gap fraction comparing to the profile
+	static const double CONS_THRESHOLD = 0.9; // threshold for print upper-case consensus residues
 
 	/* member functions */
 	/* Getters and Setters */
@@ -222,7 +223,7 @@ public:
 	 * @return the 1-based position relative to the profile, or 0 is not invalid or unmatched column
 	 */
 	int getProfileLoc(int idx) const {
-		return idx < kMaxProfile ? cs2ProfileIdx[idx] : 0;
+		return idx < kMinProfile ? cs2ProfileIdx[idx] : 0;
 	}
 
 	/**
@@ -231,21 +232,33 @@ public:
 	 * @return the 1-based position relative to the consensus sequence, or 0 if out of range
 	 */
 	int getCSLoc(int idx) const {
-		return idx < kMaxCS ? profile2CSIdx[idx] : 0;
+		return idx < kMinCS ? profile2CSIdx[idx] : 0;
 	}
 
 	/**
 	 * Get the given tag at given loc on the profile
-	 * @param tag  ptional HMMER3/f tag, i.e. CONS, RF, MM, CS
+	 * @param tag  optional HMMER3/f tag, i.e. CONS, RF, MM, CS
 	 * @param loc  1-based location on the HMM profile
 	 * @return  the optional tag value at the match emission lines, or "-" if not defined
 	 */
 	string getLocOptTag(string tag, int loc) const {
-		map<string, map<int, string> >::const_iterator it = locOptTags.find(tag);
-		if(it == locOptTags.end() || it->second.find(loc) == it->second.end()) /* non-existing tag or out-of-bound loc */
+		map<string, vector<string> >::const_iterator it = locOptTags.find(tag);
+		if(it == locOptTags.end() || !(loc >= 0 && loc < it->second.size())) /* non-existing tag or out-of-bound loc */
 			return "-";
 		else
-			return it->second.find(loc)->second;
+			return it->second[loc];
+	}
+
+	/**
+	 * Set the given tag at given loc on the profile
+	 * @param tag  optional HMMER3/f tag, i.e. CONS, RF, MM, CS
+	 * @param val  tag value to set
+	 * @param loc  1-based location on the HMM profile
+	 */
+	void setLocOptTag(string tag, string val, int loc) {
+		if(locOptTags[tag].empty())
+			locOptTags[tag].resize(K + 1); /* position 0 is dummy */
+		locOptTags[tag][loc] = val;
 	}
 
 	/**
@@ -344,18 +357,18 @@ private:
 	BandedHMMP7Bg hmmBg; // background HMMP7 profile
 	vector<string> headNames; // all header names, if set
 	map<string, string> headOpts; // header options the profile, as compatitable to HMMER3/b
-	int cs2ProfileIdx[kMaxProfile + 1]; // MAP index from consensus index -> profile index
-	int profile2CSIdx[kMaxCS + 1]; // MAP index from profile index -> consensus index
-	map<string, map<int, string> > locOptTags; // other profile loc-specific optional tags in the match emission line
+	int cs2ProfileIdx[kMinProfile + 1]; // MAP index from consensus index -> profile index
+	int profile2CSIdx[kMinCS + 1]; // MAP index from profile index -> consensus index
+	map<string, vector<string> > locOptTags; // other profile loc-specific optional tags in the match emission line
 
-	/* Transition probability matrices */
+	/* Transition cost matrices */
 	/*
 	 * Note that index 0 indicating B state,
 	 * and index K indicating E state
 	 */
 	vector<Matrix3d> Tmat;
 
-	/* Emission probability matrices */
+	/* Emission cost matrices */
 	Matrix4Xd E_M; /* emission probabilities from Mk node */
 	Matrix4Xd E_I; /* emission probabilities from Ik node */
 	/* No emission from D state */
@@ -378,29 +391,29 @@ private:
 	 */
 
 	/* Log transition probabilities, and log emission probabilities, stored as a duplicate copy for speed */
-	vector<Matrix3d> Tmat_log;
+	vector<Matrix3d> Tmat_cost;
 
-	Matrix4Xd E_M_log;
-	Matrix4Xd E_I_log;
+	Matrix4Xd E_M_cost;
+	Matrix4Xd E_I_cost;
 
-	Matrix4Xd E_SP_log;
-	MatrixXd T_SP_log;
+	Matrix4Xd E_SP_cost;
+	MatrixXd T_SP_cost;
 
-	VectorXd entryPr_log;
-	VectorXd exitPr_log;
+	VectorXd entryPr_cost;
+	VectorXd exitPr_cost;
 
 	/* Special wing retracted T_MM transition probabilities,
-	 * by adding the B->D1->...->Dk-1 to the B->Mk probability
-	 * and adding the Dk+1->Dk+2->...->E to the Mk->E probabitity
+	 * by adding the B->D1->...->Dk-1 to the B->Mk cost
+	 * and adding the Dk+1->Dk+2->...->E to the Mk->E cost
 	 */
 	//MatrixXd T_MM_retract;
 	//MatrixXd T_MM_retract_log;
 
 	/* Banded HMM limits */
-	VectorXi gapBeforeLimit; /* Maximum allowed insertions before given position 1..K, with 0 as dummy position */
-	VectorXi gapAfterLimit; /* Maximum allowed insertions after given position 1..K, with 0 as dummy position */
-	//VectorXi delBeforeLimit; /* Maximum allowed deletions before given position 1..K, with 0 as dummy position */
-	//VectorXi delAfterLimit; /* Maximum allowed deletions after given position 1..K, with 0 as dummy position */
+	VectorXi gapBeforeLimit; /* Minimum allowed insertions before given position 1..K, with 0 as dummy position */
+	VectorXi gapAfterLimit; /* Minimum allowed insertions after given position 1..K, with 0 as dummy position */
+	//VectorXi delBeforeLimit; /* Minimum allowed deletions before given position 1..K, with 0 as dummy position */
+	//VectorXi delAfterLimit; /* Minimum allowed deletions after given position 1..K, with 0 as dummy position */
 
 	/* Initialization flags */
 	bool transInit;
@@ -411,12 +424,12 @@ private:
 	bool wingRetracted;
 
 	/**
-	 * Initialize profile transition probability matrices, but not their elements
+	 * Initialize profile transition cost matrices, but not their elements
 	 */
 	void init_transition_params();
 
 	/**
-	 * Initialize profile emission probability matrices, but not their elements
+	 * Initialize profile emission cost matrices, but not their elements
 	 */
 	void init_emission_params();
 
@@ -426,24 +439,24 @@ private:
 	void init_special_params();
 
 	/**
-	 * Reset profile transition probability matrices
+	 * Reset profile transition cost matrices
 	 * use 0 for normal matrices and -inf for log matrices
 	 */
 	void reset_transition_params();
 
 	/**
-	 * Reset profile emission probability matrices
+	 * Reset profile emission cost matrices
 	 * use 0 for normal matrices and -inf for log matrices
 	 */
 	void reset_emission_params();
 
 	/**
-	 * Normalize profile transition probability matrices
+	 * Normalize profile transition cost matrices
 	 */
 //	void normalize_transition_params();
 
 	/**
-	 * Normalize profile emission probability matrices
+	 * Normalize profile emission cost matrices
 	 * use 0 for normal matrices and -inf for log matrices
 	 */
 //	void normalize_emission_params();
@@ -481,14 +494,14 @@ private:
 	bool isValidAlignPath(const ViterbiAlignPath& vpath) const;
 
 	/* Private static utility functions */
-	/** Get the maximum of three values */
-	static double max(double Vm, double Vi, double Vj) {
-		return std::max(Vm, std::max(Vi, Vj));
+	/** Get the minimum of three values */
+	static double min(double Vm, double Vi, double Vj) {
+		return std::min(Vm, std::min(Vi, Vj));
 	}
 
-	/** Get the maximum of four values */
-	static double max(double Vb, double Vm, double Vi, double Vj) {
-		return std::max(Vb, max(Vm, Vi, Vj));
+	/** Get the minimum of four values */
+	static double min(double Vb, double Vm, double Vi, double Vj) {
+		return std::min(Vb, min(Vm, Vi, Vj));
 	}
 
 	/**
@@ -539,75 +552,75 @@ private:
 		return loc < csStart ? B : loc > csEnd ? E : M;
 	}*/
 
-	/* trace back methods to tell which state the current max is coming from */
+	/* trace back methods to tell which state the current min is coming from */
 	/**
-	 * four possibility version of whichMax
+	 * four possibility version of whichMin
 	 */
-	static char whichMax(double probB, double probM, double probI, double probD, const string& states = "BMID") {
+	static char whichMin(double probB, double probM, double probI, double probD, const string& states = "BMID") {
 		assert(states.length() == 4);
 		string::size_type idx = 0;
-		double max = infV;
-		if(probB > max) {
+		double min = inf;
+		if(probB < min) {
 			idx = 0;
-			max = probB;
+			min = probB;
 		}
-		if(probM > max) {
+		if(probM < min) {
 			idx = 1;
-			max = probM;
+			min = probM;
 		}
-		if(probI > max) {
+		if(probI < min) {
 			idx = 2;
-			max = probI;
+			min = probI;
 		}
-		if(probD > max) {
+		if(probD < min) {
 			idx = 3;
-			max = probD;
+			min = probD;
 		}
 		/*std::cerr << "probB:" << probB << " probM:" << probM << " probI:" << probI
-				<< " probD:" << probD << " max:" << states[idx] << std::endl;*/
+				<< " probD:" << probD << " min:" << states[idx] << std::endl;*/
 		return states[idx];
 	}
 
 	/**
-	 * three possibility version of whichMax
+	 * three possibility version of whichMin
 	 */
-	/*static p7_state whichMax(double probM, double probI, double probD, const string& states = "MID") {
+	/*static p7_state whichMin(double probM, double probI, double probD, const string& states = "MID") {
 		assert(states.length() == 3);
 		string::size_type idx = 0;
-		double max = infV;
-		if(probM > max) {
+		double min = inf;
+		if(probM > min) {
 			idx = 1;
-			max = probM;
+			min = probM;
 		}
-		if(probI > max) {
+		if(probI > min) {
 			idx = 2;
-			max = probI;
+			min = probI;
 		}
-		if(probD > max) {
+		if(probD > min) {
 			idx = 3;
-			max = probD;
+			min = probD;
 		}
 		//std::cerr << "probB:" << probB << " probM:" << probM << " probI:" << probI
-		//		<< " probD:" << probD << " max:" << states[idx] << std::endl;
+		//		<< " probD:" << probD << " min:" << states[idx] << std::endl;
 		return encode(states[idx]);
 	}*/
 
 	/**
-	 * two possibility version of whichMax
+	 * two possibility version of whichMin
 	 */
-	static char whichMax(double probM, double probID, const string& states) {
+	static char whichMin(double probM, double probID, const string& states) {
 		assert(states.length() == 2);
 		string::size_type idx = 0;
-		double max = infV;
-		if(probM > max) {
+		double min = inf;
+		if(probM < min) {
 			idx = 0;
-			max = probM;
+			min = probM;
 		}
-		if(probID > max) {
+		if(probID < min) {
 			idx = 1;
-			max = probID;
+			min = probID;
 		}
-		/*std::cerr << "probM:" << probM << " probID:" << probID << " max:" << states[idx] << std::endl;*/
+		/*std::cerr << "probM:" << probM << " probID:" << probID << " min:" << states[idx] << std::endl;*/
 		return states[idx];
 	}
 

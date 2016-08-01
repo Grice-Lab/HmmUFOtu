@@ -142,12 +142,18 @@ MSA* MSA::loadFastaFile(const string& alphabet, const string& filename) {
 }
 
 void MSA::clear() {
+	delete[] startIdx;
+	delete[] endIdx;
+	delete[] lenIdx;
 	delete[] resCountBuf;
 	delete[] gapCountBuf;
 	delete[] seqWeightBuf;
 	delete[] posEntropyBuf;
 	delete[] resWCountBuf;
 	delete[] gapWCountBuf;
+	startIdx = NULL;
+	endIdx = NULL;
+	lenIdx = NULL;
 	resCountBuf = NULL;
 	gapCountBuf = NULL;
 	seqWeightBuf = NULL;
@@ -166,6 +172,12 @@ void MSA::resetRawCount() {
 		gapCountBuf = new int[csLen];
 		new (&gapCount) Map<VectorXi>(gapCountBuf, csLen); /* replacement constructor */
 	}
+	if(startIdx == NULL)
+		startIdx = new int[numSeq](); /* zero initiation */
+	if(endIdx == NULL)
+		endIdx = new int[numSeq]; /* zero initiation */
+	if(lenIdx == NULL)
+		lenIdx = new int[numSeq]; /* zero initiation */
 	/* reset count to zero */
 	resCount.setZero();
 	gapCount.setZero();
@@ -227,15 +239,28 @@ void MSA::updateRawCounts() {
 	/* reset old data */
 	resetRawCount();
 	/* calculate raw count */
-	for(unsigned i = 0; i < numSeq; ++i)
-		for(unsigned j = 0; j < csLen; ++j) {
+	for(int i = 0; i < numSeq; ++i) {
+		int start = -1;
+		int end = -1;
+		int len = 0;
+		for(int j = 0; j < csLen; ++j) {
 			char c = ::toupper(residualAt(i, j));
-			if(abc->isSymbol(c))
+			if(abc->isSymbol(c)) {
+				if(start == -1)
+					start = j;
+				if(j > end)
+					end = j;
+				len++;
 				resCount(abc->encode(c), j)++;
+			}
 			else if(abc->isGap(c))
 				gapCount(j)++;
 			else { } // do nothing
 		}
+		startIdx[i] = start;
+		endIdx[i] = end;
+		lenIdx[i] = len;
+	}
 }
 
 void MSA::updateEntropy() {
@@ -315,6 +340,11 @@ bool MSA::save(ostream& f) {
 	/* write concatMSA */
 	f.write(concatMSA.c_str(), concatMSA.length() + 1);
 //	cerr << "concatMSA written" << endl;
+	/* write auxiliary index */
+	f.write((const char*) startIdx, sizeof(int) * numSeq);
+	f.write((const char*) endIdx, sizeof(int) * numSeq);
+	f.write((const char*) lenIdx, sizeof(int) * numSeq);
+
 	/* write raw counts */
 	f.write((const char*) resCountBuf, sizeof(int) * abc->getSize() * csLen);
 	f.write((const char*) gapCountBuf, sizeof(int) * csLen);
@@ -361,6 +391,13 @@ MSA* MSA::load(istream& f) {
 	f.read(buf, msa->numSeq * msa->csLen + 1);
 	msa->concatMSA.assign(buf, msa->numSeq * msa->csLen);
 	delete[] buf;
+	/* Read auxiliary index */
+	msa->startIdx = new int[msa->numSeq];
+	f.read((char*) msa->startIdx, sizeof(int) * msa->numSeq);
+	msa->endIdx = new int[msa->numSeq];
+	f.read((char*) msa->endIdx, sizeof(int) * msa->numSeq);
+	msa->lenIdx = new int[msa->numSeq];
+	f.read((char*) msa->lenIdx, sizeof(int) * msa->numSeq);
 	/* Read raw counts */
 	msa->resCountBuf = new int[msa->abc->getSize() * msa->csLen];
 	f.read((char*) msa->resCountBuf, sizeof(int) * msa->abc->getSize() * msa->csLen);

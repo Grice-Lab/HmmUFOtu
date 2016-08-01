@@ -86,7 +86,7 @@ MatrixXd DirichletMixture::weightGradient(const MatrixXd& data) const {
 	return grad;
 }
 
-double DirichletMixture::trainML(const MatrixXd& data, double eta, int maxIt,
+double DirichletMixture::trainML(const MatrixXd& data, int maxIt, double eta,
 		double epsilonCost, double epsilonParams) {
 	assert(data.rows() == alpha.rows());
 	/* initiate the parameters using moment-matctching */

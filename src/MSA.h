@@ -138,6 +138,27 @@ public:
 	string alignAt(unsigned j) const;
 
 	/**
+	 * Get the seq start on CS
+	 * @param i  seq index
+	 * @return  ith seq start
+	 */
+	int seqStart(unsigned i) const;
+
+	/**
+	 * Get the seq end on CS
+	 * @param i  seq index
+	 * @return  ith seq start
+	 */
+	int seqEnd(unsigned i) const;
+
+	/**
+	 * Get the seq length on CS
+	 * @param i  seq index
+	 * @return  ith seq ungapped length
+	 */
+	int seqLength(unsigned i) const;
+
+	/**
 	 * Get the consensus residual at given pos
 	 * @param j  CS position
 	 * @return the consensus residual as the most frequent one
@@ -230,7 +251,7 @@ public:
 	double getEffectSeqNum() const;
 
 	/**
-	 * Update the count matrices of this object
+	 * Update the count matrices of this object, also update auxiliary indices
 	 */
 	void updateRawCounts();
 
@@ -347,14 +368,18 @@ private:
 	string concatMSA; // concatenated MSA
 	string CS;        // Consensus Sequence
 	bool isPruned; // flag for whether this MS is pruned
+	/* auxiliary data to remember each sequence start, end and length (non-gapped) */
+	int* startIdx; /* start position on CS */
+	int* endIdx; /* end position on CS */
+	int* lenIdx; /* unmapped length */
 
 	/* raw matrix/vector buffers for residual & gap count */
-	int *resCountBuf; /* raw buffer for Residual count */
-	int *gapCountBuf; /* raw buffer for gap count */
-	double *seqWeightBuf; /* raw buffer for sequence weight */
-	double *posEntropyBuf; /* raw buffer for position entropy (in bits) */
-	double *resWCountBuf; /* raw buffer for weighted residual count */
-	double *gapWCountBuf; /* raw buffer for weighted gap count */
+	int* resCountBuf; /* raw buffer for Residual count */
+	int* gapCountBuf; /* raw buffer for gap count */
+	double* seqWeightBuf; /* raw buffer for sequence weight */
+	double* posEntropyBuf; /* raw buffer for position entropy (in bits) */
+	double* resWCountBuf; /* raw buffer for weighted residual count */
+	double* gapWCountBuf; /* raw buffer for weighted gap count */
 
 	/* matrix/vector for residual & gap count */
 	Map<MatrixXi> resCount; /* Residual count matrix w/ alphabet-size X CSLen dimension */
@@ -399,6 +424,18 @@ inline string MSA::alignAt(unsigned j) const {
 	for(unsigned i = 0; i < numSeq; ++i)
 		aln.push_back(concatMSA[i * csLen + j]);
 	return aln;
+}
+
+inline int MSA::seqStart(unsigned i) const {
+	return startIdx[i];
+}
+
+inline int MSA::seqEnd(unsigned i) const {
+	return endIdx[i];
+}
+
+inline int MSA::seqLength(unsigned i) const {
+	return lenIdx[i];
 }
 
 inline double MSA::getSeqWeight(unsigned i) const {

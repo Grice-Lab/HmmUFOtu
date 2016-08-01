@@ -9,7 +9,5 @@
 
 namespace EGriceLab {
 
-int verbose = 0;
-
 }
 

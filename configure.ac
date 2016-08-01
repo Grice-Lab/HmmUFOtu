@@ -24,6 +24,9 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AC_CHECK_FUNCS([sqrt])
 
-AC_CONFIG_FILES(Makefile src/Makefile src/math/Makefile test/Makefile)
+AC_CONFIG_FILES(Makefile
+								data/Makefile
+								src/Makefile
+								src/math/Makefile
+								test/Makefile)
 AC_OUTPUT
-

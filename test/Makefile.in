@@ -91,12 +91,13 @@ host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = dna_test1$(EXEEXT) nucl_test1$(EXEEXT) \
 	amino_test1$(EXEEXT) bHMM_IO_test1$(EXEEXT) \
-	bHMM_train_test1$(EXEEXT) seqIO_test1$(EXEEXT) \
-	bHMM_IO_test1$(EXEEXT) banded_align_known_seed_test1$(EXEEXT) \
-	MSAIO_test1$(EXEEXT) MSAIO_test2$(EXEEXT) MSA_test1$(EXEEXT) \
-	FMIO_test1$(EXEEXT) FMIO_test2$(EXEEXT) \
-	banded_align_csfm_test1$(EXEEXT) \
-	banded_pair_csfm_test1$(EXEEXT)
+	seqIO_test1$(EXEEXT) bHMM_IO_test1$(EXEEXT) \
+	banded_align_known_seed_test1$(EXEEXT) MSAIO_test1$(EXEEXT) \
+	MSAIO_test2$(EXEEXT) MSA_test1$(EXEEXT) FMIO_test1$(EXEEXT) \
+	FMIO_test2$(EXEEXT) banded_align_csfm_test1$(EXEEXT) \
+	banded_pair_csfm_test1$(EXEEXT) dm_density_train1$(EXEEXT) \
+	dm_mixture_train1$(EXEEXT) dm_mixture_train2$(EXEEXT) \
+	DD_IO_test1$(EXEEXT)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -110,15 +111,22 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+am_DD_IO_test1_OBJECTS = DD_IO_test1.$(OBJEXT)
+DD_IO_test1_OBJECTS = $(am_DD_IO_test1_OBJECTS)
+DD_IO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a \
+	$(top_srcdir)/src/math/libEGMath.a
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
+DD_IO_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(DD_IO_test1_LDFLAGS) $(LDFLAGS) -o $@
 am_FMIO_test1_OBJECTS = FMIO_test1.$(OBJEXT)
 FMIO_test1_OBJECTS = $(am_FMIO_test1_OBJECTS)
 FMIO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a \
 	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 	$(top_srcdir)/src/libcds/src/libcds.la
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
 FMIO_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(FMIO_test1_LDFLAGS) $(LDFLAGS) -o $@
@@ -145,9 +153,6 @@ amino_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 am_bHMM_IO_test1_OBJECTS = bHMM_IO_test1.$(OBJEXT)
 bHMM_IO_test1_OBJECTS = $(am_bHMM_IO_test1_OBJECTS)
 bHMM_IO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
-am_bHMM_train_test1_OBJECTS = bHMM_train_test1.$(OBJEXT)
-bHMM_train_test1_OBJECTS = $(am_bHMM_train_test1_OBJECTS)
-bHMM_train_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 am_banded_align_csfm_test1_OBJECTS =  \
 	banded_align_csfm_test1.$(OBJEXT)
 banded_align_csfm_test1_OBJECTS =  \
@@ -174,6 +179,36 @@ banded_pair_csfm_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a \
 banded_pair_csfm_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(AM_CXXFLAGS) $(CXXFLAGS) $(banded_pair_csfm_test1_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_dm_density_train1_OBJECTS = dm_density_train1.$(OBJEXT)
+dm_density_train1_OBJECTS = $(am_dm_density_train1_OBJECTS)
+dm_density_train1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a \
+	$(top_srcdir)/src/math/libEGMath.a \
+	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+	$(top_srcdir)/src/libcds/src/libcds.la
+dm_density_train1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(dm_density_train1_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_dm_mixture_train1_OBJECTS = dm_mixture_train1.$(OBJEXT)
+dm_mixture_train1_OBJECTS = $(am_dm_mixture_train1_OBJECTS)
+dm_mixture_train1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a \
+	$(top_srcdir)/src/math/libEGMath.a \
+	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+	$(top_srcdir)/src/libcds/src/libcds.la
+dm_mixture_train1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(dm_mixture_train1_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_dm_mixture_train2_OBJECTS = dm_mixture_train2.$(OBJEXT)
+dm_mixture_train2_OBJECTS = $(am_dm_mixture_train2_OBJECTS)
+dm_mixture_train2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a \
+	$(top_srcdir)/src/math/libEGMath.a \
+	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+	$(top_srcdir)/src/libcds/src/libcds.la
+dm_mixture_train2_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(dm_mixture_train2_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_dna_test1_OBJECTS = dna_test1.$(OBJEXT)
 dna_test1_OBJECTS = $(am_dna_test1_OBJECTS)
@@ -218,22 +253,26 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(FMIO_test1_SOURCES) $(FMIO_test2_SOURCES) \
-	$(MSAIO_test1_SOURCES) $(MSAIO_test2_SOURCES) \
-	$(MSA_test1_SOURCES) $(amino_test1_SOURCES) \
-	$(bHMM_IO_test1_SOURCES) $(bHMM_train_test1_SOURCES) \
+SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
+	$(FMIO_test2_SOURCES) $(MSAIO_test1_SOURCES) \
+	$(MSAIO_test2_SOURCES) $(MSA_test1_SOURCES) \
+	$(amino_test1_SOURCES) $(bHMM_IO_test1_SOURCES) \
 	$(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) \
-	$(banded_pair_csfm_test1_SOURCES) $(dna_test1_SOURCES) \
-	$(nucl_test1_SOURCES) $(seqIO_test1_SOURCES)
-DIST_SOURCES = $(FMIO_test1_SOURCES) $(FMIO_test2_SOURCES) \
-	$(MSAIO_test1_SOURCES) $(MSAIO_test2_SOURCES) \
-	$(MSA_test1_SOURCES) $(amino_test1_SOURCES) \
-	$(bHMM_IO_test1_SOURCES) $(bHMM_train_test1_SOURCES) \
+	$(banded_pair_csfm_test1_SOURCES) $(dm_density_train1_SOURCES) \
+	$(dm_mixture_train1_SOURCES) $(dm_mixture_train2_SOURCES) \
+	$(dna_test1_SOURCES) $(nucl_test1_SOURCES) \
+	$(seqIO_test1_SOURCES)
+DIST_SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
+	$(FMIO_test2_SOURCES) $(MSAIO_test1_SOURCES) \
+	$(MSAIO_test2_SOURCES) $(MSA_test1_SOURCES) \
+	$(amino_test1_SOURCES) $(bHMM_IO_test1_SOURCES) \
 	$(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) \
-	$(banded_pair_csfm_test1_SOURCES) $(dna_test1_SOURCES) \
-	$(nucl_test1_SOURCES) $(seqIO_test1_SOURCES)
+	$(banded_pair_csfm_test1_SOURCES) $(dm_density_train1_SOURCES) \
+	$(dm_mixture_train1_SOURCES) $(dm_mixture_train2_SOURCES) \
+	$(dna_test1_SOURCES) $(nucl_test1_SOURCES) \
+	$(seqIO_test1_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -385,6 +424,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = subdir-objects
 AM_CXXFLAGS = -I$(top_srcdir)/src \
+-I$(top_srcdir)/src/math \
 -I$(top_srcdir)/src/libdivsufsort/include \
 -I$(top_srcdir)/src/libcds/include
 
@@ -398,8 +438,6 @@ seqIO_test1_SOURCES = seqIO_test1.cpp
 seqIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 bHMM_IO_test1_SOURCES = bHMM_IO_test1.cpp
 bHMM_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
-bHMM_train_test1_SOURCES = bHMM_train_test1.cpp
-bHMM_train_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 banded_align_known_seed_test1_SOURCES = banded_align_known_seed_test1.cpp
 banded_align_known_seed_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 MSAIO_test1_SOURCES = MSAIO_test1.cpp
@@ -432,6 +470,32 @@ $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la
 
 banded_pair_csfm_test1_LDFLAGS = -static
+dm_density_train1_SOURCES = dm_density_train1.cpp
+dm_density_train1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/math/libEGMath.a \
+$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+$(top_srcdir)/src/libcds/src/libcds.la
+
+dm_density_train1_LDFLAGS = -static
+dm_mixture_train1_SOURCES = dm_mixture_train1.cpp
+dm_mixture_train1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/math/libEGMath.a \
+$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+$(top_srcdir)/src/libcds/src/libcds.la
+
+dm_mixture_train1_LDFLAGS = -static
+dm_mixture_train2_SOURCES = dm_mixture_train2.cpp
+dm_mixture_train2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/math/libEGMath.a \
+$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+$(top_srcdir)/src/libcds/src/libcds.la
+
+dm_mixture_train2_LDFLAGS = -static
+DD_IO_test1_SOURCES = DD_IO_test1.cpp
+DD_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/math/libEGMath.a
+
+DD_IO_test1_LDFLAGS = -static
 all: all-am
 
 .SUFFIXES:
@@ -475,6 +539,10 @@ clean-noinstPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
+DD_IO_test1$(EXEEXT): $(DD_IO_test1_OBJECTS) $(DD_IO_test1_DEPENDENCIES) $(EXTRA_DD_IO_test1_DEPENDENCIES) 
+	@rm -f DD_IO_test1$(EXEEXT)
+	$(AM_V_CXXLD)$(DD_IO_test1_LINK) $(DD_IO_test1_OBJECTS) $(DD_IO_test1_LDADD) $(LIBS)
+
 FMIO_test1$(EXEEXT): $(FMIO_test1_OBJECTS) $(FMIO_test1_DEPENDENCIES) $(EXTRA_FMIO_test1_DEPENDENCIES) 
 	@rm -f FMIO_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(FMIO_test1_LINK) $(FMIO_test1_OBJECTS) $(FMIO_test1_LDADD) $(LIBS)
@@ -503,10 +571,6 @@ bHMM_IO_test1$(EXEEXT): $(bHMM_IO_test1_OBJECTS) $(bHMM_IO_test1_DEPENDENCIES) $
 	@rm -f bHMM_IO_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(bHMM_IO_test1_OBJECTS) $(bHMM_IO_test1_LDADD) $(LIBS)
 
-bHMM_train_test1$(EXEEXT): $(bHMM_train_test1_OBJECTS) $(bHMM_train_test1_DEPENDENCIES) $(EXTRA_bHMM_train_test1_DEPENDENCIES) 
-	@rm -f bHMM_train_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(bHMM_train_test1_OBJECTS) $(bHMM_train_test1_LDADD) $(LIBS)
-
 banded_align_csfm_test1$(EXEEXT): $(banded_align_csfm_test1_OBJECTS) $(banded_align_csfm_test1_DEPENDENCIES) $(EXTRA_banded_align_csfm_test1_DEPENDENCIES) 
 	@rm -f banded_align_csfm_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(banded_align_csfm_test1_LINK) $(banded_align_csfm_test1_OBJECTS) $(banded_align_csfm_test1_LDADD) $(LIBS)
@@ -518,6 +582,18 @@ banded_align_known_seed_test1$(EXEEXT): $(banded_align_known_seed_test1_OBJECTS)
 banded_pair_csfm_test1$(EXEEXT): $(banded_pair_csfm_test1_OBJECTS) $(banded_pair_csfm_test1_DEPENDENCIES) $(EXTRA_banded_pair_csfm_test1_DEPENDENCIES) 
 	@rm -f banded_pair_csfm_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(banded_pair_csfm_test1_LINK) $(banded_pair_csfm_test1_OBJECTS) $(banded_pair_csfm_test1_LDADD) $(LIBS)
+
+dm_density_train1$(EXEEXT): $(dm_density_train1_OBJECTS) $(dm_density_train1_DEPENDENCIES) $(EXTRA_dm_density_train1_DEPENDENCIES) 
+	@rm -f dm_density_train1$(EXEEXT)
+	$(AM_V_CXXLD)$(dm_density_train1_LINK) $(dm_density_train1_OBJECTS) $(dm_density_train1_LDADD) $(LIBS)
+
+dm_mixture_train1$(EXEEXT): $(dm_mixture_train1_OBJECTS) $(dm_mixture_train1_DEPENDENCIES) $(EXTRA_dm_mixture_train1_DEPENDENCIES) 
+	@rm -f dm_mixture_train1$(EXEEXT)
+	$(AM_V_CXXLD)$(dm_mixture_train1_LINK) $(dm_mixture_train1_OBJECTS) $(dm_mixture_train1_LDADD) $(LIBS)
+
+dm_mixture_train2$(EXEEXT): $(dm_mixture_train2_OBJECTS) $(dm_mixture_train2_DEPENDENCIES) $(EXTRA_dm_mixture_train2_DEPENDENCIES) 
+	@rm -f dm_mixture_train2$(EXEEXT)
+	$(AM_V_CXXLD)$(dm_mixture_train2_LINK) $(dm_mixture_train2_OBJECTS) $(dm_mixture_train2_LDADD) $(LIBS)
 
 dna_test1$(EXEEXT): $(dna_test1_OBJECTS) $(dna_test1_DEPENDENCIES) $(EXTRA_dna_test1_DEPENDENCIES) 
 	@rm -f dna_test1$(EXEEXT)
@@ -537,6 +613,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_IO_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FMIO_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FMIO_test2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSAIO_test1.Po@am__quote@
@@ -544,10 +621,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSA_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amino_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bHMM_IO_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bHMM_train_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/banded_align_csfm_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/banded_align_known_seed_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/banded_pair_csfm_test1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dm_density_train1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dm_mixture_train1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dm_mixture_train2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dna_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nucl_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/seqIO_test1.Po@am__quote@

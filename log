@@ -1,0 +1,52 @@
+Making all in src
+make[1]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src'
+Making all in libdivsufsort
+make[2]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libdivsufsort'
+make  all-recursive
+make[3]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libdivsufsort'
+Making all in lib
+make[4]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libdivsufsort/lib'
+make[4]: Nothing to be done for 'all'.
+make[4]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libdivsufsort/lib'
+Making all in examples
+make[4]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libdivsufsort/examples'
+make[4]: Nothing to be done for 'all'.
+make[4]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libdivsufsort/examples'
+make[4]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libdivsufsort'
+make[4]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libdivsufsort'
+make[3]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libdivsufsort'
+make[2]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libdivsufsort'
+Making all in libcds
+make[2]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libcds'
+Making all in src
+make[3]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libcds/src'
+make[3]: Nothing to be done for 'all'.
+make[3]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libcds/src'
+Making all in tests
+make[3]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libcds/tests'
+make[3]: Nothing to be done for 'all'.
+make[3]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libcds/tests'
+Making all in tutorial/src
+make[3]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libcds/tutorial/src'
+make[3]: Nothing to be done for 'all'.
+make[3]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libcds/tutorial/src'
+Making all in tutorial/ssa
+make[3]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libcds/tutorial/ssa'
+make[3]: Nothing to be done for 'all'.
+make[3]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libcds/tutorial/ssa'
+make[3]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libcds'
+make[3]: Nothing to be done for 'all-am'.
+make[3]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libcds'
+make[2]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/libcds'
+Making all in math
+make[2]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/math'
+make[2]: Nothing to be done for 'all'.
+make[2]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src/math'
+make[2]: Entering directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src'
+/bin/sh ../libtool  --tag=CXX   --mode=link g++ -I../src -I../src/math -I../src/libdivsufsort/include -I../src/libcds/include -g -O2   -o hmmufotu-build-dm hmmufotu-build-dm.o  
+libtool: link: g++ -I../src -I../src/math -I../src/libdivsufsort/include -I../src/libcds/include -g -O2 -o hmmufotu-build-dm hmmufotu-build-dm.o 
+Makefile:485: recipe for target 'hmmufotu-build-dm' failed
+make[2]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src'
+Makefile:544: recipe for target 'all-recursive' failed
+make[1]: Leaving directory '/home/zhengqi/git/HmmUFOtu/HmmUFOtu/src'
+Makefile:385: recipe for target 'all-recursive' failed

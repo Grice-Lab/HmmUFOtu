@@ -26,7 +26,7 @@ using Eigen::IOFormat;
 class DirichletModel {
 public:
 	/* default constructor, do nothing */
-	DirichletModel(): K(MIN_K) { }
+	DirichletModel(): K(0) { }
 
 	/* construct a Dirichlet model with given categories */
 	explicit DirichletModel(int K): K(K) {
@@ -55,7 +55,7 @@ public:
 	 * return NAN if anything went wrong
 	 */
 	virtual double trainML(const MatrixXd& data,
-			double eta = DEFAULT_ETA, int maxIt = MAX_ITERATION,
+			int maxIt = MAX_ITERATION, double eta = DEFAULT_ETA,
 			double epsilonCost = DEFAULT_EPSILON_COST,
 			double epsilonParams = DEFAULT_EPSILON_PARAMS) = 0;
 

@@ -8,9 +8,8 @@
  ============================================================================
  */
 
-#include <iostream>
-
-using namespace std;
+#include <algorithm>
+#include "HmmUFOtu.h"
 
 int main(void) {
 	cout << "Hello World" << endl; /* prints Hello World */

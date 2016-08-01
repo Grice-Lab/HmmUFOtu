@@ -19,12 +19,21 @@ int main(int argc, char *argv[]) {
 	}
 
 	ifstream in(argv[1]);
+	if(!in.is_open())
+		cerr << "Unable to open " << argv[1] << endl;
 	ofstream out(argv[2]);
+	if(!out.is_open())
+		cerr << "Unable to write to " << argv[2] << endl;
 
 	BandedHMMP7 hmm;
+	cerr << "hmm constructed" << endl;
 	in >> hmm;
+	if(in.good())
+		cerr << "Hmm read" << endl;
 
 	out << hmm;
+	if(out.good())
+		cerr << "Hmm writtten" << endl;
 
 	in.close();
 	out.close();

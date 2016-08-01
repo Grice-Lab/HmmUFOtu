@@ -78,9 +78,9 @@ int main(int argc, char *argv[]) {
 		//hmm.calcViterbiScores(vscore);
 		//cerr << "Bhmm aligned" << endl;
 
-		float maxScore = hmm.buildViterbiTrace(vscore, vpath);
-		if(maxScore == BandedHMMP7::infV) {
-			cerr << id << " no maxScore" << endl;
+		double minCost = hmm.buildViterbiTrace(vscore, vpath);
+		if(minCost == BandedHMMP7::inf) {
+			cerr << id << " no minScore" << endl;
 			continue;
 		}
 		//cerr << "back traced" << endl;

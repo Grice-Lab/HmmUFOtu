@@ -137,7 +137,9 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libEGMath_a_AR = $(AR) $(ARFLAGS)
 libEGMath_a_LIBADD =
-am_libEGMath_a_OBJECTS = Stats.$(OBJEXT) LinearAlgebraBasic.$(OBJEXT)
+am_libEGMath_a_OBJECTS = Stats.$(OBJEXT) LinearAlgebraBasic.$(OBJEXT) \
+	DirichletModel.$(OBJEXT) DirichletDensity.$(OBJEXT) \
+	DirichletMixture.$(OBJEXT)
 libEGMath_a_OBJECTS = $(am_libEGMath_a_OBJECTS)
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
@@ -335,7 +337,11 @@ AM_CXXFLAGS = -I$(top_srcdir)/math
 
 # Build a static/shared library
 lib_LIBRARIES = libEGMath.a
-libEGMath_a_SOURCES = Stats.cpp  LinearAlgebraBasic.cpp
+libEGMath_a_SOURCES = Stats.cpp  LinearAlgebraBasic.cpp \
+DirichletModel.cpp \
+DirichletDensity.cpp \
+DirichletMixture.cpp
+
 all: all-am
 
 .SUFFIXES:
@@ -412,6 +418,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+include ./$(DEPDIR)/DirichletDensity.Po
+include ./$(DEPDIR)/DirichletMixture.Po
+include ./$(DEPDIR)/DirichletModel.Po
 include ./$(DEPDIR)/LinearAlgebraBasic.Po
 include ./$(DEPDIR)/Stats.Po
 

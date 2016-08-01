@@ -327,7 +327,7 @@ target_vendor = unknown
 top_build_prefix = 
 top_builddir = .
 top_srcdir = .
-SUBDIRS = src test
+SUBDIRS = data  src test
 ACLOCAL_AMFLAGS = -I m4
 all: all-recursive
 

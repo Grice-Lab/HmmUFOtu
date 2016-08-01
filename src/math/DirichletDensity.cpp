@@ -41,7 +41,8 @@ VectorXd DirichletDensity::weightGradient(const MatrixXd& data) const {
 	return grad;
 }
 
-double DirichletDensity::trainML(const MatrixXd& data, double eta, int maxIt, double epsilonCost, double epsilonParams) {
+double DirichletDensity::trainML(const MatrixXd& data, int maxIt,
+		double eta, double epsilonCost, double epsilonParams) {
 	/* initiate the parameters using moment-matctching */
 	momentInit(data);
 	double c = cost(data);

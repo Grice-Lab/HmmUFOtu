@@ -66,7 +66,7 @@ public:
 	 * @return  cost at trained parameters, or NAN if over-fitting or numeric problem occured
 	 */
 	virtual double trainML(const MatrixXd& data,
-			double eta = DEFAULT_ETA, int maxIt = MAX_ITERATION,
+			int maxIt = MAX_ITERATION, double eta = DEFAULT_ETA,
 			double epsilonCost = DEFAULT_EPSILON_COST,
 			double epsilonParams = DEFAULT_EPSILON_PARAMS);
 
