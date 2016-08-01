@@ -16,7 +16,7 @@ using namespace EGriceLab;
 using namespace EGriceLab::Math;
 
 static const double DEFAULT_SYMFRAC = 0.5;
-static const string DEFAULT_DM_FILE = "99_otus.dm";
+static const string DEFAULT_DM_FILE = "gg_99_otus.dm";
 
 /**
  * Print the usage information of this program
