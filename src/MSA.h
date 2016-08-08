@@ -58,6 +58,10 @@ public:
 		return concatMSA;
 	}
 
+	const vector<string>& getSeqNames() const {
+		return seqNames;
+	}
+
 	/*
 	 * Get the consensus seq of this MSA
 	 * @return the consensus seq
@@ -96,6 +100,13 @@ public:
 	 * @return the total MSA length wo/ gaps
 	 */
 	unsigned long getMSANonGapLen() const;
+
+	/**
+	 * get the ith seq name
+	 * @param i  seq position
+	 * @return seq name of the ith seq
+	 */
+	const string& seqNameAt(unsigned i) const;
 
 	/**
 	 * Get the residual at given seq and CS pos
@@ -275,7 +286,7 @@ public:
 	 * @param f  the binary output
 	 * @return  true if everything is good after saved
 	 */
-	bool save(std::ostream& f);
+	std::ostream& save(std::ostream& out);
 
 	/* static methods */
 	/**
@@ -285,7 +296,7 @@ public:
 	 * @return  a newly constructed MSA pointer
 	 * @throws invalid_argument if alphabet or format is not known
 	 */
-	static MSA* load(std::istream& f);
+	static MSA* load(std::istream& in);
 
 	/**
 	 * Load an MSA binary file
@@ -329,6 +340,7 @@ private:
 	 */
 	explicit MSA(const string& alphabet = "dna") : alphabet(alphabet), abc(SeqCommons::getAlphabetByName(alphabet)),
 		numSeq(0), csLen(0), isPruned(false),
+		startIdx(NULL), lenIdx(NULL), endIdx(NULL),
 		resCountBuf(NULL), gapCountBuf(NULL),
 		seqWeightBuf(NULL), posEntropyBuf(NULL),
 		resWCountBuf(NULL), gapWCountBuf(NULL),
@@ -364,6 +376,7 @@ private:
 	string name;
 	unsigned numSeq; /* number of sequences */
 	unsigned csLen;  /* consensus seq length */
+	vector<string> seqNames; /* seq names stored in their occurring order */
 	//vector<string> ids;
 	string concatMSA; // concatenated MSA
 	string CS;        // Consensus Sequence
@@ -401,6 +414,10 @@ inline unsigned long MSA::getMSALen() const {
 
 inline unsigned long MSA::getMSANonGapLen() const {
 	return getMSALen() - getTotalNumGap();
+}
+
+inline const string& MSA::seqNameAt(unsigned i) const {
+	return seqNames[i];
 }
 
 inline char MSA::residualAt(unsigned i, unsigned j) const {
@@ -467,7 +484,6 @@ inline VectorXd MSA::resWFreq() const {
 inline double MSA::getEffectSeqNum() const {
 	return seqWeight.sum();
 }
-
 
 inline MSA* MSA::loadMSAFile(const string& alphabet,
 		const string& filename, const string& format) {

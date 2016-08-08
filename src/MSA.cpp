@@ -10,6 +10,7 @@
 #include <cctype>
 #include <set>
 #include <algorithm>
+#include "HmmUFOtuConst.h"
 #include "MSA.h"
 #include "Stats.h"
 #include "LinearAlgebraBasic.h"
@@ -130,6 +131,7 @@ MSA* MSA::loadFastaFile(const string& alphabet, const string& filename) {
 		msa->csLen = seq.length(); /* update csLen */
 		msa->numSeq++;
 		//ids.push_back(seq.getId());
+		msa->seqNames.push_back(seq.getId());
 		msa->concatMSA.append(seq.getSeq());
 	}
 	assert(msa->concatMSA.length() == msa->numSeq * msa->csLen);
@@ -320,100 +322,129 @@ void MSA::updateWeightedCounts() {
 		}
 }
 
-bool MSA::save(ostream& f) {
+ostream& MSA::save(ostream& out) {
+	/* save program info */
+	writeProgName(out, progName);
+	writeProgVersion(out, progVersion);
 	/* get aux length */
 	string::size_type nAlphabet = alphabet.length();
 	string::size_type nCS = CS.length();
 	string::size_type nName = name.length();
 	/* write basic info */
-	f.write((const char*) &nAlphabet, sizeof(string::size_type));
-	f.write(alphabet.c_str(), nAlphabet + 1);
-	f.write((const char*) &nName, sizeof(string::size_type));
-	f.write(name.c_str(), nName + 1);
+	out.write((const char*) &nAlphabet, sizeof(string::size_type));
+	out.write(alphabet.c_str(), nAlphabet + 1);
+	out.write((const char*) &nName, sizeof(string::size_type));
+	out.write(name.c_str(), nName + 1);
 //	cerr << "alphabet written" << endl;
-	f.write((const char*) &numSeq, sizeof(unsigned));
-	f.write((const char*) &csLen, sizeof(unsigned));
-	f.write((const char*) &nCS, sizeof(string::size_type));
-	f.write(CS.c_str(), nCS + 1); /* write the null terminal */
-	f.write((const char*) &isPruned, sizeof(bool));
-//	cerr << "CS written" << endl;
+	out.write((const char*) &numSeq, sizeof(unsigned));
+	out.write((const char*) &csLen, sizeof(unsigned));
+	out.write((const char*) &nCS, sizeof(string::size_type));
+	out.write(CS.c_str(), nCS + 1); /* write the null terminal */
+	//	cerr << "CS written" << endl;
+	out.write((const char*) &isPruned, sizeof(bool));
+	/* write seqNames */
+	for(vector<string>::const_iterator it = seqNames.begin(); it != seqNames.end(); ++it)
+//		f.write((const char*) it->length(), sizeof(string::size_type)); /* write seq length first */
+		out.write(it->c_str(), it->length() + 1); /* write the null terminal */
 	/* write concatMSA */
-	f.write(concatMSA.c_str(), concatMSA.length() + 1);
+	out.write(concatMSA.c_str(), concatMSA.length() + 1);
 //	cerr << "concatMSA written" << endl;
 	/* write auxiliary index */
-	f.write((const char*) startIdx, sizeof(int) * numSeq);
-	f.write((const char*) endIdx, sizeof(int) * numSeq);
-	f.write((const char*) lenIdx, sizeof(int) * numSeq);
+	out.write((const char*) startIdx, sizeof(int) * numSeq);
+	out.write((const char*) endIdx, sizeof(int) * numSeq);
+	out.write((const char*) lenIdx, sizeof(int) * numSeq);
 
 	/* write raw counts */
-	f.write((const char*) resCountBuf, sizeof(int) * abc->getSize() * csLen);
-	f.write((const char*) gapCountBuf, sizeof(int) * csLen);
+	out.write((const char*) resCountBuf, sizeof(int) * abc->getSize() * csLen);
+	out.write((const char*) gapCountBuf, sizeof(int) * csLen);
 	/* write seq weights */
-	f.write((const char*) seqWeightBuf, sizeof(double) * numSeq);
+	out.write((const char*) seqWeightBuf, sizeof(double) * numSeq);
 	/* write pos entropy */
-	f.write((const char*) posEntropyBuf, sizeof(double) * csLen);
+	out.write((const char*) posEntropyBuf, sizeof(double) * csLen);
 	/* write weighted counts */
-	f.write((const char*) resWCountBuf, sizeof(double) * abc->getSize() * csLen);
-	f.write((const char*) gapWCountBuf, sizeof(double) * csLen);
-	return f.good();
+	out.write((const char*) resWCountBuf, sizeof(double) * abc->getSize() * csLen);
+	out.write((const char*) gapWCountBuf, sizeof(double) * csLen);
+	return out;
 }
 
-
-MSA* MSA::load(istream& f) {
+MSA* MSA::load(istream& in) {
 	/* construct a MSA object */
 	MSA* msa = new MSA(); // use default alphabet first
+	/* Read program info */
+	string pname, pver;
+	readProgName(in, pname);
+	if(pname != progName) {
+		cerr << "Not a MSA object file" << endl;
+		in.setstate(ios_base::failbit);
+		return msa;
+	}
+	readProgVersion(in, pver);
+	if(cmpVersion(progVersion, pver) < 0) {
+		cerr << "You are trying using an older version " << (progName + progVersion) <<
+				" to read a newer MSA object file that was build by " << (pname + pver) << endl;
+		in.setstate(ios_base::failbit);
+		return msa;
+	}
 	/* read basic info */
 	char* buf = NULL;
 	string::size_type nAlphabet, nCS, nName;
-	f.read((char*) &nAlphabet, sizeof(string::size_type));
+	in.read((char*) &nAlphabet, sizeof(string::size_type));
 	buf = new char[nAlphabet + 1];
-	f.read(buf, nAlphabet + 1); /* read the null terminal */
+	in.read(buf, nAlphabet + 1); /* read the null terminal */
 	msa->alphabet.assign(buf, nAlphabet); // override the original alphabet
 	delete[] buf;
 	msa->abc = SeqCommons::getAlphabetByName(msa->alphabet);
-	f.read((char*) &nName, sizeof(string::size_type));
+	in.read((char*) &nName, sizeof(string::size_type));
 	buf = new char[nName + 1];
-	f.read(buf, nName + 1); /* read the null terminal */
+	in.read(buf, nName + 1); /* read the null terminal */
 	msa->name.assign(buf, nName);
 	delete[] buf;
 
-	f.read((char*) &msa->numSeq, sizeof(unsigned));
-	f.read((char*) &msa->csLen, sizeof(unsigned));
-	f.read((char*) &nCS, sizeof(string::size_type));
+	in.read((char*) &msa->numSeq, sizeof(unsigned));
+	in.read((char*) &msa->csLen, sizeof(unsigned));
+	in.read((char*) &nCS, sizeof(string::size_type));
 	buf = new char[nCS + 1];
-	f.read(buf, nCS + 1);
+	in.read(buf, nCS + 1);
 	msa->CS.assign(buf, nCS); /* read the null terminal */
 	delete[] buf;
-	f.read((char*) &msa->isPruned, sizeof(bool));
-
+	in.read((char*) &msa->isPruned, sizeof(bool));
+	/* read seqNames */
+	msa->seqNames.resize(msa->numSeq); /* set all names to empty */
+	for(vector<string>::iterator it = msa->seqNames.begin(); it != msa->seqNames.end();) {
+		char c = in.get();
+		if(c != '\0')
+			it->push_back(c);
+		else
+			it++;
+	}
 	/* read concatMSA */
 	buf = new char[msa->numSeq * msa->csLen + 1];
-	f.read(buf, msa->numSeq * msa->csLen + 1);
+	in.read(buf, msa->numSeq * msa->csLen + 1);
 	msa->concatMSA.assign(buf, msa->numSeq * msa->csLen);
 	delete[] buf;
 	/* Read auxiliary index */
 	msa->startIdx = new int[msa->numSeq];
-	f.read((char*) msa->startIdx, sizeof(int) * msa->numSeq);
+	in.read((char*) msa->startIdx, sizeof(int) * msa->numSeq);
 	msa->endIdx = new int[msa->numSeq];
-	f.read((char*) msa->endIdx, sizeof(int) * msa->numSeq);
+	in.read((char*) msa->endIdx, sizeof(int) * msa->numSeq);
 	msa->lenIdx = new int[msa->numSeq];
-	f.read((char*) msa->lenIdx, sizeof(int) * msa->numSeq);
+	in.read((char*) msa->lenIdx, sizeof(int) * msa->numSeq);
 	/* Read raw counts */
 	msa->resCountBuf = new int[msa->abc->getSize() * msa->csLen];
-	f.read((char*) msa->resCountBuf, sizeof(int) * msa->abc->getSize() * msa->csLen);
+	in.read((char*) msa->resCountBuf, sizeof(int) * msa->abc->getSize() * msa->csLen);
 	msa->gapCountBuf = new int[msa->csLen];
-	f.read((char*) msa->gapCountBuf, sizeof(int) * msa->csLen);
+	in.read((char*) msa->gapCountBuf, sizeof(int) * msa->csLen);
 	/* Read seq weights */
 	msa->seqWeightBuf = new double[msa->numSeq];
-	f.read((char*) msa->seqWeightBuf, sizeof(double) * msa->numSeq);
+	in.read((char*) msa->seqWeightBuf, sizeof(double) * msa->numSeq);
 	/* Read pos entropy */
 	msa->posEntropyBuf = new double[msa->csLen];
-	f.read((char*) msa->posEntropyBuf, sizeof(double) * msa->csLen);
+	in.read((char*) msa->posEntropyBuf, sizeof(double) * msa->csLen);
 	/* Read weighted counts */
 	msa->resWCountBuf = new double[msa->abc->getSize() * msa->csLen];
-	f.read((char*) msa->resWCountBuf, sizeof(double) * msa->abc->getSize() * msa->csLen);
+	in.read((char*) msa->resWCountBuf, sizeof(double) * msa->abc->getSize() * msa->csLen);
 	msa->gapWCountBuf = new double[msa->csLen];
-	f.read((char*) msa->gapWCountBuf, sizeof(double) * msa->csLen);
+	in.read((char*) msa->gapWCountBuf, sizeof(double) * msa->csLen);
 
 	/* replacement constructor the count matrices */
 	new (&msa->resCount) Map<MatrixXi>(msa->resCountBuf, msa->abc->getSize(), msa->csLen);

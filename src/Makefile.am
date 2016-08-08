@@ -9,6 +9,7 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 noinst_LIBRARIES = libHmmUFOtu.a
 libHmmUFOtu_a_SOURCES = \
 EGMath.a \
+HmmUFOtuConst.cpp \
 CommandOptions.cpp \
 DegenAlphabet.cpp \
 StringUtils.cpp \

@@ -74,6 +74,14 @@ public:
 	 */
 	static string basename(string path, string suffix = "");
 
+	/**
+	 * Remove leading and tailing quotes from a given string
+	 * @param str  string input
+	 * @param quotes  quoting characters
+	 * @return a new string with all quotes in "quote" removed
+	 */
+	static string stripQuotes(const string& str, const string& quotes = "\"'");
+
 }; /* end class StringUtils */
 } /* namespace EGriceLab */
 #endif /* STRINGUTILS_H_ */

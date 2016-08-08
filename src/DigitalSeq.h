@@ -87,6 +87,15 @@ public:
 	}
 
 	/**
+	 * test whether the encoded value position i is a symbol
+	 * param i  position within this object
+	 * @return  true if ith code is a symbol
+	 */
+	bool isSymbol(DigitalSeq::size_type i) const {
+		return operator[](i) >= 0;
+	}
+
+	/**
 	 * Append a new string to this DigitalSeq
 	 * return the modified *this
 	 */

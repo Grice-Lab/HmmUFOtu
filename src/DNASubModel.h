@@ -23,10 +23,6 @@ using Eigen::Matrix4d;
 
 class DNASubModel {
 public:
-	/* nested class and enums */
-	enum Base { A, C, G, T };
-
-public:
 	/* Constructors */
 	/* virtual destructor, do nothing */
 	virtual ~DNASubModel() { }
@@ -35,7 +31,10 @@ public:
 	/** get model name */
 	string getName() const;
 
-	/** pure virtual method to prepare rate parameters R */
+	/**
+	 * pure virtual method to prepare rate parameters R
+	 * @param freq  observed transition frequencies between different bases
+	 */
 	virtual void updateParam(const Matrix4d& freq) = 0;
 
 	/* init (normalize) base frequency vector pi */
@@ -71,6 +70,8 @@ public:
 	 */
 	virtual Matrix4d Pr(double t, double r) const = 0;
 
+	/* static DNA alphabet used to encode/decode all DNA Sub models */
+	static const DegenAlphabet* abc = SeqCommons::nuclAbc;
 
 private:
 	string name;
@@ -78,6 +79,20 @@ private:
 	Vector4d pi; /* base frequency of ATCG */
 	Matrix4d R; /* Symmetric rate parameter matrix */
 	Matrix4d Q; /* rate matrix, Q = pi X R for i!=j */
+
+	/* static methods */
+public:
+	/**
+	 * Obtain substitution Rate matrix Q from observed frequency matrix using matrix-log method
+	 * This method might generate non-valid Q that has negative off-diagnal elements
+	 */
+	static Matrix4d logQfromP(const Matrix4d P);
+
+	/**
+	 * Obtain substitution Rate matrix Q from observed frequency matrix using matrix-log method
+	 * This method might generate non-valid Q that has negative off-diagnal elements
+	 */
+	static Matrix4d constrainedQfromP(const Matrix4d P);
 };
 
 inline string DNASubModel::getName() const {

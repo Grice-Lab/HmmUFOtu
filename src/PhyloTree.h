@@ -11,9 +11,20 @@
 
 #include <string>
 #include <set>
+#include <vector>
+#include <stdexcept>
 #include <cstddef>
 #include <eigen3/Eigen/Dense>
+#include <boost/spirit/include/qi.hpp>
+#include <boost/fusion/include/adapt_struct.hpp>
+#include <boost/spirit/include/phoenix_core.hpp>
+#include <boost/spirit/include/phoenix_operator.hpp>
+#include <boost/spirit/include/phoenix_fusion.hpp>
+#include <boost/spirit/include/phoenix_stl.hpp>
+
+#include "StringUtils.h"
 #include "SeqCommons.h"
+#include "MSA.h"
 
 namespace EGriceLab {
 
@@ -24,22 +35,19 @@ using Eigen::Matrix4Xd;
 class PhyloTree {
 	/* nested types and enums */
 private:
+	class PhyloTreeNode;
+
 	class PhyloTreeNode {
 	public:
 		/* constructors */
 		/* Default constructor */
-		PhyloTreeNode() : parent(NULL), childL(NULL), childR(NULL),
-		parentDist(0), childLDist(0), childRDist(0) { }
+		PhyloTreeNode() : length(0) { }
 
 		/* construct a node with a given DigitalSeq */
-		explicit PhyloTreeNode(const DigitalSeq& seq) :
-				seq(seq), parent(NULL), childL(NULL), childR(NULL),
-				parentDist(0), childLDist(0), childRDist(0) { }
+		explicit PhyloTreeNode(const DigitalSeq& seq) : seq(seq), length(0) { }
 
 		/* construct a node with a given PrimarySeq */
-		explicit PhyloTreeNode(const PrimarySeq& seq) :
-				seq(seq), parent(NULL), childL(NULL), childR(NULL),
-				parentDist(0), childLDist(0), childRDist(0) { }
+		explicit PhyloTreeNode(const PrimarySeq& seq) : seq(seq), length(0) { }
 
 		virtual ~PhyloTreeNode() { }
 
@@ -54,46 +62,35 @@ private:
 		bool isTip() const;
 
 		DigitalSeq seq;
+		vector<PhyloTreeNode> children;
+		double length; /* branch length of this node (to its parent) */
 
-		PhyloTreeNode* parent;
-		PhyloTreeNode* childL;
-		PhyloTreeNode* childR;
-
-		double parentDist;
-		double childLDist;
-		double childRDist;
-
-		Matrix4Xd logLik; /* logLiklihood of observing this sequence given the modeland the tree */
-		Matrix4Xd childLPr; /* stored probability matrix for childL */
-		Matrix4Xd childRPr; /* stored probability matrix for childR */
-		Matrix4Xd parentPr; /* stored probability matrix for parent, only for unrooted tree 'root' */
+		Matrix4Xd cost; /* cost (negative log liklihood) of observing this sequence given the model and the tree */
 	};
 
-public:
 	/* constructors */
-	/** Default constructor*/
-	PhyloTree() : root(NULL), abc(SeqCommons::nuclAbc) { }
-
-	/** big-3: Copy constructor */
-	PhyloTree(const PhyloTree& tOther);
-
-	/** big-3: copy assignment operator */
-	PhyloTree& operator=(PhyloTree tOther); // pass by value intended
-
-	/** big-3: destructor */
-	virtual ~PhyloTree();
+public:
+	/** Default constructor, only assign the alphabet for the entire tree */
+	PhyloTree() : abc(SeqCommons::nuclAbc) { }
 
 	/* member methods */
-	/** test whether this tree is (arbitrary) rooted */
+	/** test whether this tree is properly rooted */
 	bool isRooted() const;
+
+	/** test whether this tree is leaf rooted */
+	bool isLeafRooted() const;
+
+	/** test whether this tree is (arbitrarily) internally rooted */
+	bool isInternallyRooted() const;
+
 	/** Get the number of aligned sites of this tree */
-	int numSites() const;
+	int alnSites() const;
 
 	/** Get the number of nodes of this tree */
 	int numNodes() const;
 
 	/** test whether two nodes are siblings */
-	bool isSibling(const PhyloTreeNode* node1, const PhyloTreeNode* node2) const;
+	bool isSibling(const PhyloTreeNode& node1, const PhyloTreeNode& node2) const;
 
 	/** Get the DFS set of nodes of a sub tree */
 	set<const PhyloTree::PhyloTreeNode*> dfsNodes(const PhyloTree::PhyloTreeNode* node) const;
@@ -131,27 +128,42 @@ public:
 	const PhyloTreeNode* getSibling(const PhyloTreeNode*) const;
 	PhyloTreeNode* getSibling(const PhyloTreeNode*);
 
-private:
-	/* private methods */
-	void swap(PhyloTree& other); // no-throw
+	/**
+	 * Read a tree file and MSA into this object
+	 * @param treefn  tree filename
+	 * @param format  tree file format
+	 * @param msa  Multiple Sequence Alignment of this tree
+	 * @throw illegal_argument exception if is not a supported file format
+	 */
+	int readTree(const string& treefn, const string& format, const MSA* msa);
+
+	int readTreeNewick(const string& treefn, const MSA* msa);
 
 private:
-	PhyloTreeNode* root;
+	void clear(); /* clear all nodes associated with this PhyloTree */
+
+	PhyloTreeNode root;
 	const DegenAlphabet* abc;
 	//const DNASubModel* dnaModel;
 	//vector<PhyloTreeNode*> nodes;
 };
 
 inline bool PhyloTree::PhyloTreeNode::isRoot() const {
-	return parent == NULL;
+	return children.size() == 3 /* an internally rooted tree */
+			|| children.size() == 1 /* a leaf root */;
 }
 
 inline bool PhyloTree::PhyloTreeNode::isLeaf() const {
-	return childL == NULL && childR == NULL;
+	return children.empty();
 }
 
 inline bool PhyloTree::PhyloTreeNode::isTip() const {
-	return !isLeaf() && childL->isLeaf() && childR->isLeaf();
+	if(isLeaf())
+		return false;
+	for(vector<PhyloTreeNode>::const_iterator it = children.begin(); it != children.end(); ++it)
+		if(!it->isLeaf())
+			return false; /* all children must be leaf */
+	return true;
 }
 
 inline void PhyloTree::swap(PhyloTree& other) {
@@ -161,18 +173,30 @@ inline void PhyloTree::swap(PhyloTree& other) {
 }
 
 inline bool PhyloTree::isRooted() const {
-	return root->isRoot();
+	return root.isRoot();
 }
 
-inline int PhyloTree::numSites() const {
-	return root->seq.length();
+inline bool PhyloTree::isLeafRooted() const {
+	return root.children.size() == 1;
+}
+
+inline bool PhyloTree::isInternallyRooted() const {
+	return root.children.size() == 3;
+}
+
+inline int PhyloTree::alnSites() const {
+	return root.seq.length();
 }
 
 inline int PhyloTree::numNodes() const {
 	return dfsNodes().size();
 }
 
-inline bool PhyloTree::isSibling(const PhyloTreeNode* node1, const PhyloTreeNode* node2) const {
+inline PhyloTree::~PhyloTree() {
+	clear();
+}
+
+inline bool PhyloTree::isSibling(const PhyloTreeNode& node1, const PhyloTreeNode& node2) const {
 	assert(isRooted()); // only rooted tree can test siblings
 	return !node1->isRoot() && !node2->isRoot() && node1->parent == node2->parent;
 }
@@ -211,6 +235,13 @@ inline PhyloTree::PhyloTreeNode* PhyloTree::getSibling(const PhyloTreeNode* node
 	if(node->isRoot())
 		return NULL;
 	return node->parent->childL == node ? node->parent->childR : node->parent->childL;
+}
+
+inline int PhyloTree::readTree(const string& treefn, const string& format, const MSA* msa) {
+	if(StringUtils::toLower(format) == "newick")
+		return readTreeNewick(treefn, msa);
+	else
+		throw invalid_argument("Unsupported tree file format '" + format + "'");
 }
 
 } /* namespace EGriceLab */

@@ -5,9 +5,13 @@
  *      Author: zhengqi
  */
 
-#include "PhyloTree.h"
 #include <stack>
 #include <set>
+#include <map>
+#include <cassert>
+#include <fstream>
+#include <cstdio>
+#include "PhyloTree.h"
 
 namespace EGriceLab {
 using namespace std;
@@ -54,23 +58,16 @@ PhyloTree& PhyloTree::operator =(PhyloTree tOther) { // passed by value
 	return *this; // old resources now in *this
 }
 
-PhyloTree::~PhyloTree() {
-	/* do a DFS deconstruction of the entire tree from root */
-	stack<PhyloTreeNode*> S; // using a stack to do non-recursive DFS
-	S.push(root);
+int PhyloTree::readTreeNewick(const string& treefn, const MSA* msa) {
+	return 0;
+}
 
-	while(!S.empty()) {
-		PhyloTreeNode* v = S.pop();
-		if(v != NULL) { // this node has not been destroyed
-			if(v->childL != NULL)
-				S.push(v->childL);
-			if(v->childR != NULL)
-				S.push(v->childR);
-			/* destroy this node */
-			delete v;
-			v = NULL;
-		}
-	}
+void PhyloTree::clear() {
+	root = PhyloTreeNode();
+}
+
+PhyloTree::~PhyloTree() {
+	clear();
 }
 
 set<const PhyloTree::PhyloTreeNode*> PhyloTree::dfsNodes(const PhyloTree::PhyloTreeNode* node) const {

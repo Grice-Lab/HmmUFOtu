@@ -914,7 +914,7 @@ configure:15776: gcc -o conftest -g -O2   conftest.c  >&5
 conftest.c:49:6: warning: conflicting types for built-in function 'sqrt'
  char sqrt ();
       ^
-/tmp/ccEOljBm.o: In function `main':
+/tmp/ccRQU46C.o: In function `main':
 /home/zhengqi/git/HmmUFOtu/HmmUFOtu/conftest.c:60: undefined reference to `sqrt'
 collect2: error: ld returned 1 exit status
 configure:15776: $? = 1
