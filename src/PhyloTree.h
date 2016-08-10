@@ -12,6 +12,7 @@
 #include <string>
 #include <set>
 #include <vector>
+#include <map>
 #include <stdexcept>
 #include <cstddef>
 #include <eigen3/Eigen/Dense>
@@ -35,7 +36,10 @@ using Eigen::Matrix4Xd;
 class PhyloTree {
 	/* nested types and enums */
 private:
+	enum NodeType { P /* parent */, L /* left */, R /* right */ };
 	class PhyloTreeNode;
+
+	typedef PhyloTreeNode PTNode;
 
 	class PhyloTreeNode {
 	public:
@@ -52,6 +56,36 @@ private:
 		virtual ~PhyloTreeNode() { }
 
 		/* Member methods */
+		/** test parent of this node */
+		bool hasParent() const {
+			return neighbors.find(P) != neighbors.end();
+		}
+
+		/** test Lchild of this node */
+		bool hasLChild() const {
+			return neighbors.find(L) != neighbors.end();
+		}
+
+		/** test Rchild of this node */
+		bool hasRChild() const {
+			return neighbors.find(R) != neighbors.end();
+		}
+
+		/** get parent of this node */
+		const PTNode& getParent() const {
+			return neighbors.find(P)->second;
+		}
+
+		/** get Lchild of this node */
+		const PTNode& getLChild() const {
+			return neighbors.find(L)->second;
+		}
+
+		/** get Rchild of this node */
+		const PTNode& getRChild() const {
+			return neighbors.find(R)->second;
+		}
+
 		/** test whether this node is a root node */
 		bool isRoot() const;
 
@@ -62,7 +96,7 @@ private:
 		bool isTip() const;
 
 		DigitalSeq seq;
-		vector<PhyloTreeNode> children;
+		map<NodeType, PTNode> neighbors;
 		double length; /* branch length of this node (to its parent) */
 
 		Matrix4Xd cost; /* cost (negative log liklihood) of observing this sequence given the model and the tree */
@@ -149,27 +183,16 @@ private:
 };
 
 inline bool PhyloTree::PhyloTreeNode::isRoot() const {
-	return children.size() == 3 /* an internally rooted tree */
-			|| children.size() == 1 /* a leaf root */;
+	return neighbors.size() == 3 /* an internally rooted tree */
+			|| neighbors.size() == 1 /* a leaf root */;
 }
 
 inline bool PhyloTree::PhyloTreeNode::isLeaf() const {
-	return children.empty();
+	return hasLChild() && hasRChild();
 }
 
 inline bool PhyloTree::PhyloTreeNode::isTip() const {
-	if(isLeaf())
-		return false;
-	for(vector<PhyloTreeNode>::const_iterator it = children.begin(); it != children.end(); ++it)
-		if(!it->isLeaf())
-			return false; /* all children must be leaf */
-	return true;
-}
-
-inline void PhyloTree::swap(PhyloTree& other) {
-	using std::swap;
-	swap(root, other.root);
-	swap(abc, other.abc);
+	return !isLeaf() && getLChild().isLeaf() && getRChild().isLeaf();
 }
 
 inline bool PhyloTree::isRooted() const {
@@ -177,11 +200,11 @@ inline bool PhyloTree::isRooted() const {
 }
 
 inline bool PhyloTree::isLeafRooted() const {
-	return root.children.size() == 1;
+	return root.neighbors.size() == 1;
 }
 
 inline bool PhyloTree::isInternallyRooted() const {
-	return root.children.size() == 3;
+	return root.neighbors.size() == 3;
 }
 
 inline int PhyloTree::alnSites() const {
@@ -198,7 +221,7 @@ inline PhyloTree::~PhyloTree() {
 
 inline bool PhyloTree::isSibling(const PhyloTreeNode& node1, const PhyloTreeNode& node2) const {
 	assert(isRooted()); // only rooted tree can test siblings
-	return !node1->isRoot() && !node2->isRoot() && node1->parent == node2->parent;
+	return !node1.isRoot() && !node2.isRoot() && &node1.getParent() == &node2.getParent();
 }
 
 inline set<const PhyloTree::PhyloTreeNode*> PhyloTree::children(const PhyloTree::PhyloTreeNode* node) const {
