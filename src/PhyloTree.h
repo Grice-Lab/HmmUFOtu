@@ -71,6 +71,7 @@ private:
 			return neighbors.find(R) != neighbors.end();
 		}
 
+		/* Getters */
 		/** get parent of this node */
 		const PTNode& getParent() const {
 			return neighbors.find(P)->second;
