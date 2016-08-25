@@ -24,26 +24,65 @@ using Eigen::Matrix4Xd;
 class PhyloTree {
 	/* nested types and enums */
 private:
+	class PhyloTreeNode;
+	typedef PhyloTreeNode PTNode;
+
 	class PhyloTreeNode {
 	public:
 		/* constructors */
 		/* Default constructor */
 		PhyloTreeNode() : parent(NULL), childL(NULL), childR(NULL),
-		parentDist(0), childLDist(0), childRDist(0) { }
+		length(0) { }
 
 		/* construct a node with a given DigitalSeq */
 		explicit PhyloTreeNode(const DigitalSeq& seq) :
 				seq(seq), parent(NULL), childL(NULL), childR(NULL),
-				parentDist(0), childLDist(0), childRDist(0) { }
+				length(0) { }
 
 		/* construct a node with a given PrimarySeq */
 		explicit PhyloTreeNode(const PrimarySeq& seq) :
 				seq(seq), parent(NULL), childL(NULL), childR(NULL),
-				parentDist(0), childLDist(0), childRDist(0) { }
+				length(0) { }
 
 		virtual ~PhyloTreeNode() { }
 
 		/* Member methods */
+		bool hasParent() const {
+			return parent != NULL;
+		}
+
+		bool hasChildL() const {
+			return childL != NULL;
+		}
+
+		bool hasChildR() const {
+			return childR != NULL;
+		}
+
+		PTNode* getParent() const {
+			return parent;
+		}
+
+		const PTNode* getParent() const {
+			return parent;
+		}
+
+		PTNode* getChildL() const {
+			return childL;
+		}
+
+		const PTNode* getChildL() const {
+			return childL;
+		}
+
+		PTNode* getChildR() const {
+			return childR;
+		}
+
+		const PTNode* getChildR() const {
+			return childR;
+		}
+
 		/** test whether this node is a root node */
 		bool isRoot() const;
 
@@ -59,14 +98,9 @@ private:
 		PhyloTreeNode* childL;
 		PhyloTreeNode* childR;
 
-		double parentDist;
-		double childLDist;
-		double childRDist;
+		double length;
 
-		Matrix4Xd logLik; /* logLiklihood of observing this sequence given the modeland the tree */
-		Matrix4Xd childLPr; /* stored probability matrix for childL */
-		Matrix4Xd childRPr; /* stored probability matrix for childR */
-		Matrix4Xd parentPr; /* stored probability matrix for parent, only for unrooted tree 'root' */
+		Matrix4Xd cost; /* cost (negative logLiklihood) of observing this sequence given the mode and the tree */
 	};
 
 public:
@@ -143,7 +177,8 @@ private:
 };
 
 inline bool PhyloTree::PhyloTreeNode::isRoot() const {
-	return parent == NULL;
+	return (hasParent() && hasChildL() && hasChildR()) /* internally rooted */ ||
+			(isLeaf() && hasParent()) /* leaf rooted */;
 }
 
 inline bool PhyloTree::PhyloTreeNode::isLeaf() const {
