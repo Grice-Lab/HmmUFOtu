@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 			//cerr << vscore.DP_M << endl;
 
 		float maxScore = hmm.buildViterbiTrace(vscore, vpath);
-		if(maxScore == BandedHMMP7::infV) {
+		if(maxScore == infV) {
 			cerr << id << " no maxScore" << endl;
 			continue;
 		}

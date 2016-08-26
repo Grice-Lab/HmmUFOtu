@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
 		//cerr << "Bhmm aligned" << endl;
 
 		float maxScore = hmm.buildViterbiTrace(vscore, vpath);
-		if(maxScore == BandedHMMP7::infV) {
+		if(maxScore == infV) {
 			cerr << id << " no maxScore" << endl;
 			continue;
 		}

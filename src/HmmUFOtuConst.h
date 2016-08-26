@@ -6,6 +6,8 @@
  */
 #include<string>
 #include<iostream>
+#include<limits>
+#include<cassert>
 
 #ifndef HMMUFOTUCONST_H_
 #define HMMUFOTUCONST_H_
@@ -18,6 +20,9 @@ using std::ostream;
 /* includes for some program-wide constants and definitions */
 const std::string progName = "HmmUFOtu";
 const std::string progVersion = "v1.01";
+
+const double inf = std::numeric_limits<double>::infinity();
+const double infV = -inf;
 
 /* stand-alone functions */
 /**

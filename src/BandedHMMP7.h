@@ -132,8 +132,6 @@ public:
 	};
 
 	/* static and enum members */
-	static const double inf; // inf
-	static const double infV; // -inf
 	static const int kNM; // number of matching states
 	static const int kNSP; // number of special states
 	static const int kNS; // number of total states
@@ -699,7 +697,7 @@ inline BandedHMMP7::p7_state BandedHMMP7::encode(char c) {
 }
 
 inline double BandedHMMP7::hmmValueOf(const string& s) {
-	return s != "*" ? ::atof(s.c_str()) : BandedHMMP7::inf;
+	return s != "*" ? ::atof(s.c_str()) : inf;
 }
 
 } /* namespace EGriceLab */

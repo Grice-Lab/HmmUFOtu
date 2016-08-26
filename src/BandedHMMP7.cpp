@@ -29,8 +29,6 @@ const int BandedHMMP7::kNS =  kNM + kNSP; // number of total states
 /*const int BandedHMMP7::kMinProfile = 10000; // up-to 10K 16S rRNA profile*/
 string HMM_TAG =
 		"HMM\t\tA\tC\tG\tT\n\t\tm->m\tm->i\tm->d\ti->m\ti->i\td->m\td->d";
-const double BandedHMMP7::inf = std::numeric_limits<double>::infinity();
-const double BandedHMMP7::infV = -inf;
 
 ostream& operator<<(ostream& os, const deque<BandedHMMP7::p7_state> path) {
 	for(deque<BandedHMMP7::p7_state>::const_iterator it = path.begin(); it != path.end(); ++it)
@@ -391,16 +389,16 @@ ostream& operator<<(ostream& os, const BandedHMMP7& hmm) {
 		}
 		/* write insert emission line */
 		for(MatrixXd::Index i = 0; i != hmm.E_I_cost.rows(); ++i)
-			hmm.E_I_cost(i, k) != BandedHMMP7::inf ? os << "\t\t" << hmm.E_I_cost(i, k) : os << "\t\t*";
+			hmm.E_I_cost(i, k) != inf ? os << "\t\t" << hmm.E_I_cost(i, k) : os << "\t\t*";
 		os << endl;
 		/* write state transition line */
-		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) != BandedHMMP7::inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) != BandedHMMP7::inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) != BandedHMMP7::inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) != BandedHMMP7::inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) != BandedHMMP7::inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) != BandedHMMP7::inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) != BandedHMMP7::inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) : os << "\t\t*";
 		os << endl;
 	}
 	os << "//" << endl;
@@ -539,7 +537,7 @@ void EGriceLab::BandedHMMP7::reset_transition_params() {
 	 */
 	for(int k = 0; k <= K; ++k) {
 		Tmat[k].setZero();
-		Tmat_cost[k].fill(BandedHMMP7::inf);
+		Tmat_cost[k].fill(inf);
 	}
 }
 
@@ -547,8 +545,8 @@ void EGriceLab::BandedHMMP7::reset_emission_params() {
 	/* state 0 serves as B state */
 	E_M.setZero();
 	E_I.setZero();
-	E_M_cost.fill(BandedHMMP7::inf);
-	E_I_cost.fill(BandedHMMP7::inf);
+	E_M_cost.fill(inf);
+	E_I_cost.fill(inf);
 }
 
 /*void EGriceLab::BandedHMMP7::normalize_transition_params() {

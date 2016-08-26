@@ -5,6 +5,7 @@
  *      Author: zhengqi
  */
 #include <cstdio>
+#include <cassert>
 #include "HmmUFOtuConst.h"
 
 

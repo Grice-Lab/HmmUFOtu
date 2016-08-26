@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 		//cerr << "Bhmm aligned" << endl;
 
 		double minCost = hmm.buildViterbiTrace(vscore, vpath);
-		if(minCost == BandedHMMP7::inf) {
+		if(minCost == inf) {
 			cerr << id << " no minScore" << endl;
 			continue;
 		}
