@@ -97,7 +97,7 @@ noinst_PROGRAMS = dna_test1$(EXEEXT) nucl_test1$(EXEEXT) \
 	FMIO_test2$(EXEEXT) banded_align_csfm_test1$(EXEEXT) \
 	banded_pair_csfm_test1$(EXEEXT) dm_density_train1$(EXEEXT) \
 	dm_mixture_train1$(EXEEXT) dm_mixture_train2$(EXEEXT) \
-	DD_IO_test1$(EXEEXT)
+	DD_IO_test1$(EXEEXT) PT_IO_test1$(EXEEXT)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -147,6 +147,12 @@ MSAIO_test2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 am_MSA_test1_OBJECTS = MSA_test1.$(OBJEXT)
 MSA_test1_OBJECTS = $(am_MSA_test1_OBJECTS)
 MSA_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+am_PT_IO_test1_OBJECTS = PT_IO_test1.$(OBJEXT)
+PT_IO_test1_OBJECTS = $(am_PT_IO_test1_OBJECTS)
+PT_IO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+PT_IO_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(PT_IO_test1_LDFLAGS) $(LDFLAGS) -o $@
 am_amino_test1_OBJECTS = amino_test1.$(OBJEXT)
 amino_test1_OBJECTS = $(am_amino_test1_OBJECTS)
 amino_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
@@ -256,8 +262,8 @@ am__v_CXXLD_1 =
 SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
 	$(FMIO_test2_SOURCES) $(MSAIO_test1_SOURCES) \
 	$(MSAIO_test2_SOURCES) $(MSA_test1_SOURCES) \
-	$(amino_test1_SOURCES) $(bHMM_IO_test1_SOURCES) \
-	$(banded_align_csfm_test1_SOURCES) \
+	$(PT_IO_test1_SOURCES) $(amino_test1_SOURCES) \
+	$(bHMM_IO_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) \
 	$(banded_pair_csfm_test1_SOURCES) $(dm_density_train1_SOURCES) \
 	$(dm_mixture_train1_SOURCES) $(dm_mixture_train2_SOURCES) \
@@ -266,8 +272,8 @@ SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
 DIST_SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
 	$(FMIO_test2_SOURCES) $(MSAIO_test1_SOURCES) \
 	$(MSAIO_test2_SOURCES) $(MSA_test1_SOURCES) \
-	$(amino_test1_SOURCES) $(bHMM_IO_test1_SOURCES) \
-	$(banded_align_csfm_test1_SOURCES) \
+	$(PT_IO_test1_SOURCES) $(amino_test1_SOURCES) \
+	$(bHMM_IO_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) \
 	$(banded_pair_csfm_test1_SOURCES) $(dm_density_train1_SOURCES) \
 	$(dm_mixture_train1_SOURCES) $(dm_mixture_train2_SOURCES) \
@@ -496,6 +502,9 @@ DD_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
 $(top_srcdir)/src/math/libEGMath.a
 
 DD_IO_test1_LDFLAGS = -static
+PT_IO_test1_SOURCES = PT_IO_test1.cpp
+PT_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PT_IO_test1_LDFLAGS = -static
 all: all-am
 
 .SUFFIXES:
@@ -563,6 +572,10 @@ MSA_test1$(EXEEXT): $(MSA_test1_OBJECTS) $(MSA_test1_DEPENDENCIES) $(EXTRA_MSA_t
 	@rm -f MSA_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(MSA_test1_OBJECTS) $(MSA_test1_LDADD) $(LIBS)
 
+PT_IO_test1$(EXEEXT): $(PT_IO_test1_OBJECTS) $(PT_IO_test1_DEPENDENCIES) $(EXTRA_PT_IO_test1_DEPENDENCIES) 
+	@rm -f PT_IO_test1$(EXEEXT)
+	$(AM_V_CXXLD)$(PT_IO_test1_LINK) $(PT_IO_test1_OBJECTS) $(PT_IO_test1_LDADD) $(LIBS)
+
 amino_test1$(EXEEXT): $(amino_test1_OBJECTS) $(amino_test1_DEPENDENCIES) $(EXTRA_amino_test1_DEPENDENCIES) 
 	@rm -f amino_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(amino_test1_OBJECTS) $(amino_test1_LDADD) $(LIBS)
@@ -619,6 +632,7 @@ include ./$(DEPDIR)/FMIO_test2.Po
 include ./$(DEPDIR)/MSAIO_test1.Po
 include ./$(DEPDIR)/MSAIO_test2.Po
 include ./$(DEPDIR)/MSA_test1.Po
+include ./$(DEPDIR)/PT_IO_test1.Po
 include ./$(DEPDIR)/amino_test1.Po
 include ./$(DEPDIR)/bHMM_IO_test1.Po
 include ./$(DEPDIR)/banded_align_csfm_test1.Po
