@@ -164,8 +164,15 @@ struct newick_grammar :
 		using phoenix::at_c;
 		using phoenix::push_back;
 
-		/* label grammar */
-		label %= qi::lexeme[+(qi::char_ - ':' - ')' - ',')]; /* strings without :, _ and , */
+		/* label grammars */
+		/* unquoted label is printable characters
+		 * without blanks, parentheses, brackets, single_quotes, colons, semicolons or commas
+		 */
+		unquoted_label %= qi::lexeme[+(ascii::print - ascii::space - '(' - ')' - '[' - ']' - '\'' - ':' - ';' - ',') ];
+		/* quoted label is ' printable characters ' */
+		quoted_label %= '\'' >> qi::lexeme[+(ascii::print)] >> '\'';
+
+		label = unquoted_label | quoted_label;
 
 		/* branch length grammar */
 		branch_length %= ':' >> qi::double_;
@@ -173,11 +180,11 @@ struct newick_grammar :
 		/* subtree grammar */
 		subtree =
 			// assign vector of children to the third element of PT, optional
-			-descendant_list  [at_c<2>(qi::_val) = qi::_1]
+			-(descendant_list  [at_c<2>(qi::_val) = qi::_1])
 			// assign the label to the first element, optional
-			>> -label  [at_c<0>(qi::_val) = qi::_1]
+			>> -(label  [at_c<0>(qi::_val) = qi::_1])
 			// assign the branch length to the second element, optional
-			>> -branch_length  [at_c<1>(qi::_val) = qi::_1];
+			>> -(branch_length  [at_c<1>(qi::_val) = qi::_1]);
 
 		/* descentdant_list is a vector of PT, which will be auto pushed to the compatible PT vector */
 		descendant_list %=
@@ -192,19 +199,24 @@ struct newick_grammar :
 	qi::rule<Iterator, PT()> subtree;
 	qi::rule<Iterator, std::vector<PT>()> descendant_list;
 	qi::rule<Iterator, double()> branch_length;
-	qi::rule<Iterator, std::string()> label;
-
+	qi::rule<Iterator, std::string()> unquoted_label, quoted_label, label;
 };
 
 inline ostream& operator<<(ostream& out, const PT& tree) {
 	bool first = true;
-	out << "(" << tree.name << ": " << tree.length << " { ";
-	for(std::vector<PT>::const_iterator it = tree.children.begin(); it != tree.children.end(); ++it) {
-		out << (first ? "" : ",") << *it;
-		first = false;
+	if(!tree.children.empty()) {
+		out << '(';
+		for(std::vector<PT>::const_iterator it = tree.children.begin(); it != tree.children.end(); ++it) {
+			out << (first ? "" : ",") << *it;
+			first = false;
+		}
+		out << ')';
 	}
+	if(!tree.name.empty())
+		out << tree.name;
+	if(tree.length > 0)
+		out << ':' << tree.length;
 
-	out << " }";
 	return out;
 }
 
