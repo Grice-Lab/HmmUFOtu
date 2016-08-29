@@ -15,9 +15,11 @@ namespace EGriceLab {
 
 DigitalSeq::DigitalSeq(const DegenAlphabet* abc, const string& name, const string& str) :
 				abc(abc), name(name) {
-	for(string::const_iterator it = str.begin(); it != str.end(); ++it)
-		if(abc->isValid(::toupper(*it)))
-			push_back(abc->encode(::toupper(*it))); // use encoded values
+	for(string::const_iterator it = str.begin(); it != str.end(); ++it) {
+		char c = ::toupper(*it);
+		if(abc->isValid(c))
+			push_back(abc->encode(c)); // use encoded values
+	}
 }
 
 string DigitalSeq::toString() const {
@@ -47,9 +49,11 @@ string DigitalSeq::join(const string& sep) {
 }
 
 DigitalSeq& EGriceLab::DigitalSeq::append(const string& str) {
-	for(string::const_iterator it = str.begin(); it != str.end(); ++it)
-		if(abc->isValid(::toupper(*it)))
-			push_back(abc->encode(::toupper(*it)));
+	for(string::const_iterator it = str.begin(); it != str.end(); ++it) {
+		char c = ::toupper(*it);
+		if(abc->isValid(c))
+			push_back(abc->encode(c));
+	}
 	return *this;
 }
 
@@ -58,7 +62,7 @@ DigitalSeq& EGriceLab::DigitalSeq::append(const string& str) {
  * return true if and only if all residuals are equal and are the same Alphabet
  */
 bool operator==(const DigitalSeq& lhs, const DigitalSeq& rhs) {
-	if(*(lhs.abc) != *(rhs.abc))
+	if(!(lhs.abc == rhs.abc /* same object */ || *lhs.abc == *rhs.abc /* equal object */))
 		return false;
 	if(lhs.length() != rhs.length())
 		return false;
