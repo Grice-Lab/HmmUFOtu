@@ -48,25 +48,21 @@ typedef PhyloTree PT;
 struct PhyloTree {
 	/* constructors */
 	/* Default constructor */
-	PhyloTree() : length(0), seq(NULL), parent(NULL) {
+	PhyloTree() : length(0), seq(NULL) {
 		/* Assert IEE559 at construction time */
 		assert(std::numeric_limits<double>::is_iec559);
 	}
 
 	/* Member methods */
-	/** test whether parent is initiated */
-	bool hasParent() const {
-		return parent != NULL;
-	}
 
 	/** test whether this SubTree is a leave root */
 	bool isLeafRoot() const {
-		return hasParent() && children.size() == 1;
+		return children.size() == 1;
 	}
 
 	/** test whether this SubTree is an internal root */
 	bool isInternalRoot() const {
-		return hasParent() && children.size() > 2;
+		return children.size() > 2;
 	}
 
 	/** test whether this SubTree is a root node */
@@ -119,9 +115,8 @@ struct PhyloTree {
 	string name;
 	double length; /* branch length of this node */
 	vector<PT> children;
-	PT* parent;
 
-	const DigitalSeq* seq;
+	DigitalSeq seq;
 	Matrix4Xd cost; /* cost (negative log liklihood) of observing this sequence given the model and the tree */
 
 };
@@ -217,6 +212,7 @@ inline ostream& operator<<(ostream& out, const PT& tree) {
 	if(tree.length > 0)
 		out << ':' << tree.length;
 
+	out << ';';
 	return out;
 }
 
