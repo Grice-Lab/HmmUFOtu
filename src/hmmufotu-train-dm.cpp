@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-qM"))
 		qM = ::atoi(cmdOpts.getOpt("-qM").c_str());
-	if(!(qM > 0 && qM < MAX_NUM_COMPO)) {
+	if(!(qM > 0 && qM <= MAX_NUM_COMPO)) {
 		cerr << "-qM must between 1 and " << MAX_NUM_COMPO << endl;
 		return -1;
 	}
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
 	const int K = abc->getSize();
 	assert (K == 4);
 	/* construct DM models */
-	DirichletModel* dmME;
+	DirichletModel* dmME = NULL;
 	if(qM == 1)
 		dmME = new DirichletDensity(K);
 	else
@@ -239,9 +239,15 @@ int main(int argc, char* argv[]) {
 	cerr << "Delete transition model trained" << endl;
 
 	/* output */
-	out << "Match emission:" << endl << *dmME << endl;
-	out << "Insert emission:" << endl << *dmIE << endl;
-	out << "Match transition:" << endl << *dmMT << endl;
-	out << "Insert transition:" << endl << *dmIT << endl;
-	out << "Delete transition:" << endl << *dmDT << endl;
+//	out << "Match emission:" << endl << *dmME << endl;
+//	out << "Insert emission:" << endl << *dmIE << endl;
+//	out << "Match transition:" << endl << *dmMT << endl;
+//	out << "Insert transition:" << endl << *dmIT << endl;
+//	out << "Delete transition:" << endl << *dmDT << endl;
+
+	out << "Match emission cost: " << costME << endl << *dmME << endl;
+	out << "Insert emission cost: " << costIE << endl << *dmIE << endl;
+	out << "Match transition: " << costMT << endl << *dmMT << endl;
+	out << "Insert transition: " << costIT << endl << *dmIT << endl;
+	out << "Delete transition: " << costDT << endl << *dmDT << endl;
 }
