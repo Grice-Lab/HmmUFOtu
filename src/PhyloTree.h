@@ -39,13 +39,105 @@ using std::istream;
 using std::ostream;
 using Eigen::Matrix4Xd;
 
+<<<<<<< HEAD
 struct PhyloTree;
+=======
+class PhyloTree {
+	/* nested types and enums */
+private:
+	class PhyloTreeNode;
+	typedef PhyloTreeNode PTNode;
 
+	class PhyloTreeNode {
+	public:
+		/* constructors */
+		/* Default constructor */
+		PhyloTreeNode() : parent(NULL), childL(NULL), childR(NULL),
+		length(0) { }
+>>>>>>> refs/heads/master
+
+<<<<<<< HEAD
 typedef PhyloTree PT;
+=======
+		/* construct a node with a given DigitalSeq */
+		explicit PhyloTreeNode(const DigitalSeq& seq) :
+				seq(seq), parent(NULL), childL(NULL), childR(NULL),
+				length(0) { }
+>>>>>>> refs/heads/master
 
+<<<<<<< HEAD
 //typedef boost::variant<boost::recursive_wrapper<PT> > pt_node;
+=======
+		/* construct a node with a given PrimarySeq */
+		explicit PhyloTreeNode(const PrimarySeq& seq) :
+				seq(seq), parent(NULL), childL(NULL), childR(NULL),
+				length(0) { }
+>>>>>>> refs/heads/master
 
+<<<<<<< HEAD
 struct PhyloTree {
+=======
+		virtual ~PhyloTreeNode() { }
+
+		/* Member methods */
+		bool hasParent() const {
+			return parent != NULL;
+		}
+
+		bool hasChildL() const {
+			return childL != NULL;
+		}
+
+		bool hasChildR() const {
+			return childR != NULL;
+		}
+
+		PTNode* getParent() const {
+			return parent;
+		}
+
+		const PTNode* getParent() const {
+			return parent;
+		}
+
+		PTNode* getChildL() const {
+			return childL;
+		}
+
+		const PTNode* getChildL() const {
+			return childL;
+		}
+
+		PTNode* getChildR() const {
+			return childR;
+		}
+
+		const PTNode* getChildR() const {
+			return childR;
+		}
+
+		/** test whether this node is a root node */
+		bool isRoot() const;
+
+		/** test whether this node is a leaf node */
+		bool isLeaf() const;
+
+		/** test whether this node is a tip node */
+		bool isTip() const;
+
+		DigitalSeq seq;
+
+		PhyloTreeNode* parent;
+		PhyloTreeNode* childL;
+		PhyloTreeNode* childR;
+
+		double length;
+
+		Matrix4Xd cost; /* cost (negative logLiklihood) of observing this sequence given the mode and the tree */
+	};
+
+public:
+>>>>>>> refs/heads/master
 	/* constructors */
 	/* Default constructor */
 	PhyloTree() : length(0) {
@@ -142,12 +234,63 @@ struct PhyloTree {
 
 };
 
+<<<<<<< HEAD
 inline int PhyloTree::readTree(const string& treefn, const string& format, const MSA* msa) {
 	/* Read tree structure */
 	int nNodes = readTree(treefn, format);
 	if(nNodes == -1) {
 		std::cerr << "Failed to read in tree file: " << treefn << " in " << format << " format" << std::endl;
 		return nNodes;
+=======
+inline bool PhyloTree::PhyloTreeNode::isRoot() const {
+	return (hasParent() && hasChildL() && hasChildR()) /* internally rooted */ ||
+			(isLeaf() && hasParent()) /* leaf rooted */;
+}
+
+inline bool PhyloTree::PhyloTreeNode::isLeaf() const {
+	return childL == NULL && childR == NULL;
+}
+
+inline bool PhyloTree::PhyloTreeNode::isTip() const {
+	return !isLeaf() && childL->isLeaf() && childR->isLeaf();
+}
+
+inline void PhyloTree::swap(PhyloTree& other) {
+	using std::swap;
+	swap(root, other.root);
+	swap(abc, other.abc);
+}
+
+inline bool PhyloTree::isRooted() const {
+	return root->isRoot();
+}
+
+inline int PhyloTree::numSites() const {
+	return root->seq.length();
+}
+
+inline int PhyloTree::numNodes() const {
+	return dfsNodes().size();
+}
+
+inline bool PhyloTree::isSibling(const PhyloTreeNode* node1, const PhyloTreeNode* node2) const {
+	assert(isRooted()); // only rooted tree can test siblings
+	return !node1->isRoot() && !node2->isRoot() && node1->parent == node2->parent;
+}
+
+inline set<const PhyloTree::PhyloTreeNode*> PhyloTree::children(const PhyloTree::PhyloTreeNode* node) const {
+	set<const PhyloTree::PhyloTreeNode*> children;
+	children.insert(node->childL);
+	children.insert(node->childR);
+	return children;
+}
+
+inline set<const PhyloTree::PhyloTreeNode*> PhyloTree::ancestors(const PhyloTree::PhyloTreeNode* node) const {
+	set<const PhyloTree::PhyloTreeNode*> ancestors;
+	while(!node->isRoot()) {
+		ancestors.insert(node->parent);
+		node = node->parent;
+>>>>>>> refs/heads/master
 	}
 	/* Read MSA sequences */
 	int nSeqs = readSeqFromMSA(msa);
