@@ -67,8 +67,8 @@ public:
 	 */
 	virtual double trainML(const MatrixXd& data,
 			int maxIt = MAX_ITERATION, double eta = DEFAULT_ETA,
-			double epsilonCost = DEFAULT_EPSILON_COST,
-			double epsilonParams = DEFAULT_EPSILON_PARAMS);
+			double epsilonCost = DEFAULT_REL_EPS_COST,
+			double epsilonParams = DEFAULT_REL_EPS_PARAMS);
 
 	/**
 	 * Calculate the PDF of observing a data using this DM model

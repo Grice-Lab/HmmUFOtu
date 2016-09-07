@@ -108,14 +108,14 @@ double DirichletMixture::trainML(const MatrixXd& data, int maxIt, double eta,
 			cerr << "Potential over-fitting detected. Please choose another MSA training set" << endl;
 			return NAN;
 		}
-		if(q.isZero()) {
+		if((q.array() == 0).any()) {
 			cerr << "Potential unused (zero-coefficient) mixture component detected. Please use a smaller q for training" << endl;
 			return NAN;
 		}
 		/* calculate new cost */
 		double cNew = cost(data);
-		double deltaC = c - cNew;
-//		fprintf(stderr, "c:%lg cNew:%lg deltaC:%lg\n", c, cNew, deltaC);
+		double deltaC = (c - cNew) / c;
+		fprintf(stderr, "c:%lg cNew:%lg deltaC:%lg\n", c, cNew, deltaC);
 
 		/* E step, update the mixture coefficients using iteration */
 		VectorXd qNew = VectorXd::Zero(L);
@@ -123,11 +123,12 @@ double DirichletMixture::trainML(const MatrixXd& data, int maxIt, double eta,
 			qNew += compPostP(data.col(t));
 		qNew /= static_cast<double> (M);
 		c = cNew;
-
-		/* termination check */
-		if(alpha.isApprox(alphaOld, epsilonParams) && qNew.isApprox(q, epsilonParams) && deltaC >= 0 && deltaC < epsilonCost)
-			break;
 		q = qNew;
+
+		double alphaNorm = alphaOld.norm();
+		/* termination check */
+		if(alpha.isApprox(alphaOld, epsilonParams * alphaNorm) && deltaC >= 0 && deltaC < epsilonCost)
+			break;
 	}
 	return c;
 }
@@ -215,7 +216,7 @@ void DirichletMixture::momentInit(MatrixXd data) {
 
 	delete[] idx;
 
-	/* Devide the data to L equal size categories and do moment-matching */
+	/* Divide the data to L equal size categories and do moment-matching */
 	for(int j = 0; j < L; ++j) {
 		int blockStart = j * M / L;
 		MatrixXd block = dataSorted.block(0, blockStart, K, M / L);

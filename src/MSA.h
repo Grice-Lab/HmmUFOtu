@@ -16,6 +16,7 @@
 #include "SeqCommons.h"
 #include "StringUtils.h"
 #include "PrimarySeq.h"
+#include "DigitalSeq.h"
 
 namespace EGriceLab {
 using std::string;
@@ -154,7 +155,7 @@ public:
 	 * @param i  seq position
 	 * @return the i-th DigitalSeq
 	 */
-	DigitalSeq DigitalSeqAt(unsigned i) const;
+	DigitalSeq dsAt(unsigned i) const;
 
 	/**
 	 * Get the alignment string at given pos
@@ -453,7 +454,7 @@ inline PrimarySeq MSA::primarySeqAt(unsigned i) const {
 	return PrimarySeq(abc, seqNameAt(i), seqAt(i));
 }
 
-inline DigitalSeq MSA::DigitalSeqAt(unsigned i) const {
+inline DigitalSeq MSA::dsAt(unsigned i) const {
 	return DigitalSeq(abc, seqNameAt(i), seqAt(i));
 }
 

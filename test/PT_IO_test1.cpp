@@ -11,18 +11,13 @@ using namespace std;
 
 int main(int argc, const char* argv[]) {
 
-	cerr << "Main entered" << endl;
-
 	namespace qi = boost::spirit::qi;
 	std::string str;
 
 	EGriceLab::newick_grammar<std::string::const_iterator> grammar;
 
-	cerr << "grammar initiated" << endl;
-
 	EGriceLab::PT tree;
-
-	cerr << "tree initiated" << endl;
+	cout << "Type in a newick tree or q to exit" << endl;
 
 	while(std::getline(std::cin, str)) {
 		if(str.empty() || str[0] == 'q' || str[0] == 'Q')

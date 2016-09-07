@@ -21,6 +21,7 @@
 #include "BandedHMMP7Bg.h"
 #include "BandedHMMCommons.h"
 #include "PrimarySeq.h"
+#include "DigitalSeq.h"
 #include "MSA.h"
 #include "DirichletModel.h"
 

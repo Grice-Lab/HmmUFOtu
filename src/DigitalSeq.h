@@ -102,7 +102,7 @@ public:
 	DigitalSeq& append(const string& str);
 
 private:
-	const DegenAlphabet* const abc;
+	const DegenAlphabet* abc;
 	string name;
 
 	/* non-member operators */

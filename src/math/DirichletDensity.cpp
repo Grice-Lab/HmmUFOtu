@@ -60,11 +60,12 @@ double DirichletDensity::trainML(const MatrixXd& data, int maxIt,
 		}
 		/* calculate new cost */
 		double cNew = cost(data);
-		double deltaC = c - cNew;
+		double deltaC = (c - cNew) / c;
 //		fprintf(stderr, "c:%lg cNew:%lg deltaC:%lg\n", c, cNew, deltaC);
 		c = cNew;
 		/* termination check */
-		if(alpha.isApprox(alphaOld, epsilonParams) && deltaC >= 0 && deltaC < epsilonCost)
+		double alphaNorm = alphaOld.norm();
+		if(alpha.isApprox(alphaOld, epsilonParams * alphaNorm) && deltaC >= 0 && deltaC < epsilonCost)
 			break;
 	}
 	return c;

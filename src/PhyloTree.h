@@ -1,5 +1,5 @@
 /*
- * PhyloTreeNode.h
+ * PhyloTree.h
  *	An binary Phylogenic tree class
  *	the tree is rooted if the root node has a null parent, or unrooted if the parent is actually the 3'rd child
  *  Created on: Mar 25, 2016
@@ -48,7 +48,7 @@ typedef PhyloTree PT;
 struct PhyloTree {
 	/* constructors */
 	/* Default constructor */
-	PhyloTree() : length(0), seq(NULL) {
+	PhyloTree() : length(0) {
 		/* Assert IEE559 at construction time */
 		assert(std::numeric_limits<double>::is_iec559);
 	}
@@ -94,11 +94,11 @@ struct PhyloTree {
 	/** Get the number of aligned sites of this tree */
 	int alnSites() const;
 
-	/** Get the number of nodes of this tree */
+	/** Get the number of nodes of this tree using Dfs search */
 	int numNodes() const;
 
 	/**
-	 * Read a tree file and MSA into this object
+	 * Read the tree structure and sequence from an input file of given format
 	 * @param treefn  tree filename
 	 * @param format  tree file format
 	 * @param msa  Multiple Sequence Alignment of this tree
@@ -106,7 +106,28 @@ struct PhyloTree {
 	 */
 	int readTree(const string& treefn, const string& format, const MSA* msa);
 
-	int readTreeNewick(const string& treefn, const MSA* msa);
+	/**
+	 * Read the tree structure (but not the sequence) from an input file of given format
+	 * @param treefn  tree filename
+	 * @param format  tree file format
+	 * @param msa  Multiple Sequence Alignment of this tree
+	 * @return  number of tree nodes read, or -1 if anything failed
+	 * @throw illegal_argument exception if is not a supported file format
+	 */
+	int readTree(const string& treefn, const string& format);
+
+	/**
+	 * Read the tree structure (but not the sequence) from a newick file
+	 * @param treefn  tree filename
+	 * @return
+	 */
+	int readNiwickTree(const string& treefn);
+
+	/**
+	 * Read the sequence in the this tree according to given MSA
+	 * @return  sequences with MSA assigned, or -1 if anything failed
+	 */
+	int readSeqFromMSA(const MSA* msa);
 
 	/* friend operators */
 	friend ostream& operator<<(ostream& out, const PT& tree);
@@ -122,8 +143,24 @@ struct PhyloTree {
 };
 
 inline int PhyloTree::readTree(const string& treefn, const string& format, const MSA* msa) {
+	/* Read tree structure */
+	int nNodes = readTree(treefn, format);
+	if(nNodes == -1) {
+		std::cerr << "Failed to read in tree file: " << treefn << " in " << format << " format" << std::endl;
+		return nNodes;
+	}
+	/* Read MSA sequences */
+	int nSeqs = readSeqFromMSA(msa);
+	if(nSeqs == -1) {
+		std::cerr << "Failed to read in the MSA" << std::endl;
+		return nSeqs;
+	}
+	return nNodes;
+}
+
+inline int PhyloTree::readTree(const string& treefn, const string& format) {
 	if(StringUtils::toLower(format) == "newick")
-		return readTreeNewick(treefn, msa);
+		return readNiwickTree(treefn);
 	else
 		throw invalid_argument("Unsupported tree file format '" + format + "'");
 }
@@ -214,6 +251,10 @@ inline ostream& operator<<(ostream& out, const PT& tree) {
 
 	out << ';';
 	return out;
+}
+
+inline int PhyloTree::alnSites() const {
+	return seq.length();
 }
 
 } /* namespace EGriceLab */

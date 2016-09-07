@@ -56,8 +56,8 @@ public:
 	 */
 	virtual double trainML(const MatrixXd& data,
 			int maxIt = MAX_ITERATION, double eta = DEFAULT_ETA,
-			double epsilonCost = DEFAULT_EPSILON_COST,
-			double epsilonParams = DEFAULT_EPSILON_PARAMS) = 0;
+			double epsilonCost = DEFAULT_REL_EPS_COST,
+			double epsilonParams = DEFAULT_REL_EPS_PARAMS) = 0;
 
 	/**
 	 * Calculate the logPDF of observing a data using this model
@@ -99,11 +99,11 @@ private:
 
 	/* static members */
 public:
-	static const double DEFAULT_ETA = 0.0001; // default step width relative to the gradient used in ML parameter training
+	static const double DEFAULT_ETA = 0.001; // default step width relative to the gradient used in ML parameter training
 	static const int MIN_K = 2; // minimum number of categories
 //	static const double DEFAULT_EPSILON = FLT_EPSILON;
-	static const double DEFAULT_EPSILON_COST = 1e-6;
-	static const double DEFAULT_EPSILON_PARAMS = 1e-6;
+	static const double DEFAULT_REL_EPS_COST = 1e-6;
+	static const double DEFAULT_REL_EPS_PARAMS = 1e-6;
 	static const int MAX_ITERATION = 0;
 	static const IOFormat FULL_FORMAT; /* default output format for eigen objects */
 };
