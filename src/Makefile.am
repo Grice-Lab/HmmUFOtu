@@ -22,7 +22,8 @@ SeqIO.cpp \
 BandedHMMP7Bg.cpp \
 BandedHMMP7.cpp \
 MSA.cpp \
-CSFMIndex.cpp
+CSFMIndex.cpp \
+PhyloTree.cpp
 
 # Build the executables
 bin_PROGRAMS=hmmufotu hmmufotu-train-dm hmmufotu-train

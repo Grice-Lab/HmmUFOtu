@@ -117,7 +117,7 @@ am_libHmmUFOtu_a_OBJECTS = HmmUFOtuConst.$(OBJEXT) \
 	StringUtils.$(OBJEXT) IUPACNucl.$(OBJEXT) IUPACAmino.$(OBJEXT) \
 	DNA.$(OBJEXT) SeqCommons.$(OBJEXT) PrimarySeq.$(OBJEXT) \
 	SeqIO.$(OBJEXT) BandedHMMP7Bg.$(OBJEXT) BandedHMMP7.$(OBJEXT) \
-	MSA.$(OBJEXT) CSFMIndex.$(OBJEXT)
+	MSA.$(OBJEXT) CSFMIndex.$(OBJEXT) PhyloTree.$(OBJEXT)
 libHmmUFOtu_a_OBJECTS = $(am_libHmmUFOtu_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
@@ -399,7 +399,8 @@ SeqIO.cpp \
 BandedHMMP7Bg.cpp \
 BandedHMMP7.cpp \
 MSA.cpp \
-CSFMIndex.cpp
+CSFMIndex.cpp \
+PhyloTree.cpp
 
 hmmufotu_SOURCES = HmmUFOtu.cpp
 hmmufotu_LDADD = libHmmUFOtu.a \
@@ -537,6 +538,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IUPACAmino.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IUPACNucl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSA.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PhyloTree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PrimarySeq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqCommons.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqIO.Po@am__quote@
