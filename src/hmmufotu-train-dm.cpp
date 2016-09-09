@@ -10,6 +10,8 @@
 #include <fstream>
 #include <cstdlib>
 #include <cassert>
+#include <ctime>
+#include <math.h>
 #include "HmmUFOtu.h"
 
 using namespace std;
@@ -19,20 +21,23 @@ using namespace EGriceLab::Math;
 
 static const int DEFAULT_QM = 1;
 static const double DEFAULT_SYMFRAC = 0.5;
-static const int MAX_NUM_COMPO = 4;
+static const int MAX_NUM_COMPO = 6;
 static const int MAX_ITER = 0;
+static const int DEFAULT_NSEED = 1;
 
 /**
  * Print the usage information of this program
  */
 void printUsage(const string& progName) {
 	cerr << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
-		 << "Options:    MSA-FILE     : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
-		 << "            -o FILE      : write output to FILE instead of stdout" << endl
-		 << "            -qM INT      : number of Dirichlet Mixture model components for match state emissions [" << DEFAULT_QM << "]" << endl
-		 << "            -symfrac     : conservation threshold for an MSA site to be considered as a Match state [" << DEFAULT_SYMFRAC << "]" << endl
-		 << "            --max-it INT : maximum iteration allowed in gradient descent training, 0 for no limit [" << MAX_ITER << "]" << endl
-		 << "            -h|--help    : print this help and exit" << endl;
+		 << "Options:    MSA-FILE       : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
+		 << "            -o FILE        : write output to FILE instead of stdout" << endl
+		 << "            -qM INT        : number of Dirichlet Mixture model components for match state emissions [" << DEFAULT_QM << "]" << endl
+		 << "            -symfrac       : conservation threshold for an MSA site to be considered as a Match state [" << DEFAULT_SYMFRAC << "]" << endl
+		 << "            --max-it INT   : maximum iteration allowed in gradient descent training, 0 for no limit [" << MAX_ITER << "]" << endl
+		 << "            -s|--seed INT  : random seed used in Dirichlet Mixture model training (-qM > 1) for debug purpose" << endl
+		 << "            -n number of different random initiation in Dirichlet Mixture model training [" << DEFAULT_NSEED << "]" << endl
+		 << "            -h|--help      : print this help and exit" << endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -44,6 +49,8 @@ int main(int argc, char* argv[]) {
 	string infn;
 	string outfn;
 	string fmt;
+	unsigned seed = time(NULL); // using time as default seed
+	int nSeed = DEFAULT_NSEED;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -97,6 +104,14 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
+	if(cmdOpts.hasOpt("-s"))
+		seed = ::atoi(cmdOpts.getOpt("-s").c_str());
+	if(cmdOpts.hasOpt("--seed"))
+		seed = ::atoi(cmdOpts.getOpt("--seed").c_str());
+
+	if(cmdOpts.hasOpt("-n"))
+		nSeed = ::atoi(cmdOpts.getOpt("-n").c_str());
+
 	/* guess input format */
 	if(StringUtils::endsWith(infn, ".fasta") || StringUtils::endsWith(infn, ".fas")
 		|| StringUtils::endsWith(infn, ".fa") || StringUtils::endsWith(infn, ".fna"))
@@ -108,6 +123,8 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
+	/* set seed */
+	srand(seed);
 	/* Load data */
 	MSA* msa;
 	if(fmt == "msa") { /* binary file provided */
@@ -218,23 +235,51 @@ int main(int argc, char* argv[]) {
 			cDT++;
 	} /* end each position */
 
-	cerr << "cMT:" << cMT << endl;
-	cerr << "cIT:" << cIT << endl;
-	cerr << "cDT:" << cDT << endl;
-	cerr << "dataMT:" << dataMT.rowwise().sum() << endl;
+//	cerr << "cMT:" << cMT << endl;
+//	cerr << "cIT:" << cIT << endl;
+//	cerr << "cDT:" << cDT << endl;
+//	cerr << "dataMT:" << dataMT.rowwise().sum() << endl;
 	dataMT.conservativeResize(3, cMT);
 	dataIT.conservativeResize(2, cIT);
 	dataDT.conservativeResize(2, cDT);
 
 	/* train DM models */
-	double costME = dmME->trainML(dataME, maxIter);
-	cerr << "Match emission model trained" << endl;
+	double costME = inf;
+	int bestIdx = 0;
+
+	if(qM == 1) // DirichletDensity
+		costME = dmME->trainML(dataME, maxIter);
+	else { // DirichletMixture
+		/* make a copy of the original model */
+		DirichletMixture model(*(dynamic_cast<DirichletMixture*>(dmME) ));
+		for(int i = 1; i <= nSeed; ++i) {
+			cerr << "Trying random seed " << i << endl;
+			double cost = model.trainML(dataME, maxIter);
+			cerr << "cost: " << cost << endl;
+			if(cost < costME) { // a better model found
+				*(dynamic_cast<DirichletMixture*>(dmME)) = model; // copy back
+				bestIdx = i;
+				costME = cost;
+			}
+		}
+		cerr << "Best model found at seed " << bestIdx << endl;
+	}
+	if(!isnan(costME))
+		cerr << "Match emission model trained" << endl;
+	else {
+		cerr << "Unable to train the match emission model" << endl;
+		return -1;
+	}
+
 	double costIE = dmIE->trainML(dataIE, maxIter);
 	cerr << "Insert emission model trained" << endl;
+
 	double costMT = dmMT->trainML(dataMT, maxIter);
 	cerr << "Match transition model trained" << endl;
+
 	double costIT = dmIT->trainML(dataIT, maxIter);
 	cerr << "Insert transition model trained" << endl;
+
 	double costDT = dmDT->trainML(dataDT, maxIter);
 	cerr << "Delete transition model trained" << endl;
 

@@ -115,7 +115,7 @@ double DirichletMixture::trainML(const MatrixXd& data, int maxIt, double eta,
 		/* calculate new cost */
 		double cNew = cost(data);
 		double deltaC = (c - cNew) / c;
-		fprintf(stderr, "c:%lg cNew:%lg deltaC:%lg\n", c, cNew, deltaC);
+//		fprintf(stderr, "c:%lg cNew:%lg deltaC:%lg\n", c, cNew, deltaC);
 
 		/* E step, update the mixture coefficients using iteration */
 		VectorXd qNew = VectorXd::Zero(L);
@@ -198,23 +198,21 @@ void DirichletMixture::momentInit(MatrixXd data) {
 	if(M < 2 * L)
 		return; /* at least 2 data required for each component */
 
-	/* Normalize the column sum, so the observed data follows Dirichlet-Multinomial distribution */
-	double N = data.colwise().sum().maxCoeff();
-	for(int t = 0; t < M; ++t)
-		data.col(t) *= N / data.col(t).sum();
-
-	/* Sort data according to relative frequency of each base */
+	/* Sort data columns randomly */
 	int* idx = new int[M];
 	for(int t = 0; t < M; ++t)
 		idx[t] = t;
-	std::sort(idx, idx + M, MyFreqComparator(data));
-	/* Sort the data */
+	std::random_shuffle(idx, idx + M);
+
 	MatrixXd dataSorted(K, M);
 	for(int t = 0; t < M; ++t)
 		dataSorted.col(t) = data.col(idx[t]);
-//		dataSorted.col(t) = data.col(t);
-
 	delete[] idx;
+
+	/* Normalize the column sum, so the observed data follows Dirichlet-Multinomial distribution */
+	double N = dataSorted.colwise().sum().maxCoeff();
+	for(int t = 0; t < M; ++t)
+		dataSorted.col(t) *= N / dataSorted.col(t).sum();
 
 	/* Divide the data to L equal size categories and do moment-matching */
 	for(int j = 0; j < L; ++j) {
