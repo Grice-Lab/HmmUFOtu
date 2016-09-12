@@ -21,7 +21,7 @@ using namespace EGriceLab::Math;
 
 static const int DEFAULT_QM = 1;
 static const double DEFAULT_SYMFRAC = 0.5;
-static const int MAX_NUM_COMPO = 6;
+static const int MAX_NUM_COMPO = 10;
 static const int MAX_ITER = 0;
 static const int DEFAULT_NSEED = 1;
 

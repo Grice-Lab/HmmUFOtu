@@ -19,7 +19,7 @@ using std::string;
 class DirichletMixture: public DirichletModel {
 public:
 	/* constructors */
-	/* default constructor, do nothing */
+	/* default constructor */
 	DirichletMixture() : L(MIN_COMPONENT) { }
 
 	/* construct a Dirichlet density with given categories and optionally estimated alpha */
