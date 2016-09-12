@@ -9,8 +9,8 @@ noinst_PROGRAMS = dna_test1   nucl_test1 amino_test1   \
 bHMM_IO_test1 \
 seqIO_test1 bHMM_IO_test1 \
 banded_align_known_seed_test1 \
-MSAIO_test1    MSAIO_test2     MSA_test1 \
-FMIO_test1     FMIO_test2 \
+MSAIO_test1    MSAIO_test2   MSAIO_test3     MSA_test1 \
+FMIO_test1     FMIO_test2  \
 banded_align_csfm_test1 \
 banded_pair_csfm_test1 \
 dm_density_train1 \
@@ -42,6 +42,9 @@ MSAIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 
 MSAIO_test2_SOURCES = MSAIO_test2.cpp
 MSAIO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+
+MSAIO_test3_SOURCES = MSAIO_test3.cpp
+MSAIO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 
 MSA_test1_SOURCES = MSA_test1.cpp
 MSA_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
