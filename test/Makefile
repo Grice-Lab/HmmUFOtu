@@ -93,8 +93,9 @@ noinst_PROGRAMS = dna_test1$(EXEEXT) nucl_test1$(EXEEXT) \
 	amino_test1$(EXEEXT) bHMM_IO_test1$(EXEEXT) \
 	seqIO_test1$(EXEEXT) bHMM_IO_test1$(EXEEXT) \
 	banded_align_known_seed_test1$(EXEEXT) MSAIO_test1$(EXEEXT) \
-	MSAIO_test2$(EXEEXT) MSA_test1$(EXEEXT) FMIO_test1$(EXEEXT) \
-	FMIO_test2$(EXEEXT) banded_align_csfm_test1$(EXEEXT) \
+	MSAIO_test2$(EXEEXT) MSAIO_test3$(EXEEXT) MSA_test1$(EXEEXT) \
+	FMIO_test1$(EXEEXT) FMIO_test2$(EXEEXT) \
+	banded_align_csfm_test1$(EXEEXT) \
 	banded_pair_csfm_test1$(EXEEXT) dm_density_train1$(EXEEXT) \
 	dm_mixture_train1$(EXEEXT) dm_mixture_train2$(EXEEXT) \
 	DD_IO_test1$(EXEEXT) PT_IO_test1$(EXEEXT)
@@ -144,6 +145,9 @@ MSAIO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 am_MSAIO_test2_OBJECTS = MSAIO_test2.$(OBJEXT)
 MSAIO_test2_OBJECTS = $(am_MSAIO_test2_OBJECTS)
 MSAIO_test2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+am_MSAIO_test3_OBJECTS = MSAIO_test3.$(OBJEXT)
+MSAIO_test3_OBJECTS = $(am_MSAIO_test3_OBJECTS)
+MSAIO_test3_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 am_MSA_test1_OBJECTS = MSA_test1.$(OBJEXT)
 MSA_test1_OBJECTS = $(am_MSA_test1_OBJECTS)
 MSA_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
@@ -261,9 +265,10 @@ am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
 	$(FMIO_test2_SOURCES) $(MSAIO_test1_SOURCES) \
-	$(MSAIO_test2_SOURCES) $(MSA_test1_SOURCES) \
-	$(PT_IO_test1_SOURCES) $(amino_test1_SOURCES) \
-	$(bHMM_IO_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
+	$(MSAIO_test2_SOURCES) $(MSAIO_test3_SOURCES) \
+	$(MSA_test1_SOURCES) $(PT_IO_test1_SOURCES) \
+	$(amino_test1_SOURCES) $(bHMM_IO_test1_SOURCES) \
+	$(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) \
 	$(banded_pair_csfm_test1_SOURCES) $(dm_density_train1_SOURCES) \
 	$(dm_mixture_train1_SOURCES) $(dm_mixture_train2_SOURCES) \
@@ -271,9 +276,10 @@ SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
 	$(seqIO_test1_SOURCES)
 DIST_SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
 	$(FMIO_test2_SOURCES) $(MSAIO_test1_SOURCES) \
-	$(MSAIO_test2_SOURCES) $(MSA_test1_SOURCES) \
-	$(PT_IO_test1_SOURCES) $(amino_test1_SOURCES) \
-	$(bHMM_IO_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
+	$(MSAIO_test2_SOURCES) $(MSAIO_test3_SOURCES) \
+	$(MSA_test1_SOURCES) $(PT_IO_test1_SOURCES) \
+	$(amino_test1_SOURCES) $(bHMM_IO_test1_SOURCES) \
+	$(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) \
 	$(banded_pair_csfm_test1_SOURCES) $(dm_density_train1_SOURCES) \
 	$(dm_mixture_train1_SOURCES) $(dm_mixture_train2_SOURCES) \
@@ -450,6 +456,8 @@ MSAIO_test1_SOURCES = MSAIO_test1.cpp
 MSAIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 MSAIO_test2_SOURCES = MSAIO_test2.cpp
 MSAIO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+MSAIO_test3_SOURCES = MSAIO_test3.cpp
+MSAIO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 MSA_test1_SOURCES = MSA_test1.cpp
 MSA_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 FMIO_test1_SOURCES = FMIO_test1.cpp
@@ -568,6 +576,10 @@ MSAIO_test2$(EXEEXT): $(MSAIO_test2_OBJECTS) $(MSAIO_test2_DEPENDENCIES) $(EXTRA
 	@rm -f MSAIO_test2$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(MSAIO_test2_OBJECTS) $(MSAIO_test2_LDADD) $(LIBS)
 
+MSAIO_test3$(EXEEXT): $(MSAIO_test3_OBJECTS) $(MSAIO_test3_DEPENDENCIES) $(EXTRA_MSAIO_test3_DEPENDENCIES) 
+	@rm -f MSAIO_test3$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(MSAIO_test3_OBJECTS) $(MSAIO_test3_LDADD) $(LIBS)
+
 MSA_test1$(EXEEXT): $(MSA_test1_OBJECTS) $(MSA_test1_DEPENDENCIES) $(EXTRA_MSA_test1_DEPENDENCIES) 
 	@rm -f MSA_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(MSA_test1_OBJECTS) $(MSA_test1_LDADD) $(LIBS)
@@ -631,6 +643,7 @@ include ./$(DEPDIR)/FMIO_test1.Po
 include ./$(DEPDIR)/FMIO_test2.Po
 include ./$(DEPDIR)/MSAIO_test1.Po
 include ./$(DEPDIR)/MSAIO_test2.Po
+include ./$(DEPDIR)/MSAIO_test3.Po
 include ./$(DEPDIR)/MSA_test1.Po
 include ./$(DEPDIR)/PT_IO_test1.Po
 include ./$(DEPDIR)/amino_test1.Po

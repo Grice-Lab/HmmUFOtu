@@ -7,6 +7,7 @@
 
 #include <set>
 #include <stack>
+#include <map>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -35,6 +36,28 @@ int PhyloTree::numNodes() const {
 	return visited.size();
 }
 
+int PhyloTree::numLeaves() const {
+	int n = 0;
+	set<const PT*> visited;
+	stack<const PT*> S;
+
+	S.push(this);
+	while(!S.empty()) {
+		const PT* v = S.top();
+		S.pop();
+		if(visited.find(v) != visited.end()) {
+			visited.insert(v);
+			if(v->isLeaf())
+				n++;
+			for(vector<PT>::const_iterator it = v->children.begin(); it != v->children.end(); ++it) {
+				const PT* p = &*it;
+				S.push(p);
+			}
+		}
+	}
+	return n;
+}
+
 int PhyloTree::readNiwickTree(const string& treefn) {
 	namespace qi = boost::spirit::qi;
 
@@ -61,7 +84,7 @@ int PhyloTree::readNiwickTree(const string& treefn) {
 	if(result && iter == end)
 		return numNodes();
 	else {
-		cout << "Parsing newick tree failed." << endl;
+		cout << "Parsing Newick tree failed." << endl;
 		return -1;
 	}
 }
@@ -83,6 +106,21 @@ ostream& PhyloTree::print(ostream& out) const {
 		out << ':' << length;
 
 	return out;
+}
+
+int PhyloTree::readSeqFromMSA(const MSA* msa) {
+	/* check uniqueness of seq-names */
+	map<string, unsigned> nameIdx;
+	for(unsigned i = 0; i != msa->getNumSeq(); ++i) {
+		string name = msa->seqNameAt(i);
+		if(nameIdx.find(name) != nameIdx.end()) {
+			cerr << "Non-unique seq name " << name << " found in your MSA data " << msa->getName() << endl;
+			return -1;
+		}
+		else
+			nameIdx[name] = i;
+	}
+
 }
 
 } /* namespace EGriceLab */

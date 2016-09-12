@@ -97,6 +97,9 @@ struct PhyloTree {
 	/** Get the number of nodes of this tree using Dfs search */
 	int numNodes() const;
 
+	/** Get the number of leaf node of this tree using Dfs search */
+	int numLeaves() const;
+
 	/**
 	 * Read the tree structure and sequence from an input file of given format
 	 * @param treefn  tree filename
@@ -157,14 +160,21 @@ inline int PhyloTree::readTree(const string& treefn, const string& format, const
 		std::cerr << "Failed to read in the MSA" << std::endl;
 		return nSeqs;
 	}
-	return nNodes;
+	else if(nSeqs != numLeaves()) {
+		std::cerr << "Unmathced leaves in tree file " << treefn << " and MSA file " << msa << std::endl;
+		return -1;
+	}
+	else
+		return nNodes;
 }
 
 inline int PhyloTree::readTree(const string& treefn, const string& format) {
 	if(StringUtils::toLower(format) == "newick")
 		return readNiwickTree(treefn);
-	else
-		throw invalid_argument("Unsupported tree file format '" + format + "'");
+	else {
+		std::cerr << "Unsupported tree file format '" << format << "'" << std::endl;
+		return -1;
+	}
 }
 
 } /* namespace EGriceLab */
