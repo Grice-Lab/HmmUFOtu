@@ -221,7 +221,7 @@ void DirichletMixture::momentInit(MatrixXd data) {
 		//	cerr << "Calculating moments" << endl;
 		/* calculate the Mean (1st-moment) and Var (2nd-moment) of the observed frequencies */
 		VectorXd blockMean = block.rowwise().mean();
-		VectorXd blockVar = (block.colwise() - blockMean).rowwise().squaredNorm() / (block.cols() - 1);
+		VectorXd blockVar = (block.colwise() - blockMean).rowwise().squaredNorm() /block.cols();
 
 		/* calculate parameter concentration try tring E(i) and Var(i) */
 		double alphaNorm = 0;

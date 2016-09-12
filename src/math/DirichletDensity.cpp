@@ -108,7 +108,7 @@ void DirichletDensity::momentInit(MatrixXd data) {
 		data.col(t) *= N / data.col(t).sum();
 	/* calculate the Mean (1st-moment) and Var (2nd-moment) of the observed counts */
 	VectorXd dataMean = data.rowwise().mean();
-	VectorXd dataVar = (data.colwise() - dataMean).rowwise().squaredNorm() / (M - 1);
+	VectorXd dataVar = (data.colwise() - dataMean).rowwise().squaredNorm() / M;
 	/* calculate parameter concentration using E(0) and Var(0) */
 	double alphaNorm = 0;
 	// try each k
