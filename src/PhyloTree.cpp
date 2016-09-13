@@ -17,7 +17,6 @@ namespace EGriceLab {
 using namespace std;
 
 int PhyloTree::numNodes() const {
-	int n = 0;
 	set<const PT*> visited;
 	stack<const PT*> S;
 
@@ -25,7 +24,7 @@ int PhyloTree::numNodes() const {
 	while(!S.empty()) {
 		const PT* v = S.top();
 		S.pop();
-		if(visited.find(v) != visited.end()) {
+		if(visited.find(v) == visited.end()) { /* not visited before */
 			visited.insert(v);
 			for(vector<PT>::const_iterator it = v->children.begin(); it != v->children.end(); ++it) {
 				const PT* p = &*it;
@@ -45,7 +44,7 @@ int PhyloTree::numLeaves() const {
 	while(!S.empty()) {
 		const PT* v = S.top();
 		S.pop();
-		if(visited.find(v) != visited.end()) {
+		if(visited.find(v) == visited.end()) { /* not visited before */
 			visited.insert(v);
 			if(v->isLeaf())
 				n++;
@@ -68,7 +67,6 @@ int PhyloTree::readNiwickTree(const string& treefn) {
 	}
 
 	EGriceLab::newick_grammar<std::string::const_iterator> grammar;
-	EGriceLab::PhyloTree tree;
 
 	string content;
 
@@ -79,12 +77,12 @@ int PhyloTree::readNiwickTree(const string& treefn) {
 	string::const_iterator iter = content.begin();
 	string::const_iterator end = content.end();
 	// parse
-	bool result = qi::phrase_parse(iter, end, grammar, qi::space, tree);
+	bool result = qi::phrase_parse(iter, end, grammar, qi::space, *this);
 
 	if(result && iter == end)
 		return numNodes();
 	else {
-		cout << "Parsing Newick tree failed." << endl;
+		cerr << "Parsing Newick tree failed" << endl;
 		return -1;
 	}
 }
@@ -100,8 +98,12 @@ ostream& PhyloTree::print(ostream& out) const {
 		}
 		out << ')';
 	}
-	if(!name.empty())
-		out << name;
+	if(!name.empty()) {
+		if(name.find('\'') == string::npos) // name doesn't contains quotes
+			out << name;
+		else
+			out << "'" << name << "'";
+	}
 	if(length > 0)
 		out << ':' << length;
 
@@ -117,10 +119,37 @@ int PhyloTree::readSeqFromMSA(const MSA* msa) {
 			cerr << "Non-unique seq name " << name << " found in your MSA data " << msa->getName() << endl;
 			return -1;
 		}
-		else
+		else {
 			nameIdx[name] = i;
+		}
 	}
+	/* ass Digital seq to each nodes of the tree using DFS */
+	int n = 0;
+	set<PT*> visited;
+	stack<PT*> S;
 
+	S.push(this);
+	while(!S.empty()) {
+		PT* v = S.top();
+		S.pop();
+		if(visited.find(v) == visited.end()) { /* not visited before */
+			visited.insert(v);
+			/* process this node */
+			if(nameIdx.find(v->name) != nameIdx.end()) { // this node exists in MSA
+				v->seq = msa->dsAt(nameIdx[v->name]);
+				n++;
+			}
+			else { /* assign an all-gap seq for this node */
+				v->seq = DigitalSeq(msa->getAbc(), v->name, string(msa->getCSLen(), msa->getAbc()->getGap()[0]));
+			}
+
+			for(vector<PT>::iterator it = v->children.begin(); it != v->children.end(); ++it) {
+				PT* p = &*it;
+				S.push(p);
+			}
+		}
+	}
+	return n;
 }
 
 } /* namespace EGriceLab */

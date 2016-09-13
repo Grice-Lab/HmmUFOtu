@@ -24,6 +24,7 @@
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/phoenix_fusion.hpp>
 #include <boost/spirit/include/phoenix_stl.hpp>
+#include <boost/spirit/include/phoenix_object.hpp>
 
 #include "HmmUFOtuConst.h"
 #include "StringUtils.h"
@@ -132,7 +133,17 @@ struct PhyloTree {
 	 */
 	int readSeqFromMSA(const MSA* msa);
 
+	/**
+	 * print this tree in newick format
+	 * @param out  output stream
+	 * return  output stream modified
+	 */
 	ostream& print(ostream& out) const;
+
+	/**
+	 * Evaluate this tree's overall cost using
+	 */
+	double evaluate();
 
 	/* friend operators */
 	friend ostream& operator<<(ostream& out, const PT& tree);
@@ -154,14 +165,17 @@ inline int PhyloTree::readTree(const string& treefn, const string& format, const
 		std::cerr << "Failed to read in tree file: " << treefn << " in " << format << " format" << std::endl;
 		return nNodes;
 	}
+	int nLeaves = numLeaves();
+	std::cerr << "PhyloTree read with " << nNodes << " nodes and " << nLeaves << " leaves" << std::endl;
 	/* Read MSA sequences */
 	int nSeqs = readSeqFromMSA(msa);
+	std::cerr << "Read in " << nSeqs << " sequences from MSA" << std::endl;
 	if(nSeqs == -1) {
 		std::cerr << "Failed to read in the MSA" << std::endl;
 		return nSeqs;
 	}
 	else if(nSeqs != numLeaves()) {
-		std::cerr << "Unmathced leaves in tree file " << treefn << " and MSA file " << msa << std::endl;
+		std::cerr << "Unmatched leaves in tree file " << treefn << " and MSA file " << msa << std::endl;
 		return -1;
 	}
 	else
@@ -204,9 +218,16 @@ template <typename Iterator>
 struct newick_grammar :
 		qi::grammar<Iterator, PT()> {
 	/* grammar constructor */
-	newick_grammar() : newick_grammar::base_type(tree) {
+	newick_grammar() : newick_grammar::base_type(tree, "Newick tree") {
+		using ascii::char_;
+		using ascii::string;
 		using phoenix::at_c;
 		using phoenix::push_back;
+		using qi::on_error;
+		using qi::fail;
+
+		using phoenix::construct;
+		using phoenix::val;
 
 		/* label grammars */
 		/* unquoted label is printable characters
@@ -214,12 +235,12 @@ struct newick_grammar :
 		 */
 		unquoted_label %= qi::lexeme[+(ascii::print - ascii::space - '(' - ')' - '[' - ']' - '\'' - ':' - ';' - ',') ];
 		/* quoted label is ' printable characters ' */
-		quoted_label %= '\'' >> qi::lexeme[+(ascii::print)] >> '\'';
+		quoted_label %= '\'' > qi::lexeme[+(ascii::print - '\'')] > '\'';
 
 		label = unquoted_label | quoted_label;
 
 		/* branch length grammar */
-		branch_length %= ':' >> qi::double_;
+		branch_length %= ':' > qi::double_;
 
 		/* subtree grammar */
 		subtree =
@@ -236,6 +257,25 @@ struct newick_grammar :
 
 		// The tree receive the whole subtree using %=
 		tree %= subtree >> ';';
+
+		unquoted_label.name("unquoted_label");
+		quoted_label.name("quoted_label");
+		label.name("label");
+		branch_length.name("branch_length");
+		subtree.name("subtree");
+		descendant_list.name("descendant_list");
+		tree.name("tree");
+
+		on_error<fail>(
+				tree,
+				std::cout
+					<< val("Error! Expecting ")
+					<< qi::_4                             // what failed?
+					<< val(" here:\"")
+					<< construct<std::string>(qi::_3, qi::_2) // iterators to error-pos, end
+					<< val("\"")
+					<< std::endl
+				);
 	}
 
 	private:

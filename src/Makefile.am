@@ -18,6 +18,7 @@ IUPACAmino.cpp \
 DNA.cpp \
 SeqCommons.cpp \
 PrimarySeq.cpp \
+DigitalSeq.cpp \
 SeqIO.cpp \
 BandedHMMP7Bg.cpp \
 BandedHMMP7.cpp \
