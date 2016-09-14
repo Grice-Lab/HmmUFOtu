@@ -31,61 +31,61 @@ void DNASubModel::scaleRate() {
 }
 
 /** Estimate the substitution parameters using Goldman algorithm */
-Matrix4d DNASubModel::estimateSubRateGoldman(const PhyloTree* tree) {
+/*Matrix4d DNASubModel::estimateSubRateGoldman(const PhyloTree* tree) {
 	assert(tree->isRooted());
 	Matrix4d freq = Matrix4d::Zero();
 	const set<const PhyloTree::PhyloTreeNode*>& leafSet = tree->dfsLeaves(); // get all nodes
 	vector<const PhyloTree::PhyloTreeNode*> leaves(leafSet.begin(), leafSet.end()); // transfer into a list
-	/* pair-wise count of mutations */
+	 pair-wise count of mutations
 	for(vector<const PhyloTree::PhyloTreeNode*>::size_type i = 0; i < leaves.size() - 1; ++i)
 		for(vector<const PhyloTree::PhyloTreeNode*>::size_type j = i + 1; j < leaves.size(); ++j)
 			freq += updateParams2Seq(leaves[i], leaves[j]);
 	return freq;
-}
+}*/
 
 /** Estimate the substitution parameters using Gojobori algorithm */
-Matrix4d DNASubModel::estimateSubRateGojobori(const PhyloTree* tree) {
+/*Matrix4d DNASubModel::estimateSubRateGojobori(const PhyloTree* tree) {
 	assert(tree->isRooted());
 	Matrix4d freq = Matrix4d::Zero();
 	const set<const PhyloTree::PhyloTreeNode*>& leafSet = tree->dfsLeaves(); // get all leaves
 	for(set<const PhyloTree::PhyloTreeNode*>::const_iterator it = leafSet.begin(); it != leafSet.end(); ++it) {
 		for(const PhyloTree::PhyloTreeNode* node = *it; !node->isRoot(); node = node->parent) {
 			if(node == *it)
-				continue; /* ignore itself */
+				continue;  ignore itself
 			const set<const PhyloTree::PhyloTreeNode*>& siblingLeafSet = tree->dfsLeaves(tree->getSibling(node));
 			vector<const PhyloTree::PhyloTreeNode*> siblingLeaves(siblingLeafSet.begin(), siblingLeafSet.end());
-			assert(siblingLeaves.size() >= 2); /* make sure there exists triples */
+			assert(siblingLeaves.size() >= 2);  make sure there exists triples
 			for(vector<const PhyloTree::PhyloTreeNode*>::size_type i = 0; i < siblingLeaves.size() - 1; ++i)
 				for(vector<const PhyloTree::PhyloTreeNode*>::size_type j = i + 1; j < siblingLeaves.size(); ++j)
 					freq += updateParams3Seq(*it, siblingLeaves[i], siblingLeaves[j]);
 		}
 	}
 	return freq;
-}
+}*/
 
-Matrix4d DNASubModel::updateParams2Seq(const PhyloTree::PhyloTreeNode* seq1, const PhyloTree::PhyloTreeNode* seq2) {
-	assert(abc == seq1->seq.getAbc() && abc == seq2->seq.getAbc());
-	assert(seq1->seq.length() == seq2->seq.length());
+Matrix4d DNASubModel::estimateParams2Seq(const DigitalSeq& seq1, const DigitalSeq& seq2) {
+	assert(abc == seq1.getAbc() && abc == seq2.getAbc());
+	assert(seq1.length() == seq2.length());
 	Matrix4d freq = Matrix4d::Zero();
 
-	const DigitalSeq::size_type L = seq1->seq.length();
+	const DigitalSeq::size_type L = seq1.length();
 	for(DigitalSeq::size_type i = 0; i < L; ++i)
-		if(seq1->seq.isSymbol(i) && seq2->seq.isSymbol(i)) // both not a gap
-			freq(seq1->seq[i], seq2->seq[i])++;
+		if(seq1.isSymbol(i) && seq2.isSymbol(i)) // both not a gap
+			freq(seq1[i], seq2[i])++;
 	return freq;
 }
 
-Matrix4d DNASubModel::updateParams3Seq(const PhyloTree::PhyloTreeNode* outer,
-		const PhyloTree::PhyloTreeNode* seq1, const PhyloTree::PhyloTreeNode* seq2) {
-	assert(abc == outer->seq.getAbc() && abc == seq1->seq.getAbc() && abc == seq2->seq.getAbc());
-	assert(outer->seq.length() == seq1->seq.length() && outer->seq.length() == seq2->seq.length());
+Matrix4d DNASubModel::estimateParams3Seq(const DigitalSeq& outer,
+		const DigitalSeq& seq1, const DigitalSeq& seq2) {
+	assert(abc == outer.getAbc() && abc == seq1.getAbc() && abc == seq2.getAbc());
+	assert(outer.length() == seq1.length() && outer.length() == seq2.length());
 	Matrix4d freq = Matrix4d::Zero();
 
-	const DigitalSeq::size_type L = outer->seq.length();
+	const DigitalSeq::size_type L = outer.length();
 	for(DigitalSeq::size_type i = 0; i < L; ++i) {
-		int8_t b0 = outer->seq[i];
-		int8_t b1 = seq1->seq[i];
-		int8_t b2 = seq2->seq[i];
+		int8_t b0 = outer[i];
+		int8_t b1 = seq1[i];
+		int8_t b2 = seq2[i];
 		int8_t bc; // ancestor of b0, b1 and b2
 		if(!(b0 >= 0 && b1 >= 0 &&  b2 >= 0)) // ignore any gaps
 			continue;
@@ -104,6 +104,10 @@ Matrix4d DNASubModel::updateParams3Seq(const PhyloTree::PhyloTreeNode* outer,
 		freq(bc, b2)++;
 	}
 	return freq;
+}
+
+Matrix4d DNASubModel::logQfromP(const Matrix4d P) {
+
 }
 
 } /* namespace EGriceLab */

@@ -12,7 +12,6 @@
 #include "DegenAlphabet.h"
 #include "MSA.h"
 #include "StringUtils.h"
-#include "PhyloTree.h"
 
 namespace EGriceLab {
 
@@ -47,20 +46,13 @@ public:
 	void scaleRate();
 
 	/** Estimate the substitution frequency from an multiple sequence alignment using a given algorithm */
-	Matrix4d estimateSubRate(const PhyloTree* tree, const string& method = "Gojobori");
-
-protected:
-	/** Estimate the substitution parameters using Goldman algorithm */
-	Matrix4d estimateSubRateGoldman(const PhyloTree* tree);
-
-	/** Estimate the substitution parameters using Goldman algorithm */
-	Matrix4d estimateSubRateGojobori(const PhyloTree* tree);
+//	Matrix4d estimateSubRate(const PhyloTree* tree, const string& method = "Gojobori");
 
 	/** Update the parameters using two-sequence method */
-	virtual Matrix4d updateParams2Seq(const PhyloTree::PhyloTreeNode* seq1, const PhyloTree::PhyloTreeNode* seq2);
+	virtual Matrix4d estimateParams2Seq(const DigitalSeq& seq1, const DigitalSeq& seq2);
 	/** Update the parameters using three-sequence method */
-	virtual Matrix4d updateParams3Seq(const PhyloTree::PhyloTreeNode* outer,
-			const PhyloTree::PhyloTreeNode* seq1, const PhyloTree::PhyloTreeNode* seq2);
+	virtual Matrix4d estimateParams3Seq(const DigitalSeq& outer,
+			const DigitalSeq& seq1, const DigitalSeq& seq2);
 
 public:
 	/** pure virtual method to get the Prob matrix given branch length and optionally rate factor
@@ -77,7 +69,7 @@ private:
 	string name;
 
 	Vector4d pi; /* base frequency of ATCG */
-	Matrix4d R; /* Symmetric rate parameter matrix */
+	Matrix4d R; /* rate parameters */
 	Matrix4d Q; /* rate matrix, Q = pi X R for i!=j */
 
 	/* static methods */
