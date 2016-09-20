@@ -19,25 +19,22 @@ const string name = "GTR";
 Matrix4d GTR::Pr(double t, double r) const {
 	Matrix4d X = Qlambda.asDiagonal();
 	X = (X * (t * r)).array().exp();
-	return U * X * U_inv;
+	return U * X * U_;
 }
 
-void GTR::updateParam(const Matrix4d& freq) {
-	/* normalization constant */
-	double Z = alpha + beta + gamma + delta + epsilon + eta;
-	assert(Z > 0);
-	alpha /= Z;
-	beta /= Z;
-	gamma /= Z;
-	delta /= Z;
-	epsilon /= Z;
-	eta /= Z;
-	R(A, C) = R(C, A) = alpha;
-	R(A, G) = R(G, A) = beta;
-	R(A, T) = R(T, A) = gamma;
-	R(C, G) = R(G, C) = delta;
-	R(C, T) = R(T, C) = epsilon;
-	R(G, T) = R(T, G) = eta;
+void GTR::updateParams() {
+	assert(isValid());
+	/* decomposite Q = pi_T * R */
+	R.setZero();
+	for(Matrix4d::Index j = 0; j < Q.cols(); ++j)
+		for(Matrix4d::Index i = 0; i < Q.cols(); ++i)
+			if(i != j)
+				R(i, j) = Q(i, j) / pi(j);
+}
+
+void GTR::updateRate() {
+	Q = pi.transpose() * R;
+	fixRate();
 }
 
 void GTR::updateEigenParams() {
@@ -49,7 +46,7 @@ void GTR::updateEigenParams() {
 	}
 	Qlambda = es.eigenvalues();
 	U = es.eigenvectors();
-	U_inv = U.inverse();
+	U_ = U.inverse();
 }
 
 } /* namespace EGriceLab */
