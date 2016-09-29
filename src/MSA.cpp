@@ -21,7 +21,7 @@ namespace EGriceLab {
 using namespace std;
 using namespace Math;
 
-const double MSA::NAT2BIT = ::log(2);
+const double MSA::NAT2BIT = 1.0 / ::log(2);
 
 char MSA::CSResidualAt(unsigned j) const {
 	if(!(j >= 0 && j < csLen)) // check range once
@@ -111,9 +111,10 @@ MSA& MSA::prune() {
 
 	/* rebuild the counts */
 	updateRawCounts();
-	updateEntropy();
+//	updateEntropy(); /* will be called by updateSeqWeight */
 	updateSeqWeight();
 	updateWeightedCounts();
+	normalizeSeqWeight();
 	isPruned = true;
 	return *this;
 }
@@ -136,9 +137,10 @@ MSA* MSA::loadFastaFile(const string& alphabet, const string& filename) {
 	}
 	assert(msa->concatMSA.length() == msa->numSeq * msa->csLen);
 	msa->updateRawCounts();
-	msa->updateEntropy();
+//	msa->updateEntropy(); /* will be called by updateSeqWeight */
 	msa->updateSeqWeight();
 	msa->updateWeightedCounts();
+	msa->updateSeqWeight();
 	msa->calculateCS();
 	return msa;
 }
@@ -268,21 +270,40 @@ void MSA::updateRawCounts() {
 void MSA::updateEntropy() {
 	/* reset old data */
 	resetEntropy();
-	VectorXd b = resFreq();
+	/* get background frequency */
+	VectorXd bg = resFreq();
 	int K = abc->getSize();
-	/* calculate raw posEntropies */
+	/* calculate posEntropies */
 	for(unsigned j = 0; j != csLen; ++j) {
-		double entropy = 0;
-		for(int i = 0; i != K; ++i) {
-			int c = resCount(i, j);
-			if(c > 0) // no-zero
-				entropy += c * ::log(c);
-		}
-		posEntropy(j) = NAT2BIT * entropy; // use bit
+		VectorXd p = resWCount.col(j).cast<double>() / resWCount.col(j).sum();
+		posEntropy(j) = relEntropy(p, bg);
 	}
 }
 
-void MSA::updateSeqWeight(double ere) {
+double MSA::normalizeSeqWeight(double ere, double symfrac) {
+	updateEntropy();
+	/* calculate the average entropy of consensus sites */
+	double avg_entropy = 0;
+	unsigned Nentropy = 0;
+	for(unsigned j = 0; j != csLen; ++j) {
+		if(symWFrac(j) >= symfrac) {
+			Nentropy++;
+			avg_entropy += posEntropy(j);
+		}
+	}
+	avg_entropy /= Nentropy;
+	assert(avg_entropy > 0);
+
+	double z = ere / avg_entropy;
+	cerr << "z: " << z << endl;
+
+	/* adjust according z */
+	seqWeight *= z;
+	posEntropy *= z;
+	return z;
+}
+
+void MSA::updateSeqWeight() {
 	/* reset old data */
 	resetSeqWeight();
 	/* Get a pssw weight matrix */
@@ -300,11 +321,8 @@ void MSA::updateSeqWeight(double ere) {
 		}
 		seqWeight(i) = w;
 	}
-	/* normalize seqWeights according to the effective number of seqs */
-	double z = ere / posEntropy.minCoeff();
-	seqWeight *= numSeq * z / seqWeight.sum();
-	/* adjust the entropy */
-	posEntropy *= z;
+//	cerr << "seqWeight: " << seqWeight.transpose() << endl;
+//	cerr << "EFN: " << getEffectSeqNum() << endl;
 }
 
 void MSA::updateWeightedCounts() {
@@ -320,6 +338,8 @@ void MSA::updateWeightedCounts() {
 				gapWCount(j) += seqWeight(i);
 			else { } // do nothing
 		}
+	cerr << "weighted count updated" << endl;
+	cerr << "EFN: " << getEffectSeqNum() << endl;
 }
 
 ostream& MSA::save(ostream& out) {

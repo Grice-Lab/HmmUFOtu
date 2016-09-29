@@ -39,6 +39,12 @@ using Eigen::Map;
  */
 class MSA {
 public:
+	/* constructors */
+	/** destructor, do nothing */
+	virtual ~MSA() {
+		clear();
+	}
+
 	/** Setters and Getters */
 	const string& getAlphabet() const {
 		return alphabet;
@@ -290,7 +296,7 @@ public:
 	/**
 	 * Update the seqWeight of this object
 	 */
-	void updateSeqWeight(double ere = DEFAULT_ENTROPY_PER_BASE);
+	void updateSeqWeight();
 
 	/**
 	 * Update the count matrices of this object
@@ -298,11 +304,31 @@ public:
 	void updateWeightedCounts();
 
 	/**
+	 * Normalize seqWeights so the the average bit per consensus site is set to DEFAULT_ENTROPY_PER_BASE
+	 * @return  the normalization factor z
+	 */
+	double normalizeSeqWeight(double ere = DEFAULT_ENTROPY_PER_BASE, double symfrac = DEFAULT_CONSENSUS_FRAC);
+
+	/**
 	 * Save this MSA object to a binary file
 	 * @param f  the binary output
 	 * @return  true if everything is good after saved
 	 */
 	std::ostream& save(std::ostream& out);
+
+	/**
+	 * Save this MSA object to a given file
+	 * @param filename  filename to save to
+	 * @param format  MSA file format
+	 */
+	bool saveMSAFile(const string& filename, const string& format);
+
+	/**
+	 * Save this MSA object to a file in FASTA format
+	 * @param filename  filename to save to
+	 */
+	bool saveFastaFile(const string& filename);
+
 
 	/* static methods */
 	/**
@@ -331,22 +357,14 @@ public:
 	static MSA* loadFastaFile(const string& alphabet, const string& filename);
 
 	/**
-	 * Save this MSA object to a given file
-	 * @param filename  filename to save to
-	 * @param format  MSA file format
+	 * calculate the relative entropy in bits using given observed frequency and the background frequency
 	 */
-	bool saveMSAFile(const string& filename, const string& format);
+	static double relEntropy(const VectorXd& p, const VectorXd& bg);
 
 	/**
-	 * Save this MSA object to a file in FASTA format
-	 * @param filename  filename to save to
+	 * calculate the absolute entropy in bits using given observed frequency
 	 */
-	bool saveFastaFile(const string& filename);
-
-	virtual ~MSA() {
-		clear();
-	}
-
+	static double absEntropy(const VectorXd& p);
 
 private:
 	/* constructors */
@@ -420,8 +438,9 @@ private:
 
 	/* static members */
 public:
-	static const double DEFAULT_ENTROPY_PER_BASE = 2;
+	static const double DEFAULT_ENTROPY_PER_BASE = 1;
 	static const double NAT2BIT;
+	static const double DEFAULT_CONSENSUS_FRAC = 0.5;
 };
 
 inline unsigned long MSA::getMSALen() const {
@@ -525,6 +544,23 @@ inline bool MSA::saveMSAFile(const string& filename, const string& format) {
 	if(format == "fasta")
 		return MSA::saveFastaFile(filename);
 	else throw invalid_argument("Cannot save MSA to file, unsupported MSA file format " + format);
+}
+
+inline double MSA::relEntropy(const VectorXd& p, const VectorXd& bg) {
+	assert(p.rows() == bg.rows());
+	double entropy = 0;
+	for(VectorXd::Index i = 0; i < p.rows(); ++i)
+		if(p(i) > 0)
+			entropy += p(i) * ::log(static_cast<double> (p(i)) / static_cast<double> (bg(i)));
+	return entropy * NAT2BIT;
+}
+
+inline double MSA::absEntropy(const VectorXd& p) {
+	double entropy = 0;
+	for(VectorXd::Index i = 0; i < p.rows(); ++i)
+		if(p(i) > 0)
+			entropy += p(i) * ::log(static_cast<double> (p(i)));
+	return entropy * NAT2BIT;
 }
 
 } /* namespace EGriceLab */
