@@ -6,11 +6,12 @@
  *      Author: zhengqi
  */
 
-#ifndef SRC_PHYLOTREE_H_
-#define SRC_PHYLOTREE_H_
+#ifndef PHYLOTREE_H_
+#define PHYLOTREE_H_
 
 #include <string>
 #include <vector>
+#include <set>
 #include <limits>
 #include <iostream>
 #include <stdexcept>
@@ -36,6 +37,7 @@ namespace EGriceLab {
 
 using std::string;
 using std::vector;
+using std::set;
 using std::istream;
 using std::ostream;
 using Eigen::Matrix4Xd;
@@ -102,6 +104,16 @@ struct PhyloTree {
 	int numLeaves() const;
 
 	/**
+	 * Get a set of const pointers of all leaf nodes of this sub-tree
+	 */
+	set<const PT*> leafNodes() const;
+
+	/**
+	 * Get the first leave node of this sub-tree
+	 */
+	const PT* firstLeaf() const;
+
+	/**
 	 * Read the tree structure and sequence from an input file of given format
 	 * @param treefn  tree filename
 	 * @param format  tree file format
@@ -140,11 +152,6 @@ struct PhyloTree {
 	 */
 	ostream& print(ostream& out) const;
 
-	/**
-	 * Evaluate this tree's overall cost using
-	 */
-	double evaluate();
-
 	/* friend operators */
 	friend ostream& operator<<(ostream& out, const PT& tree);
 
@@ -154,7 +161,7 @@ struct PhyloTree {
 	vector<PT> children;
 
 	DigitalSeq seq;
-	Matrix4Xd cost; /* cost (negative log liklihood) of observing this sequence given the model and the tree */
+	Matrix4Xd cost; /* cost (negative log likelihood) of observing this sequence given the model and the tree */
 
 };
 
@@ -193,7 +200,6 @@ inline int PhyloTree::readTree(const string& treefn, const string& format) {
 
 } /* namespace EGriceLab */
 
-#endif /* SRC_PHYLOTREE_H_ */
 
 // adapt the structure to fusion phoenix
 BOOST_FUSION_ADAPT_STRUCT(
@@ -296,3 +302,5 @@ inline int PhyloTree::alnSites() const {
 }
 
 } /* namespace EGriceLab */
+
+#endif /* PHYLOTREE_H_ */

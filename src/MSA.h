@@ -294,7 +294,7 @@ public:
 	void updateEntropy();
 
 	/**
-	 * Update the seqWeight of this object
+	 * Update the seqWeight of this object using the Henikoffs' algorithm (1994)
 	 */
 	void updateSeqWeight();
 
@@ -305,7 +305,8 @@ public:
 
 	/**
 	 * Normalize seqWeights so the the average bit per consensus site is set to DEFAULT_ENTROPY_PER_BASE
-	 * @return  the normalization factor z
+	 * this is a two-step normalization, which first normalize the weight by their nonGap length,
+	 * then by relative entropy
 	 */
 	double normalizeSeqWeight(double ere = DEFAULT_ENTROPY_PER_BASE, double symfrac = DEFAULT_CONSENSUS_FRAC);
 

@@ -57,6 +57,36 @@ int PhyloTree::numLeaves() const {
 	return n;
 }
 
+set<const PT*> PhyloTree::leafNodes() const {
+	set<const PT*> visited;
+	stack<const PT*> S;
+	set<const PT*> leaves;
+
+	S.push(this);
+	while(!S.empty()) {
+		const PT* v = S.top();
+		S.pop();
+		if(visited.find(v) == visited.end()) { /* not visited before */
+			visited.insert(v);
+			if(v->isLeaf())
+				leaves.insert(v);
+			for(vector<PT>::const_iterator it = v->children.begin(); it != v->children.end(); ++it) {
+				const PT* p = &*it;
+				S.push(p);
+			}
+		}
+	}
+	return leaves;
+}
+
+const PT* PhyloTree::firstLeaf() const {
+	const PT* node = this;
+	while(!node->isLeaf())
+		node = &(node->children.front());
+	return node;
+}
+
+
 int PhyloTree::readNiwickTree(const string& treefn) {
 	namespace qi = boost::spirit::qi;
 
@@ -135,13 +165,13 @@ int PhyloTree::readSeqFromMSA(const MSA* msa) {
 		if(visited.find(v) == visited.end()) { /* not visited before */
 			visited.insert(v);
 			/* process this node */
+			v->cost.resize(4, msa->getCSLen()); /* init the cost */
 			if(nameIdx.find(v->name) != nameIdx.end()) { // this node exists in MSA
 				v->seq = msa->dsAt(nameIdx[v->name]);
 				n++;
 			}
-			else { /* assign an all-gap seq for this node */
+			else /* assign an all-gap seq for this node */
 				v->seq = DigitalSeq(msa->getAbc(), v->name, string(msa->getCSLen(), msa->getAbc()->getGap()[0]));
-			}
 
 			for(vector<PT>::iterator it = v->children.begin(); it != v->children.end(); ++it) {
 				PT* p = &*it;

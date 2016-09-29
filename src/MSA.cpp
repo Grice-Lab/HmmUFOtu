@@ -292,15 +292,17 @@ double MSA::normalizeSeqWeight(double ere, double symfrac) {
 		}
 	}
 	avg_entropy /= Nentropy;
+
+	cerr << "avg_entropy:" << avg_entropy << endl;
 	assert(avg_entropy > 0);
 
-	double z = ere / avg_entropy;
-	cerr << "z: " << z << endl;
+	double Z = ere / avg_entropy;
 
-	/* adjust according z */
-	seqWeight *= z;
-	posEntropy *= z;
-	return z;
+	/* adjust according Z */
+	seqWeight *= Z;
+	posEntropy *= Z;
+
+	return Z;
 }
 
 void MSA::updateSeqWeight() {
@@ -319,10 +321,15 @@ void MSA::updateSeqWeight() {
 			if(b >= 0) /* is a valid symbol */
 				w += 1.0 / pssw(b, j);
 		}
+		if(seqLength(i) > 0)
+			w /= seqLength(i); /* first normalize weight by non-gap seqLength */
 		seqWeight(i) = w;
 	}
+	/* bring seqWeight to nseq */
+	seqWeight *= numSeq / seqWeight.sum();
+
 //	cerr << "seqWeight: " << seqWeight.transpose() << endl;
-//	cerr << "EFN: " << getEffectSeqNum() << endl;
+	cerr << "EFN: " << getEffectSeqNum() << endl;
 }
 
 void MSA::updateWeightedCounts() {
@@ -338,8 +345,6 @@ void MSA::updateWeightedCounts() {
 				gapWCount(j) += seqWeight(i);
 			else { } // do nothing
 		}
-	cerr << "weighted count updated" << endl;
-	cerr << "EFN: " << getEffectSeqNum() << endl;
 }
 
 ostream& MSA::save(ostream& out) {

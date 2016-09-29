@@ -11,20 +11,24 @@
 #include <string>
 #include <iostream>
 #include <cassert>
+#include <stdexcept>
 #include <eigen3/Eigen/Dense>
 #include "DegenAlphabet.h"
 #include "MSA.h"
 #include "StringUtils.h"
 #include "PhyloTree.h"
+#include "HmmUFOtuConst.h"
 
 namespace EGriceLab {
 
 using std::string;
 using std::istream;
 using std::ostream;
+using std::vector;
 using Eigen::Vector4d;
 using Eigen::VectorXd;
 using Eigen::Matrix4d;
+using Eigen::IOFormat;
 
 class DNASubModel {
 public:
@@ -33,45 +37,62 @@ public:
 	virtual ~DNASubModel() { }
 
 	/* member methods */
-	/* getters and setters */
-
-	/**
-	 * set rate parameter matrix from a given matrix
-	 */
-	void setRate(const Matrix4d& data) {
-		assert(isValidRate(data));
-		Q = data;
-	}
-
-	/* set base frequency vector using observed frequency */
-	void setFreq(const Vector4d& freq) {
-		pi = freq;
-	}
-
 	/** get model type */
-	virtual const string& modelType() const = 0;
+	virtual string modelType() const = 0;
 
-	/** Scale the rate matrix Q so that a branch length of 1 yields one expected change */
-	void scale(double mu = 1.0);
-
-	void fixRate();
-
-	/* update other model parameters using current rate and pi data */
-	virtual void updateParams() = 0;
-
-	/* update rate matrix from current parameters */
-	virtual void updateRate() = 0;
-
-	/** pure virtual method to get the Prob matrix given branch length and optionally rate factor
+	/** Get the P transition matrix given a branch length (in unit time ) and an optional rate factor
 	 * @param t  branch length in the unit time
 	 * @param r  rate factor in variable rate ML estimates
 	 * @return  Probability rate matrix between for Bases
 	 */
-	virtual Matrix4d Pr(double t, double r) const = 0;
+	virtual Matrix4d Pr(double t, double r = 1.0) const = 0;
 
-	bool isValid() const {
-		return isValidRate(Q) && isValidFreq(pi);
-	}
+	/**
+	 * train model parameters using a given Phylogenetic tree and method
+	 */
+	void trainParams(const PhyloTree& tree, string method = "Gojobori");
+
+	/**
+	 * Evaluate the likelihood (cost) a Phylogenetic tree using this model
+	 * All tree sites are assumed to be invariated
+	 * @param tree  tree to evaluate, interval values will be set
+	 */
+	void evaluate(PhyloTree& tree) const;
+
+	/**
+	 * Evaluate a likelihood (cost) of a Phylogenetic tree at given site using this model
+	 * @param tree  tree to evaluate, interval values will be set
+	 * @param j  site to evalaute (recursively)
+	 */
+	virtual void evaluate(PhyloTree& tree, int j) const = 0;
+
+	/** get the total cost of a Phylogenetic tree using this model
+	 * Assumes all nodes have been evaluated
+	 */
+	double cost(const PhyloTree& tree) const;
+
+	/** get the total cost at given position of a Phylogenetic tree using this model
+	 * Assumes all nodes have been evaluated
+	 */
+	virtual double cost(const PhyloTree& tree, int j) const = 0;
+
+protected:
+	/* public non-virtual methods that call private virtual methods */
+	/**
+	 * train model parameters using a given Phylogenetic tree and the "Goldman" method
+	 */
+	void trainParamsGoldman(const PhyloTree& tree);
+
+	/**
+	 * train model parameters using a given Phylogenetic tree and method
+	 */
+	void trainParamsGojobori(const PhyloTree& tree);
+
+private:
+	/**
+	 * train model parameters using given sets of observed base transition and overall frequency stored in vector
+	 */
+	virtual void trainParamsByDataset(const vector<Matrix4d>& P_vec, const Vector4d& f) = 0;
 
 	/* IO methods */
 protected:
@@ -93,9 +114,12 @@ public:
 	/** calculate the observed transition frequencies using Goldman (two-sequence) method */
 	static Matrix4d calcTransFreq2Seq(const DigitalSeq& seq1, const DigitalSeq& seq2);
 
-	/** Update the parameters using Gojobori (three-sequence) method */
+	/** calculate the observed transition frequencies using Gojobori (three-sequence) method */
 	static Matrix4d calcTransFreq3Seq(const DigitalSeq& outer,
 			const DigitalSeq& seq1, const DigitalSeq& seq2);
+
+	/** calculate the observed base frequencies of a given seq */
+	static Vector4d calcBaseFreq(const DigitalSeq& seq);
 
 	/** Scale a rate matrix Q so that a branch length of 1 yields mu expected change in a unit time */
 	static Matrix4d scale(Matrix4d Q, Vector4d pi = Vector4d::Ones(), double mu = 1.0);
@@ -116,7 +140,7 @@ public:
 	 * Test whether a 4x4 matrix is a valid rate matrix
 	 * A rate matrix requires non-negative off-diagonal elements
 	 */
-	static bool isValidRate(const Matrix4d& Q);
+	static bool isValidRate(Matrix4d Q);
 
 	/**
 	 * Test whether a vector is a valid frequency vector
@@ -129,40 +153,41 @@ public:
 
 	friend ostream& operator<<(ostream& out, const DNASubModel& model);
 
-private:
-	Vector4d pi; /* base frequency of ATCG */
-	Matrix4d Q; /* rate matrix */
-
 public:
-	static const DegenAlphabet* abc = SeqCommons::nuclAbc;
-
+	static const double MAX_PDIST = 0.15; /* maximum p-dist between training sequences */
+	static const IOFormat FULL_FORMAT; /* default output format for eigen objects */
+	static const IOFormat STD_FORMAT; /* standard output format for eigen objects */
 };
 
-inline void DNASubModel::setFreq(const Vector4d& freq) {
-	pi = freq / freq.sum();
+inline void DNASubModel::trainParams(const PhyloTree& tree, string method) {
+	if(StringUtils::toLower(method) == "goldman")
+		return trainParamsGoldman(tree);
+	else if(StringUtils::toLower(method) == "gojobori")
+		return trainParamsGojobori(tree);
+	else
+		throw std::invalid_argument("Unknown DNA model training method '" + method + "'");
 }
 
-inline void DNASubModel::scale(double mu) {
-	Q = scale(Q, pi, mu);
-}
-
-inline void DNASubModel::fixRate() {
-	for(Matrix4d::Index i = 0; i < Q.rows(); ++i) {
-		double sum = 0;
-		for(Matrix4d::Index j = 0; j < Q.cols(); ++j)
-			if(i != j)
-				sum += Q(i, j);
-		Q(i, i) = - sum;
+inline void DNASubModel::evaluate(PhyloTree& tree) const {
+	for(int j = 0; j < tree.alnSites(); ++j) {
+		std::cerr << "Evaluating site " << j << std::endl;
+		evaluate(tree, j);
 	}
 }
 
+inline double DNASubModel::cost(const PhyloTree& tree) const {
+	double c = 0;
+	for(int j = 0; j < tree.alnSites(); ++j)
+		c += cost(tree, j);
+	return c;
+}
 
-inline bool DNASubModel::isValidRate(const Matrix4d& Q) {
-	for(Matrix4d::Index i = 0; i < Q.rows(); ++i)
-		for(Matrix4d::Index j = 0; j < Q.cols(); ++j)
-			if(i != j && Q(i, j) < 0)
-				return false;
-	return true;
+inline bool DNASubModel::isValidRate(Matrix4d Q) {
+	/* set the diagonal to zeros of this copy */
+	if((Q.array() == 0).all()) /* all zero rate is invalid */
+		return false;
+	Q.diagonal().setZero();
+	return (Q.array() >= 0).all();
 }
 
 inline bool DNASubModel::isValidFreq(const Vector4d& pi) {
@@ -179,4 +204,4 @@ inline ostream& operator<<(ostream& out, const DNASubModel& model) {
 
 } /* namespace EGriceLab */
 
-#endif /* SRC_DNASUBMODEL_H_ */
+#endif /* DNASUBMODEL_H_ */

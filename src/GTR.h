@@ -8,6 +8,7 @@
 #ifndef GTR_H_
 #define GTR_H_
 #include <string>
+#include <vector>
 #include <eigen3/Eigen/Dense>
 #include "DNASubModel.h"
 
@@ -17,6 +18,8 @@ using std::string;
 using Eigen::Vector4d;
 using Eigen::VectorXd;
 using Eigen::Matrix4d;
+using Eigen::Vector4cd;
+using Eigen::Matrix4cd;
 
 class GTR : public DNASubModel {
 public:
@@ -26,7 +29,7 @@ public:
 	virtual ~GTR() { }
 
 	/* member methods */
-	virtual const string& modelType() const {
+	virtual string modelType() const {
 		return "GTR";
 	}
 
@@ -36,17 +39,32 @@ public:
 	 */
 	Matrix4d Pr(double t, double r = 1.0) const;
 
-	/*
-	 * update other model parameters using current rate and pi data
-	 * @override  base class pure virtual method
+	/**
+	 * read in content from input stream
+	 * will set badbit if anything went wrong
+	 * @override  base class method
 	 */
-	virtual void updateParams();
+	virtual istream& read(istream& in);
 
-	/*
-	 * update rate matrix using current pi and other parameters
-	 * @override  base class pure virtual method
+	/**
+	 * write this model to given output stream
+	 * @override  base class method
 	 */
-	virtual void updateRate();
+	virtual ostream& write(ostream& out) const;
+
+	/**
+	 * Evaluate a likelihood (cost) of a Phylogenetic tree at given site using this model
+	 * @param tree  tree to evaluate, interval values will be set
+	 * @param j  site to evalaute (recursively)
+	 * @override  the base class method
+	 */
+	virtual void evaluate(PhyloTree& tree, int j) const;
+
+	/** get the total cost at given position of a Phylogenetic tree using this model
+	 * Assumes all nodes have been evaluated
+	 * @override  the base class method
+	 */
+	virtual double cost(const PhyloTree& tree, int j) const;
 
 private:
 	static const string name;
@@ -54,17 +72,31 @@ private:
 	/* rate parameters, alpha + beta + gamma + delta + epsilon + eta = 1 */
 //	double mu; /* substitution rate per site per unit time */
 
-	Matrix4d R; /* Rate parameters, Q = R * pi */
+	Vector4d pi; /* base frequency */
+	Matrix4d Q; /* Rate matrix */
+	Matrix4d R; /* Symmetric rate parameters, Q = pi_T * R for i != j; R(i,i) = 0 */
 
-	Vector4d Qlambda; /* stored eigenvalues of Q */
-	Matrix4d U; /* matrix with columns as eigen vectors of Q */
-	Matrix4d U_; /* U-1 inverse of U */
+	Vector4d lambda; /* stored eigenvalues of Q for fast computation */
+	Matrix4d U; /* stored eigen-matrix with columns as eigen vectors of Q */
+	Matrix4d U_1; /* U-1 inverse of U */
 
-	/* private methods */
-	/** update lambda, U and U_inv based from Q */
-	void updateEigenParams();
+	/**
+	 * train model parameters using given sets of observed base transition and frequency counts
+	 * @override  base class method
+	 */
+	virtual void trainParamsByDataset(const vector<Matrix4d>& P_vec, const Vector4d& f);
+
+	void setQfromParams();
 };
+
+inline Matrix4d GTR::Pr(double t, double r) const {
+	return U * (lambda * (t * r)).array().exp().matrix().asDiagonal() * U_1;
+}
+
+inline double GTR::cost(const PhyloTree& tree, int j) const {
+	return ::log(pi.dot(tree.cost.col(j).array().exp().matrix())); /* Eigen guarantee exp(-inf) == 0 */
+}
 
 } /* namespace EGriceLab */
 
-#endif /* SRC_GTR_H_ */
+#endif /* GTR_H_ */

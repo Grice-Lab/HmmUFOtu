@@ -18,7 +18,10 @@ dm_mixture_train1 \
 dm_mixture_train2 \
 DD_IO_test1 \
 PT_IO_test1 \
-PT_IO_test2
+PT_IO_test2 \
+dna_model_test1 \
+dna_model_IO_test1 \
+dna_model_test2
 
 dna_test1_SOURCES = dna_test1.cpp
 dna_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
@@ -107,3 +110,15 @@ PT_IO_test1_LDFLAGS = -static
 PT_IO_test2_SOURCES = PT_IO_test2.cpp
 PT_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 PT_IO_test2_LDFLAGS = -static
+
+dna_model_test1_SOURCES = dna_model_test1.cpp
+dna_model_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+dna_model_test1_LDFLAGS = -static
+
+dna_model_IO_test1_SOURCES = dna_model_IO_test1.cpp
+dna_model_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+dna_model_IO_test1_LDFLAGS = -static
+
+dna_model_test2_SOURCES = dna_model_test2.cpp
+dna_model_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+dna_model_test2_LDFLAGS = -static

@@ -24,7 +24,9 @@ BandedHMMP7Bg.cpp \
 BandedHMMP7.cpp \
 MSA.cpp \
 CSFMIndex.cpp \
-PhyloTree.cpp
+PhyloTree.cpp \
+DNASubModel.cpp \
+GTR.cpp
 
 # Build the executables
 bin_PROGRAMS=hmmufotu hmmufotu-train-dm hmmufotu-train

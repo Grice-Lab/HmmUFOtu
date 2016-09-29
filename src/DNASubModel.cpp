@@ -8,47 +8,18 @@
 #include <vector>
 #include <set>
 #include <vector>
+#include <stack>
 #include "DNASubModel.h"
 
 namespace EGriceLab {
 using namespace std;
 using namespace Eigen;
 
-/** Estimate the substitution parameters using Goldman algorithm */
-/*Matrix4d DNASubModel::estimateSubRateGoldman(const PhyloTree* tree) {
-	assert(tree->isRooted());
-	Matrix4d freq = Matrix4d::Zero();
-	const set<const PhyloTree::PhyloTreeNode*>& leafSet = tree->dfsLeaves(); // get all nodes
-	vector<const PhyloTree::PhyloTreeNode*> leaves(leafSet.begin(), leafSet.end()); // transfer into a list
-	 pair-wise count of mutations
-	for(vector<const PhyloTree::PhyloTreeNode*>::size_type i = 0; i < leaves.size() - 1; ++i)
-		for(vector<const PhyloTree::PhyloTreeNode*>::size_type j = i + 1; j < leaves.size(); ++j)
-			freq += updateParams2Seq(leaves[i], leaves[j]);
-	return freq;
-}*/
-
-/** Estimate the substitution parameters using Gojobori algorithm */
-/*Matrix4d DNASubModel::estimateSubRateGojobori(const PhyloTree* tree) {
-	assert(tree->isRooted());
-	Matrix4d freq = Matrix4d::Zero();
-	const set<const PhyloTree::PhyloTreeNode*>& leafSet = tree->dfsLeaves(); // get all leaves
-	for(set<const PhyloTree::PhyloTreeNode*>::const_iterator it = leafSet.begin(); it != leafSet.end(); ++it) {
-		for(const PhyloTree::PhyloTreeNode* node = *it; !node->isRoot(); node = node->parent) {
-			if(node == *it)
-				continue;  ignore itself
-			const set<const PhyloTree::PhyloTreeNode*>& siblingLeafSet = tree->dfsLeaves(tree->getSibling(node));
-			vector<const PhyloTree::PhyloTreeNode*> siblingLeaves(siblingLeafSet.begin(), siblingLeafSet.end());
-			assert(siblingLeaves.size() >= 2);  make sure there exists triples
-			for(vector<const PhyloTree::PhyloTreeNode*>::size_type i = 0; i < siblingLeaves.size() - 1; ++i)
-				for(vector<const PhyloTree::PhyloTreeNode*>::size_type j = i + 1; j < siblingLeaves.size(); ++j)
-					freq += updateParams3Seq(*it, siblingLeaves[i], siblingLeaves[j]);
-		}
-	}
-	return freq;
-}*/
+const IOFormat DNASubModel::FULL_FORMAT(Eigen::FullPrecision);
+const IOFormat DNASubModel::STD_FORMAT(Eigen::StreamPrecision);
 
 Matrix4d DNASubModel::calcTransFreq2Seq(const DigitalSeq& seq1, const DigitalSeq& seq2) {
-	assert(abc == seq1.getAbc() && abc == seq2.getAbc());
+	assert(seq1.getAbc() == seq2.getAbc());
 	assert(seq1.length() == seq2.length());
 	Matrix4d freq = Matrix4d::Zero();
 
@@ -61,7 +32,7 @@ Matrix4d DNASubModel::calcTransFreq2Seq(const DigitalSeq& seq1, const DigitalSeq
 
 Matrix4d DNASubModel::calcTransFreq3Seq(const DigitalSeq& outer,
 		const DigitalSeq& seq1, const DigitalSeq& seq2) {
-	assert(abc == outer.getAbc() && abc == seq1.getAbc() && abc == seq2.getAbc());
+	assert(outer.getAbc() == seq1.getAbc() && outer.getAbc() == seq2.getAbc());
 	assert(outer.length() == seq1.length() && outer.length() == seq2.length());
 	Matrix4d freq = Matrix4d::Zero();
 
@@ -90,8 +61,16 @@ Matrix4d DNASubModel::calcTransFreq3Seq(const DigitalSeq& outer,
 	return freq;
 }
 
+Vector4d DNASubModel::calcBaseFreq(const DigitalSeq& seq) {
+	Vector4d f = Vector4d::Zero();
+	for(DigitalSeq::const_iterator it = seq.begin(); it != seq.end(); ++it)
+		if(*it >= 0)
+			f(*it)++;
+	return f;
+}
+
 double DNASubModel::pDist(const DigitalSeq& seq1, const DigitalSeq& seq2) {
-	assert(abc == seq1.getAbc() && abc == seq2.getAbc());
+	assert(seq1.getAbc() == seq2.getAbc());
 	assert(seq1.length() == seq2.length());
 	int d = 0;
 	int N = 0;
@@ -107,7 +86,7 @@ double DNASubModel::pDist(const DigitalSeq& seq1, const DigitalSeq& seq2) {
 	return static_cast<double>(d) / N;
 }
 
-Matrix4d DNASubModel::scale(Matrix4d Q, Vector4d pi, double mu = 1.0) {
+Matrix4d DNASubModel::scale(Matrix4d Q, Vector4d pi, double mu) {
 	double beta = pi.dot(Q.diagonal());
 	return Q / -beta * mu;
 }
@@ -121,17 +100,17 @@ Matrix4d DNASubModel::logQfromP(Matrix4d P, bool reversible) {
 		P.row(i) /= P.row(i).sum();
 
 	/* do matrix log by diagonalizable matrix decomposition */
-	Vector4d lambda; /* eigen values of P */
-	EigenSolver<Matrix4d> es(Q);
-	if(es.info() != Success) {
-		cerr << "Cannot perform EigenSolver on observed frequency data" << endl;
+	Vector4cd lambda; /* eigen values of P */
+	EigenSolver<Matrix4d> es(P);
+	if(es.info() != Eigen::Success) {
+		cerr << "Cannot perform EigenSolver on observed frequency data P:" << endl << P << endl;
 		abort();
 	}
 	lambda = es.eigenvalues();
-	Matrix4d U = es.eigenvectors();
-	Matrix4d U_ = U.inverse();
-	Matrix4d X = P.asDiagonal();
-	return U * X.array().log() * U_;
+	Matrix4cd U = es.eigenvectors();
+	Matrix4cd U_1 = U.inverse();
+	Matrix4cd X = lambda.asDiagonal();
+	return (U * X.array().log().matrix() * U_1).real();
 }
 
 Matrix4d DNASubModel::constrainedQfromP(Matrix4d P, bool reversible) {
@@ -148,7 +127,79 @@ Matrix4d DNASubModel::constrainedQfromP(Matrix4d P, bool reversible) {
 			}
 		}
 	}
+//	cerr << "P: " << P << endl;
+//	cerr << "Q: " << Q << endl;
 	return Q;
 }
+
+void DNASubModel::trainParamsGoldman(const PhyloTree& tree) {
+	vector<Matrix4d> P_vec; /* store observed base transition counts */
+	Vector4d f; /* observed base counts */
+	/* do DFS explore of the tree */
+	stack<const PT*> S;
+	set<const PT*> visited;
+	S.push(&tree);
+	while(!S.empty()) {
+		const PT* node = S.top();
+		S.pop();
+		if(visited.find(node) == visited.end()) { /* node not visited */
+			visited.insert(node);
+			if(node->isTip() && node->children.size() >= 2) { /* use its first 2 children for training */
+				const DigitalSeq& seq1 = node->children[0].seq;
+				const DigitalSeq& seq2 = node->children[1].seq;
+				if(DNASubModel::pDist(seq1, seq1) <= MAX_PDIST) {
+					P_vec.push_back(DNASubModel::calcTransFreq2Seq(seq1, seq2));
+					f += DNASubModel::calcBaseFreq(seq1);
+					f += DNASubModel::calcBaseFreq(seq2);
+				}
+			}
+			for(vector<PT>::const_iterator it = node->children.begin(); it != node->children.end(); ++it) { // its children
+				const PT* p = &*it;
+				S.push(p);
+			}
+		}
+	}
+	trainParamsByDataset(P_vec, f);
+}
+
+void DNASubModel::trainParamsGojobori(const PhyloTree& tree) {
+	vector<Matrix4d> P_vec; /* store observed base transition counts */
+	Vector4d f = Vector4d::Zero(); /* store observed base counts */
+	/* do DFS explore of the tree */
+	stack<const PT*> S;
+	set<const PT*> visited;
+	S.push(&tree);
+	while(!S.empty()) {
+		const PT* node = S.top();
+		S.pop();
+		if(visited.find(node) == visited.end()) { /* node not visited */
+			visited.insert(node);
+			if(node->children.size() == 2 &&
+				(node->children[0].isTip() || node->children[1].isTip()) ) { /* one child is a tip node */
+				const DigitalSeq& seq0 = node->children[0].isTip() ? node->children[1].firstLeaf()->seq : node->children[0].firstLeaf()->seq;
+				const DigitalSeq& seq1 = node->children[0].isTip() ? node->children[0].children[0].seq : node->children[1].children[0].seq;
+				const DigitalSeq& seq2 = node->children[0].isTip() ? node->children[0].children[1].seq : node->children[1].children[1].seq;
+
+//				cerr << "node: " << node->name << endl;
+//				cerr << "seq0.name : " << seq0.getName() << endl;
+//				cerr << "seq1.name : " << seq1.getName() << endl;
+//				cerr << "seq2.name : " << seq2.getName() << endl;
+
+				if(DNASubModel::pDist(seq0, seq1) <= MAX_PDIST && DNASubModel::pDist(seq0, seq2) <= MAX_PDIST) {
+					P_vec.push_back(DNASubModel::calcTransFreq3Seq(seq0, seq1, seq2));
+					f += calcBaseFreq(seq0);
+					f += calcBaseFreq(seq1);
+					f += calcBaseFreq(seq2);
+				}
+			}
+			for(vector<PT>::const_iterator it = node->children.begin(); it != node->children.end(); ++it) { // its children
+				const PT* p = &*it;
+				S.push(p);
+			}
+		}
+	}
+	trainParamsByDataset(P_vec, f);
+}
+
 
 } /* namespace EGriceLab */

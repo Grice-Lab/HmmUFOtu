@@ -1,7 +1,7 @@
 /*
- * PT_IO_test1.cpp
+ * dna_model_test1.cpp
  *
- *  Created on: Aug 25, 2016
+ *  Created on: Sep 22, 2016
  *      Author: zhengqi
  */
 
@@ -9,6 +9,9 @@
 #include <fstream>
 #include "MSA.h"
 #include "PhyloTree.h"
+#include "DNASubModel.h"
+#include "GTR.h"
+
 using namespace std;
 using namespace EGriceLab;
 
@@ -24,6 +27,7 @@ int main(int argc, const char* argv[]) {
 		cerr << "Unable to open " << argv[2] << endl;
 		return -1;
 	}
+
 	if(!out.is_open()) {
 		cerr << "Unable to write to " << argv[3] << endl;
 		return -1;
@@ -47,5 +51,10 @@ int main(int argc, const char* argv[]) {
 		return -1;
 	}
 
-	out << tree << endl;
+	/* train an GTR model */
+	GTR model;
+	model.trainParams(tree);
+
+	cerr << "GTR model trained" << endl;
+	out << model;
 }
