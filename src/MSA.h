@@ -262,13 +262,6 @@ public:
 	VectorXd symWFreq(unsigned j) const;
 
 	/**
-	 * Get the relative entropy (or information content) at given pos
-	 * @param j  CS position
-	 * @return  entropy calculated with weighted count
-	 */
-	double entropyAt(unsigned j) const;
-
-	/**
 	 * Get the residual frequency of each base of the entire MSA
 	 */
 	VectorXd resFreq() const;
@@ -279,19 +272,9 @@ public:
 	VectorXd resWFreq() const;
 
 	/**
-	 * Get the effective number of sequence of this MSA as the sum of the seq weights
-	 */
-	double getEffectSeqNum() const;
-
-	/**
 	 * Update the count matrices of this object, also update auxiliary indices
 	 */
 	void updateRawCounts();
-
-	/**
-	 * Update entropy of the PSSM
-	 */
-	void updateEntropy();
 
 	/**
 	 * Update the seqWeight of this object using the Henikoffs' algorithm (1994)
@@ -302,13 +285,6 @@ public:
 	 * Update the count matrices of this object
 	 */
 	void updateWeightedCounts();
-
-	/**
-	 * Normalize seqWeights so the the average bit per consensus site is set to DEFAULT_ENTROPY_PER_BASE
-	 * this is a two-step normalization, which first normalize the weight by their nonGap length,
-	 * then by relative entropy
-	 */
-	double normalizeSeqWeight(double ere = DEFAULT_ENTROPY_PER_BASE, double symfrac = DEFAULT_CONSENSUS_FRAC);
 
 	/**
 	 * Save this MSA object to a binary file
@@ -357,16 +333,6 @@ public:
 	 */
 	static MSA* loadFastaFile(const string& alphabet, const string& filename);
 
-	/**
-	 * calculate the relative entropy in bits using given observed frequency and the background frequency
-	 */
-	static double relEntropy(const VectorXd& p, const VectorXd& bg);
-
-	/**
-	 * calculate the absolute entropy in bits using given observed frequency
-	 */
-	static double absEntropy(const VectorXd& p);
-
 private:
 	/* constructors */
 	/**
@@ -377,10 +343,10 @@ private:
 		numSeq(0), csLen(0), isPruned(false),
 		startIdx(NULL), lenIdx(NULL), endIdx(NULL),
 		resCountBuf(NULL), gapCountBuf(NULL),
-		seqWeightBuf(NULL), posEntropyBuf(NULL),
+		seqWeightBuf(NULL),
 		resWCountBuf(NULL), gapWCountBuf(NULL),
 		resCount(NULL, 0, 0), gapCount(NULL, 0),
-		seqWeight(NULL, 0), posEntropy(NULL, 0),
+		seqWeight(NULL, 0),
 		resWCount(NULL, 0, 0), gapWCount(NULL, 0)
 	{  }
 
@@ -393,9 +359,6 @@ private:
 
 	/* reset count values */
 	void resetRawCount();
-
-	/* reset entropy */
-	void resetEntropy();
 
 	/* reset seq weights */
 	void resetSeqWeight();
@@ -425,7 +388,6 @@ private:
 	int* resCountBuf; /* raw buffer for Residual count */
 	int* gapCountBuf; /* raw buffer for gap count */
 	double* seqWeightBuf; /* raw buffer for sequence weight */
-	double* posEntropyBuf; /* raw buffer for position entropy (in bits) */
 	double* resWCountBuf; /* raw buffer for weighted residual count */
 	double* gapWCountBuf; /* raw buffer for weighted gap count */
 
@@ -433,14 +395,11 @@ private:
 	Map<MatrixXi> resCount; /* Residual count matrix w/ alphabet-size X CSLen dimension */
 	Map<VectorXi> gapCount; /* gap count array w/ CSLen length */
 	Map<VectorXd> seqWeight; /* Sequence weight for each seq w/ numSeq length */
-	Map<VectorXd> posEntropy; /* Position entropy of the PSSM (in bits) */
 	Map<MatrixXd> resWCount; /* weighted residual count matrix w/ alphabet-size X CSLen dimension */
 	Map<VectorXd> gapWCount; /* weighted gap count array w/ CSLen length */
 
 	/* static members */
 public:
-	static const double DEFAULT_ENTROPY_PER_BASE = 1;
-	static const double NAT2BIT;
 	static const double DEFAULT_CONSENSUS_FRAC = 0.5;
 };
 
@@ -511,10 +470,6 @@ inline VectorXd MSA::symWFreq(unsigned j) const {
 	return resWCount.col(j);
 }
 
-inline double MSA::entropyAt(unsigned j) const {
-	return posEntropy(j);
-}
-
 inline VectorXd MSA::resFreq() const {
 	VectorXd freq = resCount.rowwise().sum().cast<double>();
 	return freq / freq.sum();
@@ -523,10 +478,6 @@ inline VectorXd MSA::resFreq() const {
 inline VectorXd MSA::resWFreq() const {
 	VectorXd freq = resWCount.rowwise().sum();
 	return freq / freq.sum();
-}
-
-inline double MSA::getEffectSeqNum() const {
-	return seqWeight.sum();
 }
 
 inline MSA* MSA::loadMSAFile(const string& alphabet,
@@ -545,23 +496,6 @@ inline bool MSA::saveMSAFile(const string& filename, const string& format) {
 	if(format == "fasta")
 		return MSA::saveFastaFile(filename);
 	else throw invalid_argument("Cannot save MSA to file, unsupported MSA file format " + format);
-}
-
-inline double MSA::relEntropy(const VectorXd& p, const VectorXd& bg) {
-	assert(p.rows() == bg.rows());
-	double entropy = 0;
-	for(VectorXd::Index i = 0; i < p.rows(); ++i)
-		if(p(i) > 0)
-			entropy += p(i) * ::log(static_cast<double> (p(i)) / static_cast<double> (bg(i)));
-	return entropy * NAT2BIT;
-}
-
-inline double MSA::absEntropy(const VectorXd& p) {
-	double entropy = 0;
-	for(VectorXd::Index i = 0; i < p.rows(); ++i)
-		if(p(i) > 0)
-			entropy += p(i) * ::log(static_cast<double> (p(i)));
-	return entropy * NAT2BIT;
 }
 
 } /* namespace EGriceLab */

@@ -21,8 +21,6 @@ namespace EGriceLab {
 using namespace std;
 using namespace Math;
 
-const double MSA::NAT2BIT = 1.0 / ::log(2);
-
 char MSA::CSResidualAt(unsigned j) const {
 	if(!(j >= 0 && j < csLen)) // check range once
 		throw out_of_range("CS pos is out of range");
@@ -49,7 +47,7 @@ double MSA::identityAt(unsigned j) const {
 double MSA::wIdentityAt(unsigned j) const {
 	if(!(j >= 0 && j < csLen)) // check range once
 		throw out_of_range("CS pos is out of range");
-	return resWCount.col(j).maxCoeff() / getEffectSeqNum();
+	return resWCount.col(j).maxCoeff() / numSeq;
 }
 
 double MSA::gapFrac(unsigned j) const {
@@ -111,10 +109,8 @@ MSA& MSA::prune() {
 
 	/* rebuild the counts */
 	updateRawCounts();
-//	updateEntropy(); /* will be called by updateSeqWeight */
 	updateSeqWeight();
 	updateWeightedCounts();
-	normalizeSeqWeight();
 	isPruned = true;
 	return *this;
 }
@@ -137,7 +133,6 @@ MSA* MSA::loadFastaFile(const string& alphabet, const string& filename) {
 	}
 	assert(msa->concatMSA.length() == msa->numSeq * msa->csLen);
 	msa->updateRawCounts();
-//	msa->updateEntropy(); /* will be called by updateSeqWeight */
 	msa->updateSeqWeight();
 	msa->updateWeightedCounts();
 	msa->updateSeqWeight();
@@ -152,7 +147,6 @@ void MSA::clear() {
 	delete[] resCountBuf;
 	delete[] gapCountBuf;
 	delete[] seqWeightBuf;
-	delete[] posEntropyBuf;
 	delete[] resWCountBuf;
 	delete[] gapWCountBuf;
 	startIdx = NULL;
@@ -161,7 +155,6 @@ void MSA::clear() {
 	resCountBuf = NULL;
 	gapCountBuf = NULL;
 	seqWeightBuf = NULL;
-	posEntropyBuf = NULL;
 	resWCountBuf = NULL;
 	gapWCountBuf = NULL;
 }
@@ -185,16 +178,6 @@ void MSA::resetRawCount() {
 	/* reset count to zero */
 	resCount.setZero();
 	gapCount.setZero();
-}
-
-void MSA::resetEntropy() {
-	/* Initiate raw buffers and associated them to the Eigen maps */
-	if(posEntropyBuf == NULL) {
-		posEntropyBuf = new double[csLen];
-		new (&posEntropy) Map<VectorXd>(posEntropyBuf, csLen); /* replacement constructor */
-	}
-	/* reset count to zero */
-	posEntropy.setZero();
 }
 
 void MSA::resetSeqWeight() {
@@ -267,44 +250,6 @@ void MSA::updateRawCounts() {
 	}
 }
 
-void MSA::updateEntropy() {
-	/* reset old data */
-	resetEntropy();
-	/* get background frequency */
-	VectorXd bg = resFreq();
-	int K = abc->getSize();
-	/* calculate posEntropies */
-	for(unsigned j = 0; j != csLen; ++j) {
-		VectorXd p = resWCount.col(j).cast<double>() / resWCount.col(j).sum();
-		posEntropy(j) = relEntropy(p, bg);
-	}
-}
-
-double MSA::normalizeSeqWeight(double ere, double symfrac) {
-	updateEntropy();
-	/* calculate the average entropy of consensus sites */
-	double avg_entropy = 0;
-	unsigned Nentropy = 0;
-	for(unsigned j = 0; j != csLen; ++j) {
-		if(symWFrac(j) >= symfrac) {
-			Nentropy++;
-			avg_entropy += posEntropy(j);
-		}
-	}
-	avg_entropy /= Nentropy;
-
-	cerr << "avg_entropy:" << avg_entropy << endl;
-	assert(avg_entropy > 0);
-
-	double Z = ere / avg_entropy;
-
-	/* adjust according Z */
-	seqWeight *= Z;
-	posEntropy *= Z;
-
-	return Z;
-}
-
 void MSA::updateSeqWeight() {
 	/* reset old data */
 	resetSeqWeight();
@@ -327,9 +272,6 @@ void MSA::updateSeqWeight() {
 	}
 	/* bring seqWeight to nseq */
 	seqWeight *= numSeq / seqWeight.sum();
-
-//	cerr << "seqWeight: " << seqWeight.transpose() << endl;
-	cerr << "EFN: " << getEffectSeqNum() << endl;
 }
 
 void MSA::updateWeightedCounts() {
@@ -384,8 +326,6 @@ ostream& MSA::save(ostream& out) {
 	out.write((const char*) gapCountBuf, sizeof(int) * csLen);
 	/* write seq weights */
 	out.write((const char*) seqWeightBuf, sizeof(double) * numSeq);
-	/* write pos entropy */
-	out.write((const char*) posEntropyBuf, sizeof(double) * csLen);
 	/* write weighted counts */
 	out.write((const char*) resWCountBuf, sizeof(double) * abc->getSize() * csLen);
 	out.write((const char*) gapWCountBuf, sizeof(double) * csLen);
@@ -462,9 +402,6 @@ MSA* MSA::load(istream& in) {
 	/* Read seq weights */
 	msa->seqWeightBuf = new double[msa->numSeq];
 	in.read((char*) msa->seqWeightBuf, sizeof(double) * msa->numSeq);
-	/* Read pos entropy */
-	msa->posEntropyBuf = new double[msa->csLen];
-	in.read((char*) msa->posEntropyBuf, sizeof(double) * msa->csLen);
 	/* Read weighted counts */
 	msa->resWCountBuf = new double[msa->abc->getSize() * msa->csLen];
 	in.read((char*) msa->resWCountBuf, sizeof(double) * msa->abc->getSize() * msa->csLen);
