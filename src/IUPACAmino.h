@@ -29,18 +29,27 @@ public:
 	virtual ~IUPACAmino() { };
 
 	/* member methods */
-	/* implementation of abstract superclass methods */
 	/**
-	 * always return true
+	 * Get alias of this alphabet
+	 * @override  base class method
 	 */
-	bool hasComplement() const {
+	virtual string getAlias() const {
+		return "AMINO";
+	}
+
+	/**
+	 * check whether has complement, always false
+	 * @override  base class method
+	 */
+	virtual bool hasComplement() const {
 		return false;
 	}
+
 	/**
 	 * Get the complement char of given symbol
 	 * @return unchanged amino acids don't have complementary symbols
 	 */
-	char getComplementSymbol(char c) const {
+	virtual char getComplementSymbol(char c) const {
 		return c;
 	}
 

@@ -40,6 +40,10 @@ public:
 		return name;
 	}
 
+	virtual string getAlias() const {
+		return getName();
+	}
+
 	const string& getSymbol() const {
 		return symbol;
 	}

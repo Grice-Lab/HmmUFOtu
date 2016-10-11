@@ -28,18 +28,27 @@ public:
 	virtual ~IUPACNucl() { };
 
 	/* member methods */
-	/* implementation of abstract superclass methods */
+
 	/**
-	 * always return true
+	 * Get alias of this alphabet
+	 * @override  base class method
 	 */
-	bool hasComplement() const {
+	virtual string getAlias() const {
+		return "DNA";
+	}
+
+	/**
+	 * tell whether has complement symbols, always true
+	 * @override  base class method
+	 */
+	virtual bool hasComplement() const {
 		return true;
 	}
 	/**
 	 * Get the complement char of given symbol
 	 * @return the complement symbol, or leave unchanged if not defined
 	 */
-	char getComplementSymbol(char c) const {
+	virtual char getComplementSymbol(char c) const {
 		return compl_map[c];
 	}
 
