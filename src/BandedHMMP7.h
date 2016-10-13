@@ -20,6 +20,7 @@
 #include "HmmUFOtuConst.h"
 #include "BandedHMMP7Bg.h"
 #include "BandedHMMCommons.h"
+#include "StringUtils.h"
 #include "PrimarySeq.h"
 #include "DigitalSeq.h"
 #include "MSA.h"
@@ -46,8 +47,7 @@ class BandedHMMP7 {
 public:
 	/* constructors */
 	/**
-	 * Construct a NULL BandedHMMP7 profile with name as "NULL",
-	 * length 0, and values not initialized
+	 * Default constructor, do zero initiation
 	 */
 	BandedHMMP7();
 	/**
@@ -137,8 +137,8 @@ public:
 	static const int kNSP; // number of special states
 	static const int kNS; // number of total states
 	static const string HMM_TAG;
-	static const int kMinProfile = UINT16_MAX + 1;
-	static const int kMinCS = UINT16_MAX + 1;
+	static const int kMaxProfile = UINT16_MAX + 1;
+	static const int kMaxCS = UINT16_MAX + 1;
 	static const double kMinGapFrac = 0.2; // minimum gap fraction comparing to the profile
 	static const double CONS_THRESHOLD = 0.9; // threshold for print upper-case consensus residues
 
@@ -188,21 +188,15 @@ public:
 	/**
 	 * Get the value for the given tag from header options
 	 */
-	string getHeaderOpt(const string& tag) const {
-		map<string, string>::const_iterator it = headOpts.find(tag);
-		if(it != headOpts.end()) // tag exists
-			return it->second;
-		else
-			return ""; // use empty string by default
-	}
+	string getOptTag(const string& tag) const;
 
 	/**
 	 * Set the header option tag to the given value
 	 */
-	void setHeaderOpt(const string& tag, const string& val) {
-		if(headOpts.find(tag) == headOpts.end()) // tag not exists
-			headNames.push_back(tag); // add a new tag
-		headOpts[tag] = val;
+	void setOptTag(const string& tag, const string& val) {
+		if(optTags.find(tag) == optTags.end()) // tag not exists
+			optTagNames.push_back(tag); // add a new tag
+		optTags[tag] = val; // always override
 	}
 
 	/**
@@ -222,7 +216,7 @@ public:
 	 * @return the 1-based position relative to the profile, or 0 is not invalid or unmatched column
 	 */
 	int getProfileLoc(int idx) const {
-		return idx < kMinProfile ? cs2ProfileIdx[idx] : 0;
+		return idx < kMaxProfile ? cs2ProfileIdx[idx] : 0;
 	}
 
 	/**
@@ -231,7 +225,7 @@ public:
 	 * @return the 1-based position relative to the consensus sequence, or 0 if out of range
 	 */
 	int getCSLoc(int idx) const {
-		return idx < kMinCS ? profile2CSIdx[idx] : 0;
+		return idx < kMaxCS ? profile2CSIdx[idx] : 0;
 	}
 
 	/**
@@ -349,19 +343,9 @@ public:
 			const string& name = "unnamed");
 
 private:
-	string version; // version of the program generated this hmm file, default is progName-progVersion
-	string name; // profile name
-	const DegenAlphabet* abc; // Nucleotide alphabet
+	/* core fields */
 	int K; // profile length
-	BandedHMMP7Bg hmmBg; // background HMMP7 profile
-	vector<string> headNames; // all header names, if set
-	map<string, string> headOpts; // header options the profile, as compatitable to HMMER3/b
-	int cs2ProfileIdx[kMinProfile + 1]; // MAP index from consensus index -> profile index
-	int profile2CSIdx[kMinCS + 1]; // MAP index from profile index -> consensus index
-	map<string, vector<string> > locOptTags; // other profile loc-specific optional tags in the match emission line
-
-	/* Transition cost matrices */
-	/*
+	/* Transition cost matrices
 	 * Note that index 0 indicating B state,
 	 * and index K indicating E state
 	 */
@@ -401,18 +385,28 @@ private:
 	VectorXd entryPr_cost;
 	VectorXd exitPr_cost;
 
-	/* Special wing retracted T_MM transition probabilities,
-	 * by adding the B->D1->...->Dk-1 to the B->Mk cost
-	 * and adding the Dk+1->Dk+2->...->E to the Mk->E cost
-	 */
-	//MatrixXd T_MM_retract;
-	//MatrixXd T_MM_retract_log;
-
 	/* Banded HMM limits */
 	VectorXi gapBeforeLimit; /* Minimum allowed insertions before given position 1..K, with 0 as dummy position */
 	VectorXi gapAfterLimit; /* Minimum allowed insertions after given position 1..K, with 0 as dummy position */
 	//VectorXi delBeforeLimit; /* Minimum allowed deletions before given position 1..K, with 0 as dummy position */
 	//VectorXi delAfterLimit; /* Minimum allowed deletions after given position 1..K, with 0 as dummy position */
+
+	int cs2ProfileIdx[kMaxProfile + 1]; // MAP index from consensus index -> profile index
+	int profile2CSIdx[kMaxCS + 1]; // MAP index from profile index -> consensus index
+
+	BandedHMMP7Bg hmmBg; // background HMMP7 profile
+
+	/* information fields */
+	string hmmVersion; // version of this hmm file, default is "progName-progVersion"
+	string name; // profile name
+	const DegenAlphabet* abc; // Nucleotide alphabet
+	int nSeq;  // sequence number used in training
+	double effN;  // effective sequence number, used with observed counts and Dirichlet prior info in parameter training
+
+	vector<string> optTagNames; // optional tag names in read in order
+	map<string, string> optTags; // all HMMER3 optional tag pairs
+
+	map<string, vector<string> > locOptTags; // other profile loc-specific optional tags in the match emission line
 
 	/* Initialization flags */
 	bool transInit;
@@ -492,7 +486,7 @@ private:
 	 */
 	bool isValidAlignPath(const ViterbiAlignPath& vpath) const;
 
-	/* Private static utility functions */
+	/* Private utility functions */
 	/** Get the minimum of three values */
 	static double min(double Vm, double Vi, double Vj) {
 		return std::min(Vm, std::min(Vi, Vj));
@@ -626,15 +620,15 @@ private:
 	/* convert an hmm coded string to value */
 	static double hmmValueOf(const string& s);
 
-//public:
-	/*
-	 * Get pseudo-count of a given value
-	 * current implementation use sqrt of the observed count
-	 */
-	static double pseudoCount(double x) {
-		return std::sqrt(x);
+	static bool yesOrNo2bool(const string& value) {
+		return StringUtils::toLower(value) == "yes";
 	}
 
+	static string bool2YesOrNo(bool flag) {
+		return flag ? "yes" : "no";
+	}
+
+//public:
 	/* non-member operators */
 	/**
 	 * utility function for output an alignment path to a human readable string
@@ -650,6 +644,11 @@ private:
 	 */
 	friend ostream& operator<<(ostream& os, const BandedHMMP7& hmm);
 }; /* BandedHMMP7 */
+
+inline std::string BandedHMMP7::getOptTag(const string& tag) const {
+	map<string, string>::const_iterator it = optTags.find(tag);
+	return it != optTags.end() ? it->second : "";
+}
 
 inline char BandedHMMP7::decode(p7_state state) {
 	switch(state) {

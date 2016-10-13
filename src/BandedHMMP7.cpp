@@ -30,10 +30,31 @@ const int BandedHMMP7::kNS =  kNM + kNSP; // number of total states
 string HMM_TAG =
 		"HMM\t\tA\tC\tG\tT\n\t\tm->m\tm->i\tm->d\ti->m\ti->i\td->m\td->d";
 
-ostream& operator<<(ostream& os, const deque<BandedHMMP7::p7_state> path) {
-	for(deque<BandedHMMP7::p7_state>::const_iterator it = path.begin(); it != path.end(); ++it)
-		os << BandedHMMP7::decode(*it);
-	return os;
+BandedHMMP7::BandedHMMP7() :
+		hmmVersion(progName + "-" + progVersion), name("unnamed"), K(0), abc(NULL),
+		hmmBg(0), nSeq(0), effN(0),
+		transInit(false), emisInit(false),
+		spInit(false), limitInit(false), indexInit(false), wingRetracted(false) {
+	/* Assert IEE559 at construction time */
+	assert(numeric_limits<double>::is_iec559);
+}
+
+BandedHMMP7::BandedHMMP7(const string& name, int K, const DegenAlphabet* abc) :
+		hmmVersion(progName + "-" + progVersion), name(name), K(K), abc(abc),
+		hmmBg(K), nSeq(0), effN(0),
+		transInit(false), emisInit(false), spInit(false), limitInit(false), indexInit(false),
+		wingRetracted(false) {
+	if(!(abc->getName() == "IUPACNucl" && abc->getSize() == 4))
+		throw invalid_argument("BandedHMMP7 only supports DNA alphabet");
+	/* Assert IEE559 at construction time */
+	assert(numeric_limits<double>::is_iec559);
+	init_transition_params();
+	init_emission_params();
+	init_special_params();
+	init_index();
+	init_limits();
+	enableProfileLocalMode(); // always in profile local alignment mode
+	setSpEmissionFreq(hmmBg.getBgEmitPr()); // Use bg emission freq by default
 }
 
 /* non-member friend functions */
@@ -61,20 +82,16 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 			iss >> tag;
 			if (tag.substr(0, 6) == "HMMER3") { // do not override our version, check minor version
 				if(tag.length() < 8 || tag[7] < 'f') {
-					cerr << "Obsolete HMM file version: " << tag << ", must be HMMER3/f [3.1] or higher" << endl;
+					cerr << "Obsolete HMM file version: " << tag << ", must be HMMER3/f or higher" << endl;
 					abort();
 				}
 			}
 			else if (tag == "NAME") {
-				string name;
-				iss >> name;
-				hmm.setName(name);
-				hmm.setHeaderOpt(tag, name);
+				iss >> hmm.name;
 			} else if (tag == "LENG") {
-				string size;
+				int size;
 				iss >> size;
-				hmm.setProfileSize(atoi(size.c_str()));
-				hmm.setHeaderOpt(tag, size);
+				hmm.setProfileSize(size);
 			} else if (tag == "ALPH") {
 				string abc;
 				iss >> abc;
@@ -82,8 +99,8 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 					throw invalid_argument(
 							"Not allowed alphabet '" + abc
 									+ "' in the HMM input file! Must be DNA");
-				assert(hmm.abc->getSymbol() == "ACGT");
-				hmm.setHeaderOpt(tag, "DNA");
+				// override the alphabet
+				hmm.abc = SeqCommons::nuclAbc;
 			} else if (tag == "STATS") {
 				string mode;
 				string distrib;
@@ -91,17 +108,24 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 				tag += " " + mode + " " + distrib; // use STATS + mode + distribution as the new tag name
 				string val;
 				getline(iss, val);
-				hmm.setHeaderOpt(tag, BandedHMMP7::trim(val));
+				hmm.setOptTag(tag, BandedHMMP7::trim(val));
 
 			} else if(tag == "HMM") { /* HMM TAG */
 				string tmp;
 				getline(is, tmp); /* ignore the next line too */
 			}
-			else { /* non-mandatory lines */
+			else { /* optional tags */
 				string val;
 				getline(iss, val); // get the entire remaining part of this line
 				if(!tag.empty())
-					hmm.setHeaderOpt(tag, BandedHMMP7::trim(val)); // record this tag-value pair
+					hmm.setOptTag(tag, BandedHMMP7::trim(val)); // record this tag-value pair
+				// check some optional tags
+				if(tag == "NSEQ")
+					hmm.nSeq = ::atoi(val.c_str());
+				else if(tag == "EFFN")
+					hmm.effN = ::atof(val.c_str());
+				else
+				{ /* do nothing */ }
 			}
 		} /* end of header section */
 		else { /* Main body, starts with space */
@@ -122,7 +146,7 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 					hmm.E_M_cost.col(k) = emitFreq;
 					/* Make sure the MAP tag is set */
 					string val;
-					if(hmm.getHeaderOpt("MAP") != "yes") {
+					if(hmm.getOptTag("MAP") != "yes") {
 						cerr << "Error: HMM file must has the MAP flag set to 'yes'" << endl;
 						abort();
 					}
@@ -131,19 +155,19 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 					hmm.profile2CSIdx[k] = atoi(tmp.c_str());
 					hmm.setLocOptTag("MAP", tmp, k);
 					/* read other optional tags */
-					if(!hmm.getHeaderOpt("CONS").empty()) { /* this tag is present, regarding yes or no */
+					if(!hmm.getOptTag("CONS").empty()) { /* this tag is present, regarding yes or no */
 						iss >> tmp;
 						hmm.setLocOptTag("CONS", tmp, k);
 					}
-					if(!hmm.getHeaderOpt("RF").empty()) { /* this tag is present, regarding yes or no */
+					if(!hmm.getOptTag("RF").empty()) { /* this tag is present, regarding yes or no */
 						iss >> tmp;
 						hmm.setLocOptTag("RF", tmp, k);
 					}
-					if(!hmm.getHeaderOpt("MM").empty()) { /* this tag is present, regarding yes or no */
+					if(!hmm.getOptTag("MM").empty()) { /* this tag is present, regarding yes or no */
 						iss >> tmp;
 						hmm.setLocOptTag("MM", tmp, k);
 					}
-					if(!hmm.getHeaderOpt("CS").empty()) { /* this tag is present, regarding yes or no */
+					if(!hmm.getOptTag("CS").empty()) { /* this tag is present, regarding yes or no */
 						iss >> tmp;
 						hmm.setLocOptTag("CS", tmp, k);
 					}
@@ -183,6 +207,62 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 	return is;
 }
 
+ostream& operator<<(ostream& os, const BandedHMMP7& hmm) {
+	/* write mandatory tags */
+	os << "HMMER3/f\t" << hmm.hmmVersion << endl;
+	os << "NAME\t" << hmm.name << endl;
+	os << "LENG\t" << hmm.K << endl;
+	os << "ALPH\t" << hmm.abc->getAlias() << endl;
+
+	/* write optional tags */
+	for(vector<string>::const_iterator it = hmm.optTagNames.begin(); it != hmm.optTagNames.end(); ++it)
+		os << *it << "  " << hmm.getOptTag(*it) << endl;
+
+	/* write optional HMM tags */
+	os << HMM_TAG << endl;
+	for(int k = 0; k <= hmm.K; ++k) {
+		/* write M or background emission line */
+		if(k == 0)
+			os << "\tCOMPO\t" << hmm.E_M_cost.col(0).transpose()  << endl;
+		else {
+			os << "\t" << k << "\t" << hmm.E_M_cost.col(k).transpose();
+			/* write other optional tags, if present */
+			if(!hmm.getOptTag("MAP").empty())
+				os << "\t" << hmm.getLocOptTag("MAP", k);
+			if(!hmm.getOptTag("CONS").empty())
+				os << "\t" << hmm.getLocOptTag("CONS", k);
+			if(!hmm.getOptTag("RF").empty())
+				os << "\t" << hmm.getLocOptTag("RF", k);
+			if(!hmm.getOptTag("MM").empty())
+				os << "\t" << hmm.getLocOptTag("MM", k);
+			if(!hmm.getOptTag("CS").empty())
+				os << "\t" << hmm.getLocOptTag("CS", k);
+			os << endl;
+		}
+		/* write insert emission line */
+		for(MatrixXd::Index i = 0; i != hmm.E_I_cost.rows(); ++i)
+			hmm.E_I_cost(i, k) != inf ? os << "\t\t" << hmm.E_I_cost(i, k) : os << "\t\t*";
+		os << endl;
+		/* write state transition line */
+		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) : os << "\t\t*";
+		hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) : os << "\t\t*";
+		os << endl;
+	}
+	os << "//" << endl;
+	return os;
+}
+
+ostream& operator<<(ostream& os, const deque<BandedHMMP7::p7_state> path) {
+	for(deque<BandedHMMP7::p7_state>::const_iterator it = path.begin(); it != path.end(); ++it)
+		os << BandedHMMP7::decode(*it);
+	return os;
+}
+
 BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 		const DirichletModel& dmME, const DirichletModel& dmIE,
 		const DirichletModel& dmMT, const DirichletModel& dmIT, const DirichletModel& dmDT,
@@ -195,11 +275,11 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 	const unsigned L = msa->getCSLen();
 	const unsigned N = msa->getNumSeq();
 	unsigned k = 0;
-	int cs2ProfileIdx[kMinProfile + 1]; // MAP index from consensus index -> profile index
-	int profile2CSIdx[kMinCS + 1]; // MAP index from profile index -> consensus index
-	for(int i = 0; i <= kMinProfile; ++i)
+	int cs2ProfileIdx[kMaxProfile + 1]; // MAP index from consensus index -> profile index
+	int profile2CSIdx[kMaxCS + 1]; // MAP index from profile index -> consensus index
+	for(int i = 0; i <= kMaxProfile; ++i)
 		cs2ProfileIdx[i] = 0;
-	for(int i = 1; i <= kMinCS; ++i)
+	for(int i = 1; i <= kMaxCS; ++i)
 		profile2CSIdx[i] = 0;
 
 	for(unsigned j = 0; j < L; ++j) {
@@ -216,8 +296,8 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 	hmm.reset_transition_params();
 	hmm.reset_emission_params();
 	/* copy the index */
-	std::copy(cs2ProfileIdx, cs2ProfileIdx + kMinProfile, hmm.cs2ProfileIdx);
-	std::copy(profile2CSIdx, profile2CSIdx + kMinCS, hmm.profile2CSIdx);
+	std::copy(cs2ProfileIdx, cs2ProfileIdx + kMaxProfile, hmm.cs2ProfileIdx);
+	std::copy(profile2CSIdx, profile2CSIdx + kMaxCS, hmm.profile2CSIdx);
 
 	/* train the hmm model, all index are 1-based */
 	for(unsigned j = 1; j <= L; ++j) {
@@ -274,7 +354,7 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 		hmm.Tmat[K](smEnd, M) += w;
 	}
 
-	/* get posterial emission and transition costs using Drichlet Models */
+	/* get posterior emission and transition costs using Drichlet Models */
 	for(int j = 0; j <= K; ++j) {
 //		cerr << "EM observed: " <<  hmm.E_M.col(j).transpose() << endl;
 		if(j > 0)
@@ -320,22 +400,28 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 	hmm.Tmat_cost[K](D, M) = 0;
 	hmm.Tmat_cost[K](D, D) = inf;
 
-	/* set mandotory headers */
+	/* set optional tags */
 	char value[128];
-	sprintf(value, "%d", K);
-	hmm.setHeaderOpt("LENG", value);
-	/* set optional headers */
 	sprintf(value, "%d", msa->getCSLen());
-	hmm.setHeaderOpt("MAXL", value);
-	hmm.setHeaderOpt("RF", "no");
-	hmm.setHeaderOpt("MM", "no");
-	hmm.setHeaderOpt("CONS", "yes");
-	hmm.setHeaderOpt("CS", "no");
-	hmm.setHeaderOpt("MAP", "yes");
-	sprintf(value, "%d", msa->getNumSeq());
-	hmm.setHeaderOpt("NSEQ", value);
-	sprintf(value, "%g", msa->getEffectSeqNum());
-	hmm.setHeaderOpt("EFFN", value);
+	hmm.setOptTag("MAXL", value);
+
+	hmm.setOptTag("RF", "no");
+
+	hmm.setOptTag("MM", "no");
+
+	hmm.setOptTag("CONS", "yes");
+
+	hmm.setOptTag("CS", "no");
+
+	hmm.setOptTag("MAP", "yes");
+
+	hmm.nSeq = msa->getNumSeq();
+	sprintf(value, "%d", hmm.nSeq);
+	hmm.setOptTag("NSEQ", value);
+
+	hmm.effN = hmm.nSeq; /* use nSeq as effN as initiate */
+	sprintf(value, "%g", hmm.effN);
+	hmm.setOptTag("EFFN", value);
 
 	/* set locOptTags */
 	hmm.locOptTags["CONS"].resize(K + 1);
@@ -357,52 +443,9 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 	strftime(value, 128, "%c", timeinfo);
-	hmm.setHeaderOpt("DATE", value);
+	hmm.setOptTag("DATE", value);
 
 	return hmm;
-}
-
-ostream& operator<<(ostream& os, const BandedHMMP7& hmm) {
-	/* write header tags */
-	for(vector<string>::const_iterator it = hmm.headNames.begin(); it != hmm.headNames.end(); ++it)
-		os << *it << "  " << hmm.getHeaderOpt(*it) << endl;
-	/* write optional HMM tags */
-	os << HMM_TAG << endl;
-	for(int k = 0; k <= hmm.K; ++k) {
-		/* write M or background emission line */
-		if(k == 0)
-			os << "\tCOMPO\t" << hmm.E_M_cost.col(0).transpose()  << endl;
-		else {
-			os << "\t" << k << "\t" << hmm.E_M_cost.col(k).transpose();
-			/* write other optional tags, if present */
-			if(!hmm.getHeaderOpt("MAP").empty())
-				os << "\t" << hmm.getLocOptTag("MAP", k);
-			if(!hmm.getHeaderOpt("CONS").empty())
-				os << "\t" << hmm.getLocOptTag("CONS", k);
-			if(!hmm.getHeaderOpt("RF").empty())
-				os << "\t" << hmm.getLocOptTag("RF", k);
-			if(!hmm.getHeaderOpt("MM").empty())
-				os << "\t" << hmm.getLocOptTag("MM", k);
-			if(!hmm.getHeaderOpt("CS").empty())
-				os << "\t" << hmm.getLocOptTag("CS", k);
-			os << endl;
-		}
-		/* write insert emission line */
-		for(MatrixXd::Index i = 0; i != hmm.E_I_cost.rows(); ++i)
-			hmm.E_I_cost(i, k) != inf ? os << "\t\t" << hmm.E_I_cost(i, k) : os << "\t\t*";
-		os << endl;
-		/* write state transition line */
-		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) : os << "\t\t*";
-		os << endl;
-	}
-	os << "//" << endl;
-	return os;
 }
 
 string BandedHMMP7::trim(const string& str, const string& whitespace) {
@@ -413,7 +456,6 @@ string BandedHMMP7::trim(const string& str, const string& whitespace) {
 	return str.substr(strBegin, strRange);
 }
 
-} /* namespace EGriceLab */
 
 /*void EGriceLab::BandedHMMP7::setSequenceMode(enum align_mode mode) {
  switch(mode) {
@@ -421,44 +463,7 @@ string BandedHMMP7::trim(const string& str, const string& whitespace) {
  }
  }*/
 
-EGriceLab::BandedHMMP7::BandedHMMP7() :
-		version(progName + "-" + progVersion), name("NULL"), K(0),
-		abc(SeqCommons::nuclAbc), hmmBg(0), transInit(false), emisInit(false),
-		spInit(false), limitInit(false), indexInit(false), wingRetracted(false) {
-	/* Assert IEE559 at construction time */
-	assert(numeric_limits<double>::is_iec559);
-	/* set mandatory tags */
-	setHeaderOpt("HMMER3/f", progName + "-" + progVersion);
-	setHeaderOpt("NAME", "NULL");
-	setHeaderOpt("LENG", "0");
-	setHeaderOpt("ALPH", "DNA");
-}
-
-EGriceLab::BandedHMMP7::BandedHMMP7(const string& name, int K, const DegenAlphabet* abc) :
-		version(progName + "-" + progVersion), name(name), K(K), abc(abc),
-		hmmBg(K), transInit(false), emisInit(false),
-				spInit(false), limitInit(false), indexInit(false), wingRetracted(false) {
-	if(!(abc->getName() == "IUPACNucl" && abc->getSize() == 4))
-		throw invalid_argument("BandedHMMP7 only supports DNA alphabet");
-	/* Assert IEE559 at construction time */
-	assert(numeric_limits<double>::is_iec559);
-	init_transition_params();
-	init_emission_params();
-	init_special_params();
-	init_index();
-	init_limits();
-	enableProfileLocalMode(); // always in profile local alignment mode
-	setSpEmissionFreq(hmmBg.getBgEmitPr()); // Use bg emission freq by default
-	/* set mandatory tags */
-	setHeaderOpt("HMMER3/f", progName + "-" + progVersion);
-	setHeaderOpt("NAME", name);
-	char value[128];
-	sprintf(value, "%d", K);
-	setHeaderOpt("LENG", value);
-	setHeaderOpt("ALPH", "DNA");
-}
-
-void EGriceLab::BandedHMMP7::setProfileSize(int size) {
+void BandedHMMP7::setProfileSize(int size) {
 	K = size; // set self size
 	hmmBg.setSize(size); // set bg size
 	init_transition_params();
@@ -470,7 +475,7 @@ void EGriceLab::BandedHMMP7::setProfileSize(int size) {
 	setSpEmissionFreq(hmmBg.getBgEmitPr()); // Use bg emission freq by default
 }
 
-void EGriceLab::BandedHMMP7::setSequenceMode(enum align_mode mode) {
+void BandedHMMP7::setSequenceMode(enum align_mode mode) {
 	switch (mode) {
 	case GLOBAL:
 		T_SP(N, N) = T_SP(C, C) = 0;
@@ -494,13 +499,13 @@ void EGriceLab::BandedHMMP7::setSequenceMode(enum align_mode mode) {
 	T_SP_cost = -T_SP.array().log(); // Eigen3 handle array to matrix assignment automatically
 }
 
-void EGriceLab::BandedHMMP7::setSpEmissionFreq(const Vector4d& freq) {
+void BandedHMMP7::setSpEmissionFreq(const Vector4d& freq) {
 	E_SP.col(N) = E_SP.col(C) = freq / freq.sum(); // re-do normalization, even if already done
 	E_SP.col(B) = E_SP.col(E) = Vector4d::Zero(); // no emission for state B and E
 	E_SP_cost = -E_SP.array().log();
 }
 
-void EGriceLab::BandedHMMP7::init_transition_params() {
+void BandedHMMP7::init_transition_params() {
 	if (transInit) // already initialized
 		return;
 	/*
@@ -512,7 +517,7 @@ void EGriceLab::BandedHMMP7::init_transition_params() {
 	transInit = true;
 }
 
-void EGriceLab::BandedHMMP7::init_emission_params() {
+void BandedHMMP7::init_emission_params() {
 	if (emisInit) // already initialized
 		return;
 	/* state 0 serves as B state */
@@ -521,7 +526,7 @@ void EGriceLab::BandedHMMP7::init_emission_params() {
 	emisInit = true;
 }
 
-void EGriceLab::BandedHMMP7::init_special_params() {
+void BandedHMMP7::init_special_params() {
 	if (spInit) // already initialized
 		return;
 	entryPr = entryPr_cost = VectorXd(K + 1);
@@ -531,7 +536,7 @@ void EGriceLab::BandedHMMP7::init_special_params() {
 	spInit = true;
 }
 
-void EGriceLab::BandedHMMP7::reset_transition_params() {
+void BandedHMMP7::reset_transition_params() {
 	/*
 	 * state 0 serves as the B state
 	 */
@@ -541,7 +546,7 @@ void EGriceLab::BandedHMMP7::reset_transition_params() {
 	}
 }
 
-void EGriceLab::BandedHMMP7::reset_emission_params() {
+void BandedHMMP7::reset_emission_params() {
 	/* state 0 serves as B state */
 	E_M.setZero();
 	E_I.setZero();
@@ -549,7 +554,7 @@ void EGriceLab::BandedHMMP7::reset_emission_params() {
 	E_I_cost.fill(inf);
 }
 
-/*void EGriceLab::BandedHMMP7::normalize_transition_params() {
+/*void BandedHMMP7::normalize_transition_params() {
 
 	 * state 0 serves as the B state
 
@@ -565,7 +570,7 @@ void EGriceLab::BandedHMMP7::reset_emission_params() {
 
 }*/
 
-/*void EGriceLab::BandedHMMP7::normalize_emission_params() {
+/*void BandedHMMP7::normalize_emission_params() {
 	 state 0 serves as B state
 	for(int k = 0; k <= K; ++k) {
 		double emC = E_M.col(k).sum();
@@ -592,7 +597,7 @@ void EGriceLab::BandedHMMP7::reset_emission_params() {
 	E_I_cost = -E_I.array().log();
 }*/
 
-void EGriceLab::BandedHMMP7::init_limits() {
+void BandedHMMP7::init_limits() {
 	if (limitInit) // already initialized
 		return;
 /*	insBeforeLimit = insAfterLimit = VectorXi::Constant(K + 1, static_cast<int> (kMinProfile));
@@ -607,16 +612,16 @@ void EGriceLab::BandedHMMP7::init_limits() {
 	limitInit = true;
 }
 
-void EGriceLab::BandedHMMP7::init_index() {
+void BandedHMMP7::init_index() {
 	if(indexInit) // already initialized
 		return;
-	for(int i = 0; i <= kMinProfile; ++i)
+	for(int i = 0; i <= kMaxProfile; ++i)
 		cs2ProfileIdx[i] = 0;
-	for(int i = 1; i <= kMinCS; ++i)
+	for(int i = 1; i <= kMaxCS; ++i)
 		profile2CSIdx[i] = 0;
 }
 
-void EGriceLab::BandedHMMP7::enableProfileLocalMode() {
+void BandedHMMP7::enableProfileLocalMode() {
 	/* set entering costs */
 	entryPr(0) = 0; // B->B not allowed
 	entryPr.segment(1, K).setConstant(1 - hmmBg.getBgTransPr()); /* B->M1..MK equal cost */
@@ -630,7 +635,7 @@ void EGriceLab::BandedHMMP7::enableProfileLocalMode() {
 	exitPr_cost = -exitPr.array().log();
 }
 
-void EGriceLab::BandedHMMP7::adjustProfileLocalMode() {
+void BandedHMMP7::adjustProfileLocalMode() {
 	/* adjust entering costs */
 	entryPr(0) = 0; // B->B not allowed
 	entryPr.segment(1, K).setConstant(Tmat[0](M, M)); /* B->M1..MK equal cost */
@@ -644,7 +649,7 @@ void EGriceLab::BandedHMMP7::adjustProfileLocalMode() {
 	exitPr_cost = -exitPr.array().log();
 }
 
-EGriceLab::BandedHMMP7::ViterbiScores EGriceLab::BandedHMMP7::initViterbiScores(
+BandedHMMP7::ViterbiScores EGriceLab::BandedHMMP7::initViterbiScores(
 		const PrimarySeq& seq) const {
 	assert(abc == seq.getDegenAlphabet());
 	ViterbiScores vs(seq);
@@ -654,7 +659,7 @@ EGriceLab::BandedHMMP7::ViterbiScores EGriceLab::BandedHMMP7::initViterbiScores(
 	resetTraceScores(bHmm);*/
 }
 
-EGriceLab::BandedHMMP7::ViterbiScores& EGriceLab::BandedHMMP7::resetViterbiScores(ViterbiScores& vs,
+BandedHMMP7::ViterbiScores& EGriceLab::BandedHMMP7::resetViterbiScores(ViterbiScores& vs,
 		const PrimarySeq& seq) const {
 	vs.seq = &seq; // swap the pointer value but leave the pointing object untouched
 	const int L = vs.seq->length();
@@ -673,24 +678,7 @@ EGriceLab::BandedHMMP7::ViterbiScores& EGriceLab::BandedHMMP7::resetViterbiScore
 	return vs;
 }
 
-/*void EGriceLab::BandedHMMP7::resetForwardBackwardScores(
-		ViterbiScores& vs) const {
-	int L = vs.ds.length();
-	 Use 0 as initial values for forward-backward matricies
-	vs.F_M = vs.F_I = vs.F_D = MatrixXd::Zero(L + 1, K + 1);
-	vs.B_M = vs.B_I = vs.B_D = MatrixXd::Zero(L + 1, K + 1);
-	 Use 1 as default scaling factor value
-	vs.SV_M = vs.SV_I = vs.SV_D = VectorXd::Constant(L + 1, 1);
-}*/
-
-/*void EGriceLab::BandedHMMP7::resetTraceScores(ViterbiScores& vs) const {
-	int L = vs.ds.length();
-	 Use -1 as initial values for trace scores
-	vs.TRACE = MatrixXi::Constant(L + 1, K + 1, -1);
-}*/
-
-
-EGriceLab::BandedHMMP7::ViterbiAlignPath EGriceLab::BandedHMMP7::initViterbiAlignPath(
+BandedHMMP7::ViterbiAlignPath EGriceLab::BandedHMMP7::initViterbiAlignPath(
 		int L) const {
 	ViterbiAlignPath vpath;
 	vpath.K = K; // K is fixed between different seq
@@ -698,7 +686,7 @@ EGriceLab::BandedHMMP7::ViterbiAlignPath EGriceLab::BandedHMMP7::initViterbiAlig
 	return resetViterbiAlignPath(vpath, L);
 }
 
-EGriceLab::BandedHMMP7::ViterbiAlignPath& EGriceLab::BandedHMMP7::resetViterbiAlignPath(ViterbiAlignPath& vpath,
+BandedHMMP7::ViterbiAlignPath& EGriceLab::BandedHMMP7::resetViterbiAlignPath(ViterbiAlignPath& vpath,
 		int L) const {
 	vpath.L = L;
 	vpath.N = 0;
@@ -719,7 +707,7 @@ EGriceLab::BandedHMMP7::ViterbiAlignPath& EGriceLab::BandedHMMP7::resetViterbiAl
 	return vpath;
 }
 
-void EGriceLab::BandedHMMP7::calcViterbiScores(
+void BandedHMMP7::calcViterbiScores(
 		ViterbiScores& vs) const {
 	assert(vs.seq != NULL);
 	assert(wingRetracted); // make sure wing is retracted
@@ -762,7 +750,7 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 		vs.S.row(i).array() += T_SP_cost(C, C) * (L - i); // add L-i C->C circles
 }
 
-void EGriceLab::BandedHMMP7::calcViterbiScores(
+void BandedHMMP7::calcViterbiScores(
 		ViterbiScores& vs, const ViterbiAlignPath& vpath) const {
 	assert(vs.seq != NULL);
 	if(vpath.N == 0) // no known path provided, reduce to full Viterbi Dynamic-Programming
@@ -887,7 +875,7 @@ void EGriceLab::BandedHMMP7::calcViterbiScores(
 		vs.S.row(i).array() += T_SP_cost(C, C) * (L - i); // add L-i C->C circles
 }
 
-void EGriceLab::BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
+void BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
 		const CSLoc& csLoc, int csFrom, int csTo) const {
 	using std::string;
 //	cerr << "csStart:" << csLoc.start << " csEnd:" << csLoc.end << " csFrom:" << csFrom << " csTo:" << csTo <<
@@ -945,7 +933,7 @@ void EGriceLab::BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
 	}
 }
 
-double EGriceLab::BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath& vpath) const {
+double BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath& vpath) const {
 	assert(vs.seq != NULL);
 	assert(vs.S.rows() == vpath.L + 1 && vs.S.cols() == K + 2);
 	MatrixXd::Index minRow, minCol;
@@ -1021,7 +1009,7 @@ double EGriceLab::BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, Viterb
 	return minScore;
 }
 
-std::string EGriceLab::BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
+std::string BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
 		const ViterbiAlignPath& vpath) const {
 	assert(vs.seq != NULL);
 	string aSeq;
@@ -1063,7 +1051,7 @@ std::string EGriceLab::BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
 	return aSeq;
 }
 
-void EGriceLab::BandedHMMP7::wingRetract() {
+void BandedHMMP7::wingRetract() {
 	if(wingRetracted) // already wing-retracted
 		return;
 	/* retract entering costs */
@@ -1102,7 +1090,7 @@ void EGriceLab::BandedHMMP7::wingRetract() {
 	wingRetracted = true;
 }
 
-bool EGriceLab::BandedHMMP7::isValidAlignPath(const ViterbiAlignPath& vpath) const {
+bool BandedHMMP7::isValidAlignPath(const ViterbiAlignPath& vpath) const {
 	bool flag = true;
 	for(int n = 0; n < vpath.N; ++n)
 		if(!(vpath.start[n] >= 1 && vpath.start[n] <= vpath.end[n] && vpath.end[n] <= vpath.K
@@ -1111,3 +1099,5 @@ bool EGriceLab::BandedHMMP7::isValidAlignPath(const ViterbiAlignPath& vpath) con
 			return false;
 	return true;
 }
+
+} /* namespace EGriceLab */

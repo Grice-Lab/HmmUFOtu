@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 		cerr << "MSA database loaded" << endl;
 	}
 
-	cerr << "Effective seqNum:" << msa->getEffectSeqNum() << endl;
+	cerr << "Total seqNum:" << msa->getNumSeq() << endl;
 
 	if(!msa->save(out)) {
 		cerr << "Unable to save MSA database" << endl;

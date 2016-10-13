@@ -36,14 +36,14 @@ public:
 	 * return the background transition prob between G states
 	 */
 	float getBgTransPr() const {
-		return transGG;
+		return p1;
 	}
 
 	/**
 	 * return the background transition lods between G states
 	 */
 	float getBgTransLods() const {
-		return log(transGG);
+		return log(p1);
 	}
 
 	/*
@@ -84,10 +84,11 @@ private:
 	//void init_emisPr();
 
 	int K; // profile size
-	const IUPACNucl* nuclAbc;
+	const DegenAlphabet* nuclAbc;
 	Vector4d bgFreq; // null background frequencies of each nuclotide bases
-	float transGG; // null transition distribution of G->G and G->F
-	//static const float kTerminal = 0.05f;
+	double p1; // null transition distribution of G->G, which is 1 - p0 = 1 - transBG
+
+	static const int MIN_BG_K = 350; /* min profile length used to set bg transition probability */
 };
 
 } /* namespace EGriceLab */

@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 	msa->prune();
 	cerr << "MSA pruned" << endl;
 
-	cerr << "Effective seqNum:" << msa->getEffectSeqNum() << endl;
+	cerr << "Total numSeq:" << msa->getNumSeq() << endl;
 
 	out << "pos\tidentity\tsym_frac\tgap_frac" << endl;
 	for(unsigned j = 0; j != msa->getCSLen(); ++j)

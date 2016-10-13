@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
 		cerr << "MSA database loaded" << endl;
 	}
 
-	cerr << "Effective seqNum:" << msa->getEffectSeqNum() << endl;
+	cerr << "Total numSeq:" << msa->getNumSeq() << endl;
 
 	out << "pos";
 	string sym = msa->getAbc()->getSymbol();
