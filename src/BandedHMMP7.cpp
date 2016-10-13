@@ -63,14 +63,7 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 	int k = 0; // pos on the profile
 	while (getline(is, line)) {
 		if (line == "//") {/* end of profile */
-			/* finalize transition matrices */
-			for(int k = 0; k <= hmm.K; ++k) {
-				hmm.Tmat_cost[k];
-				hmm.Tmat[k] = (-hmm.Tmat_cost[k]).array().exp();
-			}
-			/* finalize emission matrices */
-			hmm.E_M = (-hmm.E_M_cost).array().exp();
-			hmm.E_I = (-hmm.E_I_cost).array().exp();
+			hmm.resetProbByCost(); // set the cost matrices
 			hmm.adjustProfileLocalMode();
 			hmm.wingRetract();
 			return is;
@@ -205,6 +198,38 @@ istream& operator>>(istream& is, BandedHMMP7& hmm) {
 	// somehow the hmm file reached end without '//'
 	is.setstate(std::ios::failbit);
 	return is;
+}
+
+void BandedHMMP7::scale(double r) {
+	/* scale transitions */
+	for(int k = 0; k <= K; ++k)
+		Tmat[k] *= r;
+	/* scale emissions */
+	E_M *= r;
+	E_I *= r;
+	/* reset costs */
+	resetCostByProb();
+}
+
+void BandedHMMP7::normalize() {
+	for(int k = 0; k <= K; ++k) {
+		/* normalize transitions */
+		Tmat[k].row(M) /= Tmat[k].row(M).sum(); /* TMX */
+		Tmat[k].row(I) /= Tmat[k].row(I).sum(); /* TIX */
+		Tmat[k].row(D) /= Tmat[k].row(D).sum(); /* TDX */
+		/* normalize emissions */
+		E_M.col(k) /= E_M.col(k).sum(); /* EM */
+		E_I.col(k) /= E_I.col(k).sum(); /* EI */
+	}
+	/* enforce the T[0] and T[K] specials */
+	Tmat[0](D, M) = 1;
+	Tmat[0](D, D) = 0;
+	Tmat[K](M, D) = 0;
+	Tmat[K](D, M) = 1;
+	Tmat[K](D, D) = 0;
+
+	/* reset costs */
+	resetCostByProb();
 }
 
 ostream& operator<<(ostream& os, const BandedHMMP7& hmm) {

@@ -352,8 +352,8 @@ private:
 	vector<Matrix3d> Tmat;
 
 	/* Emission cost matrices */
-	Matrix4Xd E_M; /* emission probabilities from Mk node */
-	Matrix4Xd E_I; /* emission probabilities from Ik node */
+	Matrix4Xd E_M; /* emission probabilities from Mk node, k = 0, 1, ..., K */
+	Matrix4Xd E_I; /* emission probabilities from Ik node, k = 0, 1, ..., K */
 	/* No emission from D state */
 
 	Matrix4Xd E_SP; /* Emission probabilities from special_states sp node */
@@ -464,7 +464,6 @@ private:
 	 */
 	void init_index();
 
-
 	/**
 	 * set the profile alignment to local mode by setting entry and exit probabilities
 	 */
@@ -474,6 +473,36 @@ private:
 	 * adjust the profile local mode probabilities to accommodate to the learned probabilities
 	 */
 	void adjustProfileLocalMode();
+
+	/**
+	 * Reset all cost matrices by raw probability matrices
+	 */
+	void resetCostByProb();
+
+	/**
+	 * Reset all raw probability matrices by cost matrices
+	 */
+	void resetProbByCost();
+
+	/**
+	 * Scale the current model's transition and emission matrix by a constant factor
+	 * The new model will be an invalid model since the colSums of all transition/emisison matricies should be 1
+	 * The invalid model needed to be re-normalized
+	 * @param r  constants to scale
+	 */
+	void scale(double r);
+
+	/**
+	 * Normalize an invalid model without using any priors,
+	 * the model is usually raw counts or scaled by calling scale()
+	 */
+	void normalize();
+
+	/**
+	 * Normalize an invalid model using a Dirichlet model
+	 * the model is usually raw counts or scaled by calling scale()
+	 */
+//	void normalize();
 
 	/**
 	 * test whether given viterbi align path is valid
@@ -648,6 +677,24 @@ private:
 inline std::string BandedHMMP7::getOptTag(const string& tag) const {
 	map<string, string>::const_iterator it = optTags.find(tag);
 	return it != optTags.end() ? it->second : "";
+}
+
+inline void BandedHMMP7::resetCostByProb() {
+	/* reset transitions */
+	for(int k = 0; k <= K; ++k)
+		Tmat_cost[k] = -Tmat[k].array().log();
+	/* reset emissions */
+	E_M_cost = -E_M.array().log();
+	E_I_cost = -E_I.array().log();
+}
+
+inline void BandedHMMP7::resetProbByCost() {
+	/* reset transitions */
+	for(int k = 0; k <= K; ++k)
+		Tmat[k] = (-Tmat_cost[k]).array().exp();
+	/* reset emissions */
+	E_M = (-E_M_cost).array().exp();
+	E_I = (-E_I_cost).array().exp();
 }
 
 inline char BandedHMMP7::decode(p7_state state) {
