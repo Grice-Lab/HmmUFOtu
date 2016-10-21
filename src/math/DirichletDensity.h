@@ -9,6 +9,7 @@
 #define SRC_DIRICHLETDENSITY_H_
 
 #include <string>
+#include <stdexcept>
 #include "DirichletModel.h"
 
 namespace EGriceLab {
@@ -34,6 +35,13 @@ public:
 	virtual ~DirichletDensity() { }
 
 	/* member methods */
+	/**
+	 * Set K
+	 * @param K  # of categories
+	 * @override  base class virtual method
+	 */
+	virtual void setK(int K);
+
 	/**
 	 * Calculate the posterior probability given this model an observed frequency
 	 * implement the base case abstract method
@@ -83,6 +91,16 @@ public:
 	static const double DEFAULT_WEIGHT = 0;
 	static const string FILE_HEADER;
 };
+
+inline void DirichletDensity::setK(int K) {
+	if(K < MIN_K)
+		throw std::invalid_argument("DirichletDensity K must be at least " + MIN_K);
+	DirichletModel::setK(K); // invoke base class method
+	alpha.resize(K);
+	w.resize(K);
+	alpha.setConstant(DEFAULT_ALPHA);
+	w.setConstant(DEFAULT_WEIGHT);
+}
 
 } /* namespace Math */
 } /* namespace EGriceLab */

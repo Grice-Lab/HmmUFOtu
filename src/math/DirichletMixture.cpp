@@ -89,8 +89,9 @@ MatrixXd DirichletMixture::weightGradient(const MatrixXd& data) const {
 double DirichletMixture::trainML(const MatrixXd& data, int maxIt, double eta,
 		double epsilonCost, double epsilonParams) {
 	assert(data.rows() == alpha.rows());
-	/* initiate the parameters using moment-matctching */
+	/* initiate the parameters using moment-matching */
 	momentInit(data);
+	cerr << "Moment matched alpha:" << endl << alpha << endl;
 
 	MatrixXd::Index M = data.cols();
 	/* EM algorithm to update both the Dirichlet parameters and mixture coefficients */
@@ -108,7 +109,7 @@ double DirichletMixture::trainML(const MatrixXd& data, int maxIt, double eta,
 			cerr << "Potential over-fitting detected. Please choose another MSA training set" << endl;
 			return NAN;
 		}
-		if((q.array() == 0).any()) {
+		if(q.minCoeff() < 1.0 / data.cols()) { /* eventually no columns corresponding to this component */
 			cerr << "Potential unused (zero-coefficient) mixture component detected. Please use a smaller q for training" << endl;
 			return NAN;
 		}
@@ -122,6 +123,8 @@ double DirichletMixture::trainML(const MatrixXd& data, int maxIt, double eta,
 		for(MatrixXd::Index t = 0; t < M; ++t)
 			qNew += compPostP(data.col(t));
 		qNew /= static_cast<double> (M);
+//		fprintf(stderr, "c:%lg cNew:%lg deltaC:%lg\n", c, cNew, deltaC);
+
 		c = cNew;
 		q = qNew;
 
@@ -184,7 +187,7 @@ VectorXd DirichletMixture::compPostP(const VectorXd& data) const {
 
 ostream& DirichletMixture::print(ostream& out) const {
 	out << FILE_HEADER << endl;
-	out << "K: " << getK() << " L:" << L << endl;
+	out << "K: " << getK() << " L: " << L << endl;
 	out << "Mixture coefficients:" << endl;
 	out << q.transpose().format(FULL_FORMAT) << endl;
 	out << "alpha:" << endl;

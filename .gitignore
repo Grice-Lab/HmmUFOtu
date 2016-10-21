@@ -6,3 +6,7 @@
 **/.cproject
 **/.project
 **/.settings
+# binary files
+hmmufotu
+hmmufotu-train
+hmmufotu-train-dm

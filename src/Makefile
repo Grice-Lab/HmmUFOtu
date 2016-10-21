@@ -116,14 +116,16 @@ am_libHmmUFOtu_a_OBJECTS = HmmUFOtuConst.$(OBJEXT) \
 	CommandOptions.$(OBJEXT) DegenAlphabet.$(OBJEXT) \
 	StringUtils.$(OBJEXT) IUPACNucl.$(OBJEXT) IUPACAmino.$(OBJEXT) \
 	DNA.$(OBJEXT) SeqCommons.$(OBJEXT) PrimarySeq.$(OBJEXT) \
-	SeqIO.$(OBJEXT) BandedHMMP7Bg.$(OBJEXT) BandedHMMP7.$(OBJEXT) \
-	MSA.$(OBJEXT) CSFMIndex.$(OBJEXT)
+	DigitalSeq.$(OBJEXT) SeqIO.$(OBJEXT) BandedHMMP7Bg.$(OBJEXT) \
+	BandedHMMP7Prior.$(OBJEXT) BandedHMMP7.$(OBJEXT) MSA.$(OBJEXT) \
+	CSFMIndex.$(OBJEXT) PhyloTree.$(OBJEXT) DNASubModel.$(OBJEXT) \
+	GTR.$(OBJEXT)
 libHmmUFOtu_a_OBJECTS = $(am_libHmmUFOtu_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_hmmufotu_OBJECTS = HmmUFOtu.$(OBJEXT)
 hmmufotu_OBJECTS = $(am_hmmufotu_OBJECTS)
-hmmufotu_DEPENDENCIES = libHmmUFOtu.a $(srcdir)/math/libEGMath.a
+hmmufotu_DEPENDENCIES = libHmmUFOtu.a math/libEGMath.a
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
 am__v_lt_0 = --silent
@@ -133,15 +135,14 @@ hmmufotu_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(CXXFLAGS) $(hmmufotu_LDFLAGS) $(LDFLAGS) -o $@
 am_hmmufotu_train_OBJECTS = hmmufotu_train-hmmufotu-train.$(OBJEXT)
 hmmufotu_train_OBJECTS = $(am_hmmufotu_train_OBJECTS)
-hmmufotu_train_DEPENDENCIES = libHmmUFOtu.a $(srcdir)/math/libEGMath.a
+hmmufotu_train_DEPENDENCIES = libHmmUFOtu.a math/libEGMath.a
 hmmufotu_train_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(AM_CXXFLAGS) $(CXXFLAGS) $(hmmufotu_train_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_hmmufotu_train_dm_OBJECTS = hmmufotu-train-dm.$(OBJEXT)
 hmmufotu_train_dm_OBJECTS = $(am_hmmufotu_train_dm_OBJECTS)
-hmmufotu_train_dm_DEPENDENCIES = libHmmUFOtu.a \
-	$(srcdir)/math/libEGMath.a
+hmmufotu_train_dm_DEPENDENCIES = libHmmUFOtu.a math/libEGMath.a
 hmmufotu_train_dm_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(AM_CXXFLAGS) $(CXXFLAGS) $(hmmufotu_train_dm_LDFLAGS) \
@@ -385,7 +386,6 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 # Build a convenient library
 noinst_LIBRARIES = libHmmUFOtu.a
 libHmmUFOtu_a_SOURCES = \
-EGMath.a \
 HmmUFOtuConst.cpp \
 CommandOptions.cpp \
 DegenAlphabet.cpp \
@@ -395,26 +395,25 @@ IUPACAmino.cpp \
 DNA.cpp \
 SeqCommons.cpp \
 PrimarySeq.cpp \
+DigitalSeq.cpp \
 SeqIO.cpp \
 BandedHMMP7Bg.cpp \
+BandedHMMP7Prior.cpp \
 BandedHMMP7.cpp \
 MSA.cpp \
-CSFMIndex.cpp
+CSFMIndex.cpp \
+PhyloTree.cpp \
+DNASubModel.cpp \
+GTR.cpp
 
 hmmufotu_SOURCES = HmmUFOtu.cpp
-hmmufotu_LDADD = libHmmUFOtu.a \
-$(srcdir)/math/libEGMath.a
-
+hmmufotu_LDADD = libHmmUFOtu.a math/libEGMath.a
 hmmufotu_LDFLAGS = -static
 hmmufotu_train_dm_SOURCES = hmmufotu-train-dm.cpp
-hmmufotu_train_dm_LDADD = libHmmUFOtu.a \
-$(srcdir)/math/libEGMath.a
-
+hmmufotu_train_dm_LDADD = libHmmUFOtu.a math/libEGMath.a
 hmmufotu_train_dm_LDFLAGS = -static
 hmmufotu_train_SOURCES = hmmufotu-train.cpp
-hmmufotu_train_LDADD = libHmmUFOtu.a \
-$(srcdir)/math/libEGMath.a
-
+hmmufotu_train_LDADD = libHmmUFOtu.a math/libEGMath.a
 hmmufotu_train_CPPFLAGS = -DDATA=$(pkgdatadir)
 hmmufotu_train_LDFLAGS = -static
 all: all-recursive
@@ -528,15 +527,20 @@ distclean-compile:
 
 include ./$(DEPDIR)/BandedHMMP7.Po
 include ./$(DEPDIR)/BandedHMMP7Bg.Po
+include ./$(DEPDIR)/BandedHMMP7Prior.Po
 include ./$(DEPDIR)/CSFMIndex.Po
 include ./$(DEPDIR)/CommandOptions.Po
 include ./$(DEPDIR)/DNA.Po
+include ./$(DEPDIR)/DNASubModel.Po
 include ./$(DEPDIR)/DegenAlphabet.Po
+include ./$(DEPDIR)/DigitalSeq.Po
+include ./$(DEPDIR)/GTR.Po
 include ./$(DEPDIR)/HmmUFOtu.Po
 include ./$(DEPDIR)/HmmUFOtuConst.Po
 include ./$(DEPDIR)/IUPACAmino.Po
 include ./$(DEPDIR)/IUPACNucl.Po
 include ./$(DEPDIR)/MSA.Po
+include ./$(DEPDIR)/PhyloTree.Po
 include ./$(DEPDIR)/PrimarySeq.Po
 include ./$(DEPDIR)/SeqCommons.Po
 include ./$(DEPDIR)/SeqIO.Po

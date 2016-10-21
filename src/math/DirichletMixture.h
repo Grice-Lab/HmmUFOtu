@@ -20,7 +20,7 @@ class DirichletMixture: public DirichletModel {
 public:
 	/* constructors */
 	/* default constructor */
-	DirichletMixture() : L(MIN_COMPONENT) { }
+	DirichletMixture() : L(0) { }
 
 	/* construct a Dirichlet density with given categories and optionally estimated alpha */
 	DirichletMixture(int K, int L):
@@ -36,6 +36,26 @@ public:
 	virtual ~DirichletMixture() { }
 
 	/* member methods */
+	/**
+	 * Set K
+	 * @param K  # of categories
+	 * @override  base class virtual method
+	 */
+	virtual void setK(int K);
+
+	/**
+	 * Set L
+	 * @param L:  # of mixtures
+	 */
+	void setL(int L);
+
+	/**
+	 * Set dimentions
+	 * @param K:  # of categories
+	 * @param L:  # of mixtures
+	 */
+	void setDims(int K, int L);
+
 	/**
 	 * Calculate the mean posterior probability given this model an observed frequency
 	 * implement the base case abstract method
@@ -108,6 +128,47 @@ public:
 	static const double DEFAULT_WEIGHT = 0;
 	static const string FILE_HEADER;
 };
+
+inline void DirichletMixture::setK(int K) {
+	if(K < MIN_K)
+		throw std::invalid_argument("DirichletDensity K must be at least " + MIN_K);
+
+	DirichletModel::setK(K); // invoke base class method
+	alpha.resize(K, L);
+	w.resize(K, L);
+	q.resize(L);
+	alpha.setConstant(DEFAULT_ALPHA);
+	w.setConstant(DEFAULT_WEIGHT);
+	q.setConstant(1.0 / L);
+}
+
+inline void DirichletMixture::setL(int L) {
+	if(L < MIN_COMPONENT)
+		throw std::invalid_argument("DirichletMixture L must be at least " + MIN_COMPONENT);
+
+	alpha.resize(getK(), L);
+	w.resize(getK(), L);
+	q.resize(L);
+	alpha.setConstant(DEFAULT_ALPHA);
+	w.setConstant(DEFAULT_WEIGHT);
+	q.setConstant(1.0 / L);
+}
+
+inline void DirichletMixture::setDims(int K, int L) {
+	if(K < MIN_K)
+		throw std::invalid_argument("DirichletDensity K must be at least " + MIN_K);
+	if(L < MIN_COMPONENT)
+		throw std::invalid_argument("DirichletMixture L must be at least " + MIN_COMPONENT);
+
+	DirichletModel::setK(K); // invoke base class method
+	this->L = L;
+	alpha.resize(K, L);
+	w.resize(K, L);
+	q.resize(L);
+	alpha.setConstant(DEFAULT_ALPHA);
+	w.setConstant(DEFAULT_WEIGHT);
+	q.setConstant(1.0 / L);
+}
 
 } /* namespace Math */
 } /* namespace EGriceLab */

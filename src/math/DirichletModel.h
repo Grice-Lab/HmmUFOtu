@@ -82,15 +82,18 @@ public:
 
 public:
 	/* non-member friend functions */
-	friend ostream& operator<<(ostream& out, const DirichletModel& dm);
 	friend istream& operator>>(istream& in, DirichletModel& dm);
+	friend ostream& operator<<(ostream& out, const DirichletModel& dm);
 
 	/* getters and setters */
 	int getK() const {
 		return K;
 	}
 
-	void setK(int k) {
+	/**
+	 * Set K # of categories
+	 */
+	virtual void setK(int k) {
 		K = k;
 	}
 
@@ -108,7 +111,7 @@ public:
 	static const IOFormat FULL_FORMAT; /* default output format for eigen objects */
 };
 
-inline ostream& operator<<(ostream& out, DirichletModel& dm) {
+inline ostream& operator<<(ostream& out, const DirichletModel& dm) {
 	return dm.print(out);
 }
 

@@ -287,6 +287,11 @@ public:
 	void updateWeightedCounts();
 
 	/**
+	 * Scale every seq weight by a constant
+	 */
+	void sclaleWeight(double r);
+
+	/**
 	 * Save this MSA object to a binary file
 	 * @param f  the binary output
 	 * @return  true if everything is good after saved
@@ -478,6 +483,11 @@ inline VectorXd MSA::resFreq() const {
 inline VectorXd MSA::resWFreq() const {
 	VectorXd freq = resWCount.rowwise().sum();
 	return freq / freq.sum();
+}
+
+inline void MSA::sclaleWeight(double r) {
+	seqWeight *= r;
+	updateWeightedCounts();
 }
 
 inline MSA* MSA::loadMSAFile(const string& alphabet,

@@ -36,10 +36,10 @@ seqIO_test1_SOURCES = seqIO_test1.cpp
 seqIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 
 bHMM_IO_test1_SOURCES = bHMM_IO_test1.cpp
-bHMM_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+bHMM_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a $(top_srcdir)/src/math/libEGMath.a
 
 banded_align_known_seed_test1_SOURCES = banded_align_known_seed_test1.cpp
-banded_align_known_seed_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+banded_align_known_seed_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a $(top_srcdir)/src/math/libEGMath.a
 
 MSAIO_test1_SOURCES = MSAIO_test1.cpp
 MSAIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
@@ -67,18 +67,21 @@ FMIO_test2_LDFLAGS = -static
 
 banded_align_csfm_test1_SOURCES = banded_align_csfm_test1.cpp
 banded_align_csfm_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la
 banded_align_csfm_test1_LDFLAGS = -static
 
 banded_pair_csfm_test1_SOURCES = banded_pair_csfm_test1.cpp
 banded_pair_csfm_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la
 banded_pair_csfm_test1_LDFLAGS = -static
 
 dm_density_train1_SOURCES = dm_density_train1.cpp
 dm_density_train1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la

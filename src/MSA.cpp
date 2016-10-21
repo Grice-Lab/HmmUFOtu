@@ -135,7 +135,6 @@ MSA* MSA::loadFastaFile(const string& alphabet, const string& filename) {
 	msa->updateRawCounts();
 	msa->updateSeqWeight();
 	msa->updateWeightedCounts();
-	msa->updateSeqWeight();
 	msa->calculateCS();
 	return msa;
 }
