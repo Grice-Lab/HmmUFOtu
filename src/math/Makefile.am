@@ -8,4 +8,5 @@ lib_LIBRARIES = libEGMath.a
 libEGMath_a_SOURCES = Stats.cpp  LinearAlgebraBasic.cpp \
 DirichletModel.cpp \
 DirichletDensity.cpp \
-DirichletMixture.cpp
+DirichletMixture.cpp \
+RootFinder.cpp

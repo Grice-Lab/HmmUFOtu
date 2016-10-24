@@ -21,7 +21,8 @@ PT_IO_test1 \
 PT_IO_test2 \
 dna_model_test1 \
 dna_model_IO_test1 \
-dna_model_test2
+dna_model_test2 \
+RootFinder_test1
 
 dna_test1_SOURCES = dna_test1.cpp
 dna_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
@@ -125,3 +126,9 @@ dna_model_IO_test1_LDFLAGS = -static
 dna_model_test2_SOURCES = dna_model_test2.cpp
 dna_model_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 dna_model_test2_LDFLAGS = -static
+
+RootFinder_test1_SOURCES = RootFinder_test1.cpp
+RootFinder_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/math/libEGMath.a
+RootFinder_test1_LDFLAGS = -static
+
