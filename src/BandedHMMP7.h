@@ -19,6 +19,7 @@
 #include <iostream>
 #include "HmmUFOtuConst.h"
 #include "BandedHMMP7Bg.h"
+#include "BandedHMMP7Prior.h"
 #include "BandedHMMCommons.h"
 #include "StringUtils.h"
 #include "PrimarySeq.h"
@@ -36,7 +37,6 @@ using std::deque;
 using Eigen::Matrix3d;
 using Eigen::Matrix4Xd;
 using Eigen::Matrix4d;
-using Math::DirichletModel;
 
 /**
  * Banded plan7 HMM for 16S rRNA profile alignment
@@ -131,6 +131,8 @@ public:
 		 */
 		//MatrixXi TRACE;
 	};
+
+
 
 	/* static and enum members */
 	static const int kNM; // number of matching states
@@ -338,9 +340,7 @@ public:
 
 	/* static member methods */
 	static BandedHMMP7 build(const MSA* msa, double symfrac,
-			const DirichletModel& dmME, const DirichletModel& dmIE,
-			const DirichletModel& dmMT, const DirichletModel& dmIT, const DirichletModel& dmDT,
-			const string& name = "unnamed");
+			const BandedHMMP7Prior& pri, const string& name = "unnamed");
 
 private:
 	/* core fields */

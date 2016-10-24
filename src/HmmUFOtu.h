@@ -25,6 +25,7 @@
 
 #include "BandedHMMCommons.h"
 #include "BandedHMMP7Bg.h"
+#include "BandedHMMP7Prior.h"
 #include "BandedHMMP7.h"
 #include "CSFMIndex.h"
 

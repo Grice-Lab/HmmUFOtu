@@ -56,6 +56,11 @@ inline istream& operator>>(istream& in, BandedHMMP7Prior& pri) {
 		else
 			continue;
 	}
+	if(!(pri.dmME.getK() > 0 && pri.dmIE.getK() > 0
+			&& pri.dmMT.getK() > 0 && pri.dmIT.getK() > 0 && pri.dmDT.getK() > 0)) {
+		std::cerr << "Empty or partial BandedHMMP7Prior input" << endl;
+		in.setstate(std::ios_base::failbit);
+	}
 	return in;
 }
 

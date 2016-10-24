@@ -19,9 +19,10 @@ using namespace Eigen;
 using namespace EGriceLab;
 using namespace EGriceLab::Math;
 
-static const int DEFAULT_QM = 1;
+static const int DEFAULT_QM = 5;
 static const double DEFAULT_SYMFRAC = 0.5;
 static const int MAX_NUM_COMPO = 10;
+static const double DEFAULT_PRI_RATE = 0.05;
 static const int MAX_ITER = 0;
 static const int DEFAULT_NSEED = 1;
 
@@ -32,9 +33,10 @@ void printUsage(const string& progName) {
 	cerr << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
 		 << "Options:    MSA-FILE       : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
 		 << "            -o FILE        : write output to FILE instead of stdout" << endl
-		 << "            -qM INT        : number of Dirichlet Mixture model components for match state emissions [" << DEFAULT_QM << "]" << endl
+		 << "            -qM INT[>=2]   : number of Dirichlet Mixture model components for match state emissions [" << DEFAULT_QM << "]" << endl
 		 << "            -symfrac       : conservation threshold for an MSA site to be considered as a Match state [" << DEFAULT_SYMFRAC << "]" << endl
 		 << "            --max-it INT   : maximum iteration allowed in gradient descent training, 0 for no limit [" << MAX_ITER << "]" << endl
+		 << "            --pri-rate DBL : adjust the sequence weights so the prior information is roughly this ratio in training [" << DEFAULT_PRI_RATE << "]" << endl
 		 << "            -s|--seed INT  : random seed used in Dirichlet Mixture model training (-qM > 1) for debug purpose" << endl
 		 << "            -n number of different random initiation in Dirichlet Mixture model training [" << DEFAULT_NSEED << "]" << endl
 		 << "            -h|--help      : print this help and exit" << endl;
@@ -45,6 +47,7 @@ int main(int argc, char* argv[]) {
 	ofstream of;
 	int qM = DEFAULT_QM;
 	double symfrac = DEFAULT_SYMFRAC;
+	double priRate = DEFAULT_PRI_RATE;
 	int maxIter = MAX_ITER;
 	string infn;
 	string outfn;
@@ -85,8 +88,8 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-qM"))
 		qM = ::atoi(cmdOpts.getOpt("-qM").c_str());
-	if(!(qM > 0 && qM <= MAX_NUM_COMPO)) {
-		cerr << "-qM must between 1 and " << MAX_NUM_COMPO << endl;
+	if(!(qM > 1 && qM <= MAX_NUM_COMPO)) {
+		cerr << "-qM must between 2 and " << MAX_NUM_COMPO << endl;
 		return -1;
 	}
 
@@ -94,6 +97,13 @@ int main(int argc, char* argv[]) {
 		symfrac = ::atof(cmdOpts.getOpt("-symfrac").c_str());
 	if(!(symfrac >= 0 && symfrac <= 1)) {
 		cerr << "-symfrac must between 0 and 1" << endl;
+		return -1;
+	}
+
+	if(cmdOpts.hasOpt("--pri-rate"))
+		priRate = ::atof(cmdOpts.getOpt("--pri-rate").c_str());
+	if(!( priRate > 0 && priRate <= 1 )) {
+		cerr << "--rate must be in (0, 1]" << endl;
 		return -1;
 	}
 
@@ -123,7 +133,7 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	/* set seed */
+	/* set random seed */
 	srand(seed);
 	/* Load data */
 	MSA* msa;
@@ -133,29 +143,33 @@ int main(int argc, char* argv[]) {
 	}
 	else
 		msa = MSA::loadMSAFile("dna", infn, fmt); /* always read DNA MSA file */
+
 	cerr << "MSA loaded" << endl;
 	msa->prune(); /* prune MSA */
 	cerr << "MSA pruned" << endl;
+	msa->sclaleWeight(20.0 / msa->getNumSeq());
+	cerr << "MSA weight scaled" << endl;
 
-	const DegenAlphabet* abc = msa->getAbc();
-	const int K = abc->getSize();
+	if(msa->getAlphabet() != "dna") {
+		cerr << "Expecting MSA in 'DNA' alphabet but found " << msa->getAlphabet() << endl;
+		return -1;
+	}
+	const int K = msa->getAbc()->getSize();
 	assert (K == 4);
-	/* construct DM models */
-	DirichletModel* dmME = NULL;
-	if(qM == 1)
-		dmME = new DirichletDensity(K);
-	else
-		dmME = new DirichletMixture(K, qM); /* Match state emission, 4 categories, qM components */
-	DirichletModel* dmIE = new DirichletDensity(K); /* Insert state emission */
-	DirichletModel* dmMT = new DirichletDensity(3); /* Match state transition, 3 categories */
-	DirichletModel* dmIT = new DirichletDensity(2); /* Insert state transition, 3 categories */
-	DirichletModel* dmDT = new DirichletDensity(2); /* Delete state transition, 3 categories */
+	/* construct an HMM prior */
+	BandedHMMP7Prior pri;
+	/* set the # of parameters */
+	pri.dmME.setDims(K, qM);
+	pri.dmIE.setK(K);
+	pri.dmMT.setK(3); /* M->M, M->I, M-D */
+	pri.dmIT.setK(2); /* I->M, I->I */
+	pri.dmDT.setK(2); /* D->M, D->D */
 
-	cerr << "Dirichlet models initiated" << endl;
+	cerr << "Dirichlet model based HmmUFOtu prior initiated" << endl;
 
 	const unsigned L = msa->getCSLen();
 	const unsigned N = msa->getNumSeq();
-	/* Prepare training data */
+	/* Prepare the training data */
 	Matrix4Xd dataME(K, L);
 	Matrix4Xd dataIE(K, L);
 	Matrix3Xd dataMT = Matrix3Xd::Zero(3, L); /* M->M, M->I and M->D */
@@ -177,6 +191,9 @@ int main(int argc, char* argv[]) {
 	dataME.conservativeResize(K, cME);
 	dataIE.conservativeResize(K, cIE);
 	cerr << "Emission training data prepared" << endl;
+	cerr << dataME.leftCols(20) << endl;
+//	cerr << "cME:" << cME << endl;
+//	cerr << "cIE:" << cIE << endl;
 
 	for(int j = 0; j < L - 1; ++j) {
 		bool matchFlag = msa->symWFrac(j) >= symfrac;
@@ -238,61 +255,48 @@ int main(int argc, char* argv[]) {
 //	cerr << "cMT:" << cMT << endl;
 //	cerr << "cIT:" << cIT << endl;
 //	cerr << "cDT:" << cDT << endl;
-//	cerr << "dataMT:" << dataMT.rowwise().sum() << endl;
 	dataMT.conservativeResize(3, cMT);
 	dataIT.conservativeResize(2, cIT);
 	dataDT.conservativeResize(2, cDT);
+	cerr << "Transition training date prepared" << endl;
 
 	/* train DM models */
+
+	/* iteratively train ME */
 	double costME = inf;
 	int bestIdx = 0;
 
-	if(qM == 1) // DirichletDensity
-		costME = dmME->trainML(dataME, maxIter);
-	else { // DirichletMixture
-		/* make a copy of the original model */
-		DirichletMixture model(*(dynamic_cast<DirichletMixture*>(dmME) ));
-		for(int i = 1; i <= nSeed; ++i) {
-			cerr << "Trying random seed " << i << endl;
-			double cost = model.trainML(dataME, maxIter);
-			cerr << "cost: " << cost << endl;
-			if(cost < costME) { // a better model found
-				*(dynamic_cast<DirichletMixture*>(dmME)) = model; // copy back
-				bestIdx = i;
-				costME = cost;
-			}
+	/* make a copy of the original model */
+	DirichletMixture model(pri.dmME);
+	for(int i = 1; i <= nSeed; ++i) {
+		cerr << "Training Match Emission model on random seed " << i << endl;
+		double cost = model.trainML(dataME, maxIter);
+		cerr << "seed " << i << " trained, final cost: " << cost << endl;
+		if(cost < costME) { // a better model found
+			pri.dmME = model; // copy back
+			bestIdx = i;
+			costME = cost;
 		}
-		cerr << "Best model found at seed " << bestIdx << endl;
 	}
 	if(!isnan(costME))
-		cerr << "Match emission model trained" << endl;
+		cerr << "Best Match Emission found at seed " << bestIdx << endl;
 	else {
 		cerr << "Unable to train the match emission model" << endl;
 		return -1;
 	}
 
-	double costIE = dmIE->trainML(dataIE, maxIter);
-	cerr << "Insert emission model trained" << endl;
+	double costIE = pri.dmIE.trainML(dataIE, maxIter);
+	cerr << "Insert Emission model trained" << endl;
 
-	double costMT = dmMT->trainML(dataMT, maxIter);
-	cerr << "Match transition model trained" << endl;
+	double costMT = pri.dmMT.trainML(dataMT, maxIter);
+	cerr << "Match Transition model trained" << endl;
 
-	double costIT = dmIT->trainML(dataIT, maxIter);
-	cerr << "Insert transition model trained" << endl;
+	double costIT = pri.dmIT.trainML(dataIT, maxIter);
+	cerr << "Insert Transition model trained" << endl;
 
-	double costDT = dmDT->trainML(dataDT, maxIter);
-	cerr << "Delete transition model trained" << endl;
+	double costDT = pri.dmDT.trainML(dataDT, maxIter);
+	cerr << "Delete Transition model trained" << endl;
 
 	/* output */
-//	out << "Match emission:" << endl << *dmME << endl;
-//	out << "Insert emission:" << endl << *dmIE << endl;
-//	out << "Match transition:" << endl << *dmMT << endl;
-//	out << "Insert transition:" << endl << *dmIT << endl;
-//	out << "Delete transition:" << endl << *dmDT << endl;
-
-	out << "Match emission cost: " << costME << endl << *dmME << endl;
-	out << "Insert emission cost: " << costIE << endl << *dmIE << endl;
-	out << "Match transition: " << costMT << endl << *dmMT << endl;
-	out << "Insert transition: " << costIT << endl << *dmIT << endl;
-	out << "Delete transition: " << costDT << endl << *dmDT << endl;
+	out << pri << endl;
 }

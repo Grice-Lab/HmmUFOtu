@@ -289,9 +289,7 @@ ostream& operator<<(ostream& os, const deque<BandedHMMP7::p7_state> path) {
 }
 
 BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
-		const DirichletModel& dmME, const DirichletModel& dmIE,
-		const DirichletModel& dmMT, const DirichletModel& dmIT, const DirichletModel& dmDT,
-		const string& name) {
+		const BandedHMMP7Prior& pri, const string& name) {
 	if(msa->getMSALen() == 0)
 		throw invalid_argument("Empty MSA encountered");
 	if(!(symfrac > 0 && symfrac < 1))
@@ -383,17 +381,17 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 	for(int j = 0; j <= K; ++j) {
 //		cerr << "EM observed: " <<  hmm.E_M.col(j).transpose() << endl;
 		if(j > 0)
-			hmm.E_M.col(j) = dmME.meanPostP(hmm.E_M.col(j)); /* do not use Dirichelet prior for COMPO emission */
+			hmm.E_M.col(j) = pri.dmME.meanPostP(hmm.E_M.col(j)); /* do not use Dirichelet prior for COMPO emission */
 //		cerr << "EM postP: " <<  hmm.E_M.col(j).transpose() << endl;
 
-		hmm.E_I.col(j) = dmIE.meanPostP(hmm.E_I.col(j));
-		VectorXd mt = dmMT.meanPostP(hmm.Tmat[j].row(M));
-		VectorXd it = dmIT.meanPostP(hmm.Tmat[j].row(I).segment(M, 2));
+		hmm.E_I.col(j) = pri.dmIE.meanPostP(hmm.E_I.col(j));
+		VectorXd mt = pri.dmMT.meanPostP(hmm.Tmat[j].row(M));
+		VectorXd it = pri.dmIT.meanPostP(hmm.Tmat[j].row(I).segment(M, 2));
 		VectorXd dt(2); /* store observed dtFreq */
 		dt(0) = hmm.Tmat[j](D, M);
 		dt(1) = hmm.Tmat[j](D, D);
 //		cerr << "DT observed: " << dt << endl;
-		dt = dmDT.meanPostP(dt); /* override with postP */
+		dt = pri.dmDT.meanPostP(dt); /* override with postP */
 //		cerr << "DT postP: " <<  dt << endl;
 
 		hmm.Tmat[j].row(M) = mt;

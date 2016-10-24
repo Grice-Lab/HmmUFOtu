@@ -81,27 +81,11 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	/* Load in DMs used for the HMM training */
-	DirichletDensity dmME, dmIE, dmMT, dmIT, dmDT;
-	while(std::getline(dmin, line)) {
-		if(line == "Match emission:")
-			dmin >> dmME;
-		else if(line == "Insert emission:")
-			dmin >> dmIE;
-		else if(line == "Match transition:")
-			dmin >> dmMT;
-		else if(line == "Insert transition:")
-			dmin >> dmIT;
-		else if(line == "Delete transition:")
-			dmin >> dmDT;
-		else { } // do nothing
-	}
-	if(!in.good()) {
-		cerr << "Unable to read in DM file " << dmfn << " bad format" << endl;
-		return -1;
-	}
-	if(!(dmME.getK() > 0 && dmIE.getK() > 0 && dmMT.getK() > 0 && dmIT.getK() > 0 && dmDT.getK() > 0)) {
-		cerr << "In-complete DM file found :'" << dmfn << "'" << endl;
+	/* Load in BandedHmmPrior for the HMM training */
+	BandedHMMP7Prior hmmPrior;
+	dmin >> hmmPrior;
+	if(!dmin.good()) {
+		cerr << "Failed to read in the HMM Prior file " << endl;
 		return -1;
 	}
 
@@ -113,7 +97,7 @@ int main(int argc, char *argv[]) {
 	else
 		cerr << "MSA loaded, found " << msa->getNumSeq() << " X " << msa->getCSLen() << " alignments" << endl;
 
-	BandedHMMP7 hmm = BandedHMMP7::build(msa, symfrac, dmME, dmIE, dmMT, dmIT, dmDT);
+	BandedHMMP7 hmm = BandedHMMP7::build(msa, symfrac, hmmPrior);
 
 	cerr << "HMM trained" << endl;
 
