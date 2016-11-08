@@ -9,14 +9,18 @@
 #define SRC_MATH_LINEARALGEBRABASIC_H_
 
 #include <eigen3/Eigen/Dense>
-
 #include <iostream>
+#include <cassert>
+#include <cmath>
+
 namespace EGriceLab {
 
 namespace Math {
 
 using Eigen::VectorXd;
 using Eigen::MatrixBase;
+
+const double NAT2BIT = 1.0 / ::log(2);
 
 /**
  * Normalize a vector
@@ -76,6 +80,21 @@ inline double dDirichlet(const VectorXd& alpha, const VectorXd& x) {
 	std::cerr << "logNumer:" << logNumer << " logDenom:" << logDenom << std::endl;
 
 	return ::exp(logNumer - logDenom);
+}
+
+
+/**
+ * calculate relative entropy between a two distribution
+ * zero p probs are ignored
+ */
+inline double relative_entropy(const VectorXd& p, const VectorXd& q) {
+	assert(p.rows() == q.rows());
+	VectorXd::Index N = p.rows();
+	double ent = 0;
+	for(VectorXd::Index i = 0; i < N; ++i)
+		if(p(i) > 0)
+			ent += p(i) * ::log( static_cast<double> (p(i)) / static_cast<double> (q(i)) );
+	return NAT2BIT * ent; /* return entropy in bits */
 }
 
 } /* end namespace Math */

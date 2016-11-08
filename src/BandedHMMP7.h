@@ -12,6 +12,7 @@
 #include <map>
 #include <deque>
 #include <eigen3/Eigen/Dense>
+#include <limits>
 #include <cmath>
 #include <cstdio>
 #include <climits>
@@ -25,7 +26,7 @@
 #include "PrimarySeq.h"
 #include "DigitalSeq.h"
 #include "MSA.h"
-#include "DirichletModel.h"
+#include "RootFinder.h"
 
 namespace EGriceLab {
 using std::string;
@@ -37,6 +38,7 @@ using std::deque;
 using Eigen::Matrix3d;
 using Eigen::Matrix4Xd;
 using Eigen::Matrix4d;
+using Math::RootFinder;
 
 /**
  * Banded plan7 HMM for 16S rRNA profile alignment
@@ -133,16 +135,17 @@ public:
 	};
 
 
-
 	/* static and enum members */
-	static const int kNM; // number of matching states
-	static const int kNSP; // number of special states
-	static const int kNS; // number of total states
+	static const int kNM = 3; // number of matching states
+	static const int kNSP = 4; // number of special states
+	static const int kNS = kNM + kNSP; // number of total states
 	static const string HMM_TAG;
 	static const int kMaxProfile = UINT16_MAX + 1;
 	static const int kMaxCS = UINT16_MAX + 1;
-	static const double kMinGapFrac = 0.2; // minimum gap fraction comparing to the profile
-	static const double CONS_THRESHOLD = 0.9; // threshold for print upper-case consensus residues
+	static const double kMinGapFrac; // minimum gap fraction comparing to the profile
+	static const double CONS_THRESHOLD; // threshold for print upper-case consensus residues
+	static const double DEFAULT_ERE; // target mean average relative entropy of the model
+	static const Eigen::IOFormat tabFmt;
 
 	/* member functions */
 	/* Getters and Setters */
@@ -340,7 +343,25 @@ public:
 
 	/* static member methods */
 	static BandedHMMP7 build(const MSA* msa, double symfrac,
-			const BandedHMMP7Prior& pri, const string& name = "unnamed");
+			const BandedHMMP7Prior& prior, const string& name = "unnamed");
+
+	/**
+	 * Scale the current model's transition and emission matrix by a constant factor
+	 * current model is supposed to be a raw count-based model,
+	 * without previous calling of normalize() or estimateParameters()
+	 * The new model will also be an invalid model
+	 * The invalid model needed to be normalized or estimatedParameters
+	 * @param r  constants to scale
+	 */
+	void scale(double r);
+
+	/**
+	 * Normalize an invalid model without using a prior,
+	 * the model is usually raw counts or scaled by calling scale()
+	 */
+	void normalize();
+
+
 
 private:
 	/* core fields */
@@ -485,18 +506,17 @@ private:
 	void resetProbByCost();
 
 	/**
-	 * Scale the current model's transition and emission matrix by a constant factor
-	 * The new model will be an invalid model since the colSums of all transition/emisison matricies should be 1
-	 * The invalid model needed to be re-normalized
-	 * @param r  constants to scale
+	 * calculate the mean relative entropy of this model
+	 * only match state emission will be used
 	 */
-	void scale(double r);
+	double meanRelativeEntropy() const;
 
 	/**
-	 * Normalize an invalid model without using any priors,
-	 * the model is usually raw counts or scaled by calling scale()
+	 * Re-estimate the parameters using the given prior and current observed frequencies
+	 * (usually unnormalzied due to previous call of scale(double)
+	 * @param prior  HMM-prior used to estimate
 	 */
-	void normalize();
+	void estimateParams(const BandedHMMP7Prior& prior);
 
 	/**
 	 * Normalize an invalid model using a Dirichlet model
@@ -649,6 +669,9 @@ private:
 	/* convert an hmm coded string to value */
 	static double hmmValueOf(const string& s);
 
+	/* print hmm cost values to ostream */
+	static ostream& hmmPrintValue(ostream& out, double val);
+
 	static bool yesOrNo2bool(const string& value) {
 		return StringUtils::toLower(value) == "yes";
 	}
@@ -672,6 +695,9 @@ private:
 	 * Write a BandedHMMP7 profile into a file in hmm format
 	 */
 	friend ostream& operator<<(ostream& os, const BandedHMMP7& hmm);
+
+	friend class RelativeEntropyTargetFunc;
+
 }; /* BandedHMMP7 */
 
 inline std::string BandedHMMP7::getOptTag(const string& tag) const {
@@ -746,6 +772,37 @@ inline BandedHMMP7::p7_state BandedHMMP7::encode(char c) {
 inline double BandedHMMP7::hmmValueOf(const string& s) {
 	return s != "*" ? ::atof(s.c_str()) : inf;
 }
+
+inline ostream& hmmPrintValue(ostream& out, double val) {
+	return val != EGriceLab::inf ? out << val : out << "*";
+}
+
+/**
+ * A relative entropy target functor to calculate relative entropy difference
+ * between the current status and a given target average information content (in bits)
+ */
+struct RelativeEntropyTargetFunc : RootFinder::R2RFunc {
+	/**
+	 * construct a calculator from copies of hmm and prior
+	 */
+	RelativeEntropyTargetFunc(double ere, const BandedHMMP7& hmm, const BandedHMMP7Prior& prior) :
+		ere(ere), hmm(hmm), prior(prior) { }
+
+	/**
+	 * virtual destructor, do nothing
+	 */
+	virtual ~RelativeEntropyTargetFunc() { }
+
+	/**
+	 * calculate the relative entropy by scaling the hmm to effN = x
+	 * @override  base class abstract method
+	 */
+	virtual double operator()(double x);
+
+	double ere;
+	BandedHMMP7 hmm;
+	BandedHMMP7Prior prior;
+};
 
 } /* namespace EGriceLab */
 

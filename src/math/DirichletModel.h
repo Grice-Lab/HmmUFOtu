@@ -102,13 +102,15 @@ private:
 
 	/* static members */
 public:
-	static const double DEFAULT_ETA = 0.001; // default step width relative to the gradient used in ML parameter training
+	static const double DEFAULT_ETA; // default step width relative to the gradient used in ML parameter training
 	static const int MIN_K = 2; // minimum number of categories
 //	static const double DEFAULT_EPSILON = FLT_EPSILON;
-	static const double DEFAULT_REL_EPS_COST = 1e-6;
-	static const double DEFAULT_REL_EPS_PARAMS = 1e-6;
-	static const int MAX_ITERATION = 0;
-	static const IOFormat FULL_FORMAT; /* default output format for eigen objects */
+	static const double DEFAULT_ABS_EPS_COST; // absolute epsilon of the cost
+	static const double DEFAULT_ABS_EPS_PARAMS; // absolute epsilon of the parameters
+	static const double DEFAULT_REL_EPS_COST; // relative epsilon of the cost
+	static const double DEFAULT_REL_EPS_PARAMS; // relative epsilon of the parameters
+	static const int MAX_ITERATION = 0; // maximum iteration
+	static const IOFormat FULL_FORMAT; /* default tab-delimited output format for eigen objects */
 };
 
 inline ostream& operator<<(ostream& out, const DirichletModel& dm) {

@@ -22,6 +22,7 @@ using boost::math::digamma;
 /* static variable definition */
 const string DirichletMixture::FILE_HEADER = "Dirichlet Mixture Model";
 
+
 /* private comparator functions */
 struct MyFreqComparator {
 	MyFreqComparator(const MatrixXd& data) : data(data) { }
@@ -40,7 +41,7 @@ struct MyFreqComparator {
 };
 
 VectorXd DirichletMixture::meanPostP(const VectorXd& data) const {
-	assert(data.size() == alpha.rows());
+	assert(data.rows() == alpha.rows());
 	int K = alpha.rows();
 	/* calculate the beta function part */
 	VectorXd logB(L);
@@ -91,7 +92,7 @@ double DirichletMixture::trainML(const MatrixXd& data, int maxIt, double eta,
 	assert(data.rows() == alpha.rows());
 	/* initiate the parameters using moment-matching */
 	momentInit(data);
-	cerr << "Moment matched alpha:" << endl << alpha << endl;
+//	cerr << "Moment matched alpha:" << endl << alpha << endl;
 
 	MatrixXd::Index M = data.cols();
 	/* EM algorithm to update both the Dirichlet parameters and mixture coefficients */
@@ -260,6 +261,7 @@ istream& DirichletMixture::read(istream& in) {
 	std::getline(in, line); /* ignore mixture coefficients line */
 	for(VectorXd::Index j = 0; j < L; ++j) /* read q */
 		in >> q(j);
+	std::getline(in, line); /* ignore rest of coef line */
 	std::getline(in, line); /* ignore alpha line */
 	for(MatrixXd::Index i = 0; i < K; ++i)
 		for(MatrixXd::Index j = 0; j < L; ++j)

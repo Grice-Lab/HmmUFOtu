@@ -6,7 +6,6 @@
  */
 
 #include <cstdlib>
-#include <cmath>
 #include <cfloat>
 #include <iostream>
 #include "RootFinder.h"
@@ -24,6 +23,11 @@ double RootFinder::rootBisection() {
 	double x, xmag, fx;
 	int iter;
 
+	double fxl = f(xl);
+	double fxr = f(xr);
+	if(fxl * fxr >= 0)
+		return NAN;
+
 	for(iter = 0; maxIter == 0 || iter < maxIter; ++iter) {
 		/* Bisect and evaluate the function */
 		x = (xl + xr) / 2;
@@ -32,8 +36,7 @@ double RootFinder::rootBisection() {
 			break;
 
 		/* test for convergence */
-		double fxl = f(xl);
-		double fxr = f(xr);
+
 		xmag = (xl < 0 && xr > 0) ? 0 : x;
 
 		if(xr - xl < absEps + relEps * xmag || ::fabs(fx) < resEps) /* an approximate root */
@@ -60,6 +63,9 @@ double RootFinder::rootBisection() {
 				fxr = fx;
 			}
 		}
+		/* update values */
+		fxl = f(xl);
+		fxr = f(xr);
 	}
 
 	if(maxIter > 0 && iter >= maxIter) {

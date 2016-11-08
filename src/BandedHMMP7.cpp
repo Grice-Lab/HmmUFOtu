@@ -23,12 +23,14 @@ namespace EGriceLab {
 using namespace std;
 using namespace Eigen;
 
-const int BandedHMMP7::kNM = 3; // number of matching states
-const int BandedHMMP7::kNSP = 4; // number of special states
-const int BandedHMMP7::kNS =  kNM + kNSP; // number of total states
 /*const int BandedHMMP7::kMinProfile = 10000; // up-to 10K 16S rRNA profile*/
 string HMM_TAG =
 		"HMM\t\tA\tC\tG\tT\n\t\tm->m\tm->i\tm->d\ti->m\ti->i\td->m\td->d";
+
+const double BandedHMMP7::kMinGapFrac = 0.2;
+const double BandedHMMP7::CONS_THRESHOLD = 0.9;
+const double BandedHMMP7::DEFAULT_ERE = 1;
+const IOFormat tabFmt(StreamPrecision, DontAlignCols, "\t", "\n", "", "", "", "");
 
 BandedHMMP7::BandedHMMP7() :
 		hmmVersion(progName + "-" + progVersion), name("unnamed"), K(0), abc(NULL),
@@ -232,6 +234,50 @@ void BandedHMMP7::normalize() {
 	resetCostByProb();
 }
 
+void BandedHMMP7::estimateParams(const BandedHMMP7Prior& prior) {
+	assert(abc->getSize() == prior.dmME.getK());
+
+	/* normalize the COMPO Match emission, which is the B state emission */
+//	E_M.col(0) /= E_M.col(0).sum();
+
+	/* re-estimate parameters using the prior info */
+	for(int k = 0; k <= K; ++k) {
+		/* update transition parameters */
+		/* TM */
+		Tmat[k].row(M) = prior.dmMT.meanPostP(Tmat[k].row(M));
+		/* TI */
+		Tmat[k].row(I).segment(M, 2) = prior.dmIT.meanPostP(Tmat[k].row(I).segment(M, 2)); /* only use first two elements of the TI row */
+		/* TD */
+		VectorXd dt(2);
+		dt(0) = Tmat[k](D, M);
+		dt(1) = Tmat[k](D, D);
+		dt = prior.dmDT.meanPostP(dt); /* replace observed frequency with meanPostP */
+		Tmat[k](D, M) = dt(0);
+		Tmat[k](D, D) = dt(1);
+
+		/* update emission parameters */
+		E_M.col(k) = prior.dmME.meanPostP(E_M.col(k));
+		E_I.col(k) = prior.dmIE.meanPostP(E_I.col(k));
+	}
+
+	/* enforce the T[0] and T[K] specials */
+	Tmat[0](D, M) = 1;
+	Tmat[0](D, D) = 0;
+	Tmat[K](M, D) = 0;
+	Tmat[K](D, M) = 1;
+	Tmat[K](D, D) = 0;
+
+	/* reset costs */
+	resetCostByProb();
+}
+
+double BandedHMMP7::meanRelativeEntropy() const {
+	double ent = 0;
+	for(int k = 1; k <= K; ++k)
+		ent += Math::relative_entropy(E_M.col(k), hmmBg.getBgEmitPr());
+	return ent / K;
+}
+
 ostream& operator<<(ostream& os, const BandedHMMP7& hmm) {
 	/* write mandatory tags */
 	os << "HMMER3/f\t" << hmm.hmmVersion << endl;
@@ -248,9 +294,9 @@ ostream& operator<<(ostream& os, const BandedHMMP7& hmm) {
 	for(int k = 0; k <= hmm.K; ++k) {
 		/* write M or background emission line */
 		if(k == 0)
-			os << "\tCOMPO\t" << hmm.E_M_cost.col(0).transpose()  << endl;
+			os << "\tCOMPO\t" << hmm.E_M_cost.col(0).transpose().format(tabFmt) << endl;
 		else {
-			os << "\t" << k << "\t" << hmm.E_M_cost.col(k).transpose();
+			os << "\t" << k << "\t" << hmm.E_M_cost.col(k).transpose().format(tabFmt);
 			/* write other optional tags, if present */
 			if(!hmm.getOptTag("MAP").empty())
 				os << "\t" << hmm.getLocOptTag("MAP", k);
@@ -265,17 +311,23 @@ ostream& operator<<(ostream& os, const BandedHMMP7& hmm) {
 			os << endl;
 		}
 		/* write insert emission line */
-		for(MatrixXd::Index i = 0; i != hmm.E_I_cost.rows(); ++i)
-			hmm.E_I_cost(i, k) != inf ? os << "\t\t" << hmm.E_I_cost(i, k) : os << "\t\t*";
+		double val;
+		os << "\t";
+		for(MatrixXd::Index i = 0; i != hmm.E_I_cost.rows(); ++i) {
+			val = hmm.E_I_cost(i, k);
+			hmmPrintValue(os << "\t", val);
+		}
 		os << endl;
+
 		/* write state transition line */
-		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) : os << "\t\t*";
-		hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) != inf ? os << "\t\t" << hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) : os << "\t\t*";
+		val = hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M); hmmPrintValue(os << "\t\t", val);
+		val = hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I); hmmPrintValue(os << "\t", val);
+		val = hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D); hmmPrintValue(os << "\t", val);
+		val = hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M); hmmPrintValue(os << "\t", val);
+		val = hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I); hmmPrintValue(os << "\t", val);
+		val = hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M); hmmPrintValue(os << "\t", val);
+		val = hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D); hmmPrintValue(os << "\t", val);
+
 		os << endl;
 	}
 	os << "//" << endl;
@@ -289,7 +341,7 @@ ostream& operator<<(ostream& os, const deque<BandedHMMP7::p7_state> path) {
 }
 
 BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
-		const BandedHMMP7Prior& pri, const string& name) {
+		const BandedHMMP7Prior& prior, const string& name) {
 	if(msa->getMSALen() == 0)
 		throw invalid_argument("Empty MSA encountered");
 	if(!(symfrac > 0 && symfrac < 1))
@@ -315,6 +367,7 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 	const int csEnd = profile2CSIdx[K];
 
 	BandedHMMP7 hmm(msa->getName(), K, msa->getAbc()); /* construct an empty hmm */
+
 	/* reset transition and emisison matrices */
 	hmm.reset_transition_params();
 	hmm.reset_emission_params();
@@ -322,7 +375,7 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 	std::copy(cs2ProfileIdx, cs2ProfileIdx + kMaxProfile, hmm.cs2ProfileIdx);
 	std::copy(profile2CSIdx, profile2CSIdx + kMaxCS, hmm.profile2CSIdx);
 
-	/* train the hmm model, all index are 1-based */
+	/* train the hmm model using observed count, all index are 1-based */
 	for(unsigned j = 1; j <= L; ++j) {
 		unsigned k = cs2ProfileIdx[j];
 		for(unsigned i = 1; i <= N; ++i) {
@@ -376,52 +429,25 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 		p7_state smEnd = determineMatchingState(cs2ProfileIdx, end + 1, bEnd);
 		hmm.Tmat[K](smEnd, M) += w;
 	}
+	hmm.nSeq = msa->getNumSeq();
+	hmm.effN = hmm.nSeq;
 
-	/* get posterior emission and transition costs using Drichlet Models */
-	for(int j = 0; j <= K; ++j) {
-//		cerr << "EM observed: " <<  hmm.E_M.col(j).transpose() << endl;
-		if(j > 0)
-			hmm.E_M.col(j) = pri.dmME.meanPostP(hmm.E_M.col(j)); /* do not use Dirichelet prior for COMPO emission */
-//		cerr << "EM postP: " <<  hmm.E_M.col(j).transpose() << endl;
+	cerr << "Initial count based mean ere: " << hmm.meanRelativeEntropy() << endl;
 
-		hmm.E_I.col(j) = pri.dmIE.meanPostP(hmm.E_I.col(j));
-		VectorXd mt = pri.dmMT.meanPostP(hmm.Tmat[j].row(M));
-		VectorXd it = pri.dmIT.meanPostP(hmm.Tmat[j].row(I).segment(M, 2));
-		VectorXd dt(2); /* store observed dtFreq */
-		dt(0) = hmm.Tmat[j](D, M);
-		dt(1) = hmm.Tmat[j](D, D);
-//		cerr << "DT observed: " << dt << endl;
-		dt = pri.dmDT.meanPostP(dt); /* override with postP */
-//		cerr << "DT postP: " <<  dt << endl;
+	/* tune the effN to target mean relative entropy */
 
-		hmm.Tmat[j].row(M) = mt;
-		hmm.Tmat[j].row(I).segment(0, 2) = it;
-		hmm.Tmat[j](D, M) = dt(0);
-		hmm.Tmat[j](D, D) = dt(1);
-	}
-	/* get COMPO Match emission */
-	hmm.E_M.col(0) = EGriceLab::Math::normalize(hmm.E_M.col(0));
-	/* set special transition costs */
-	hmm.Tmat[0](D, M) = 1;
-	hmm.Tmat[0](D, D) = 0;
-	hmm.Tmat[K](M, D) = 0;
-	hmm.Tmat[K](D, M) = 1;
-	hmm.Tmat[K](D, D) = 0;
+	RelativeEntropyTargetFunc entFunc(DEFAULT_ERE, hmm, prior);
+	Math::RootFinder rf(entFunc, 0, hmm.nSeq);
+	hmm.effN = rf.rootBisection();
+	if(::isnan(hmm.effN))
+		hmm.effN = hmm.nSeq;
+	cerr << "Final HMM EFFN: " << hmm.effN << endl;
+	hmm.scale(hmm.effN / hmm.nSeq);
+	hmm.estimateParams(prior);
 
 	/* set bgFreq */
 	hmm.hmmBg.setBgFreq(hmm.E_M.col(0));
 	hmm.setSpEmissionFreq(hmm.E_M.col(0));
-	/* set log matrices */
-	hmm.E_M_cost = -(hmm.E_M.array().log());
-	hmm.E_I_cost = -(hmm.E_I.array().log());
-	for(int k = 0; k <= hmm.K; ++k)
-		hmm.Tmat_cost[k] = -(hmm.Tmat[k].array().log());
-	/* set special transition costs */
-	hmm.Tmat_cost[0](D, M) = 0;
-	hmm.Tmat_cost[0](D, D) = inf;
-	hmm.Tmat_cost[K](M, D) = inf;
-	hmm.Tmat_cost[K](D, M) = 0;
-	hmm.Tmat_cost[K](D, D) = inf;
 
 	/* set optional tags */
 	char value[128];
@@ -438,11 +464,9 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 
 	hmm.setOptTag("MAP", "yes");
 
-	hmm.nSeq = msa->getNumSeq();
 	sprintf(value, "%d", hmm.nSeq);
 	hmm.setOptTag("NSEQ", value);
 
-	hmm.effN = hmm.nSeq; /* use nSeq as effN as initiate */
 	sprintf(value, "%g", hmm.effN);
 	hmm.setOptTag("EFFN", value);
 
@@ -1121,6 +1145,21 @@ bool BandedHMMP7::isValidAlignPath(const ViterbiAlignPath& vpath) const {
 				(n == 0 || (vpath.start[n] > vpath.end[n - 1] && vpath.from[n] > vpath.to[n - 1]))) // path is properly ordered
 			return false;
 	return true;
+}
+
+double RelativeEntropyTargetFunc::operator()(double x) {
+	BandedHMMP7 hmm2(hmm); // use a copy so original hmm won't be affected
+
+	if(x > hmm2.effN) // do not scale up
+		return 0;
+
+	hmm2.effN = x;
+	hmm2.scale(hmm2.effN / hmm2.nSeq);
+	hmm2.estimateParams(prior);
+	double relEnt = hmm2.meanRelativeEntropy();
+//	cerr << "current effN: " << x << " ere: " << relEnt << endl;
+//	return hmm.meanRelativeEntropy() - ere;
+	return relEnt - ere;
 }
 
 } /* namespace EGriceLab */

@@ -84,8 +84,9 @@ int main(int argc, char *argv[]) {
 	/* Load in BandedHmmPrior for the HMM training */
 	BandedHMMP7Prior hmmPrior;
 	dmin >> hmmPrior;
-	if(!dmin.good()) {
+	if(dmin.bad()) {
 		cerr << "Failed to read in the HMM Prior file " << endl;
+		cerr << hmmPrior << endl;
 		return -1;
 	}
 

@@ -8,7 +8,9 @@
 #ifndef SRC_MATH_ROOTFINDER_H_
 #define SRC_MATH_ROOTFINDER_H_
 
-#include <stdexcept>
+#include <limits>
+#include <cmath>
+#include <cassert>
 
 namespace EGriceLab {
 namespace Math {
@@ -45,8 +47,7 @@ public:
 		f(f), xl(xl), xr(xr),
 		absEps(DEFAULT_ABS_EPS), relEps(DEFAULT_REL_EPS),
 		resEps(DEFAULT_RES_EPS), maxIter(MAX_ITER) {
-		if(setDomain(xl, xr) >= 0)
-			throw invalid_argument("xl, xr do not bracket a root");
+		assert(std::numeric_limits<double>::is_iec559);
 	}
 
 	/* disable copy and assignment constructor */
@@ -65,7 +66,11 @@ public:
 	double setDomain(double xl, double xr) {
 		this->xl = xl;
 		this->xr = xr;
-		return f(xl) * f(xr);
+		double fxl = f(xl);
+		double fxr = f(xr);
+		std::cerr << "fxl: " << fxl << " fxr: " << fxr << std::endl;
+//		return f(xl) * f(xr);
+		return fxl * fxr;
 	}
 
 	/**
@@ -101,12 +106,14 @@ public:
 	 * @param xl  lower search bound
 	 * @param xr  upper search bound
 	 * return root x so f(x) == 0
+	 * or nan if root cannot be found
 	 */
 	double rootBisection(double xl, double xr);
 
 	/**
 	 * find one-dimensional root of the functor f using current domain
 	 * return root x so f(x) == 0
+	 * or nan if root cannot be found
 	 */
 	double rootBisection();
 
@@ -132,8 +139,10 @@ private:
 
 
 inline double RootFinder::rootBisection(double xl, double xr) {
-	if(setDomain(xl, xr) >= 0)
-		throw invalid_argument("xl, xr do not bracket the root");
+	if(setDomain(xl, xr) >= 0) {
+		std::cerr << "xl, xr do not bracket the root" << std::endl;
+		return NAN;
+	}
 	return rootBisection();
 }
 

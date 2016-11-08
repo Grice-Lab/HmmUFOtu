@@ -22,7 +22,7 @@ using namespace EGriceLab::Math;
 static const int DEFAULT_QM = 5;
 static const double DEFAULT_SYMFRAC = 0.5;
 static const int MAX_NUM_COMPO = 10;
-static const double DEFAULT_PRI_RATE = 0.05;
+static const double DEFAULT_PRI_RATE = 0.1;
 static const int MAX_ITER = 0;
 static const int DEFAULT_NSEED = 1;
 
@@ -147,7 +147,8 @@ int main(int argc, char* argv[]) {
 	cerr << "MSA loaded" << endl;
 	msa->prune(); /* prune MSA */
 	cerr << "MSA pruned" << endl;
-	msa->sclaleWeight(20.0 / msa->getNumSeq());
+	double effN = 1 / priRate;
+	msa->sclaleWeight(effN / msa->getNumSeq());
 	cerr << "MSA weight scaled" << endl;
 
 	if(msa->getAlphabet() != "dna") {
@@ -190,8 +191,7 @@ int main(int argc, char* argv[]) {
 	}
 	dataME.conservativeResize(K, cME);
 	dataIE.conservativeResize(K, cIE);
-	cerr << "Emission training data prepared" << endl;
-	cerr << dataME.leftCols(20) << endl;
+//	cerr << "Emission training data prepared" << endl;
 //	cerr << "cME:" << cME << endl;
 //	cerr << "cIE:" << cIE << endl;
 
