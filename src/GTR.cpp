@@ -123,6 +123,8 @@ void GTR::setQfromParams() {
 }
 
 void GTR::evaluate(PhyloTree& tree, int j) const {
+	if(tree.isEvaluated(j)) // already evaluated
+		return;
 	/* calculate the cost of this node */
 	if(tree.isLeaf()) { /* this is a leaf node */
 		if(tree.seq[j] >= 0) { /* is not a gap */
@@ -132,20 +134,27 @@ void GTR::evaluate(PhyloTree& tree, int j) const {
 		else { /* a gap is treated as missing data */
 			tree.cost.col(j) = - pi.array().log();
 		}
+//		if((tree.cost.col(j).array() != inf).count() != 1 && !(tree.cost.col(j).array() != inf).all())
+//			cerr << "Strange Leaf " << tree.name << " cost j: " << tree.cost.col(j).transpose() << endl;
 //		cerr << "Leaf " << tree.name << " evaluated. cost: \n" << tree.cost.col(j) << endl;
 	}
 	else { /* this is an internal node, all bases are treated as missing data */
-//		if(!tree.isEvaluated())
-//			tree.cost.resize(4, tree.alnSites());
 		tree.cost.col(j).setZero(); /* initiate all cost to 0 */
 		for(vector<PT>::iterator o = tree.children.begin(); o != tree.children.end(); ++o) { /* check each child */
 			const Matrix4d& P = Pr(o->length);
+//			cerr << "P:" << P << endl;
 			evaluate(*o, j); /* evaluate this child recursively */
 			for(Matrix4Xd::Index i = 0; i < tree.cost.rows(); ++i)
-				tree.cost(i, j) += -::log(P.row(i).dot((-o->cost.col(j)).array().exp().matrix()));
+				tree.cost(i, j) += -::log(P.row(i).dot((-o->cost.col(j)).array().exp().matrix())) + o->scale(j);
 		}
+		/* rescale the node if neccessary */
+		double maxC = tree.cost.col(j).maxCoeff();
+		if(maxC >= PhyloTree::MIN_EXPONENT)
+			tree.reScale(maxC - PhyloTree::MIN_EXPONENT, j);
+//
 //		cerr << "Internal node evaluated " << tree.name << " evaluated. cost: \n" << tree.cost.col(j) << endl;
 	}
+
 }
 
 } /* namespace EGriceLab */

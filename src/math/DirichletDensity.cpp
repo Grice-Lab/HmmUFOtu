@@ -41,17 +41,19 @@ VectorXd DirichletDensity::weightGradient(const MatrixXd& data) const {
 	return grad;
 }
 
-double DirichletDensity::trainML(const MatrixXd& data, int maxIt,
-		double eta, double epsilonCost, double epsilonParams) {
+double DirichletDensity::trainML(const MatrixXd& data) {
 	/* initiate the parameters using moment-matctching */
 	momentInit(data);
 	double c = cost(data);
-	for(int it = 0; maxIt <= 0 || it < maxIt; ++it) { // infinite loop to be terminated within
+	for(int it = 0; maxIter <= 0 || it < maxIter; ++it) { // infinite loop to be terminated within
+		/* copy old parameters */
+		double cOld = c;
+		VectorXd alphaOld(alpha);
+
 		VectorXd wGrad = weightGradient(data);
 //		cerr << "wGrad:" << wGrad.transpose() << endl;
 		/* update weight and parameters */
 		w += eta * wGrad;
-		VectorXd alphaOld(alpha);
 		alpha = w.array().exp();
 		/* check the new parameters for over-fitting */
 		if((alpha.array() == 0).any()) {
@@ -59,15 +61,16 @@ double DirichletDensity::trainML(const MatrixXd& data, int maxIt,
 			return NAN;
 		}
 		/* calculate new cost */
-		double cNew = cost(data);
-		double deltaC = (c - cNew) / c;
-//		fprintf(stderr, "c:%lg cNew:%lg deltaC:%lg\n", c, cNew, deltaC);
-		c = cNew;
+		c = cost(data);
+		double deltaC = cOld - c;
+//		fprintf(stderr, "cOld:%lg c:%lg deltaC:%lg\n", cOld, c, deltaC);
+
 		/* termination check */
-		double alphaNorm = alphaOld.norm();
-		if(alpha.isApprox(alphaOld, epsilonParams * alphaNorm) && deltaC >= 0 && deltaC < epsilonCost)
+		if(alpha.isApprox(alphaOld, absEpsParams + relEpsParams * alphaOld.norm())
+				&& deltaC >= 0 && deltaC < absEpsCost + relEpsCost * cOld)
 			break;
 	}
+	setTrainingCost(c);
 	return c;
 }
 
@@ -90,6 +93,7 @@ double DirichletDensity::lpdf(const VectorXd& freq) const {
 
 ostream& DirichletDensity::print(ostream& out) const {
 	out << FILE_HEADER << endl;
+	out << "Training cost: " << getTrainingCost() << endl;
 	out << "K: " << getK() << endl;
 	out << "alpha: " << endl;
 	out << alpha.transpose().format(FULL_FORMAT) << endl;
@@ -129,14 +133,21 @@ void DirichletDensity::momentInit(MatrixXd data) {
 istream& DirichletDensity::read(istream& in) {
 	string line;
 	int K;
+	double c;
 	std::getline(in, line);
 	if(line != FILE_HEADER) {
 		in.setstate(ios_base::failbit);
 		return in;
 	}
+
+	std::getline(in, line);
+	sscanf(line.c_str(), "Training cost: %d", &c); /* read in training cost */
+
 	std::getline(in, line);
 	sscanf(line.c_str(), "K: %d", &K); /* Read K */
+
 	/* set fields */
+	setTrainingCost(c);
 	setK(K);
 	alpha.resize(K);
 	w.resize(K);

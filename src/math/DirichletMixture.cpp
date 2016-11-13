@@ -87,8 +87,7 @@ MatrixXd DirichletMixture::weightGradient(const MatrixXd& data) const {
 	return grad;
 }
 
-double DirichletMixture::trainML(const MatrixXd& data, int maxIt, double eta,
-		double epsilonCost, double epsilonParams) {
+double DirichletMixture::trainML(const MatrixXd& data) {
 	assert(data.rows() == alpha.rows());
 	/* initiate the parameters using moment-matching */
 	momentInit(data);
@@ -97,12 +96,18 @@ double DirichletMixture::trainML(const MatrixXd& data, int maxIt, double eta,
 	MatrixXd::Index M = data.cols();
 	/* EM algorithm to update both the Dirichlet parameters and mixture coefficients */
 	double c = cost(data);
-	for(int it = 0; maxIt <= 0 || it < maxIt; ++it) { // infinite loop to be terminated within
+//	fprintf(stderr, "absEpsParams:%lg relEpsParams:%lg absEpsCost:%lg relEpsCost:%lg\n",
+//			absEpsParams, relEpsParams, absEpsCost, relEpsCost);
+
+	for(int it = 0; maxIter <= 0 || it < maxIter; ++it) { // infinite loop to be terminated within
+		/* keep old parameters */
+		double cOld = c;
+		MatrixXd alphaOld(alpha);
+
 		/* M step, maximize the parameters using gradient descent */
 		MatrixXd wGrad = weightGradient(data);
 		/* update weight and parameters */
 		w += eta * wGrad;
-		MatrixXd alphaOld(alpha);
 		alpha = w.array().exp();
 
 		/* check the new parameters for over-fitting */
@@ -115,25 +120,25 @@ double DirichletMixture::trainML(const MatrixXd& data, int maxIt, double eta,
 			return NAN;
 		}
 		/* calculate new cost */
-		double cNew = cost(data);
-		double deltaC = (c - cNew) / c;
-//		fprintf(stderr, "c:%lg cNew:%lg deltaC:%lg\n", c, cNew, deltaC);
+		c = cost(data);
+		double deltaC = cOld - c;
+//		fprintf(stderr, "cOld:%lg c:%lg deltaC:%lg\n", cOld, c, deltaC);
 
 		/* E step, update the mixture coefficients using iteration */
 		VectorXd qNew = VectorXd::Zero(L);
 		for(MatrixXd::Index t = 0; t < M; ++t)
 			qNew += compPostP(data.col(t));
 		qNew /= static_cast<double> (M);
-//		fprintf(stderr, "c:%lg cNew:%lg deltaC:%lg\n", c, cNew, deltaC);
+		q = qNew; /* update q */
 
-		c = cNew;
-		q = qNew;
+//		fprintf(stderr, "cOld:%lg c:%lg deltaC:%lg alphaNorm:%lg\n", cOld, c, deltaC, alphaOld.norm());
 
-		double alphaNorm = alphaOld.norm();
 		/* termination check */
-		if(alpha.isApprox(alphaOld, epsilonParams * alphaNorm) && deltaC >= 0 && deltaC < epsilonCost)
+		if(alpha.isApprox(alphaOld, absEpsParams + relEpsParams * alphaOld.norm())
+				&& deltaC >= 0 && deltaC < absEpsCost + relEpsCost * cOld)
 			break;
 	}
+	setTrainingCost(c);
 	return c;
 }
 
@@ -188,6 +193,7 @@ VectorXd DirichletMixture::compPostP(const VectorXd& data) const {
 
 ostream& DirichletMixture::print(ostream& out) const {
 	out << FILE_HEADER << endl;
+	out << "Training cost: " << getTrainingCost() << endl;
 	out << "K: " << getK() << " L: " << L << endl;
 	out << "Mixture coefficients:" << endl;
 	out << q.transpose().format(FULL_FORMAT) << endl;
@@ -245,15 +251,20 @@ void DirichletMixture::momentInit(MatrixXd data) {
 istream& DirichletMixture::read(istream& in) {
 	string line;
 	int K;
+	double c;
 	std::getline(in, line);
 	if(line != FILE_HEADER) {
 		in.setstate(ios_base::failbit);
 		return in;
 	}
 	std::getline(in, line);
+	sscanf(line.c_str(), "Training cost: ", &c); /* Read trainingCost */
+
+	std::getline(in, line);
 	sscanf(line.c_str(), "K: %d L: %d", &K, &L); /* Read K */
 	/* set fields */
 	setK(K);
+	setTrainingCost(c);
 	q.resize(L);
 	alpha.resize(K, L);
 	w.resize(K, L);

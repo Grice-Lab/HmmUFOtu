@@ -94,7 +94,7 @@ inline Matrix4d GTR::Pr(double t, double r) const {
 }
 
 inline double GTR::cost(const PhyloTree& tree, int j) const {
-	return ::log(pi.dot(tree.cost.col(j).array().exp().matrix())); /* Eigen guarantee exp(-inf) == 0 */
+	return -::log(pi.dot((-tree.cost.col(j)).array().exp().matrix())) + tree.scale(j); /* Eigen guarantee exp(-inf) == 0 */
 }
 
 } /* namespace EGriceLab */

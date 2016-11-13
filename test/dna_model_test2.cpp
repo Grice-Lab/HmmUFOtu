@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <ctime>
 #include "MSA.h"
 #include "PhyloTree.h"
 #include "DNASubModel.h"
@@ -67,11 +68,14 @@ int main(int argc, const char* argv[]) {
 	else
 		cerr << "DNA model read in successfully" << endl;
 
+	cerr << "Starting evaluating tree" << endl;
+	clock_t t1 = clock();
+
 	model->evaluate(tree);
-	cerr << "Tree evaluated" << endl;
+
+	clock_t t2 = clock();
+	cerr << "Tree evaluated, time used: " << (t2 - t1) / CLOCKS_PER_SEC << endl;
 
 	double c = model->cost(tree);
-	cerr << "Tree cost calculated" << endl;
-
-	out << "Tree cost: " << c << endl;
+	cerr << "Tree cost calculated, c:" << c << endl;
 }

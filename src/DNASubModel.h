@@ -169,10 +169,8 @@ inline void DNASubModel::trainParams(const PhyloTree& tree, string method) {
 }
 
 inline void DNASubModel::evaluate(PhyloTree& tree) const {
-	for(int j = 0; j < tree.alnSites(); ++j) {
-		std::cerr << "Evaluating site " << j << std::endl;
+	for(int j = 0; j < tree.alnSites(); ++j)
 		evaluate(tree, j);
-	}
 }
 
 inline double DNASubModel::cost(const PhyloTree& tree) const {

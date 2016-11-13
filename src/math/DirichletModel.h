@@ -8,6 +8,7 @@
 #ifndef SRC_MATH_DIRICHLETMODEL_H_
 #define SRC_MATH_DIRICHLETMODEL_H_
 
+#include <cmath>
 #include <cassert>
 #include <cfloat>
 #include <stdexcept>
@@ -26,10 +27,17 @@ using Eigen::IOFormat;
 class DirichletModel {
 public:
 	/* default constructor, do nothing */
-	DirichletModel(): K(0) { }
+	DirichletModel(): K(0), trainingCost(NAN),
+	eta(DEFAULT_ETA), maxIter(DEFAULT_MAX_ITER),
+	absEpsCost(DEFAULT_ABS_EPS_COST), absEpsParams(DEFAULT_ABS_EPS_PARAMS),
+	relEpsCost(DEFAULT_REL_EPS_COST), relEpsParams(DEFAULT_REL_EPS_PARAMS)
+	{ }
 
 	/* construct a Dirichlet model with given categories */
-	explicit DirichletModel(int K): K(K) {
+	explicit DirichletModel(int K): K(K), trainingCost(NAN),
+			eta(DEFAULT_ETA), maxIter(DEFAULT_MAX_ITER),
+			absEpsCost(DEFAULT_ABS_EPS_COST), absEpsParams(DEFAULT_ABS_EPS_PARAMS),
+			relEpsCost(DEFAULT_REL_EPS_COST), relEpsParams(DEFAULT_REL_EPS_PARAMS) {
 		assert(K >= MIN_K);
 	}
 
@@ -54,10 +62,7 @@ public:
 	 * with M columns each an observed frequency vector, and K rows
 	 * return NAN if anything went wrong
 	 */
-	virtual double trainML(const MatrixXd& data,
-			int maxIt = MAX_ITERATION, double eta = DEFAULT_ETA,
-			double epsilonCost = DEFAULT_REL_EPS_COST,
-			double epsilonParams = DEFAULT_REL_EPS_PARAMS) = 0;
+	virtual double trainML(const MatrixXd& data) = 0;
 
 	/**
 	 * Calculate the logPDF of observing a data using this model
@@ -97,8 +102,73 @@ public:
 		K = k;
 	}
 
+	double getAbsEpsCost() const {
+		return absEpsCost;
+	}
+
+	void setAbsEpsCost(double absEpsCost) {
+		this->absEpsCost = absEpsCost;
+	}
+
+	double getAbsEpsParams() const {
+		return absEpsParams;
+	}
+
+	void setAbsEpsParams(double absEpsParams) {
+		this->absEpsParams = absEpsParams;
+	}
+
+	double getEta() const {
+		return eta;
+	}
+
+	void setEta(double eta) {
+		this->eta = eta;
+	}
+
+	int getMaxIter() const {
+		return maxIter;
+	}
+
+	void setMaxIter(int maxIter) {
+		this->maxIter = maxIter;
+	}
+
+	double getRelEpsCost() const {
+		return relEpsCost;
+	}
+
+	void setRelEpsCost(double relEpsCost) {
+		this->relEpsCost = relEpsCost;
+	}
+
+	double getRelEpsParams() const {
+		return relEpsParams;
+	}
+
+	void setRelEpsParams(double relEpsParams) {
+		this->relEpsParams = relEpsParams;
+	}
+
+	double getTrainingCost() const {
+		return trainingCost;
+	}
+
+	void setTrainingCost(double trainingCost) {
+		this->trainingCost = trainingCost;
+	}
+
 private:
 	int K; // number of parameters
+	double trainingCost; // cost during training, for documentation purpose only
+
+protected:
+	double eta;
+	double absEpsCost;
+	double absEpsParams;
+	double relEpsCost;
+	double relEpsParams;
+	int maxIter;
 
 	/* static members */
 public:
@@ -109,8 +179,8 @@ public:
 	static const double DEFAULT_ABS_EPS_PARAMS; // absolute epsilon of the parameters
 	static const double DEFAULT_REL_EPS_COST; // relative epsilon of the cost
 	static const double DEFAULT_REL_EPS_PARAMS; // relative epsilon of the parameters
-	static const int MAX_ITERATION = 0; // maximum iteration
-	static const IOFormat FULL_FORMAT; /* default tab-delimited output format for eigen objects */
+	static const int DEFAULT_MAX_ITER = 0; // maximum iteration
+	static const IOFormat FULL_FORMAT; /* ful precision output format for eigen objects */
 };
 
 inline ostream& operator<<(ostream& out, const DirichletModel& dm) {

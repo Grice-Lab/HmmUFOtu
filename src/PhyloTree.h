@@ -41,6 +41,7 @@ using std::set;
 using std::istream;
 using std::ostream;
 using Eigen::Matrix4Xd;
+using Eigen::RowVectorXd;
 
 struct PhyloTree;
 
@@ -89,9 +90,53 @@ struct PhyloTree {
 		return true;
 	}
 
-	/** test whether the cost is evaluated */
+	/** test whether this tree node is evaluated */
 	bool isEvaluated() const {
 		return cost.cols() > 0 && (cost.array() != inf).any();
+	}
+
+	/** test whether this tree is evaluated at specific site */
+	bool isEvaluated(int j) const {
+		return cost.cols() > 0 && (cost.col(j).array() != inf).any();
+	}
+
+	/** reset the (evaluated) cost of this tree */
+	void resetCost() {
+		if(cost.cols() > 0)
+			cost.setConstant(inf);
+		if(scale.rows() > 0)
+			scale.setZero();
+	}
+
+	/**
+	 * Get the scaled cost of this node
+	 */
+	Matrix4Xd getCost() const {
+		return cost.rowwise() + scale;
+	}
+
+	/**
+	 * Re-scale the cost at position j of this node by subtracting a constant
+	 */
+	void reScale(double c, int j) {
+		cost.col(j).array() -= c;
+		scale(j) += c;
+	}
+
+	/**
+	 * Re-scale the cost of all position by subtracting a constant
+	 */
+	void reScale(double c) {
+		cost.array() -= c;
+		scale.array() += c;
+	}
+
+	/**
+	 * Re-scale the cost of all position by subtracting a given vector
+	 */
+	void reScale(const RowVectorXd& c) {
+		cost.rowwise() -= c;
+		scale += c;
 	}
 
 	/** Get the number of aligned sites of this tree */
@@ -162,7 +207,10 @@ struct PhyloTree {
 
 	DigitalSeq seq;
 	Matrix4Xd cost; /* cost (negative log likelihood) of observing this sequence given the model and the tree */
+	RowVectorXd scale; /* log-scale constant used during calculating and storing the cost to avoid numeric underfly */
 
+	/* static fields */
+	static double MIN_EXPONENT;
 };
 
 inline int PhyloTree::readTree(const string& treefn, const string& format, const MSA* msa) {

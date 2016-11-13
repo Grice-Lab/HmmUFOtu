@@ -66,10 +66,7 @@ public:
 	 * implment the base class method
 	 * @return  cost at trained parameters, or NAN if anything went wrong
 	 */
-	virtual double trainML(const MatrixXd& data,
-			int maxIt = MAX_ITERATION, double eta = DEFAULT_ETA,
-			double epsilonCost = DEFAULT_REL_EPS_COST,
-			double epsilonParams = DEFAULT_REL_EPS_PARAMS);
+	virtual double trainML(const MatrixXd& data);
 
 	/**
 	 * Calculate the log PDF of observing a data using this model

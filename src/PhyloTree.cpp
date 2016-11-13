@@ -11,10 +11,13 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <limits>
 #include "PhyloTree.h"
 
 namespace EGriceLab {
 using namespace std;
+
+double PhyloTree::MIN_EXPONENT = std::numeric_limits<float>::min_exponent;
 
 int PhyloTree::numNodes() const {
 	set<const PT*> visited;
@@ -165,7 +168,11 @@ int PhyloTree::readSeqFromMSA(const MSA* msa) {
 		if(visited.find(v) == visited.end()) { /* not visited before */
 			visited.insert(v);
 			/* process this node */
-			v->cost.resize(4, msa->getCSLen()); /* init the cost */
+			v->cost.resize(4, msa->getCSLen()); /* initiate the cost */
+			v->cost.setConstant(inf);
+			/* initiate the scale */
+			v->scale.resize(msa->getCSLen());
+			v->scale.setZero();
 			if(nameIdx.find(v->name) != nameIdx.end()) { // this node exists in MSA
 				v->seq = msa->dsAt(nameIdx[v->name]);
 				n++;

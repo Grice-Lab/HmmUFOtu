@@ -85,10 +85,7 @@ public:
 	 * with M columns each an observed frequency vector of length and K (K * M matrix)
 	 * @return  cost at trained parameters, or NAN if over-fitting or numeric problem occured
 	 */
-	virtual double trainML(const MatrixXd& data,
-			int maxIt = MAX_ITERATION, double eta = DEFAULT_ETA,
-			double epsilonCost = DEFAULT_REL_EPS_COST,
-			double epsilonParams = DEFAULT_REL_EPS_PARAMS);
+	virtual double trainML(const MatrixXd& data);
 
 	/**
 	 * Calculate the PDF of observing a data using this DM model

@@ -33,6 +33,16 @@ struct BandedHMMP7Prior {
 	DirichletDensity dmIT; /* density for insertion transitions */
 	DirichletDensity dmDT; /* density for deletion transitions */
 
+	/* member functions */
+	/* convenient setters to forward calls to underlying models */
+	void setDims(int K, int L);
+
+	void setMaxIter(int maxIter);
+	void setAbsEpsCost(double eps);
+	void setRelEpsCost(double eps);
+	void setAbsEpsParams(double eps);
+	void setRelEpsParams(double eps);
+
 	/* non-member functions */
 	/** read content from input */
 	friend istream& operator>>(istream& in, BandedHMMP7Prior& pri);
@@ -64,6 +74,54 @@ inline istream& operator>>(istream& in, BandedHMMP7Prior& pri) {
 	return in;
 }
 
+inline void BandedHMMP7Prior::setDims(int K, int L) {
+	/* set the # of parameters */
+	dmME.setDims(K, L);
+	dmIE.setK(K);
+	dmMT.setK(3); /* M->M, M->I, M-D */
+	dmIT.setK(2); /* I->M, I->I */
+	dmDT.setK(2); /* D->M, D->D */
+}
+
+inline void BandedHMMP7Prior::setMaxIter(int maxIter) {
+	dmME.setMaxIter(maxIter);
+	dmIE.setMaxIter(maxIter);
+	dmMT.setMaxIter(maxIter);
+	dmIT.setMaxIter(maxIter);
+	dmDT.setMaxIter(maxIter);
+}
+
+inline void BandedHMMP7Prior::setAbsEpsCost(double eps) {
+	dmME.setAbsEpsCost(eps);
+	dmIE.setAbsEpsCost(eps);
+	dmMT.setAbsEpsCost(eps);
+	dmIT.setAbsEpsCost(eps);
+	dmDT.setAbsEpsCost(eps);
+}
+
+inline void BandedHMMP7Prior::setRelEpsCost(double eps) {
+	dmME.setRelEpsCost(eps);
+	dmIE.setRelEpsCost(eps);
+	dmMT.setRelEpsCost(eps);
+	dmIT.setRelEpsCost(eps);
+	dmDT.setRelEpsCost(eps);
+}
+
+inline void BandedHMMP7Prior::setAbsEpsParams(double eps) {
+	dmME.setAbsEpsParams(eps);
+	dmIE.setAbsEpsParams(eps);
+	dmMT.setAbsEpsParams(eps);
+	dmIT.setAbsEpsParams(eps);
+	dmDT.setAbsEpsParams(eps);
+}
+
+inline void BandedHMMP7Prior::setRelEpsParams(double eps) {
+	dmME.setRelEpsParams(eps);
+	dmIE.setRelEpsParams(eps);
+	dmMT.setRelEpsParams(eps);
+	dmIT.setRelEpsParams(eps);
+	dmDT.setRelEpsParams(eps);
+}
 
 } /* namespace EGriceLab */
 
