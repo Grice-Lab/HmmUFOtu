@@ -50,14 +50,29 @@ typedef PhyloTree PT;
 //typedef boost::variant<boost::recursive_wrapper<PT> > pt_node;
 
 struct PhyloTree {
+	/** Nested types and enums */
+	enum TaxonRank { K, P, C, O, F, G, S };
+
+	struct CostIndex {
+		/* member fields */
+		int K; /* number of alphabet size + 1 */
+		int L; /* number of aligned sites */
+		int N; /* Number of total tree nodes */
+	};
+
 	/* constructors */
 	/* Default constructor */
-	PhyloTree() : length(0) {
+	PhyloTree() : length(0), id(-1), descDist(0) {
 		/* Assert IEE559 at construction time */
 		assert(std::numeric_limits<double>::is_iec559);
 	}
 
 	/* Member methods */
+
+	/** test whether this node is named */
+	bool isNamed() const {
+		return !name.empty();
+	}
 
 	/** test whether this SubTree is a leave root */
 	bool isLeafRoot() const {
@@ -201,8 +216,11 @@ struct PhyloTree {
 	friend ostream& operator<<(ostream& out, const PT& tree);
 
 	/* member fields */
-	string name;
+	long id; /* unique id for each node, in Depth-first search (DFS) order */
+	string name; /* node name */
 	double length; /* branch length of this node */
+	string anno; /* node annotation */
+	double descDist; /* Phylogenetic distance to the named ancestor node from which this node get its annotation */
 	vector<PT> children;
 
 	DigitalSeq seq;

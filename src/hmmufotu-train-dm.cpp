@@ -22,7 +22,7 @@ using namespace EGriceLab::Math;
 static const int DEFAULT_QM = 5;
 static const double DEFAULT_SYMFRAC = 0.5;
 static const int MAX_NUM_COMPO = 10;
-static const double DEFAULT_PRI_RATE = 0.1;
+static const double DEFAULT_PRI_RATE = 0.05;
 static const int MAX_ITER = 0;
 static const int DEFAULT_NSEED = 1;
 
@@ -160,11 +160,13 @@ int main(int argc, char* argv[]) {
 	/* construct an HMM prior */
 	BandedHMMP7Prior pri;
 	/* set the # of parameters */
-	pri.dmME.setDims(K, qM);
-	pri.dmIE.setK(K);
-	pri.dmMT.setK(3); /* M->M, M->I, M-D */
-	pri.dmIT.setK(2); /* I->M, I->I */
-	pri.dmDT.setK(2); /* D->M, D->D */
+	pri.setDims(K, qM);
+	pri.setMaxIter(maxIter);
+	pri.setAbsEpsCost(0);
+	pri.setRelEpsCost(1e-6);
+	pri.setAbsEpsParams(effN * 1e-4);
+//	pri.setAbsEpsParams(0);
+//	pri.setRelEpsParams(1e-6);
 
 	cerr << "Dirichlet model based HmmUFOtu prior initiated" << endl;
 
@@ -270,7 +272,7 @@ int main(int argc, char* argv[]) {
 	DirichletMixture model(pri.dmME);
 	for(int i = 1; i <= nSeed; ++i) {
 		cerr << "Training Match Emission model on random seed " << i << endl;
-		double cost = model.trainML(dataME, maxIter);
+		double cost = model.trainML(dataME);
 		cerr << "seed " << i << " trained, final cost: " << cost << endl;
 		if(cost < costME) { // a better model found
 			pri.dmME = model; // copy back
@@ -285,16 +287,16 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	double costIE = pri.dmIE.trainML(dataIE, maxIter);
+	double costIE = pri.dmIE.trainML(dataIE);
 	cerr << "Insert Emission model trained" << endl;
 
-	double costMT = pri.dmMT.trainML(dataMT, maxIter);
+	double costMT = pri.dmMT.trainML(dataMT);
 	cerr << "Match Transition model trained" << endl;
 
-	double costIT = pri.dmIT.trainML(dataIT, maxIter);
+	double costIT = pri.dmIT.trainML(dataIT);
 	cerr << "Insert Transition model trained" << endl;
 
-	double costDT = pri.dmDT.trainML(dataDT, maxIter);
+	double costDT = pri.dmDT.trainML(dataDT);
 	cerr << "Delete Transition model trained" << endl;
 
 	/* output */
