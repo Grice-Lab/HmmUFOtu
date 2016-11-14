@@ -62,7 +62,7 @@ struct PhyloTree {
 
 	/* constructors */
 	/* Default constructor */
-	PhyloTree() : length(0), id(-1), descDist(0) {
+	PhyloTree() : length(0), id(-1), annoDist(0), parent(NULL) {
 		/* Assert IEE559 at construction time */
 		assert(std::numeric_limits<double>::is_iec559);
 	}
@@ -212,6 +212,26 @@ struct PhyloTree {
 	 */
 	ostream& print(ostream& out) const;
 
+	/**
+	 * Set the unique ID and parent pointer for this sub-tree recursively using DFS algorithm,
+	 * @param initID  starting ID for the root node
+	 * @return  total nodes found in this sub-tree
+	 */
+	long setIDandParent();
+
+	/**
+	 * update the parent pointer for this sub-tree recursively using DFS algorithm
+	 * so nodes will not point to parents outside the current tree. Should be called whenever the tree is copied
+	 */
+	long updateParent();
+
+	/**
+	 * Annotate this sub-tree recursively using DFS algorithm,
+	 * where unnamed nodes will be annotated to their closest named ancestor node
+	 * and named node will have their annotation as their name
+	 */
+	void annotate();
+
 	/* friend operators */
 	friend ostream& operator<<(ostream& out, const PT& tree);
 
@@ -220,8 +240,9 @@ struct PhyloTree {
 	string name; /* node name */
 	double length; /* branch length of this node */
 	string anno; /* node annotation */
-	double descDist; /* Phylogenetic distance to the named ancestor node from which this node get its annotation */
+	double annoDist; /* Phylogenetic distance to the named ancestor node from which this node get its annotation */
 	vector<PT> children;
+	const PT* parent; /* convenient pointer to this PTNode's parent */
 
 	DigitalSeq seq;
 	Matrix4Xd cost; /* cost (negative log likelihood) of observing this sequence given the model and the tree */

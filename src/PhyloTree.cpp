@@ -189,5 +189,82 @@ int PhyloTree::readSeqFromMSA(const MSA* msa) {
 	return n;
 }
 
+long PhyloTree::setIDandParent() {
+	long currID = 0;
+	/* browse the tree in Depth-first order */
+	set<PT*> visited;
+	stack<PT*> S;
+
+	S.push(this);
+	while(!S.empty()) {
+		PT* v = S.top();
+		S.pop();
+		if(visited.find(v) == visited.end()) { /* not visited before */
+			visited.insert(v);
+			/* set the id */
+			v->id = currID++;
+			/* set the parent of its children */
+			for(vector<PT>::iterator it = v->children.begin(); it != v->children.end(); ++it) {
+				it->parent = v;
+				PT* p = &*it;
+				S.push(p);
+			}
+		}
+	}
+	return currID;
+}
+
+long PhyloTree::updateParent() {
+	/* browse the tree in Depth-first order */
+	set<PT*> visited;
+	stack<PT*> S;
+
+	S.push(this);
+	while(!S.empty()) {
+		PT* v = S.top();
+		S.pop();
+		if(visited.find(v) == visited.end()) { /* not visited before */
+			visited.insert(v);
+			/* set the parent of its children */
+			for(vector<PT>::iterator it = v->children.begin(); it != v->children.end(); ++it) {
+				it->parent = v;
+				PT* p = &*it;
+				S.push(p);
+			}
+		}
+	}
+}
+
+
+void PhyloTree::annotate() {
+	/* browse the tree in Depth-first order */
+	set<PT*> visited;
+	stack<PT*> S;
+
+	S.push(this);
+	while(!S.empty()) {
+		PT* v = S.top();
+		S.pop();
+		if(visited.find(v) == visited.end()) { /* not visited before */
+			visited.insert(v);
+			/* trace back ancestors to annotate this node */
+			for(const PT* p = v; p->parent != NULL; p = p->parent) {
+				if(p->isNamed()) {
+					v->anno = p->name;
+					break;
+				}
+				v->annoDist += p->length; /* add up length */
+			}
+			if(v->anno.empty()) /* if cannot find any named ancestor */
+				v->anno = "root";
+
+			for(vector<PT>::iterator it = v->children.begin(); it != v->children.end(); ++it) {
+				PT* p = &*it;
+				S.push(p);
+			}
+		}
+	}
+}
+
 } /* namespace EGriceLab */
 
