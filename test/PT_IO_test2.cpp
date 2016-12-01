@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <ctime>
 #include "MSA.h"
 #include "PhyloTree.h"
 using namespace std;

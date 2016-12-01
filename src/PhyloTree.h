@@ -51,13 +51,28 @@ typedef PhyloTree PT;
 
 struct PhyloTree {
 	/** Nested types and enums */
-	enum TaxonRank { K, P, C, O, F, G, S };
+//	enum TaxonRank { K, P, C, O, F, G, S };
 
-	struct CostIndex {
+	/*
+	 * Pre-calculated PhyloTree new node placement cost at given node's branch, considering all posible alphabet symbols
+	 */
+	struct NodePlacementCost {
+		/* constructors */
+		/** default constructor */
+		NodePlacementCost() : id(-1), annoDist(0), K(0), L(0)
+		{ 	}
+
+		/* member methods */
+		istream& load(istream& in);
+		ostream& save(ostream& out) const;
+
 		/* member fields */
+		long id;
+		string anno;
+		double annoDist;
 		int K; /* number of alphabet size + 1 */
 		int L; /* number of aligned sites */
-		int N; /* Number of total tree nodes */
+		MatrixXd treeCost; /* placement cost matrix with K x L elements indicating pre-calculated final cost of the entire tree */
 	};
 
 	/* constructors */

@@ -41,6 +41,13 @@ int main(int argc, const char* argv[]) {
 
 	clock_t t1 = clock();
 	EGriceLab::PT tree;
+	cerr << "PT size: " << sizeof(PT) << endl;
+	cerr << "Children vector size: " << sizeof(vector<PT>) << endl;
+	cerr << "name size :" << sizeof(string) << endl;
+	cerr << "DS size :" << sizeof(DigitalSeq) << endl;
+	cerr << "cost size: " << sizeof(Matrix4Xd) << endl;
+	cerr << "scale size: " << sizeof(RowVectorXd) << endl;
+
 	int nRead = tree.readTree(argv[1], "newick", msa);
 	if(nRead != -1)
 		cerr << "PhyloTree read with " << nRead << " assigned seq" << endl;
@@ -51,18 +58,19 @@ int main(int argc, const char* argv[]) {
 	clock_t t2 = clock();
 	cerr << "Time elapsed " << (t2 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 
-//	tree.setIDandParent();
-//	tree.annotate();
+	tree.setIDandParent();
+	tree.annotate();
 
 	clock_t t3 = clock();
 	cerr << "PhyloTree annotated" << endl;
 	cerr << "Time elapsed " << (t3 - t2) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 
-	PhyloTree tree2(tree);
-	tree2.updateParent();
-	clock_t t4 = clock();
-	cerr << "PhyloTree copied" << endl;
-	cerr << "Time elapsed " << (t4 - t3) / static_cast<float>(CLOCKS_PER_SEC) << endl;
+	sleep(10);
+//	PhyloTree tree2(tree);
+//	tree2.updateParent();
+//	clock_t t4 = clock();
+//	cerr << "PhyloTree copied" << endl;
+//	cerr << "Time elapsed " << (t4 - t3) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 
 	out << tree << endl;
 }
