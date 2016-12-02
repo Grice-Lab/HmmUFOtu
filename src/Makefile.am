@@ -25,6 +25,7 @@ BandedHMMP7.cpp \
 MSA.cpp \
 CSFMIndex.cpp \
 PhyloTree.cpp \
+PhyloTreeUnrooted.cpp \
 DNASubModel.cpp \
 GTR.cpp
 

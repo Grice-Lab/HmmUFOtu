@@ -20,6 +20,7 @@ DD_IO_test1 \
 PT_IO_test1 \
 PT_IO_test2 \
 PT_IO_test3 \
+PTU_IO_test1 \
 dna_model_test1 \
 dna_model_IO_test1 \
 dna_model_test2 \
