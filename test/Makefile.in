@@ -99,8 +99,9 @@ noinst_PROGRAMS = dna_test1$(EXEEXT) nucl_test1$(EXEEXT) \
 	banded_pair_csfm_test1$(EXEEXT) dm_density_train1$(EXEEXT) \
 	dm_mixture_train1$(EXEEXT) dm_mixture_train2$(EXEEXT) \
 	DD_IO_test1$(EXEEXT) PT_IO_test1$(EXEEXT) PT_IO_test2$(EXEEXT) \
+	PT_IO_test3$(EXEEXT) PTU_IO_test1$(EXEEXT) \
 	dna_model_test1$(EXEEXT) dna_model_IO_test1$(EXEEXT) \
-	dna_model_test2$(EXEEXT)
+	dna_model_test2$(EXEEXT) RootFinder_test1$(EXEEXT)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -153,6 +154,9 @@ MSAIO_test3_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 am_MSA_test1_OBJECTS = MSA_test1.$(OBJEXT)
 MSA_test1_OBJECTS = $(am_MSA_test1_OBJECTS)
 MSA_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_IO_test1_SOURCES = PTU_IO_test1.c
+PTU_IO_test1_OBJECTS = PTU_IO_test1.$(OBJEXT)
+PTU_IO_test1_LDADD = $(LDADD)
 am_PT_IO_test1_OBJECTS = PT_IO_test1.$(OBJEXT)
 PT_IO_test1_OBJECTS = $(am_PT_IO_test1_OBJECTS)
 PT_IO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
@@ -165,6 +169,20 @@ PT_IO_test2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 PT_IO_test2_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(PT_IO_test2_LDFLAGS) $(LDFLAGS) -o $@
+am_PT_IO_test3_OBJECTS = PT_IO_test3.$(OBJEXT)
+PT_IO_test3_OBJECTS = $(am_PT_IO_test3_OBJECTS)
+PT_IO_test3_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+PT_IO_test3_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(PT_IO_test3_LDFLAGS) $(LDFLAGS) -o $@
+am_RootFinder_test1_OBJECTS = RootFinder_test1.$(OBJEXT)
+RootFinder_test1_OBJECTS = $(am_RootFinder_test1_OBJECTS)
+RootFinder_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a \
+	$(top_srcdir)/src/math/libEGMath.a
+RootFinder_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(RootFinder_test1_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_amino_test1_OBJECTS = amino_test1.$(OBJEXT)
 amino_test1_OBJECTS = $(am_amino_test1_OBJECTS)
 amino_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
@@ -279,6 +297,24 @@ DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_@AM_V@)
+am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
+am__v_CC_0 = @echo "  CC      " $@;
+am__v_CC_1 = 
+CCLD = $(CC)
+LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_@AM_V@)
+am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
+am__v_CCLD_0 = @echo "  CCLD    " $@;
+am__v_CCLD_1 = 
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
@@ -300,8 +336,9 @@ am__v_CXXLD_1 =
 SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
 	$(FMIO_test2_SOURCES) $(MSAIO_test1_SOURCES) \
 	$(MSAIO_test2_SOURCES) $(MSAIO_test3_SOURCES) \
-	$(MSA_test1_SOURCES) $(PT_IO_test1_SOURCES) \
-	$(PT_IO_test2_SOURCES) $(amino_test1_SOURCES) \
+	$(MSA_test1_SOURCES) PTU_IO_test1.c $(PT_IO_test1_SOURCES) \
+	$(PT_IO_test2_SOURCES) $(PT_IO_test3_SOURCES) \
+	$(RootFinder_test1_SOURCES) $(amino_test1_SOURCES) \
 	$(bHMM_IO_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) \
 	$(banded_pair_csfm_test1_SOURCES) $(dm_density_train1_SOURCES) \
@@ -312,8 +349,9 @@ SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
 DIST_SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
 	$(FMIO_test2_SOURCES) $(MSAIO_test1_SOURCES) \
 	$(MSAIO_test2_SOURCES) $(MSAIO_test3_SOURCES) \
-	$(MSA_test1_SOURCES) $(PT_IO_test1_SOURCES) \
-	$(PT_IO_test2_SOURCES) $(amino_test1_SOURCES) \
+	$(MSA_test1_SOURCES) PTU_IO_test1.c $(PT_IO_test1_SOURCES) \
+	$(PT_IO_test2_SOURCES) $(PT_IO_test3_SOURCES) \
+	$(RootFinder_test1_SOURCES) $(amino_test1_SOURCES) \
 	$(bHMM_IO_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) \
 	$(banded_pair_csfm_test1_SOURCES) $(dm_density_train1_SOURCES) \
@@ -390,6 +428,7 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
@@ -461,6 +500,7 @@ psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target = @target@
 target_alias = @target_alias@
@@ -555,6 +595,9 @@ PT_IO_test1_LDFLAGS = -static
 PT_IO_test2_SOURCES = PT_IO_test2.cpp
 PT_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 PT_IO_test2_LDFLAGS = -static
+PT_IO_test3_SOURCES = PT_IO_test3.cpp
+PT_IO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PT_IO_test3_LDFLAGS = -static
 dna_model_test1_SOURCES = dna_model_test1.cpp
 dna_model_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 dna_model_test1_LDFLAGS = -static
@@ -564,10 +607,15 @@ dna_model_IO_test1_LDFLAGS = -static
 dna_model_test2_SOURCES = dna_model_test2.cpp
 dna_model_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 dna_model_test2_LDFLAGS = -static
+RootFinder_test1_SOURCES = RootFinder_test1.cpp
+RootFinder_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+$(top_srcdir)/src/math/libEGMath.a
+
+RootFinder_test1_LDFLAGS = -static
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .lo .o .obj
+.SUFFIXES: .c .cpp .lo .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -635,6 +683,10 @@ MSA_test1$(EXEEXT): $(MSA_test1_OBJECTS) $(MSA_test1_DEPENDENCIES) $(EXTRA_MSA_t
 	@rm -f MSA_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(MSA_test1_OBJECTS) $(MSA_test1_LDADD) $(LIBS)
 
+PTU_IO_test1$(EXEEXT): $(PTU_IO_test1_OBJECTS) $(PTU_IO_test1_DEPENDENCIES) $(EXTRA_PTU_IO_test1_DEPENDENCIES) 
+	@rm -f PTU_IO_test1$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(PTU_IO_test1_OBJECTS) $(PTU_IO_test1_LDADD) $(LIBS)
+
 PT_IO_test1$(EXEEXT): $(PT_IO_test1_OBJECTS) $(PT_IO_test1_DEPENDENCIES) $(EXTRA_PT_IO_test1_DEPENDENCIES) 
 	@rm -f PT_IO_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(PT_IO_test1_LINK) $(PT_IO_test1_OBJECTS) $(PT_IO_test1_LDADD) $(LIBS)
@@ -642,6 +694,14 @@ PT_IO_test1$(EXEEXT): $(PT_IO_test1_OBJECTS) $(PT_IO_test1_DEPENDENCIES) $(EXTRA
 PT_IO_test2$(EXEEXT): $(PT_IO_test2_OBJECTS) $(PT_IO_test2_DEPENDENCIES) $(EXTRA_PT_IO_test2_DEPENDENCIES) 
 	@rm -f PT_IO_test2$(EXEEXT)
 	$(AM_V_CXXLD)$(PT_IO_test2_LINK) $(PT_IO_test2_OBJECTS) $(PT_IO_test2_LDADD) $(LIBS)
+
+PT_IO_test3$(EXEEXT): $(PT_IO_test3_OBJECTS) $(PT_IO_test3_DEPENDENCIES) $(EXTRA_PT_IO_test3_DEPENDENCIES) 
+	@rm -f PT_IO_test3$(EXEEXT)
+	$(AM_V_CXXLD)$(PT_IO_test3_LINK) $(PT_IO_test3_OBJECTS) $(PT_IO_test3_LDADD) $(LIBS)
+
+RootFinder_test1$(EXEEXT): $(RootFinder_test1_OBJECTS) $(RootFinder_test1_DEPENDENCIES) $(EXTRA_RootFinder_test1_DEPENDENCIES) 
+	@rm -f RootFinder_test1$(EXEEXT)
+	$(AM_V_CXXLD)$(RootFinder_test1_LINK) $(RootFinder_test1_OBJECTS) $(RootFinder_test1_LDADD) $(LIBS)
 
 amino_test1$(EXEEXT): $(amino_test1_OBJECTS) $(amino_test1_DEPENDENCIES) $(EXTRA_amino_test1_DEPENDENCIES) 
 	@rm -f amino_test1$(EXEEXT)
@@ -712,8 +772,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSAIO_test2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSAIO_test3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSA_test1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTU_IO_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PT_IO_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PT_IO_test2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PT_IO_test3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RootFinder_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amino_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bHMM_IO_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/banded_align_csfm_test1.Po@am__quote@
@@ -728,6 +791,30 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dna_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nucl_test1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/seqIO_test1.Po@am__quote@
+
+.c.o:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ $<
+
+.c.obj:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.c.lo:
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

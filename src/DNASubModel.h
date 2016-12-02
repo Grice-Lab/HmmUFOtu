@@ -154,7 +154,7 @@ public:
 	friend ostream& operator<<(ostream& out, const DNASubModel& model);
 
 public:
-	static const double MAX_PDIST = 0.15; /* maximum p-dist between training sequences */
+	static const double MAX_PDIST; /* maximum p-dist between training sequences */
 	static const IOFormat FULL_FORMAT; /* default output format for eigen objects */
 	static const IOFormat STD_FORMAT; /* standard output format for eigen objects */
 };

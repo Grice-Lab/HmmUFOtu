@@ -20,6 +20,8 @@ using namespace Eigen;
 using boost::math::digamma;
 
 /* static variable definition */
+const double DirichletMixture::DEFAULT_ALPHA = 1;
+const double DirichletMixture::DEFAULT_WEIGHT = 0;
 const string DirichletMixture::FILE_HEADER = "Dirichlet Mixture Model";
 
 

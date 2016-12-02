@@ -121,8 +121,8 @@ private:
 
 public:
 	static const int MIN_COMPONENT = 2; /* minimum number of components */
-	static const double DEFAULT_ALPHA = 1;
-	static const double DEFAULT_WEIGHT = 0;
+	static const double DEFAULT_ALPHA;
+	static const double DEFAULT_WEIGHT;
 	static const string FILE_HEADER;
 };
 

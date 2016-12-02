@@ -405,7 +405,7 @@ private:
 
 	/* static members */
 public:
-	static const double DEFAULT_CONSENSUS_FRAC = 0.5;
+	static const double DEFAULT_CONSENSUS_FRAC;
 };
 
 inline unsigned long MSA::getMSALen() const {

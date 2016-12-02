@@ -15,6 +15,7 @@ namespace EGriceLab {
 using namespace std;
 using namespace Eigen;
 
+const double DNASubModel::MAX_PDIST = 0.15; /* maximum p-dist between training sequences */
 const IOFormat DNASubModel::FULL_FORMAT(Eigen::FullPrecision);
 const IOFormat DNASubModel::STD_FORMAT(Eigen::StreamPrecision);
 

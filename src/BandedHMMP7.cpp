@@ -5,7 +5,7 @@
  *      Author: zhengqi
  */
 
-#include <cmath>
+#include <math.h> /* using C99 */
 #include <cstdlib>
 #include <cassert>
 #include <limits>

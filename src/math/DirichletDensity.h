@@ -84,8 +84,8 @@ private:
 	VectorXd w; // weight parameters, alpha = exp(w)
 
 public:
-	static const double DEFAULT_ALPHA = 1;
-	static const double DEFAULT_WEIGHT = 0;
+	static const double DEFAULT_ALPHA;
+	static const double DEFAULT_WEIGHT;
 	static const string FILE_HEADER;
 };
 

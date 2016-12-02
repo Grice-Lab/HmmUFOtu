@@ -18,6 +18,8 @@ using namespace Eigen;
 using boost::math::digamma;
 
 /* static variable definition */
+const double DirichletDensity::DEFAULT_ALPHA = 1;
+const double DirichletDensity::DEFAULT_WEIGHT = 0;
 const string DirichletDensity::FILE_HEADER = "Dirichlet Density Model";
 
 VectorXd DirichletDensity::meanPostP(const VectorXd& freq) const {

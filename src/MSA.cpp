@@ -21,6 +21,9 @@ namespace EGriceLab {
 using namespace std;
 using namespace Math;
 
+/* static field definition */
+const double DEFAULT_CONSENSUS_FRAC = 0.5;
+
 char MSA::CSResidualAt(unsigned j) const {
 	if(!(j >= 0 && j < csLen)) // check range once
 		throw out_of_range("CS pos is out of range");

@@ -54,7 +54,7 @@ struct PhyloTree {
 //	enum TaxonRank { K, P, C, O, F, G, S };
 
 	/*
-	 * Pre-calculated PhyloTree new node placement cost at given node's branch, considering all posible alphabet symbols
+	 * Pre-calculated PhyloTree new node placement cost at given node's branch, considering all possible alphabet symbols
 	 */
 	struct NodePlacementCost {
 		/* constructors */
@@ -264,7 +264,7 @@ struct PhyloTree {
 	RowVectorXd scale; /* log-scale constant used during calculating and storing the cost to avoid numeric underfly */
 
 	/* static fields */
-	static double MIN_EXPONENT;
+	static const double MIN_EXPONENT;
 };
 
 inline int PhyloTree::readTree(const string& treefn, const string& format, const MSA* msa) {

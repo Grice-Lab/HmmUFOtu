@@ -17,7 +17,7 @@
 namespace EGriceLab {
 using namespace std;
 
-double PhyloTree::MIN_EXPONENT = std::numeric_limits<float>::min_exponent;
+const double PhyloTree::MIN_EXPONENT = std::numeric_limits<float>::min_exponent;
 
 int PhyloTree::numNodes() const {
 	set<const PT*> visited;
@@ -234,7 +234,6 @@ long PhyloTree::updateParent() {
 		}
 	}
 }
-
 
 void PhyloTree::annotate() {
 	/* browse the tree in Depth-first order */
