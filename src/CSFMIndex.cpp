@@ -184,20 +184,20 @@ CSFMIndex::~CSFMIndex() {
 	delete bwt;
 }
 
-CSFMIndex* CSFMIndex::build(const MSA* msa) {
-	if(!(msa->getCSLen() <= UINT16_MAX))
+CSFMIndex* CSFMIndex::build(const MSA& msa) {
+	if(!(msa.getCSLen() <= UINT16_MAX))
 		throw invalid_argument("CSFMIndex cannot handle MSA with consensus length longer than " + UINT16_MAX);
 	CSFMIndex* csFM = new CSFMIndex; // allocate an empty object
 	//cerr << "FM initiated" << endl;
 	/* set basic info */
-	csFM->abc = msa->getAbc();
+	csFM->abc = msa.getAbc();
 	csFM->gapCh = csFM->abc->getGap()[0]; // use the default gap character
-	csFM->csLen = msa->getCSLen();
-	csFM->concatLen = msa->getMSANonGapLen() + msa->getNumSeq(); /* including one seperator per seq */
-	csFM->csSeq = ' ' + msa->getCS(); /* dummy position 0 w/ white-space */
+	csFM->csLen = msa.getCSLen();
+	csFM->concatLen = msa.getMSANonGapLen() + msa.getNumSeq(); /* including one seperator per seq */
+	csFM->csSeq = ' ' + msa.getCS(); /* dummy position 0 w/ white-space */
 	csFM->csIdentity = new double[csFM->csLen + 1];
 	for(unsigned j = 0; j < csFM->csLen; ++j)
-		csFM->csIdentity[j + 1] = msa->identityAt(j);
+		csFM->csIdentity[j + 1] = msa.identityAt(j);
 
 	const int32_t N = csFM->concatLen + 1;
 
@@ -206,9 +206,9 @@ CSFMIndex* CSFMIndex::build(const MSA* msa) {
 	csFM->concat2CS = new uint16_t[N](); /* zero-initiate 1-based concatSeq pos to CS pos, 0 for gap pos on CS */
 
 	string::size_type shift = 0;
-	for(unsigned i = 0; i < msa->getNumSeq(); ++i) {
+	for(unsigned i = 0; i < msa.getNumSeq(); ++i) {
 		for(unsigned j = 0; j < csFM->csLen; ++j) {
-			char c = msa->residualAt(i, j);
+			char c = msa.residualAt(i, j);
 			if(!csFM->abc->isGap(c)) {
 				int8_t k = csFM->abc->encode(::toupper(c)) + 1; /* encode to 1..alphabet-size range */
 				csFM->C[k]++; // count alphabet frequency

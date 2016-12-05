@@ -16,9 +16,13 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	MSA* msa = MSA::loadMSAFile("dna", argv[1], argv[2]);
-
-	cerr << "msa loaded" << endl;
+	MSA msa;
+	if(msa.loadMSAFile("dna", argv[1], argv[2]) >= 0)
+		cerr << "msa loaded" << endl;
+	else {
+		cerr << "Unable to load MSA file '" << argv[1] << "'" << endl;
+		return -1;
+	}
 
 	CSFMIndex* fmIdx = CSFMIndex::build(msa);
 

@@ -39,13 +39,12 @@ int main(int argc, const char* argv[]) {
 		return -1;
 	}
 
-	MSA* msa = MSA::load(msaIn);
-	if(!msaIn.good()) {
+	MSA msa;
+	if(msa.load(msaIn))
+		cerr << "MSA database loaded" << endl;
+	else {
 		cerr << "Unable to load MSA database" << endl;
 		return -1;
-	}
-	else {
-		cerr << "MSA database loaded" << endl;
 	}
 
 	EGriceLab::PT tree;

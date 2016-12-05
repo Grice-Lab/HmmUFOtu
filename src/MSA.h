@@ -311,24 +311,21 @@ public:
 	 */
 	bool saveFastaFile(const string& filename);
 
-
-	/* static methods */
 	/**
-	 * Load an MSA file in given format
+	 * Load an MSA file in given format into this object
 	 * @param filename  MSA file name
 	 * @param format  MSA file format
 	 * @return  a newly constructed MSA pointer
 	 * @throws invalid_argument if alphabet or format is not known
 	 */
-	static MSA* load(std::istream& in);
+	std::istream& load(std::istream& in);
 
 	/**
 	 * Load an MSA binary file
 	 * @param f  the binary input
-	 * @return  a newly constructed MSA pointer
-	 * @throws invalid_argument if alphabet or format is not known
+	 * @return  number of MSA sequences successfully read in
 	 */
-	static MSA* loadMSAFile(const string& alphabet, const string& filename, const string& format);
+	long loadMSAFile(const string& alphabet, const string& filename, const string& format);
 
 	/**
 	 * Load an MSA file in fasta format
@@ -336,9 +333,8 @@ public:
 	 * @return  a newly constructed MSA pointer
 	 * @throws invalid_argument if alphabet or format is not known
 	 */
-	static MSA* loadFastaFile(const string& alphabet, const string& filename);
+	long loadFastaFile(const string& alphabet, const string& filename);
 
-private:
 	/* constructors */
 	/**
 	 * construct an MSA with given alphabet
@@ -355,6 +351,7 @@ private:
 		resWCount(NULL, 0, 0), gapWCount(NULL, 0)
 	{  }
 
+private:
 	/* Disable copy and assignment constructors */
 	MSA(const MSA& other);
 	MSA& operator=(const MSA& other);
@@ -490,16 +487,14 @@ inline void MSA::sclaleWeight(double r) {
 	updateWeightedCounts();
 }
 
-inline MSA* MSA::loadMSAFile(const string& alphabet,
+inline long MSA::loadMSAFile(const string& alphabet,
 		const string& filename, const string& format) {
-	MSA* msa = NULL;
 	if(format == "fasta")
-		msa = loadFastaFile(alphabet, filename);
-	else
-		throw invalid_argument("Unsupported MSA file format '" + format + "'");
-	/* construct the CS, if it is not set by the MSA file yet */
-	msa->calculateCS();
-	return msa;
+		return loadFastaFile(alphabet, filename);
+	else {
+		std::cerr << "Unsupported MSA file format '" + format + "'";
+		return -1;
+	}
 }
 
 inline bool MSA::saveMSAFile(const string& filename, const string& format) {

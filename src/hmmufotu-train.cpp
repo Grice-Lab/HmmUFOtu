@@ -90,13 +90,14 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	MSA* msa = MSA::load(in);
+	MSA msa;
+	msa.load(in);
 	if(!in.good()) {
 		cerr << "Unable to load MSA database" << endl;
 		return -1;
 	}
 	else
-		cerr << "MSA loaded, found " << msa->getNumSeq() << " X " << msa->getCSLen() << " alignments" << endl;
+		cerr << "MSA loaded, found " << msa.getNumSeq() << " X " << msa.getCSLen() << " alignments" << endl;
 
 	BandedHMMP7 hmm = BandedHMMP7::build(msa, symfrac, hmmPrior);
 

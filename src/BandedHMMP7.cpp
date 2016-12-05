@@ -340,15 +340,15 @@ ostream& operator<<(ostream& os, const deque<BandedHMMP7::p7_state> path) {
 	return os;
 }
 
-BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
+BandedHMMP7 BandedHMMP7::build(const MSA& msa, double symfrac,
 		const BandedHMMP7Prior& prior, const string& name) {
-	if(msa->getMSALen() == 0)
+	if(msa.getMSALen() == 0)
 		throw invalid_argument("Empty MSA encountered");
 	if(!(symfrac > 0 && symfrac < 1))
 		throw invalid_argument("symfrac must between 0 and 1");
 	/* determine the bHMM size */
-	const unsigned L = msa->getCSLen();
-	const unsigned N = msa->getNumSeq();
+	const unsigned L = msa.getCSLen();
+	const unsigned N = msa.getNumSeq();
 	unsigned k = 0;
 	int cs2ProfileIdx[kMaxProfile + 1]; // MAP index from consensus index -> profile index
 	int profile2CSIdx[kMaxCS + 1]; // MAP index from profile index -> consensus index
@@ -358,7 +358,7 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 		profile2CSIdx[i] = 0;
 
 	for(unsigned j = 0; j < L; ++j) {
-		if(msa->symWFrac(j) >= symfrac)
+		if(msa.symWFrac(j) >= symfrac)
 			profile2CSIdx[++k] = j + 1; /* all index are 1-based */
 		cs2ProfileIdx[j+1] = k;
 	}
@@ -366,7 +366,7 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 	const int csStart = profile2CSIdx[1];
 	const int csEnd = profile2CSIdx[K];
 
-	BandedHMMP7 hmm(msa->getName(), K, msa->getAbc()); /* construct an empty hmm */
+	BandedHMMP7 hmm(msa.getName(), K, msa.getAbc()); /* construct an empty hmm */
 
 	/* reset transition and emisison matrices */
 	hmm.reset_transition_params();
@@ -379,8 +379,8 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 	for(unsigned j = 1; j <= L; ++j) {
 		unsigned k = cs2ProfileIdx[j];
 		for(unsigned i = 1; i <= N; ++i) {
-			int8_t b = msa->encodeAt(i - 1, j - 1);
-			double w = msa->getSeqWeight(i - 1); /* use weighted count */
+			int8_t b = msa.encodeAt(i - 1, j - 1);
+			double w = msa.getSeqWeight(i - 1); /* use weighted count */
 			p7_state sm = determineMatchingState(cs2ProfileIdx, j, b);
 			if(sm == P)
 				continue; // ignore this base
@@ -402,7 +402,7 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 			p7_state smN;
 			/* find the next non P loc on this seq */
 			for(jN = j + 1; jN <= L; ++jN) {
-				int8_t bN = msa->encodeAt(i - 1, jN - 1);
+				int8_t bN = msa.encodeAt(i - 1, jN - 1);
 				p7_state smN = determineMatchingState(cs2ProfileIdx, jN, bN);
 				if(smN != P)
 					break;
@@ -419,17 +419,17 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 	} // end each loc
 	/* update B->M1/I0/D1 and MK/IK/DK->E frequencies */
 	for(unsigned i = 0; i < N; ++i) {
-		double w = msa->getSeqWeight(i);
-		int start = msa->seqStart(i);
-		int end = msa->seqEnd(i);
-		int8_t bStart = msa->encodeAt(i, start);
+		double w = msa.getSeqWeight(i);
+		int start = msa.seqStart(i);
+		int end = msa.seqEnd(i);
+		int8_t bStart = msa.encodeAt(i, start);
 		p7_state smStart = determineMatchingState(cs2ProfileIdx, start + 1, bStart);
 		hmm.Tmat[0](M, smStart) += w;
-		int8_t bEnd = msa->encodeAt(i, end);
+		int8_t bEnd = msa.encodeAt(i, end);
 		p7_state smEnd = determineMatchingState(cs2ProfileIdx, end + 1, bEnd);
 		hmm.Tmat[K](smEnd, M) += w;
 	}
-	hmm.nSeq = msa->getNumSeq();
+	hmm.nSeq = msa.getNumSeq();
 	hmm.effN = hmm.nSeq;
 
 	cerr << "Initial count based mean ere: " << hmm.meanRelativeEntropy() << endl;
@@ -451,7 +451,7 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 
 	/* set optional tags */
 	char value[128];
-	sprintf(value, "%d", msa->getCSLen());
+	sprintf(value, "%d", msa.getCSLen());
 	hmm.setOptTag("MAXL", value);
 
 	hmm.setOptTag("RF", "no");
@@ -477,9 +477,9 @@ BandedHMMP7 BandedHMMP7::build(const MSA* msa, double symfrac,
 		int map = profile2CSIdx[k];
 		sprintf(value, "%d", map);
 		hmm.setLocOptTag("MAP", value, k);
-		char c = msa->CSBaseAt(map);
-		int8_t b = msa->getAbc()->encode(c);
-		if(msa->wIdentityAt(map) < CONS_THRESHOLD)
+		char c = msa.CSBaseAt(map);
+		int8_t b = msa.getAbc()->encode(c);
+		if(msa.wIdentityAt(map) < CONS_THRESHOLD)
 			c = ::tolower(c);
 		hmm.setLocOptTag("CONS", string() + c, k);
 	}

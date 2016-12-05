@@ -195,7 +195,7 @@ struct PhyloTree {
 	 * @param msa  Multiple Sequence Alignment of this tree
 	 * @throw illegal_argument exception if is not a supported file format
 	 */
-	int readTree(const string& treefn, const string& format, const MSA* msa);
+	int readTree(const string& treefn, const string& format, const MSA& msa);
 
 	/**
 	 * Read the tree structure (but not the sequence) from an input file of given format
@@ -218,7 +218,7 @@ struct PhyloTree {
 	 * Read the sequence in the this tree according to given MSA
 	 * @return  sequences with MSA assigned, or -1 if anything failed
 	 */
-	int readSeqFromMSA(const MSA* msa);
+	int readSeqFromMSA(const MSA& msa);
 
 	/**
 	 * print this tree in newick format
@@ -267,7 +267,7 @@ struct PhyloTree {
 	static const double MIN_EXPONENT;
 };
 
-inline int PhyloTree::readTree(const string& treefn, const string& format, const MSA* msa) {
+inline int PhyloTree::readTree(const string& treefn, const string& format, const MSA& msa) {
 	/* Read tree structure */
 	int nNodes = readTree(treefn, format);
 	if(nNodes == -1) {
@@ -284,7 +284,7 @@ inline int PhyloTree::readTree(const string& treefn, const string& format, const
 		return nSeqs;
 	}
 	else if(nSeqs != numLeaves()) {
-		std::cerr << "Unmatched leaves in tree file " << treefn << " and MSA file " << msa << std::endl;
+		std::cerr << "Unmatched leaves in tree file " << treefn << " and MSA file " << msa.getName() << std::endl;
 		return -1;
 	}
 	else

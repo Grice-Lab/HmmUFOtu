@@ -342,7 +342,7 @@ public:
 	string buildGlobalAlignSeq(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
 
 	/* static member methods */
-	static BandedHMMP7 build(const MSA* msa, double symfrac,
+	static BandedHMMP7 build(const MSA& msa, double symfrac,
 			const BandedHMMP7Prior& prior, const string& name = "unnamed");
 
 	/**

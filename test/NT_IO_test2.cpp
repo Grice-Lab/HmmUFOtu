@@ -10,7 +10,6 @@
 #include <ctime>
 #include "MSA.h"
 #include "NewickTree.h"
-#include "PhyloTreeUnrooted.h"
 using namespace std;
 using namespace EGriceLab;
 
@@ -31,13 +30,8 @@ int main(int argc, const char* argv[]) {
 		return -1;
 	}
 
-	EGriceLab::NT NTree;
-	in >> NTree;
-	cerr << "Newick Tree read" << endl;
+	EGriceLab::NT tree;
+	in >> tree;
 
-	PTUnrooted PTree(NTree);
-	cerr << "PhyloTreeUnrooted converted from Newick Tree, total " << PTree.numNodes() << " nodes found" << endl;
-	cerr << "NTRoot name: " << NTree.name << " neighbors: " << NTree.children.size() << endl;
-	cerr << "PTRoot id: " << PTree.getRoot()->id << " name: " << PTree.getRoot()->name << " neighbors: " << PTree.getRoot()->neighbors.size() << endl;
-
+	out << tree;
 }

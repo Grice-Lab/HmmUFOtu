@@ -31,7 +31,7 @@ public:
 	 * @param msa  pointer to an MSA object
 	 * @return a fresh allocated CSFMIndex
 	 */
-	static CSFMIndex* build(const MSA* msa);
+	static CSFMIndex* build(const MSA& msa);
 
 	/**
 	 * Save this object to ofstream

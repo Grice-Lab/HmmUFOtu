@@ -143,13 +143,13 @@ ostream& PhyloTree::print(ostream& out) const {
 	return out;
 }
 
-int PhyloTree::readSeqFromMSA(const MSA* msa) {
+int PhyloTree::readSeqFromMSA(const MSA& msa) {
 	/* check uniqueness of seq-names */
 	map<string, unsigned> nameIdx;
-	for(unsigned i = 0; i != msa->getNumSeq(); ++i) {
-		string name = msa->seqNameAt(i);
+	for(unsigned i = 0; i != msa.getNumSeq(); ++i) {
+		string name = msa.seqNameAt(i);
 		if(nameIdx.find(name) != nameIdx.end()) {
-			cerr << "Non-unique seq name " << name << " found in your MSA data " << msa->getName() << endl;
+			cerr << "Non-unique seq name " << name << " found in your MSA data " << msa.getName() << endl;
 			return -1;
 		}
 		else {
@@ -168,17 +168,17 @@ int PhyloTree::readSeqFromMSA(const MSA* msa) {
 		if(visited.find(v) == visited.end()) { /* not visited before */
 			visited.insert(v);
 			/* process this node */
-			v->cost.resize(4, msa->getCSLen()); /* initiate the cost */
+			v->cost.resize(4, msa.getCSLen()); /* initiate the cost */
 			v->cost.setConstant(inf);
 			/* initiate the scale */
-			v->scale.resize(msa->getCSLen());
+			v->scale.resize(msa.getCSLen());
 			v->scale.setZero();
 			if(nameIdx.find(v->name) != nameIdx.end()) { // this node exists in MSA
-				v->seq = msa->dsAt(nameIdx[v->name]);
+				v->seq = msa.dsAt(nameIdx[v->name]);
 				n++;
 			}
 			else /* assign an all-gap seq for this node */
-				v->seq = DigitalSeq(msa->getAbc(), v->name, string(msa->getCSLen(), msa->getAbc()->getGap()[0]));
+				v->seq = DigitalSeq(msa.getAbc(), v->name, string(msa.getCSLen(), msa.getAbc()->getGap()[0]));
 
 			for(vector<PT>::iterator it = v->children.begin(); it != v->children.end(); ++it) {
 				PT* p = &*it;

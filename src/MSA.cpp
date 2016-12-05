@@ -118,28 +118,30 @@ MSA& MSA::prune() {
 	return *this;
 }
 
-MSA* MSA::loadFastaFile(const string& alphabet, const string& filename) {
-	MSA* msa = new MSA(alphabet);
-	msa->setName(StringUtils::basename(filename));
+long MSA::loadFastaFile(const string& alphabet, const string& filename) {
+	setName(StringUtils::basename(filename));
 	SeqIO seqIn(filename, alphabet, "fasta");
 	while(seqIn.hasNext()) {
 		const PrimarySeq& seq = seqIn.nextSeq();
 		//cerr << seq.getId() << " " << seq.getSeq() << endl;
 		/* check new seq */
-		if(msa->csLen != 0 && seq.length() != msa->csLen)
-			throw ios_base::failure("Not a valid fasta alignment file where not all sequences have the same length!");
-		msa->csLen = seq.length(); /* update csLen */
-		msa->numSeq++;
+		if(csLen != 0 && seq.length() != csLen) {
+			cerr << "Invalid fasta alignment file! Not all sequences have the same length!";
+			return -1;
+		}
+		csLen = seq.length(); /* update csLen */
+		numSeq++;
 		//ids.push_back(seq.getId());
-		msa->seqNames.push_back(seq.getId());
-		msa->concatMSA.append(seq.getSeq());
+		seqNames.push_back(seq.getId());
+		concatMSA.append(seq.getSeq());
 	}
-	assert(msa->concatMSA.length() == msa->numSeq * msa->csLen);
-	msa->updateRawCounts();
-	msa->updateSeqWeight();
-	msa->updateWeightedCounts();
-	msa->calculateCS();
-	return msa;
+	assert(concatMSA.length() == numSeq * csLen);
+	updateRawCounts();
+	updateSeqWeight();
+	updateWeightedCounts();
+	calculateCS();
+
+	return numSeq;
 }
 
 void MSA::clear() {
@@ -334,23 +336,21 @@ ostream& MSA::save(ostream& out) {
 	return out;
 }
 
-MSA* MSA::load(istream& in) {
-	/* construct a MSA object */
-	MSA* msa = new MSA(); // use default alphabet first
+istream& MSA::load(istream& in) {
 	/* Read program info */
 	string pname, pver;
 	readProgName(in, pname);
 	if(pname != progName) {
 		cerr << "Not a MSA object file" << endl;
 		in.setstate(ios_base::failbit);
-		return msa;
+		return in;
 	}
 	readProgVersion(in, pver);
 	if(cmpVersion(progVersion, pver) < 0) {
 		cerr << "You are trying using an older version " << (progName + progVersion) <<
 				" to read a newer MSA object file that was build by " << (pname + pver) << endl;
 		in.setstate(ios_base::failbit);
-		return msa;
+		return in;
 	}
 	/* read basic info */
 	char* buf = NULL;
@@ -358,66 +358,68 @@ MSA* MSA::load(istream& in) {
 	in.read((char*) &nAlphabet, sizeof(string::size_type));
 	buf = new char[nAlphabet + 1];
 	in.read(buf, nAlphabet + 1); /* read the null terminal */
-	msa->alphabet.assign(buf, nAlphabet); // override the original alphabet
+	alphabet.assign(buf, nAlphabet); // override the original alphabet
 	delete[] buf;
-	msa->abc = SeqCommons::getAlphabetByName(msa->alphabet);
+	abc = SeqCommons::getAlphabetByName(alphabet);
 	in.read((char*) &nName, sizeof(string::size_type));
 	buf = new char[nName + 1];
 	in.read(buf, nName + 1); /* read the null terminal */
-	msa->name.assign(buf, nName);
+	name.assign(buf, nName);
 	delete[] buf;
 
-	in.read((char*) &msa->numSeq, sizeof(unsigned));
-	in.read((char*) &msa->csLen, sizeof(unsigned));
+	in.read((char*) &numSeq, sizeof(unsigned));
+	in.read((char*) &csLen, sizeof(unsigned));
 	in.read((char*) &nCS, sizeof(string::size_type));
 	buf = new char[nCS + 1];
 	in.read(buf, nCS + 1);
-	msa->CS.assign(buf, nCS); /* read the null terminal */
+	CS.assign(buf, nCS); /* read the null terminal */
 	delete[] buf;
-	in.read((char*) &msa->isPruned, sizeof(bool));
+	in.read((char*) &isPruned, sizeof(bool));
+
 	/* read seqNames */
-	msa->seqNames.resize(msa->numSeq); /* set all names to empty */
-	for(vector<string>::iterator it = msa->seqNames.begin(); it != msa->seqNames.end();) {
+	seqNames.resize(numSeq); /* set all names to empty */
+	for(vector<string>::iterator it = seqNames.begin(); it != seqNames.end();) {
 		char c = in.get();
 		if(c != '\0')
 			it->push_back(c);
 		else
 			it++;
 	}
+
 	/* read concatMSA */
-	buf = new char[msa->numSeq * msa->csLen + 1];
-	in.read(buf, msa->numSeq * msa->csLen + 1);
-	msa->concatMSA.assign(buf, msa->numSeq * msa->csLen);
+	buf = new char[numSeq * csLen + 1];
+	in.read(buf, numSeq * csLen + 1);
+	concatMSA.assign(buf, numSeq * csLen);
 	delete[] buf;
 	/* Read auxiliary index */
-	msa->startIdx = new int[msa->numSeq];
-	in.read((char*) msa->startIdx, sizeof(int) * msa->numSeq);
-	msa->endIdx = new int[msa->numSeq];
-	in.read((char*) msa->endIdx, sizeof(int) * msa->numSeq);
-	msa->lenIdx = new int[msa->numSeq];
-	in.read((char*) msa->lenIdx, sizeof(int) * msa->numSeq);
+	startIdx = new int[numSeq];
+	in.read((char*) startIdx, sizeof(int) * numSeq);
+	endIdx = new int[numSeq];
+	in.read((char*) endIdx, sizeof(int) * numSeq);
+	lenIdx = new int[numSeq];
+	in.read((char*) lenIdx, sizeof(int) * numSeq);
 	/* Read raw counts */
-	msa->resCountBuf = new int[msa->abc->getSize() * msa->csLen];
-	in.read((char*) msa->resCountBuf, sizeof(int) * msa->abc->getSize() * msa->csLen);
-	msa->gapCountBuf = new int[msa->csLen];
-	in.read((char*) msa->gapCountBuf, sizeof(int) * msa->csLen);
+	resCountBuf = new int[abc->getSize() * csLen];
+	in.read((char*) resCountBuf, sizeof(int) * abc->getSize() * csLen);
+	gapCountBuf = new int[csLen];
+	in.read((char*) gapCountBuf, sizeof(int) * csLen);
 	/* Read seq weights */
-	msa->seqWeightBuf = new double[msa->numSeq];
-	in.read((char*) msa->seqWeightBuf, sizeof(double) * msa->numSeq);
+	seqWeightBuf = new double[numSeq];
+	in.read((char*) seqWeightBuf, sizeof(double) * numSeq);
 	/* Read weighted counts */
-	msa->resWCountBuf = new double[msa->abc->getSize() * msa->csLen];
-	in.read((char*) msa->resWCountBuf, sizeof(double) * msa->abc->getSize() * msa->csLen);
-	msa->gapWCountBuf = new double[msa->csLen];
-	in.read((char*) msa->gapWCountBuf, sizeof(double) * msa->csLen);
+	resWCountBuf = new double[abc->getSize() * csLen];
+	in.read((char*) resWCountBuf, sizeof(double) * abc->getSize() * csLen);
+	gapWCountBuf = new double[csLen];
+	in.read((char*) gapWCountBuf, sizeof(double) * csLen);
 
 	/* replacement constructor the count matrices */
-	new (&msa->resCount) Map<MatrixXi>(msa->resCountBuf, msa->abc->getSize(), msa->csLen);
-	new (&msa->gapCount) Map<VectorXi>(msa->gapCountBuf, msa->csLen);
-	new (&msa->seqWeight) Map<VectorXd>(msa->seqWeightBuf, msa->numSeq);
-	new (&msa->resWCount) Map<MatrixXd>(msa->resWCountBuf, msa->abc->getSize(), msa->csLen);
-	new (&msa->gapWCount) Map<VectorXd>(msa->gapWCountBuf, msa->csLen);
+	new (&resCount) Map<MatrixXi>(resCountBuf, abc->getSize(), csLen);
+	new (&gapCount) Map<VectorXi>(gapCountBuf, csLen);
+	new (&seqWeight) Map<VectorXd>(seqWeightBuf, numSeq);
+	new (&resWCount) Map<MatrixXd>(resWCountBuf, abc->getSize(), csLen);
+	new (&gapWCount) Map<VectorXd>(gapWCountBuf, csLen);
 
-	return msa;
+	return in;
 }
 
 } /* namespace EGriceLab */

@@ -23,25 +23,24 @@ int main(int argc, char *argv[]) {
 	}
 
 	cerr << "File opened" << endl;
-	MSA* msa = MSA::load(in);
-	if(!in.good()) {
+	MSA msa;
+	if(msa.load(in))
+		cerr << "MSA database loaded" << endl;
+	else {
 		cerr << "Unable to load MSA database" << endl;
 		return -1;
 	}
-	else {
-		cerr << "MSA database loaded" << endl;
-	}
 
-	cerr << "Total numSeq:" << msa->getNumSeq() << endl;
+	cerr << "Total numSeq:" << msa.getNumSeq() << endl;
 
 	out << "pos";
-	string sym = msa->getAbc()->getSymbol();
+	string sym = msa.getAbc()->getSymbol();
 	for(string::const_iterator it = sym.begin(); it != sym.end(); ++it)
 		out << " " << *it;
 	out << "\n";
-	unsigned L = msa->getCSLen();
+	unsigned L = msa.getCSLen();
 	for(unsigned j = 0; j < L; ++j) {
-		out << j << " " << msa->symFreq(j).transpose() << endl;
+		out << j << " " << msa.symFreq(j).transpose() << endl;
 	}
 
 	return 0;

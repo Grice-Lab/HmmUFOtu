@@ -21,20 +21,23 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	MSA* msa = MSA::load(in);
-	if(!in.good()) {
+	MSA msa;
+	if(msa.load(in))
+		cerr << "MSA database loaded" << endl;
+	else {
 		cerr << "Unable to load MSA database" << endl;
 		return -1;
 	}
-	msa->prune();
+
+	msa.prune();
 	cerr << "MSA pruned" << endl;
 
-	cerr << "Total numSeq:" << msa->getNumSeq() << endl;
+	cerr << "Total numSeq:" << msa.getNumSeq() << endl;
 
 	out << "pos\tidentity\tsym_frac\tgap_frac" << endl;
-	for(unsigned j = 0; j != msa->getCSLen(); ++j)
-		out << j << "\t" << msa->identityAt(j) << "\t" <<
-			msa->symFrac(j) << "\t" << msa->gapFrac(j) << endl;
+	for(unsigned j = 0; j != msa.getCSLen(); ++j)
+		out << j << "\t" << msa.identityAt(j) << "\t" <<
+			msa.symFrac(j) << "\t" << msa.gapFrac(j) << endl;
 
 	return 0;
 }

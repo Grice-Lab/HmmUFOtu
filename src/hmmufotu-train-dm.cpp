@@ -136,26 +136,26 @@ int main(int argc, char* argv[]) {
 	/* set random seed */
 	srand(seed);
 	/* Load data */
-	MSA* msa;
+	MSA msa;
 	if(fmt == "msa") { /* binary file provided */
 		ifstream in(infn.c_str());
-		msa = MSA::load(in);
+		msa.load(in);
 	}
 	else
-		msa = MSA::loadMSAFile("dna", infn, fmt); /* always read DNA MSA file */
+		msa.loadMSAFile("dna", infn, fmt); /* always read DNA MSA file */
 
 	cerr << "MSA loaded" << endl;
-	msa->prune(); /* prune MSA */
+	msa.prune(); /* prune MSA */
 	cerr << "MSA pruned" << endl;
 	double effN = 1 / priRate;
-	msa->sclaleWeight(effN / msa->getNumSeq());
+	msa.sclaleWeight(effN / msa.getNumSeq());
 	cerr << "MSA weight scaled" << endl;
 
-	if(msa->getAlphabet() != "dna") {
-		cerr << "Expecting MSA in 'DNA' alphabet but found " << msa->getAlphabet() << endl;
+	if(msa.getAlphabet() != "dna") {
+		cerr << "Expecting MSA in 'DNA' alphabet but found " << msa.getAlphabet() << endl;
 		return -1;
 	}
-	const int K = msa->getAbc()->getSize();
+	const int K = msa.getAbc()->getSize();
 	assert (K == 4);
 	/* construct an HMM prior */
 	BandedHMMP7Prior pri;
@@ -170,8 +170,8 @@ int main(int argc, char* argv[]) {
 
 	cerr << "Dirichlet model based HmmUFOtu prior initiated" << endl;
 
-	const unsigned L = msa->getCSLen();
-	const unsigned N = msa->getNumSeq();
+	const unsigned L = msa.getCSLen();
+	const unsigned N = msa.getNumSeq();
 	/* Prepare the training data */
 	Matrix4Xd dataME(K, L);
 	Matrix4Xd dataIE(K, L);
@@ -186,10 +186,10 @@ int main(int argc, char* argv[]) {
 	int cDT = 0;
 
 	for(int j = 0; j < L; ++j) {
-		if(msa->symWFrac(j) >= symfrac) /* match state emission */
-			dataME.col(cME++) = msa->symWFreq(j);
+		if(msa.symWFrac(j) >= symfrac) /* match state emission */
+			dataME.col(cME++) = msa.symWFreq(j);
 		else
-			dataIE.col(cIE++) = msa->symWFreq(j);
+			dataIE.col(cIE++) = msa.symWFreq(j);
 	}
 	dataME.conservativeResize(K, cME);
 	dataIE.conservativeResize(K, cIE);
@@ -198,13 +198,13 @@ int main(int argc, char* argv[]) {
 //	cerr << "cIE:" << cIE << endl;
 
 	for(int j = 0; j < L - 1; ++j) {
-		bool matchFlag = msa->symWFrac(j) >= symfrac;
+		bool matchFlag = msa.symWFrac(j) >= symfrac;
 		for(int i = 0; i < N; ++i) {
 //			cerr << "seqStart:" << msa->seqStart(i) << " seqEnd:" << msa->seqEnd(i) << endl;
 //			if(j < msa->seqStart(i) || j > msa->seqEnd(i)) /* ignore 5' and 3' hanging gaps */
 //				continue;
-			double w = msa->getSeqWeight(i);
-			bool resFlag = msa->encodeAt(i, j) >= 0;
+			double w = msa.getSeqWeight(i);
+			bool resFlag = msa.encodeAt(i, j) >= 0;
 			if(!matchFlag && !resFlag) /* ignore phantom positions */
 				continue;
 			/* search to next non-phentome position */
@@ -212,8 +212,8 @@ int main(int argc, char* argv[]) {
 			bool resFlagN = false;
 			int k = j + 1;
 			while(!matchFlagN && !resFlagN && k < L) {
-				matchFlagN = msa->symWFrac(k) >= symfrac;
-				resFlagN = msa->encodeAt(i, k) >= 0;
+				matchFlagN = msa.symWFrac(k) >= symfrac;
+				resFlagN = msa.encodeAt(i, k) >= 0;
 				k++;
 			}
 			if(k >= L) /* no more position found */

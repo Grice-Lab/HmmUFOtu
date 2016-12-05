@@ -82,6 +82,21 @@ public:
 	 */
 	static string stripQuotes(const string& str, const string& quotes = "\"'");
 
+	/**
+	 * check whether a string contains any white space characters
+	 * @param str  input string
+	 * @return  true if it has any white space character (' ', '\t', '\n', '\r', '\v')
+	 */
+	static bool containsWhiteSpace(const string& str);
+
+	/**
+	 * check whether a string contains any character in another string
+	 * @param str  input string
+	 * @param query  query string
+	 * @return  true if str contains any character of query
+	 */
+	static bool containsAny(const string& str, const string& query);
+
 }; /* end class StringUtils */
 } /* namespace EGriceLab */
 #endif /* STRINGUTILS_H_ */

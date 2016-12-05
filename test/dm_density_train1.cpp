@@ -27,20 +27,19 @@ int main(int argc, char *argv[]) {
 	}
 
 	cerr << "File opened" << endl;
-	MSA* msa = MSA::load(in);
-	if(!in.good()) {
+	MSA msa;
+	if(msa.load(in))
+		cerr << "MSA database loaded" << endl;
+	else {
 		cerr << "Unable to load MSA database" << endl;
 		return -1;
 	}
-	else {
-		cerr << "MSA database loaded" << endl;
-	}
 
-	MatrixXd data(msa->getAbc()->getSize(), msa->getCSLen());
+	MatrixXd data(msa.getAbc()->getSize(), msa.getCSLen());
 	unsigned M = 0;
 	for(unsigned j = 0; j < data.cols(); ++j) {
-		if(msa->symWFrac(j) >= 0.5) // an insertion, non-conserved region
-			data.col(M++) = msa->symWFreq(j);
+		if(msa.symWFrac(j) >= 0.5) // an insertion, non-conserved region
+			data.col(M++) = msa.symWFreq(j);
 	}
 	data.conservativeResize(data.rows(), M);
 //	cerr << "Residual frequency data read data:" << endl << data.rowwise().sum() << endl;

@@ -20,20 +20,19 @@ int main(int argc, char *argv[]) {
 		cerr << "Unable to write to " << argv[2] << endl;
 		return -1;
 	}
-
 	cerr << "File opened" << endl;
-	MSA* msa = MSA::load(in);
-	if(!in.good()) {
+
+	MSA msa;
+	if(msa.load(in))
+		cerr << "MSA database loaded" << endl;
+	else {
 		cerr << "Unable to load MSA database" << endl;
 		return -1;
 	}
-	else {
-		cerr << "MSA database loaded" << endl;
-	}
 
-	cerr << "Total seqNum:" << msa->getNumSeq() << endl;
+	cerr << "Total seqNum:" << msa.getNumSeq() << endl;
 
-	if(!msa->save(out)) {
+	if(!msa.save(out)) {
 		cerr << "Unable to save MSA database" << endl;
 		return -1;
 	}

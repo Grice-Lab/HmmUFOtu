@@ -20,6 +20,8 @@ DD_IO_test1 \
 PT_IO_test1 \
 PT_IO_test2 \
 PT_IO_test3 \
+NT_IO_test1 \
+NT_IO_test2 \
 PTU_IO_test1 \
 dna_model_test1 \
 dna_model_IO_test1 \
@@ -120,6 +122,18 @@ PT_IO_test2_LDFLAGS = -static
 PT_IO_test3_SOURCES = PT_IO_test3.cpp
 PT_IO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 PT_IO_test3_LDFLAGS = -static
+
+NT_IO_test1_SOURCES = NT_IO_test1.cpp
+NT_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+NT_IO_test1_LDFLAGS = -static
+
+NT_IO_test2_SOURCES = NT_IO_test2.cpp
+NT_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+NT_IO_test2_LDFLAGS = -static
+
+PTU_IO_test1_SOURCES = PTU_IO_test1.cpp
+PTU_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_IO_test1_LDFLAGS = -static
 
 dna_model_test1_SOURCES = dna_model_test1.cpp
 dna_model_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a

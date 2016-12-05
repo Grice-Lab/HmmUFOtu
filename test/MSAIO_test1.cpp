@@ -16,15 +16,20 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	MSA* msa = MSA::loadMSAFile("dna", argv[1], argv[2]);
-	cerr << "MSA loaded" << endl;
+	MSA msa;
+	if(msa.loadMSAFile("dna", argv[1], argv[2]) >= 0)
+		cerr << "MSA file loaded" << endl;
+	else {
+		cerr << "Unable to load MSA file" << endl;
+		return -1;
+	}
 
-	msa->prune();
+	msa.prune();
 	cerr << "MSA pruned" << endl;
 
-	cerr << "Total seqNum:" << msa->getNumSeq() << endl;
+	cerr << "Total seqNum:" << msa.getNumSeq() << endl;
 
-	if(!msa->save(out)) {
+	if(!msa.save(out)) {
 		cerr << "Unable to save MSA database" << endl;
 		return -1;
 	}

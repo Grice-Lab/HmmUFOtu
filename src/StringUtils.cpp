@@ -85,4 +85,19 @@ string StringUtils::stripQuotes(const string& str, const string& quotes) {
 	return newStr;
 }
 
+bool StringUtils::containsWhiteSpace(const string& str) {
+	for(string::const_iterator it = str.begin(); it != str.end(); ++it)
+		if(::isspace(*it))
+			return true;
+	return false;
+}
+
+bool StringUtils::containsAny(const string& str, const string& query) {
+	for(string::const_iterator it = query.begin(); it != query.end(); ++it)
+		if(str.find(*it) != string::npos)
+			return true;
+	return false;
+}
+
+
 } /* namespace EGriceLab */
