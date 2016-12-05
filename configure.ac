@@ -22,7 +22,7 @@ AM_INIT_AUTOMAKE()
 AC_PROG_CXX
 AC_CONFIG_MACRO_DIR([m4])
 
-AC_CHECK_FUNCS([sqrt])
+AC_CHECK_FUNCS([sqrt isnan])
 
 AC_CONFIG_FILES([Makefile
 								 data/Makefile
