@@ -32,6 +32,11 @@ string& StringUtils::toUpper(string& str) {
 	return str;
 }
 
+/**
+ * make a copy of the input string in all lower cases
+ * @param str  input string
+ * @return  a copy with in all lower cases
+ */
 string StringUtils::toLower(const string& str) {
 	string newStr; // make a new copy
 	newStr.resize(str.length());
@@ -39,6 +44,11 @@ string StringUtils::toLower(const string& str) {
 	return newStr;
 }
 
+/**
+ * make the input string into all lower cases
+ * @param str  input string
+ * @return  the modified string
+ */
 string& StringUtils::toLower(string& str) {
 	transform(str.begin(), str.end(), str.begin(), ::tolower);
 	return str;
