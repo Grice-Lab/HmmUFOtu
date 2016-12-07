@@ -16,7 +16,7 @@ namespace EGriceLab {
 using namespace std;
 using namespace Eigen;
 
-const string name = "GTR";
+const string GTR::name = "GTR";
 
 
 istream& GTR::read(istream& in) {
@@ -64,7 +64,7 @@ ostream& GTR::write(ostream& out) const {
 	return out;
 }
 
-void GTR::trainParamsByDataset(const vector<Matrix4d>& P_vec, const Vector4d& f) {
+void GTR::trainParams(const vector<Matrix4d>& P_vec, const Vector4d& f) {
 	/* estimate pi using mean f */
 	pi = f / f.sum();
 //	assert(isValidFreq(pi));
@@ -120,41 +120,6 @@ void GTR::setQfromParams() {
 	lambda = es.eigenvalues().real();
 	U = es.eigenvectors().real();
 	U_1 = U.inverse();
-}
-
-void GTR::evaluate(PhyloTree& tree, int j) const {
-	if(tree.isEvaluated(j)) // already evaluated
-		return;
-	/* calculate the cost of this node */
-	if(tree.isLeaf()) { /* this is a leaf node */
-		if(tree.seq[j] >= 0) { /* is not a gap */
-			for(Matrix4Xd::Index s = 0; s < tree.cost.rows(); ++s)
-				tree.cost(s, j) = s == tree.seq[j] ? 0 : inf;
-		}
-		else { /* a gap is treated as missing data */
-			tree.cost.col(j) = - pi.array().log();
-		}
-//		if((tree.cost.col(j).array() != inf).count() != 1 && !(tree.cost.col(j).array() != inf).all())
-//			cerr << "Strange Leaf " << tree.name << " cost j: " << tree.cost.col(j).transpose() << endl;
-//		cerr << "Leaf " << tree.name << " evaluated. cost: \n" << tree.cost.col(j) << endl;
-	}
-	else { /* this is an internal node, all bases are treated as missing data */
-		tree.cost.col(j).setZero(); /* initiate all cost to 0 */
-		for(vector<PT>::iterator o = tree.children.begin(); o != tree.children.end(); ++o) { /* check each child */
-			const Matrix4d& P = Pr(o->length);
-//			cerr << "P:" << P << endl;
-			evaluate(*o, j); /* evaluate this child recursively */
-			for(Matrix4Xd::Index i = 0; i < tree.cost.rows(); ++i)
-				tree.cost(i, j) += -::log(P.row(i).dot((-o->cost.col(j)).array().exp().matrix())) + o->scale(j);
-		}
-		/* rescale the node if neccessary */
-		double maxC = tree.cost.col(j).maxCoeff();
-		if(maxC >= PhyloTree::MIN_EXPONENT)
-			tree.reScale(maxC - PhyloTree::MIN_EXPONENT, j);
-//
-//		cerr << "Internal node evaluated " << tree.name << " evaluated. cost: \n" << tree.cost.col(j) << endl;
-	}
-
 }
 
 } /* namespace EGriceLab */

@@ -261,7 +261,7 @@ struct PhyloTree {
 
 	DigitalSeq seq;
 	Matrix4Xd cost; /* cost (negative log likelihood) of observing this sequence given the model and the tree */
-	RowVectorXd scale; /* log-scale constant used during calculating and storing the cost to avoid numeric underfly */
+	RowVectorXd scale; /* log-scale constant used during calculating and storing the cost to avoid numeric underflow */
 
 	/* static fields */
 	static const double MIN_EXPONENT;

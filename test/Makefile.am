@@ -17,15 +17,13 @@ dm_density_train1 \
 dm_mixture_train1 \
 dm_mixture_train2 \
 DD_IO_test1 \
-PT_IO_test1 \
-PT_IO_test2 \
-PT_IO_test3 \
 NT_IO_test1 \
 NT_IO_test2 \
 PTU_IO_test1 \
-dna_model_test1 \
+PTU_IO_test2 \
+PTU_IO_test3 \
+PTU_test1 \
 dna_model_IO_test1 \
-dna_model_test2 \
 RootFinder_test1
 
 dna_test1_SOURCES = dna_test1.cpp
@@ -111,17 +109,21 @@ DD_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
 $(top_srcdir)/src/math/libEGMath.a
 DD_IO_test1_LDFLAGS = -static
 
-PT_IO_test1_SOURCES = PT_IO_test1.cpp
-PT_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
-PT_IO_test1_LDFLAGS = -static
+PTU_IO_test1_SOURCES = PTU_IO_test1.cpp
+PTU_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_IO_test1_LDFLAGS = -static
 
-PT_IO_test2_SOURCES = PT_IO_test2.cpp
-PT_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
-PT_IO_test2_LDFLAGS = -static
+PTU_IO_test2_SOURCES = PTU_IO_test2.cpp
+PTU_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_IO_test2_LDFLAGS = -static
 
-PT_IO_test3_SOURCES = PT_IO_test3.cpp
-PT_IO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
-PT_IO_test3_LDFLAGS = -static
+PTU_IO_test3_SOURCES = PTU_IO_test3.cpp
+PTU_IO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_IO_test3_LDFLAGS = -static
+
+PTU_test1_SOURCES = PTU_test1.cpp
+PTU_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_test1_LDFLAGS = -static
 
 NT_IO_test1_SOURCES = NT_IO_test1.cpp
 NT_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
@@ -135,17 +137,17 @@ PTU_IO_test1_SOURCES = PTU_IO_test1.cpp
 PTU_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 PTU_IO_test1_LDFLAGS = -static
 
-dna_model_test1_SOURCES = dna_model_test1.cpp
-dna_model_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
-dna_model_test1_LDFLAGS = -static
+#dna_model_test1_SOURCES = dna_model_test1.cpp
+#dna_model_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+#dna_model_test1_LDFLAGS = -static
 
 dna_model_IO_test1_SOURCES = dna_model_IO_test1.cpp
 dna_model_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 dna_model_IO_test1_LDFLAGS = -static
 
-dna_model_test2_SOURCES = dna_model_test2.cpp
-dna_model_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
-dna_model_test2_LDFLAGS = -static
+#dna_model_test2_SOURCES = dna_model_test2.cpp
+#dna_model_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+#dna_model_test2_LDFLAGS = -static
 
 RootFinder_test1_SOURCES = RootFinder_test1.cpp
 RootFinder_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \

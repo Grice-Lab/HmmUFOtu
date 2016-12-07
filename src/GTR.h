@@ -33,6 +33,10 @@ public:
 		return "GTR";
 	}
 
+	virtual Vector4d getPi() const {
+		return pi;
+	}
+
 	/**
 	 * get the Prob matrix given branch length and optionally rate factor
 	 * @override  the base class pure virtual function
@@ -52,20 +56,6 @@ public:
 	 */
 	virtual ostream& write(ostream& out) const;
 
-	/**
-	 * Evaluate a likelihood (cost) of a Phylogenetic tree at given site using this model
-	 * @param tree  tree to evaluate, interval values will be set
-	 * @param j  site to evalaute (recursively)
-	 * @override  the base class method
-	 */
-	virtual void evaluate(PhyloTree& tree, int j) const;
-
-	/** get the total cost at given position of a Phylogenetic tree using this model
-	 * Assumes all nodes have been evaluated
-	 * @override  the base class method
-	 */
-	virtual double cost(const PhyloTree& tree, int j) const;
-
 private:
 	static const string name;
 
@@ -84,17 +74,13 @@ private:
 	 * train model parameters using given sets of observed base transition and frequency counts
 	 * @override  base class method
 	 */
-	virtual void trainParamsByDataset(const vector<Matrix4d>& P_vec, const Vector4d& f);
+	virtual void trainParams(const vector<Matrix4d>& P_vec, const Vector4d& f);
 
 	void setQfromParams();
 };
 
 inline Matrix4d GTR::Pr(double t, double r) const {
 	return U * (lambda * (t * r)).array().exp().matrix().asDiagonal() * U_1;
-}
-
-inline double GTR::cost(const PhyloTree& tree, int j) const {
-	return -::log(pi.dot((-tree.cost.col(j)).array().exp().matrix())) + tree.scale(j); /* Eigen guarantee exp(-inf) == 0 */
 }
 
 } /* namespace EGriceLab */

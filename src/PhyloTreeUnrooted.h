@@ -96,8 +96,8 @@ public:
 		}
 
 		/** test whether this subtree is rooted */
-		bool isRooted() const {
-			return parent != NULL;
+		bool isRoot() const {
+			return parent == NULL;
 		}
 
 		/* member fields */
@@ -123,10 +123,13 @@ public:
 
 	/* member methods */
 
-	/** Get the number of nodes of this tree using Dfs search */
-	long numNodes() const {
+	/** Get the number of nodes of this tree */
+	size_t numNodes() const {
 		return id2node.size();
 	}
+
+	/** Get number of leaves in this tree */
+	size_t numLeaves() const;
 
 	/** get number of aligned sites */
 	int getNumAlignSites() const {
@@ -137,6 +140,22 @@ public:
 	const PTUNodePtr& getRoot() const {
 		return root;
 	}
+
+	/* get all nodes */
+	std::vector<PTUNodePtr> getNodes() const {
+		return id2node;
+	}
+
+	/* get node i */
+	PTUNodePtr getNode(std::vector<PTUNodePtr>::size_type i) const {
+		return id2node[i];
+	}
+
+	/**
+	 * get branch length from u -> v
+	 * @return  -1 if not exists
+	 */
+	double getBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) const;
 
 	/** Load sequences from MSA into this this */
 	long loadMSA(const MSA& msa);
@@ -152,35 +171,76 @@ public:
 	/**
 	 * set tree root at given node, return the old node
 	 */
-	PTUNodePtr setRoot(PTUNodePtr newRoot);
+	PTUNodePtr setRoot(const PTUNodePtr& newRoot);
 
 	/**
-	 * test whether the cost (message) of node u -> v has been evaluated
+	 * test whether the cost (message) of node u -> v of site j has been evaluated
 	 */
-	bool isEvaluated(const PTUNodePtr u, const PTUNodePtr v) const {
-		CostMap::const_iterator result = node2cost.find(u);
-		return result != node2cost.end() &&
-				result->second.find(v) != result->second.end();
+	bool isEvaluated(const PTUNodePtr u, const PTUNodePtr v, int j) const {
+		return (node2cost.find(u)->second.find(v)->second.col(j).array() != inf).any();
 	}
 
 	/**
-	 * reset the evaluated cost
-	 * @return  actual number of cost removed
+	 * initiate the cached incoming cost of between every node u and every neighbor v
 	 */
-	CostMap::size_type resetCost(const PTUNodePtr u, const PTUNodePtr v) {
-		CostMap::iterator result = node2cost.find(u);
-		if(result == node2cost.end()) /* u not exists */
-			return 0;
-		return result->second.erase(v);
+	void initInCost();
+
+	/**
+	 * initiate the leaf cost given a DNA Sub-model for faster computation
+	 * @param model  any Time-reversible DNA substitution model
+	 */
+	void initLeafCost(const DNASubModel& model);
+
+	/**
+	 * reset the cached cost of edge u->v
+	 */
+	void resetCost(const PTUNodePtr u, const PTUNodePtr v) {
+		node2cost[u][v].setConstant(inf);
 	}
 
 	/**
-	 * evaluate the likelihood at node node by treating its the root of this PTUnrooted
+	 * reset the cached cost of every node
+	 */
+	void resetCost();
+
+	/**
+	 * evaluate the likelihood at given node by treating it as the root of this PTUnrooted
 	 * @param node  new root of this tree
 	 * @param model  DNA substitution model, must be a time-reversible model
-	 * @return  overall cost of observing this tree at this root
+	 * @return  cost matrix of observing this tree at this root
 	 */
-	double evaluate(const PTUNodePtr node, const DNASubModel& model) const;
+	Matrix4Xd evaluate(const PTUNodePtr& node, const DNASubModel& model);
+
+	/**
+	 * evaluate the likelihood at given node and site by treating it as the root of this PTUnrooted
+	 * @param node  new root of this tree
+	 * @param j  the jth aligned site
+	 * @param model  DNA substitution model, must be a time-reversible model
+	 * @return  cost vector of observing this tree at this root
+	 */
+	Vector4d evaluate(const PTUNodePtr& node, int j, const DNASubModel& model);
+
+	/* static methods */
+	/**
+	 * test whether p is parent of c
+	 */
+	static bool isParent(const PTUNodePtr& p, const PTUNodePtr& c) {
+		return c != NULL && c->parent == p;
+	}
+
+	static bool isChild(const PTUNodePtr& c, const PTUNodePtr& p) {
+		return isParent(p, c);
+	}
+
+	/**
+	 * write this PTUnrooted tree structure into output in given format
+	 */
+	ostream& writeTree(ostream& out, string format = "newick") const;
+
+	/**
+	 * write this PTUnrooted tree structure with given root recursively into output in newick format
+	 */
+	ostream& writeTreeNewick(ostream& out, const PTUNodePtr& node) const;
 
 private:
 	int L; /* number of aligned sites */
@@ -188,14 +248,53 @@ private:
 	PTUNodePtr root; /* root node of this tree */
 	vector<PTUNodePtr> id2node; /* indexed tree nodes */
 
-	BranchLenMap id2length; /* branch length index storing all L*L pairs */
-	CostMap node2cost; /* cost index between two neighboring nodes */
-
+	BranchLenMap node2length; /* branch length index storing all L*L pairs */
+	CostMap node2cost; /* cached cost message sending from u -> v, before conjugating into the Pr(v) of the branch-length */
+	Matrix4Xd leafCost; /* cached 4 X 5 leaf cost matrix,
+						with each column the pre-computed cost of observing A, C, G, T or - at any given site */
 
 public:
 	/* static fields */
-	static const double MIN_EXPONENT;
+	static const double MAX_COST_EXP;
 };
+
+inline size_t PTUnrooted::numLeaves() const {
+	size_t nLeaves = 0;
+	for(vector<PTUNodePtr>::const_iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt)
+		if((*nodeIt)->isLeaf())
+			nLeaves++;
+	return nLeaves;
+}
+
+inline Matrix4Xd PTUnrooted::evaluate(const PTUNodePtr& node, const DNASubModel& model) {
+	Matrix4Xd costMat(4, L);
+	for(int j = 0; j < L; ++j) {
+		std::cerr << "Evaluating at site " << j << std::endl;
+		costMat.col(j) = evaluate(node, j, model);
+	}
+	return costMat;
+}
+
+inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {
+	StringUtils::toLower(format);
+	if(format == "newick")
+		return writeTreeNewick(out, root) << ";";
+	else {
+		std::cerr << "Cannot write PTUnrooted tree, unknown tree format " << format << std::endl;
+		out.setstate(std::ios_base::failbit);
+		return out;
+	}
+}
+
+inline double PTUnrooted::getBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) const {
+	BranchLenMap::const_iterator resultOuter = node2length.find(u);
+	if(resultOuter == node2length.end())
+		return -1;
+	else {
+		boost::unordered_map<PTUNodePtr, double>::const_iterator resultInner = resultOuter->second.find(v);
+		return resultInner == resultOuter->second.end() ? -1 : resultInner->second;
+	}
+}
 
 } /* namespace EGriceLab */
 

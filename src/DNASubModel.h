@@ -16,7 +16,6 @@
 #include "DegenAlphabet.h"
 #include "MSA.h"
 #include "StringUtils.h"
-#include "PhyloTree.h"
 #include "HmmUFOtuConst.h"
 
 namespace EGriceLab {
@@ -40,6 +39,8 @@ public:
 	/** get model type */
 	virtual string modelType() const = 0;
 
+	virtual Vector4d getPi() const = 0;
+
 	/** Get the P transition matrix given a branch length (in unit time ) and an optional rate factor
 	 * @param t  branch length in the unit time
 	 * @param r  rate factor in variable rate ML estimates
@@ -50,49 +51,25 @@ public:
 	/**
 	 * train model parameters using a given Phylogenetic tree and method
 	 */
-	void trainParams(const PhyloTree& tree, string method = "Gojobori");
+//	void trainParams(const PhyloTree& tree, string method = "Gojobori");
 
-	/**
-	 * Evaluate the likelihood (cost) a Phylogenetic tree using this model
-	 * All tree sites are assumed to be invariated
-	 * @param tree  tree to evaluate, interval values will be set
-	 */
-	void evaluate(PhyloTree& tree) const;
-
-	/**
-	 * Evaluate a likelihood (cost) of a Phylogenetic tree at given site using this model
-	 * @param tree  tree to evaluate, interval values will be set
-	 * @param j  site to evalaute (recursively)
-	 */
-	virtual void evaluate(PhyloTree& tree, int j) const = 0;
-
-	/** get the total cost of a Phylogenetic tree using this model
-	 * Assumes all nodes have been evaluated
-	 */
-	double cost(const PhyloTree& tree) const;
-
-	/** get the total cost at given position of a Phylogenetic tree using this model
-	 * Assumes all nodes have been evaluated
-	 */
-	virtual double cost(const PhyloTree& tree, int j) const = 0;
-
-protected:
+//protected:
 	/* public non-virtual methods that call private virtual methods */
 	/**
 	 * train model parameters using a given Phylogenetic tree and the "Goldman" method
 	 */
-	void trainParamsGoldman(const PhyloTree& tree);
+//	void trainParamsGoldman(const PhyloTree& tree);
 
 	/**
 	 * train model parameters using a given Phylogenetic tree and method
 	 */
-	void trainParamsGojobori(const PhyloTree& tree);
+//	void trainParamsGojobori(const PhyloTree& tree);
 
 private:
 	/**
 	 * train model parameters using given sets of observed base transition and overall frequency stored in vector
 	 */
-	virtual void trainParamsByDataset(const vector<Matrix4d>& P_vec, const Vector4d& f) = 0;
+	virtual void trainParams(const vector<Matrix4d>& P_vec, const Vector4d& f) = 0;
 
 	/* IO methods */
 protected:
@@ -159,26 +136,14 @@ public:
 	static const IOFormat STD_FORMAT; /* standard output format for eigen objects */
 };
 
-inline void DNASubModel::trainParams(const PhyloTree& tree, string method) {
-	if(StringUtils::toLower(method) == "goldman")
-		return trainParamsGoldman(tree);
-	else if(StringUtils::toLower(method) == "gojobori")
-		return trainParamsGojobori(tree);
-	else
-		throw std::invalid_argument("Unknown DNA model training method '" + method + "'");
-}
-
-inline void DNASubModel::evaluate(PhyloTree& tree) const {
-	for(int j = 0; j < tree.alnSites(); ++j)
-		evaluate(tree, j);
-}
-
-inline double DNASubModel::cost(const PhyloTree& tree) const {
-	double c = 0;
-	for(int j = 0; j < tree.alnSites(); ++j)
-		c += cost(tree, j);
-	return c;
-}
+//inline void DNASubModel::trainParams(const PhyloTree& tree, string method) {
+//	if(StringUtils::toLower(method) == "goldman")
+//		return trainParamsGoldman(tree);
+//	else if(StringUtils::toLower(method) == "gojobori")
+//		return trainParamsGojobori(tree);
+//	else
+//		throw std::invalid_argument("Unknown DNA model training method '" + method + "'");
+//}
 
 inline bool DNASubModel::isValidRate(Matrix4d Q) {
 	/* set the diagonal to zeros of this copy */

@@ -133,19 +133,19 @@ Matrix4d DNASubModel::constrainedQfromP(Matrix4d P, bool reversible) {
 	return Q;
 }
 
-void DNASubModel::trainParamsGoldman(const PhyloTree& tree) {
-	vector<Matrix4d> P_vec; /* store observed base transition counts */
-	Vector4d f; /* observed base counts */
-	/* do DFS explore of the tree */
+/*void DNASubModel::trainParamsGoldman(const PhyloTree& tree) {
+	vector<Matrix4d> P_vec;  store observed base transition counts
+	Vector4d f;  observed base counts
+	 do DFS explore of the tree
 	stack<const PT*> S;
 	set<const PT*> visited;
 	S.push(&tree);
 	while(!S.empty()) {
 		const PT* node = S.top();
 		S.pop();
-		if(visited.find(node) == visited.end()) { /* node not visited */
+		if(visited.find(node) == visited.end()) {  node not visited
 			visited.insert(node);
-			if(node->isTip() && node->children.size() >= 2) { /* use its first 2 children for training */
+			if(node->isTip() && node->children.size() >= 2) {  use its first 2 children for training
 				const DigitalSeq& seq1 = node->children[0].seq;
 				const DigitalSeq& seq2 = node->children[1].seq;
 				if(DNASubModel::pDist(seq1, seq1) <= MAX_PDIST) {
@@ -160,23 +160,24 @@ void DNASubModel::trainParamsGoldman(const PhyloTree& tree) {
 			}
 		}
 	}
-	trainParamsByDataset(P_vec, f);
-}
+	trainParams(P_vec, f);
+}*/
 
+/*
 void DNASubModel::trainParamsGojobori(const PhyloTree& tree) {
-	vector<Matrix4d> P_vec; /* store observed base transition counts */
-	Vector4d f = Vector4d::Zero(); /* store observed base counts */
-	/* do DFS explore of the tree */
+	vector<Matrix4d> P_vec;  store observed base transition counts
+	Vector4d f = Vector4d::Zero();  store observed base counts
+	 do DFS explore of the tree
 	stack<const PT*> S;
 	set<const PT*> visited;
 	S.push(&tree);
 	while(!S.empty()) {
 		const PT* node = S.top();
 		S.pop();
-		if(visited.find(node) == visited.end()) { /* node not visited */
+		if(visited.find(node) == visited.end()) {  node not visited
 			visited.insert(node);
 			if(node->children.size() == 2 &&
-				(node->children[0].isTip() || node->children[1].isTip()) ) { /* one child is a tip node */
+				(node->children[0].isTip() || node->children[1].isTip()) ) {  one child is a tip node
 				const DigitalSeq& seq0 = node->children[0].isTip() ? node->children[1].firstLeaf()->seq : node->children[0].firstLeaf()->seq;
 				const DigitalSeq& seq1 = node->children[0].isTip() ? node->children[0].children[0].seq : node->children[1].children[0].seq;
 				const DigitalSeq& seq2 = node->children[0].isTip() ? node->children[0].children[1].seq : node->children[1].children[1].seq;
@@ -199,8 +200,9 @@ void DNASubModel::trainParamsGojobori(const PhyloTree& tree) {
 			}
 		}
 	}
-	trainParamsByDataset(P_vec, f);
+	trainParams(P_vec, f);
 }
+*/
 
 
 } /* namespace EGriceLab */

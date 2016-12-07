@@ -1,6 +1,6 @@
 /*
- * PT_IO_test1.cpp
- *
+ * PTU_test1.cpp
+ *  Test re-root of a PTUnrooted all all possible nodes
  *  Created on: Aug 25, 2016
  *      Author: zhengqi
  */
@@ -37,7 +37,10 @@ int main(int argc, const char* argv[]) {
 
 	PTUnrooted tree(NTree);
 	cerr << "PhyloTreeUnrooted converted from Newick Tree, total " << tree.numNodes() << " nodes found" << endl;
-	cerr << "NTRoot name: " << NTree.name << " neighbors: " << NTree.children.size() << endl;
-	cerr << "PTRoot id: " << tree.getRoot()->id << " name: " << tree.getRoot()->name << " neighbors: " << tree.getRoot()->neighbors.size() << endl;
 
+	for(size_t i = 0; i < tree.numNodes(); ++i) {
+		tree.setRoot(tree.getNode(i));
+		out << "Tree rerooted at node " << i << " name: " << tree.getRoot()->name << endl;
+		tree.writeTree(out) << endl;
+	}
 }
