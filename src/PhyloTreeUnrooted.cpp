@@ -9,14 +9,15 @@
 #include <boost/unordered_set.hpp>
 #include "PhyloTreeUnrooted.h"
 #include <cfloat>
+#include <cmath>
 
 namespace EGriceLab {
 using namespace std;
 using namespace EGriceLab;
 
-const double PhyloTreeUnrooted::MAX_COST_EXP = ::fabs(DBL_MIN_EXP) - ::fabs(FLT_MIN_EXP) > ::fabs(FLT_MIN_EXP) ? ::fabs(DBL_MIN_EXP) - ::fabs(FLT_MIN_EXP) : ::fabs(FLT_MIN_EXP);
+const double PhyloTreeUnrooted::MAX_COST_EXP = -DBL_MIN_EXP / 2; /* use half of the DBL_MIN_EXP to avoid numeric-underflow */
 
-PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : L(0) {
+PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 	/* construct PTUNode by DFS of the NewickTree */
 	boost::unordered_set<const NT*> visited;
 	stack<const NT*> S;
@@ -79,8 +80,7 @@ long PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 		return -1;
 	}
 	const unsigned numSeq = msa.getNumSeq();
-	const unsigned csLen = msa.getCSLen();
-	L = csLen;
+	csLen = msa.getCSLen();
 
 	/* check uniqueness of seq names in msa */
 	map<string, unsigned> nameIdx;
@@ -111,7 +111,6 @@ long PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRoot) {
 	if(newRoot == NULL || newRoot == root) /* no need to set */
 		return root;
-	cerr << "Resetting root at " << newRoot->name << endl;
 
 	newRoot->parent = NULL; // root has no parent
 	/* DFS of this tree starting from newRoot */
@@ -123,17 +122,13 @@ PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRo
 		PTUNodePtr v = S.top();
 		S.pop();
 		if(visited.find(v) == visited.end()) { /* not visited before */
-			cerr << "  setRoot is exploring " << v->name << endl;
 			visited.insert(v);
 
 			/* check each neighbor of v */
 			for(vector<PTUNodePtr>::iterator neighborIt = v->neighbors.begin(); neighborIt != v->neighbors.end(); ++neighborIt) {
-				cerr << "    setRoot found a neighbor of " << v->name << " as " << (*neighborIt)->name << endl;
-				if(visited.find(*neighborIt) == visited.end()) { /* not parent/ancestor of v */
-					/* update this child's parent */
-					cerr << "    setting " << (*neighborIt)->name << " 's parent as " << v->name << endl;
+				if(visited.find(*neighborIt) == visited.end() /* not parent/ancestor of v */
+					&& !isChild(*neighborIt, v)) /* update this child's parent */
 					(*neighborIt)->parent = v;
-				}
 				S.push(*neighborIt);
 			}
 		}
@@ -150,9 +145,10 @@ void PhyloTreeUnrooted::resetCost() {
 }
 
 void PhyloTreeUnrooted::initInCost() {
+	node2cost[root][root->parent] = Matrix4Xd::Constant(4, csLen, inf); /* initiate the dummy root -> NULL cost */
 	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u)
 		for(vector<PTUNodePtr>::iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
-			node2cost[*u][*v] = Matrix4Xd::Constant(4, L, inf);
+			node2cost[*u][*v] = Matrix4Xd::Constant(4, csLen, inf);
 }
 
 void PhyloTreeUnrooted::initLeafCost(const DNASubModel& model) {
@@ -171,40 +167,43 @@ Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j, const DNASub
 //		cerr << "Leaf node " << node->name << " evaluated at site " << j << " cost: "  << costVec.transpose() << endl;
 	}
 	else { /* this is an internal node, all bases are treated as missing data */
-		for(vector<PTUNodePtr>::iterator o = node->neighbors.begin(); o != node->neighbors.end(); ++o) { /* check each child */
-			if(!isChild(*o, node)) /* ignore non-child neighbor */
+		for(vector<PTUNodePtr>::iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) { /* check each child */
+			if(!isChild(*child, node)) /* ignore non-child neighbor */
 				continue;
 
-			/* check whether this incoming cost from child o has been evaluated */
+			/* check whether this incoming cost from child has been evaluated */
 			Vector4d inCost;
-			if(isEvaluated(*o, node, j))
-				inCost = node2cost[*o][node].col(j); /* use cached value */
+			if(isEvaluated(*child, node, j))
+				inCost = node2cost[*child][node].col(j); /* use cached incoming cost */
 			else {
-				const Matrix4d& P = model.Pr(node2length[*o][node]);
 				// cerr << "P:" << P << endl;
-				Vector4d oCost = evaluate(*o, j, model); /* evaluate this child recursively */
-				if((oCost.array() == inf).all()) {
-					cerr << "strange ocost from node id " << (*o)->id << " name " << (*o)->name
+				inCost = evaluate(*child, j, model); /* evaluate this child recursively */
+				if( (inCost.array() != inCost.array()).any() ) {
+					cerr << "Warning: NaN values generated in cost from node id " << (*child)->id << " name " << (*child)->name
 							<< " to node id " << node->id << " name " << node->name <<
-							" with cost " << oCost.transpose() << endl;
+							" with cost " << inCost.transpose() << endl;
 				}
-				double scale = 0; /* potential scaling factor to avoid numeric overflow */
-				if((oCost.array() > MAX_COST_EXP).all()) { /* need re-scale only the min cost efficient is too large */
-					scale = oCost.minCoeff() - MAX_COST_EXP;
-					oCost.array() -= scale;
-
-					cerr << "scaling at " << scale << " to avoid numeric underflow" << endl;
-				}
-				for(Vector4d::Index i = 0; i < inCost.rows(); ++i)
-					inCost(i) = -::log(P.row(i).dot((-oCost).array().exp().matrix())) + scale;
-
-				node2cost[*o][node].col(j) = inCost; /* cache this cost */
+				node2cost[*child][node].col(j) = inCost; /* cache this cost */
 			}
-			costVec += inCost;
+
+			/* convolute the inCost with Pr */
+			double scale = 0; /* potential scaling factor to avoid numeric overflow */
+			if((inCost.array() != inf).any() && (inCost.array() > MAX_COST_EXP).all()) { /* need re-scale only the min cost efficient is too large */
+				scale = inCost.minCoeff() - MAX_COST_EXP;
+				inCost.array() -= scale;
+//				cerr << "scaling at " << scale << " to avoid numeric underflow" << endl;
+			}
+			const Matrix4d& P = model.Pr(node2length[*child][node]);
+
+			for(Vector4d::Index i = 0; i < inCost.rows(); ++i)
+				costVec(i) += -::log(P.row(i).dot((-inCost).array().exp().matrix())) + scale;
+
 		}
 //		cerr << "Internal node " << node->id << " evaluated at site " << j << " cost: "  << costVec.transpose() << endl;
 	}
 
+	if(node->isRoot()) /* the inCost message of root also needed to be stored */
+		node2cost[node][node->parent].col(j) = costVec;
 	return costVec;
 }
 
@@ -230,6 +229,18 @@ ostream& PTUnrooted::writeTreeNewick(ostream& out, const PTUNodePtr& node) const
 		out << ':' << length;
 
 	return out;
+}
+
+double PTUnrooted::treeCost(int j, const DNASubModel& model) {
+	Vector4d cost = !isEvaluated(root, root->parent, j) ? /* tree site not evaluated */
+		evaluate(root, j, model) /* evaluate if neccessary */ : node2cost[root][NULL].col(j) /* use cached value */;
+
+	double scale = 0; /* scale factor to avoid potential numeric underflow */
+	if((cost.array() != inf).any() && (cost.array() > MAX_COST_EXP).all()) { /* need re-scale only the min cost efficient is too large */
+		scale = cost.minCoeff() - MAX_COST_EXP;
+		cost.array() -= scale;
+	}
+	return -::log(model.getPi().dot((-cost).array().exp().matrix())) + scale;
 }
 
 } /* namespace EGriceLab */

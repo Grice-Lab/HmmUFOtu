@@ -1,7 +1,7 @@
 /*
- * PTU_IO_test3.cpp
- *  test PTUnrooted IO and MSA loading
- *  Created on: Aug 25, 2016
+ * PTU_test2.cpp
+ *  test PTUnrooted evaluating at fixed root
+ *  Created on: Dec 8, 2016
  *      Author: zhengqi
  */
 
@@ -16,13 +16,14 @@ using namespace std;
 using namespace EGriceLab;
 
 int main(int argc, const char* argv[]) {
-	if(argc != 3) {
-		cerr << "Usage:  " << argv[0] << " TREE-INFILE MSA-INFILE" << endl;
+	if(argc != 4) {
+		cerr << "Usage:  " << argv[0] << " TREE-INFILE MSA-INFILE OUTFILE" << endl;
 		return -1;
 	}
 
 	ifstream in(argv[1]);
 	ifstream msaIn(argv[2]);
+	ofstream out(argv[3]);
 
 	if(!in.is_open()) {
 		cerr << "Unable to open " << argv[1] << endl;
@@ -30,6 +31,10 @@ int main(int argc, const char* argv[]) {
 	}
 	if(!msaIn.is_open()) {
 		cerr << "Unable to open " << argv[2] << endl;
+		return -1;
+	}
+	if(!out.is_open()) {
+		cerr << "Unable to open " << argv[3] << endl;
 		return -1;
 	}
 
@@ -63,4 +68,22 @@ int main(int argc, const char* argv[]) {
 	else {
 		cerr << "MSA loaded successfully, read in " << nRead << " nodes with " << tree.getNumAlignSites() << " numSites" << endl;
 	}
+
+	ifstream modelIn("99_otus.gtr");
+	GTR model;
+	modelIn >> model;
+	cerr << "DNA model loaded" << endl;
+	cerr << "MAX_COST_EXP: " << PhyloTreeUnrooted::MAX_COST_EXP << endl;
+
+	clock_t t1 = clock();
+	tree.initInCost();
+	tree.initLeafCost(model);
+	clock_t t2 = clock();
+	cerr << "Tree cost initiated, total eclipsed time: " << (t2 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
+
+	tree.evaluate(tree.getRoot(), model);
+	double treeCost = tree.treeCost(model);
+	clock_t t3 = clock();
+	out << "Tree evaluated, total eclipsed time: " << (t3 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
+	out << "Final tree cost: " << treeCost << endl;
 }

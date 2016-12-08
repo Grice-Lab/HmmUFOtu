@@ -116,7 +116,7 @@ public:
 
 	/* constructors */
 	/** Default constructor, do nothing */
-	PhyloTreeUnrooted() : L(0) {  }
+	PhyloTreeUnrooted() : csLen(0) {  }
 
 	/** Construct a PTUnrooted from a Newick Tree */
 	PhyloTreeUnrooted(const NewickTree& ntree);
@@ -133,7 +133,7 @@ public:
 
 	/** get number of aligned sites */
 	int getNumAlignSites() const {
-		return L;
+		return csLen;
 	}
 
 	/** Get root node */
@@ -212,13 +212,41 @@ public:
 	Matrix4Xd evaluate(const PTUNodePtr& node, const DNASubModel& model);
 
 	/**
-	 * evaluate the likelihood at given node and site by treating it as the root of this PTUnrooted
+	 * evaluate the likelihood of a given node and site by treating it as the root of this PTUnrooted
 	 * @param node  new root of this tree
 	 * @param j  the jth aligned site
 	 * @param model  DNA substitution model, must be a time-reversible model
-	 * @return  cost vector of observing this tree at this root
+	 * @return  cost vector of observing this tree at the jth site at this root
 	 */
 	Vector4d evaluate(const PTUNodePtr& node, int j, const DNASubModel& model);
+
+	/**
+	 * calculate the entire tree cost given a DNA sub model
+	 * evaluate the tree if necessary
+	 */
+	double treeCost(const DNASubModel& model);
+
+	/**
+	 * calculate the entire tree cost at given region using given a DNA sub model
+	 * both start and end are 0-based inclusive
+	 */
+	double treeCost(int start, int end, const DNASubModel& model);
+
+	/**
+	 * calculate the entire tree cost at j-th site given a DNA sub model
+	 * evaluate the tree if neccessary
+	 */
+	double treeCost(int j, const DNASubModel& model);
+
+	/**
+	 * write this PTUnrooted tree structure into output in given format
+	 */
+	ostream& writeTree(ostream& out, string format = "newick") const;
+
+	/**
+	 * write this PTUnrooted tree structure with given root recursively into output in newick format
+	 */
+	ostream& writeTreeNewick(ostream& out, const PTUNodePtr& node) const;
 
 	/* static methods */
 	/**
@@ -232,18 +260,9 @@ public:
 		return isParent(p, c);
 	}
 
-	/**
-	 * write this PTUnrooted tree structure into output in given format
-	 */
-	ostream& writeTree(ostream& out, string format = "newick") const;
-
-	/**
-	 * write this PTUnrooted tree structure with given root recursively into output in newick format
-	 */
-	ostream& writeTreeNewick(ostream& out, const PTUNodePtr& node) const;
-
+	/* member fields */
 private:
-	int L; /* number of aligned sites */
+	int csLen; /* number of aligned sites */
 
 	PTUNodePtr root; /* root node of this tree */
 	vector<PTUNodePtr> id2node; /* indexed tree nodes */
@@ -267,8 +286,8 @@ inline size_t PTUnrooted::numLeaves() const {
 }
 
 inline Matrix4Xd PTUnrooted::evaluate(const PTUNodePtr& node, const DNASubModel& model) {
-	Matrix4Xd costMat(4, L);
-	for(int j = 0; j < L; ++j) {
+	Matrix4Xd costMat(4, csLen);
+	for(int j = 0; j < csLen; ++j) {
 		std::cerr << "Evaluating at site " << j << std::endl;
 		costMat.col(j) = evaluate(node, j, model);
 	}
@@ -295,6 +314,18 @@ inline double PTUnrooted::getBranchLength(const PTUNodePtr& u, const PTUNodePtr&
 		return resultInner == resultOuter->second.end() ? -1 : resultInner->second;
 	}
 }
+
+inline double PTUnrooted::treeCost(int start, int end, const DNASubModel& model) {
+	double cost = 0;
+	for(int j = start; j <= end; ++j)
+		cost += treeCost(j, model);
+	return cost;
+}
+
+inline double PTUnrooted::treeCost(const DNASubModel& model) {
+	return treeCost(0, csLen - 1, model);
+}
+
 
 } /* namespace EGriceLab */
 
