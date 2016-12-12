@@ -348,7 +348,7 @@ istream& MSA::load(istream& in) {
 	readProgVersion(in, pver);
 	if(cmpVersion(progVersion, pver) < 0) {
 		cerr << "You are trying using an older version " << (progName + progVersion) <<
-				" to read a newer MSA object file that was build by " << (pname + pver) << endl;
+				" to read a newer MSA data file that was build by " << (pname + pver) << endl;
 		in.setstate(ios_base::failbit);
 		return in;
 	}

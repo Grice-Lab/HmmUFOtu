@@ -10,8 +10,8 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	ifstream in(argv[1]);
-	ofstream out(argv[2]);
+	ifstream in(argv[1], ios_base::in | ios_base::binary);
+	ofstream out(argv[2], ios_base::out | ios_base::binary);
 	if(!in.is_open()) {
 		cerr << "Unable to open " << argv[1] << endl;
 		return -1;

@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	ofstream out(argv[3]);
+	ofstream out(argv[3], ios_base::out | ios_base::binary);
 	if(!out.is_open()) {
 		cerr << "Unable to open " << argv[3] << endl;
 		return -1;
@@ -27,7 +27,8 @@ int main(int argc, char *argv[]) {
 	msa.prune();
 	cerr << "MSA pruned" << endl;
 
-	cerr << "Total seqNum:" << msa.getNumSeq() << endl;
+	cerr << "csLen: " << msa.getCSLen() << endl;
+	cerr << "Total seqNum: " << msa.getNumSeq() << endl;
 
 	if(!msa.save(out)) {
 		cerr << "Unable to save MSA database" << endl;
