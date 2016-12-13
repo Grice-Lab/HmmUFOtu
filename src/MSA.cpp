@@ -109,12 +109,32 @@ MSA& MSA::prune() {
 
 	/* destroy old counts */
 	clear();
+	resetRawCount();
+	resetSeqWeight();
+	resetWeightedCount();
 
 	/* rebuild the counts */
 	updateRawCounts();
 	updateSeqWeight();
 	updateWeightedCounts();
 	isPruned = true;
+
+	cerr << "alphabet: " << alphabet << endl;
+	cerr << "name: " << name << endl;
+	cerr << "numSeq: " << numSeq << endl;
+	cerr << "csLen: " << csLen << endl;
+	cerr << "seqNames.size(): " << seqNames.size() << endl;
+	cerr << "concatMSA.length(): " << concatMSA.length() << endl;
+	cerr << "CS.length(): " << CS.length() << endl;
+	cerr << "startIdx.size(): " << startIdx.size() << endl;
+	cerr << "endIdx.size(): " << endIdx.size() << endl;
+	cerr << "lenIdx.size(): " << lenIdx.size() << endl;
+	cerr << "resCount.size(): " << resCount.size() << endl;
+	cerr << "gapCount.rows(): " << gapCount.rows() << endl;
+	cerr << "seqWeight.rows(): " << seqWeight.rows() << endl;
+	cerr << "resWCount.size(): " << resWCount.size() << endl;
+	cerr << "gapWCount.rows(): " << gapWCount.rows() << endl;
+
 	return *this;
 }
 
@@ -145,65 +165,46 @@ long MSA::loadFastaFile(const string& alphabet, const string& filename) {
 }
 
 void MSA::clear() {
-	delete[] startIdx;
-	delete[] endIdx;
-	delete[] lenIdx;
-	delete[] resCountBuf;
-	delete[] gapCountBuf;
-	delete[] seqWeightBuf;
-	delete[] resWCountBuf;
-	delete[] gapWCountBuf;
-	startIdx = NULL;
-	endIdx = NULL;
-	lenIdx = NULL;
-	resCountBuf = NULL;
-	gapCountBuf = NULL;
-	seqWeightBuf = NULL;
-	resWCountBuf = NULL;
-	gapWCountBuf = NULL;
+//	resCount.setZero();
+//	gapCount.setZero();
+//	seqWeight.setZero();
+//	resWCount.setZero();
+//	gapWCount.setZero();
 }
 
 void MSA::resetRawCount() {
-	/* Initiate raw buffers and associated them to the Eigen maps */
-	if(resCountBuf == NULL) {
-		resCountBuf = new int[abc->getSize() * csLen];
-		new (&resCount) Map<MatrixXi>(resCountBuf, abc->getSize(), csLen); /* replacement constructor */
-	}
-	if(gapCountBuf == NULL) {
-		gapCountBuf = new int[csLen];
-		new (&gapCount) Map<VectorXi>(gapCountBuf, csLen); /* replacement constructor */
-	}
-	if(startIdx == NULL)
-		startIdx = new int[numSeq](); /* zero initiation */
-	if(endIdx == NULL)
-		endIdx = new int[numSeq]; /* zero initiation */
-	if(lenIdx == NULL)
-		lenIdx = new int[numSeq]; /* zero initiation */
+	/* Initiate counts */
+	if(resCount.size() != abc->getSize() * csLen)
+		resCount.resize(abc->getSize(), csLen);
+	if(gapCount.rows() != csLen)
+		gapCount.resize(csLen);
+	if(startIdx.size() != numSeq)
+		startIdx.resize(numSeq);
+	if(endIdx.size() != numSeq)
+		endIdx.resize(numSeq);
+	if(lenIdx.size() != numSeq)
+		lenIdx.resize(numSeq);
+
 	/* reset count to zero */
 	resCount.setZero();
 	gapCount.setZero();
+	std::fill(startIdx.begin(), startIdx.end(), 0);
+	std::fill(endIdx.begin(), endIdx.end(), 0);
+	std::fill(lenIdx.begin(), lenIdx.end(), 0);
 }
 
 void MSA::resetSeqWeight() {
-	/* Initiate raw buffers and associated them to the Eigen maps */
-	if(seqWeightBuf == NULL) {
-		seqWeightBuf = new double[numSeq];
-		new (&seqWeight) Map<VectorXd>(seqWeightBuf, numSeq); /* replacement constructor */
-	}
+	if(seqWeight.rows() != numSeq)
+		seqWeight.resize(numSeq);
 	/* reset count to zero */
 	seqWeight.setZero();
 }
 
 void MSA::resetWeightedCount() {
-	/* Initiate raw buffers and associated them to the Eigen maps */
-	if(resWCountBuf == NULL) {
-		resWCountBuf = new double[abc->getSize() * csLen];
-		new (&resWCount) Map<MatrixXd>(resWCountBuf, abc->getSize(), csLen); /* replacement constructor */
-	}
-	if(gapWCountBuf == NULL) {
-		gapWCountBuf = new double[csLen];
-		new (&gapWCount) Map<VectorXd>(gapWCountBuf, csLen); /* replacement constructor */
-	}
+	if(resWCount.size() != abc->getSize() * csLen)
+		resWCount.resize(abc->getSize(), csLen);
+	if(gapWCount.rows() != csLen)
+		gapWCount.resize(csLen);
 	/* reset count to zero */
 	resWCount.setZero();
 	gapWCount.setZero();
@@ -320,19 +321,55 @@ ostream& MSA::save(ostream& out) {
 	/* write concatMSA */
 	out.write(concatMSA.c_str(), concatMSA.length() + 1);
 //	cerr << "concatMSA written" << endl;
+
+	int* bufi = NULL; /* integer output buffer */
+	double* bufd = NULL; /* double output buffer */
+
 	/* write auxiliary index */
-	out.write((const char*) startIdx, sizeof(int) * numSeq);
-	out.write((const char*) endIdx, sizeof(int) * numSeq);
-	out.write((const char*) lenIdx, sizeof(int) * numSeq);
+	bufi = new int[numSeq];
+	std::copy(startIdx.begin(), startIdx.end(), bufi);
+	out.write((const char*) bufi, sizeof(int) * numSeq);
+
+	std::copy(endIdx.begin(), endIdx.end(), bufi);
+	out.write((const char*) bufi, sizeof(int) * numSeq);
+
+	std::copy(lenIdx.begin(), lenIdx.end(), bufi);
+	out.write((const char*) bufi, sizeof(int) * numSeq);
+	delete[] bufi;
 
 	/* write raw counts */
-	out.write((const char*) resCountBuf, sizeof(int) * abc->getSize() * csLen);
-	out.write((const char*) gapCountBuf, sizeof(int) * csLen);
+	bufi = new int[resCount.size()];
+	Map<MatrixXi> resCountMap(bufi, resCount.rows(), resCount.cols());
+	resCountMap = resCount; /* copy data */
+	out.write((const char*) bufi, sizeof(int) * resCount.size());
+	delete[] bufi;
+
+	bufi = new int[gapCount.rows()];
+	Map<VectorXi> gapCountMap(bufi, gapCount.rows());
+	gapCountMap = gapCount; /* copy data */
+	out.write((const char*) bufi, sizeof(int) * gapCount.rows());
+	delete[] bufi;
+
 	/* write seq weights */
-	out.write((const char*) seqWeightBuf, sizeof(double) * numSeq);
+	bufd = new double[seqWeight.rows()];
+	Map<VectorXd> seqWeightMap(bufd, seqWeight.rows());
+	seqWeightMap = seqWeight; /* copy data */
+	out.write((const char*) bufd, sizeof(double) * seqWeight.rows());
+	delete[] bufd;
+
 	/* write weighted counts */
-	out.write((const char*) resWCountBuf, sizeof(double) * abc->getSize() * csLen);
-	out.write((const char*) gapWCountBuf, sizeof(double) * csLen);
+	bufd = new double[resWCount.size()];
+	Map<MatrixXd> resWCountMap(bufd, resWCount.rows(), resWCount.cols());
+	resWCountMap = resWCount; /* copy data */
+	out.write((const char*) bufd, sizeof(double) * resWCount.size());
+	delete[] bufd;
+
+	bufd = new double[gapWCount.rows()];
+	Map<VectorXd> gapWCountMap(bufd, gapWCount.rows());
+	gapWCountMap = gapWCount; /* copy data */
+	out.write((const char*) bufd, sizeof(double) * gapWCount.rows());
+	delete[] bufd;
+
 	return out;
 }
 
@@ -353,7 +390,9 @@ istream& MSA::load(istream& in) {
 		return in;
 	}
 	/* read basic info */
-	char* buf = NULL;
+	char* buf = NULL; /* character buf */
+	int* bufi = NULL; /* integer buf */
+	double* bufd = NULL; /* double buf */
 	string::size_type nAlphabet, nCS, nName;
 	in.read((char*) &nAlphabet, sizeof(string::size_type));
 	buf = new char[nAlphabet + 1];
@@ -391,33 +430,67 @@ istream& MSA::load(istream& in) {
 	in.read(buf, numSeq * csLen + 1);
 	concatMSA.assign(buf, numSeq * csLen);
 	delete[] buf;
-	/* Read auxiliary index */
-	startIdx = new int[numSeq];
-	in.read((char*) startIdx, sizeof(int) * numSeq);
-	endIdx = new int[numSeq];
-	in.read((char*) endIdx, sizeof(int) * numSeq);
-	lenIdx = new int[numSeq];
-	in.read((char*) lenIdx, sizeof(int) * numSeq);
-	/* Read raw counts */
-	resCountBuf = new int[abc->getSize() * csLen];
-	in.read((char*) resCountBuf, sizeof(int) * abc->getSize() * csLen);
-	gapCountBuf = new int[csLen];
-	in.read((char*) gapCountBuf, sizeof(int) * csLen);
-	/* Read seq weights */
-	seqWeightBuf = new double[numSeq];
-	in.read((char*) seqWeightBuf, sizeof(double) * numSeq);
-	/* Read weighted counts */
-	resWCountBuf = new double[abc->getSize() * csLen];
-	in.read((char*) resWCountBuf, sizeof(double) * abc->getSize() * csLen);
-	gapWCountBuf = new double[csLen];
-	in.read((char*) gapWCountBuf, sizeof(double) * csLen);
 
-	/* replacement constructor the count matrices */
-	new (&resCount) Map<MatrixXi>(resCountBuf, abc->getSize(), csLen);
-	new (&gapCount) Map<VectorXi>(gapCountBuf, csLen);
-	new (&seqWeight) Map<VectorXd>(seqWeightBuf, numSeq);
-	new (&resWCount) Map<MatrixXd>(resWCountBuf, abc->getSize(), csLen);
-	new (&gapWCount) Map<VectorXd>(gapWCountBuf, csLen);
+	/* initiate all maticies and indices */
+	resetRawCount();
+	resetSeqWeight();
+	resetWeightedCount();
+
+	/* Read auxiliary index */
+	bufi = new int[numSeq];
+	in.read((char*) bufi, sizeof(int) * numSeq);
+	std::copy(bufi, bufi + numSeq, startIdx.begin()); /* copy data */
+
+	in.read((char*) bufi, sizeof(int) * numSeq);
+	std::copy(bufi, bufi + numSeq, endIdx.begin()); /* copy data */
+
+	in.read((char*) bufi, sizeof(int) * numSeq);
+	std::copy(bufi, bufi + numSeq, lenIdx.begin()); /* copy data */
+	delete[] bufi;
+
+	/* Read raw counts */
+	bufi = new int[resCount.size()];
+	in.read((char*) bufi, sizeof(int) * resCount.size());
+	resCount = Map<MatrixXi>(bufi, resCount.rows(), resCount.cols()); /* copy by assign */
+	delete[] bufi;
+
+	bufi = new int[gapCount.rows()];
+	in.read((char*) bufi, sizeof(int) * gapCount.rows());
+	gapCount = Map<VectorXi>(bufi, gapCount.rows()); /* copy by assign */
+	delete[] bufi;
+
+	/* Read seq weights */
+	bufd = new double[seqWeight.rows()];
+	in.read((char*) bufd, sizeof(double) * seqWeight.rows()); /* copy by assign */
+	seqWeight = Map<VectorXd>(bufd, seqWeight.rows());
+	delete[] bufd;
+
+	/* Read weighted counts */
+	bufd = new double[resWCount.size()];
+	in.read((char*) bufd, sizeof(double) * resWCount.size());
+	resWCount = Map<MatrixXd>(bufd, resWCount.rows(), resWCount.cols()); /* copy by assign */
+	delete[] bufd;
+
+	bufd = new double[gapWCount.rows()];
+	in.read((char*) bufd, sizeof(double) * gapWCount.rows());
+	gapWCount = Map<VectorXd>(bufd, gapWCount.rows()); /* copy by assign */
+	delete[] bufd;
+
+	cerr << "alphabet: " << alphabet << endl;
+	cerr << "name: " << name << endl;
+	cerr << "numSeq: " << numSeq << endl;
+	cerr << "csLen: " << csLen << endl;
+	cerr << "seqNames.size(): " << seqNames.size() << endl;
+	cerr << "concatMSA.length(): " << concatMSA.length() << endl;
+	cerr << "CS.length(): " << CS.length() << endl;
+	cerr << "startIdx.size(): " << startIdx.size() << endl;
+	cerr << "endIdx.size(): " << endIdx.size() << endl;
+	cerr << "lenIdx.size(): " << lenIdx.size() << endl;
+	cerr << "resCount.size(): " << resCount.size() << endl;
+	cerr << "gapCount.rows(): " << gapCount.rows() << endl;
+	cerr << "seqWeight.rows(): " << seqWeight.rows() << endl;
+	cerr << "resWCount.size(): " << resWCount.size() << endl;
+	cerr << "gapWCount.rows(): " << gapWCount.rows() << endl;
 
 	return in;
 }

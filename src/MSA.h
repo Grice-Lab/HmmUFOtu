@@ -341,20 +341,8 @@ public:
 	 * @throw invalid_argument if the alphabet is not known
 	 */
 	explicit MSA(const string& alphabet = "dna") : alphabet(alphabet), abc(SeqCommons::getAlphabetByName(alphabet)),
-		numSeq(0), csLen(0), isPruned(false),
-		startIdx(NULL), lenIdx(NULL), endIdx(NULL),
-		resCountBuf(NULL), gapCountBuf(NULL),
-		seqWeightBuf(NULL),
-		resWCountBuf(NULL), gapWCountBuf(NULL),
-		resCount(NULL, 0, 0), gapCount(NULL, 0),
-		seqWeight(NULL, 0),
-		resWCount(NULL, 0, 0), gapWCount(NULL, 0)
+		numSeq(0), csLen(0), isPruned(false)
 	{  }
-
-private:
-	/* Disable copy and assignment constructors */
-	MSA(const MSA& other);
-	MSA& operator=(const MSA& other);
 
 	/* Clear the heap memories */
 	void clear();
@@ -372,7 +360,7 @@ private:
 	void calculateCS();
 
 	string alphabet;
-	const DegenAlphabet* abc;
+	const DegenAlphabet* abc; /* stored abc const pointer that guarenteed to be a global variable */
 	string name;
 	unsigned numSeq; /* number of sequences */
 	unsigned csLen;  /* consensus seq length */
@@ -382,23 +370,16 @@ private:
 	string CS;        // Consensus Sequence
 	bool isPruned; // flag for whether this MS is pruned
 	/* auxiliary data to remember each sequence start, end and length (non-gapped) */
-	int* startIdx; /* start position on CS */
-	int* endIdx; /* end position on CS */
-	int* lenIdx; /* unmapped length */
-
-	/* raw matrix/vector buffers for residual & gap count */
-	int* resCountBuf; /* raw buffer for Residual count */
-	int* gapCountBuf; /* raw buffer for gap count */
-	double* seqWeightBuf; /* raw buffer for sequence weight */
-	double* resWCountBuf; /* raw buffer for weighted residual count */
-	double* gapWCountBuf; /* raw buffer for weighted gap count */
+	vector<int> startIdx; /* start position on CS */
+	vector<int> endIdx; /* end position on CS */
+	vector<int> lenIdx; /* unmapped length */
 
 	/* matrix/vector for residual & gap count */
-	Map<MatrixXi> resCount; /* Residual count matrix w/ alphabet-size X CSLen dimension */
-	Map<VectorXi> gapCount; /* gap count array w/ CSLen length */
-	Map<VectorXd> seqWeight; /* Sequence weight for each seq w/ numSeq length */
-	Map<MatrixXd> resWCount; /* weighted residual count matrix w/ alphabet-size X CSLen dimension */
-	Map<VectorXd> gapWCount; /* weighted gap count array w/ CSLen length */
+	MatrixXi resCount; /* Residual count matrix w/ alphabet-size X CSLen dimension */
+	VectorXi gapCount; /* gap count array w/ CSLen length */
+	VectorXd seqWeight; /* Sequence weight for each seq w/ numSeq length */
+	MatrixXd resWCount; /* weighted residual count matrix w/ alphabet-size X CSLen dimension */
+	VectorXd gapWCount; /* weighted gap count array w/ CSLen length */
 
 	/* static members */
 public:
