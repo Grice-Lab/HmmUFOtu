@@ -15,7 +15,7 @@ using namespace EGriceLab;
 
 int main(int argc, const char* argv[]) {
 	if(argc != 3) {
-		cerr << "Usage:  " << argv[0] << " TREE-INFILE MSA-INFILE OUTFILE" << endl;
+		cerr << "Usage:  " << argv[0] << " TREE-INFILE MSA-INFILE" << endl;
 		return -1;
 	}
 
@@ -46,7 +46,8 @@ int main(int argc, const char* argv[]) {
 	PTUnrooted tree(NTree);
 	cerr << "PhyloTreeUnrooted constructed, total " << tree.numNodes() << " nodes found" << endl;
 	cerr << "NTRoot name: " << NTree.name << " neighbors: " << NTree.children.size() << endl;
-	cerr << "PTRoot id: " << tree.getRoot()->id << " name: " << tree.getRoot()->name << " neighbors: " << tree.getRoot()->neighbors.size() << endl;
+	cerr << "PTRoot id: " << tree.getRoot()->getId() << " name: " << tree.getRoot()->getName()
+			<< " neighbors: " << tree.getRoot()->numNeighbors() << endl;
 
 	long nLeaves = tree.numLeaves();
 	long nRead = tree.loadMSA(msa);
@@ -58,7 +59,7 @@ int main(int argc, const char* argv[]) {
 		cerr << "Loaded in " << nRead << " nodes from MSA but expecting " << nLeaves << " leaves in the PhyloTree " << endl;
 		return -1;
 	}
-	else {
-		cerr << "MSA loaded successfully, read in " << nRead << " nodes" << endl;
-	}
+	else
+		cerr << "MSA loaded successfully, read in " << nRead << " nodes with " << tree.numAlignSites() << " numSites" << endl;
+
 }

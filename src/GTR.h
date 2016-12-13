@@ -56,6 +56,12 @@ public:
 	 */
 	virtual ostream& write(ostream& out) const;
 
+	/**
+	 * train model parameters using given sets of observed base transition and frequency counts
+	 * @override  base class method
+	 */
+	virtual void trainParams(const vector<Matrix4d>& Pv, const Vector4d& f);
+
 private:
 	static const string name;
 
@@ -69,12 +75,6 @@ private:
 	Vector4d lambda; /* stored eigenvalues of Q for fast computation */
 	Matrix4d U; /* stored eigen-matrix with columns as eigen vectors of Q */
 	Matrix4d U_1; /* U-1 inverse of U */
-
-	/**
-	 * train model parameters using given sets of observed base transition and frequency counts
-	 * @override  base class method
-	 */
-	virtual void trainParams(const vector<Matrix4d>& P_vec, const Vector4d& f);
 
 	void setQfromParams();
 };

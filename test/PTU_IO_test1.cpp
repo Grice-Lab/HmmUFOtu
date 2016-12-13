@@ -38,6 +38,7 @@ int main(int argc, const char* argv[]) {
 	PTUnrooted tree(NTree);
 	cerr << "PhyloTreeUnrooted converted from Newick Tree, total " << tree.numNodes() << " nodes found" << endl;
 	cerr << "NTRoot name: " << NTree.name << " neighbors: " << NTree.children.size() << endl;
-	cerr << "PTRoot id: " << tree.getRoot()->id << " name: " << tree.getRoot()->name << " neighbors: " << tree.getRoot()->neighbors.size() << endl;
+	cerr << "PTRoot id: " << tree.getRoot()->getId() << " name: " << tree.getRoot()->getName()
+			<< " neighbors: " << tree.getRoot()->numNeighbors() << endl;
 
 }

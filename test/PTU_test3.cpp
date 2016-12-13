@@ -1,6 +1,6 @@
 /*
- * PTU_test2.cpp
- *  test PTUnrooted evaluating at fixed root
+ * PTU_test3.cpp
+ *  test PTUnrooted evaluating at all posible nodes
  *  Created on: Dec 8, 2016
  *      Author: zhengqi
  */
@@ -16,15 +16,15 @@ using namespace std;
 using namespace EGriceLab;
 
 int main(int argc, const char* argv[]) {
-	if(argc != 4) {
-		cerr << "Evaluate a tree at given root" << endl;
-		cerr << "Usage:  " << argv[0] << " TREE-INFILE MSA-INFILE OUTFILE" << endl;
+	if(argc != 5) {
+		cerr << "Usage:  " << argv[0] << " TREE-INFILE MSA-INFILE GTR-FILE OUTFILE" << endl;
 		return -1;
 	}
 
 	ifstream in(argv[1]);
 	ifstream msaIn(argv[2]);
-	ofstream out(argv[3]);
+	ifstream gtrIn(argv[3]);
+	ofstream out(argv[4]);
 
 	if(!in.is_open()) {
 		cerr << "Unable to open " << argv[1] << endl;
@@ -34,8 +34,12 @@ int main(int argc, const char* argv[]) {
 		cerr << "Unable to open " << argv[2] << endl;
 		return -1;
 	}
-	if(!out.is_open()) {
+	if(!gtrIn.is_open()) {
 		cerr << "Unable to open " << argv[3] << endl;
+		return -1;
+	}
+	if(!out.is_open()) {
+		cerr << "Unable to open " << argv[4] << endl;
 		return -1;
 	}
 
@@ -71,10 +75,10 @@ int main(int argc, const char* argv[]) {
 		cerr << "MSA loaded successfully, read in " << nRead << " nodes with " << tree.numAlignSites() << " numSites" << endl;
 	}
 
-	ifstream modelIn("99_otus.gtr");
 	GTR model;
-	modelIn >> model;
+	gtrIn >> model;
 	cerr << "DNA model loaded" << endl;
+	cerr << "MAX_COST_EXP: " << PhyloTreeUnrooted::MAX_COST_EXP << endl;
 
 	clock_t t1 = clock();
 	tree.initInCost();
@@ -82,16 +86,14 @@ int main(int argc, const char* argv[]) {
 	clock_t t2 = clock();
 	cerr << "Tree cost initiated, total eclipsed time: " << (t2 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 
-	tree.evaluate(tree.getRoot(), model);
-	double treeCost = tree.treeCost(model);
-	clock_t t3 = clock();
-	cerr << "Tree evaluated, total eclipsed time: " << (t3 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
-	cerr << "Final tree cost: " << treeCost << endl;
-
-	if(tree.save(out))
-		cerr << "Tree saved successfully" << endl;
-	else {
-		cerr << "Unable to save tree" << endl;
-		return -1;
+	for(size_t i = 0; i < tree.numNodes(); ++i) {
+		cerr << "Rooting tree at node " << i << endl;
+		tree.setRoot(tree.getNode(i));
+		cerr << "Evaluating tree at node " << i << endl;
+		tree.evaluate(model);
+		double treeCost = tree.treeCost(model);
+		out << "Final tree cost: " << treeCost << endl;
 	}
+	clock_t t3 = clock();
+	out << "All possible tree evaluated, total eclipsed time: " << (t3 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 }

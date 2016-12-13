@@ -40,7 +40,7 @@ int main(int argc, const char* argv[]) {
 
 	for(size_t i = 0; i < tree.numNodes(); ++i) {
 		tree.setRoot(tree.getNode(i));
-		out << "Tree rerooted at node " << i << " name: " << tree.getRoot()->name << endl;
+		out << "Tree rerooted at node " << i << " name: " << tree.getRoot()->getName() << endl;
 		tree.writeTree(out) << endl;
 	}
 }

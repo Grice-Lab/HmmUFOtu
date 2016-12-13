@@ -44,6 +44,10 @@ istream& GTR::read(istream& in) {
 				for(Vector4d::Index j = 0; j < R.cols(); ++j)
 					in >> R(i, j);
 		}
+		else if(tag == "Q:") { // Q section for human read only
+			for(Vector4d::Index i = 0; i <= Q.rows(); ++i)
+				std::getline(in, line); /* ignore the entire line */
+		}
 		else {
 			cerr << "Un-recognized line found in GTR Model file: tag: " << tag << endl << line << endl;
 			in.setstate(ios_base::badbit);
@@ -60,20 +64,21 @@ ostream& GTR::write(ostream& out) const {
 	out << "Type: " << modelType() << endl;
 	out << "pi: " << pi.transpose().format(FULL_FORMAT) << endl;
 	out << "R:" << endl << R.format(FULL_FORMAT) << endl;
-//	out << "Q:" << endl << Q << endl;
+	out << "Q:" << endl << Q.format(FULL_FORMAT) << endl;
 	return out;
 }
 
-void GTR::trainParams(const vector<Matrix4d>& P_vec, const Vector4d& f) {
+void GTR::trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) {
+	cerr << "Training GTR model using " << Pv.size() << " observed data" << endl;
 	/* estimate pi using mean f */
 	pi = f / f.sum();
 //	assert(isValidFreq(pi));
-	cerr << "pi estimated: " << pi.transpose() << endl;
+//	cerr << "pi estimated: " << pi.transpose() << endl;
 
-	/* estimate Q from P_vec */
+	/* estimate Q from Pv using constrained optimization */
 	Q.setZero();
-	vector<Matrix4d>::size_type N = 0;
-	for(vector<Matrix4d>::const_iterator it = P_vec.begin(); it != P_vec.end(); ++it) {
+	size_t N = 0;
+	for(vector<Matrix4d>::const_iterator it = Pv.begin(); it != Pv.end(); ++it) {
 		const Matrix4d& Qv = constrainedQfromP(*it);
 		if(isValidRate(Qv)) {
 			N++;
@@ -81,8 +86,8 @@ void GTR::trainParams(const vector<Matrix4d>& P_vec, const Vector4d& f) {
 		}
 	}
 	Q /= N;
-	cerr << "Q estimated: " << endl << Q << endl;
-	assert(isValidRate(Q));
+//	cerr << "Q estimated: " << endl << Q << endl;
+//	assert(isValidRate(Q));
 
 	/* Decomposite R from Q, as Qij = Rij * pi(j) */
 	for(Matrix4d::Index j = 0; j < R.cols(); ++j)
@@ -90,12 +95,10 @@ void GTR::trainParams(const vector<Matrix4d>& P_vec, const Vector4d& f) {
 	R.diagonal().setZero(); /* set diagonal to zeros */
 
 	/* average R to make it symmetric */
-	R = (R + R.transpose()) / 2;
+	R += R.transpose().eval();
+	R /= 2.0;
 	/* reset Q */
 	setQfromParams();
-//	cerr << "Final data used in Q traning: " << N << endl;
-//	cerr << "Final R estimated: " << endl << R << endl;
-//	cerr << "Final Q estimated: " << endl << Q << endl;
 }
 
 void GTR::setQfromParams() {
@@ -103,9 +106,8 @@ void GTR::setQfromParams() {
 	assert(R.diagonal().sum() == 0);
 	for(Matrix4d::Index j = 0; j < R.cols(); ++j)
 		Q.col(j) = R.col(j) * pi(j);
-	/* make Q valid */
-	for(Matrix4d::Index i = 0; i < Q.rows(); ++i)
-		Q(i, i) = - Q.row(i).sum();
+	/* setting Q's diagnal elements */
+	Q.diagonal() = - Q.rowwise().sum();
 	Q = scale(Q); /* re-scale Q */
 
 	/* Eigen-decompsite Q

@@ -65,14 +65,11 @@ public:
 	 */
 //	void trainParamsGojobori(const PhyloTree& tree);
 
-private:
 	/**
 	 * train model parameters using given sets of observed base transition and overall frequency stored in vector
 	 */
-	virtual void trainParams(const vector<Matrix4d>& P_vec, const Vector4d& f) = 0;
+	virtual void trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) = 0;
 
-	/* IO methods */
-protected:
 	/**
 	 * read in content from input
 	 */
