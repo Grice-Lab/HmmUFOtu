@@ -118,7 +118,8 @@ am_libHmmUFOtu_a_OBJECTS = HmmUFOtuConst.$(OBJEXT) \
 	DNA.$(OBJEXT) SeqCommons.$(OBJEXT) PrimarySeq.$(OBJEXT) \
 	DigitalSeq.$(OBJEXT) SeqIO.$(OBJEXT) BandedHMMP7Bg.$(OBJEXT) \
 	BandedHMMP7Prior.$(OBJEXT) BandedHMMP7.$(OBJEXT) MSA.$(OBJEXT) \
-	CSFMIndex.$(OBJEXT) PhyloTree.$(OBJEXT) DNASubModel.$(OBJEXT) \
+	CSFMIndex.$(OBJEXT) NewickTree.$(OBJEXT) \
+	PhyloTreeUnrooted.$(OBJEXT) DNASubModel.$(OBJEXT) \
 	GTR.$(OBJEXT)
 libHmmUFOtu_a_OBJECTS = $(am_libHmmUFOtu_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
@@ -271,7 +272,7 @@ CXXCPP = g++ -E
 CXXDEPMODE = depmode=gcc3
 CXXFLAGS = -g -O2
 CYGPATH_W = echo
-DEFS = -DPACKAGE_NAME=\"HmmUFOtu\" -DPACKAGE_TARNAME=\"hmmufotu\" -DPACKAGE_VERSION=\"1.0\" -DPACKAGE_STRING=\"HmmUFOtu\ 1.0\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -DHAVE__BOOL=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DPACKAGE=\"hmmufotu\" -DVERSION=\"1.0\"
+DEFS = -DPACKAGE_NAME=\"HmmUFOtu\" -DPACKAGE_TARNAME=\"hmmufotu\" -DPACKAGE_VERSION=\"1.0\" -DPACKAGE_STRING=\"HmmUFOtu\ 1.0\" -DPACKAGE_BUGREPORT=\"\" -DPACKAGE_URL=\"\" -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_DLFCN_H=1 -DLT_OBJDIR=\".libs/\" -DHAVE__BOOL=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DPACKAGE=\"hmmufotu\" -DVERSION=\"1.0\" -DHAVE_ISNAN=1
 DEPDIR = .deps
 DLLTOOL = false
 DSYMUTIL = 
@@ -296,6 +297,7 @@ LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LIPO = 
 LN_S = ln -s
 LTLIBOBJS = 
+LT_SYS_LIBRARY_PATH = 
 MAKEINFO = ${SHELL} /home/zhengqi/git/HmmUFOtu/HmmUFOtu/missing makeinfo
 MANIFEST_TOOL = :
 MKDIR_P = /usr/bin/mkdir -p
@@ -367,6 +369,7 @@ psdir = ${docdir}
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 srcdir = .
+subdirs =  src/libcds src/libdivsufsort
 sysconfdir = ${prefix}/etc
 target = x86_64-unknown-linux-gnu
 target_alias = 
@@ -402,7 +405,8 @@ BandedHMMP7Prior.cpp \
 BandedHMMP7.cpp \
 MSA.cpp \
 CSFMIndex.cpp \
-PhyloTree.cpp \
+NewickTree.cpp \
+PhyloTreeUnrooted.cpp \
 DNASubModel.cpp \
 GTR.cpp
 
@@ -540,7 +544,8 @@ include ./$(DEPDIR)/HmmUFOtuConst.Po
 include ./$(DEPDIR)/IUPACAmino.Po
 include ./$(DEPDIR)/IUPACNucl.Po
 include ./$(DEPDIR)/MSA.Po
-include ./$(DEPDIR)/PhyloTree.Po
+include ./$(DEPDIR)/NewickTree.Po
+include ./$(DEPDIR)/PhyloTreeUnrooted.Po
 include ./$(DEPDIR)/PrimarySeq.Po
 include ./$(DEPDIR)/SeqCommons.Po
 include ./$(DEPDIR)/SeqIO.Po

@@ -9,7 +9,7 @@ noinst_PROGRAMS = dna_test1   nucl_test1 amino_test1   \
 bHMM_IO_test1 \
 seqIO_test1 bHMM_IO_test1 \
 banded_align_known_seed_test1 \
-MSAIO_test1    MSAIO_test2   MSAIO_test3     MSA_test1 \
+MSAIO_test1    MSAIO_test2   MSAIO_test3  MSAIO_test4   MSA_test1 \
 FMIO_test1     FMIO_test2  \
 banded_align_csfm_test1 \
 banded_pair_csfm_test1 \
@@ -23,7 +23,10 @@ PTU_IO_test1 \
 PTU_IO_test2 \
 PTU_IO_test3 \
 PTU_test1 \
+PTU_test2 \
+PTU_test3 \
 dna_model_IO_test1 \
+dna_model_test1 \
 RootFinder_test1
 
 dna_test1_SOURCES = dna_test1.cpp
@@ -52,6 +55,9 @@ MSAIO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 
 MSAIO_test3_SOURCES = MSAIO_test3.cpp
 MSAIO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+
+MSAIO_test4_SOURCES = MSAIO_test4.cpp
+MSAIO_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 
 MSA_test1_SOURCES = MSA_test1.cpp
 MSA_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
@@ -109,6 +115,14 @@ DD_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
 $(top_srcdir)/src/math/libEGMath.a
 DD_IO_test1_LDFLAGS = -static
 
+NT_IO_test1_SOURCES = NT_IO_test1.cpp
+NT_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+NT_IO_test1_LDFLAGS = -static
+
+NT_IO_test2_SOURCES = NT_IO_test2.cpp
+NT_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+NT_IO_test2_LDFLAGS = -static
+
 PTU_IO_test1_SOURCES = PTU_IO_test1.cpp
 PTU_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 PTU_IO_test1_LDFLAGS = -static
@@ -125,25 +139,21 @@ PTU_test1_SOURCES = PTU_test1.cpp
 PTU_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 PTU_test1_LDFLAGS = -static
 
-NT_IO_test1_SOURCES = NT_IO_test1.cpp
-NT_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
-NT_IO_test1_LDFLAGS = -static
+PTU_test2_SOURCES = PTU_test2.cpp
+PTU_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_test2_LDFLAGS = -static
 
-NT_IO_test2_SOURCES = NT_IO_test2.cpp
-NT_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
-NT_IO_test2_LDFLAGS = -static
-
-PTU_IO_test1_SOURCES = PTU_IO_test1.cpp
-PTU_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
-PTU_IO_test1_LDFLAGS = -static
-
-#dna_model_test1_SOURCES = dna_model_test1.cpp
-#dna_model_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
-#dna_model_test1_LDFLAGS = -static
+PTU_test3_SOURCES = PTU_test3.cpp
+PTU_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_test3_LDFLAGS = -static
 
 dna_model_IO_test1_SOURCES = dna_model_IO_test1.cpp
 dna_model_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 dna_model_IO_test1_LDFLAGS = -static
+
+dna_model_test1_SOURCES = dna_model_test1.cpp
+dna_model_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+dna_model_test1_LDFLAGS = -static
 
 #dna_model_test2_SOURCES = dna_model_test2.cpp
 #dna_model_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
@@ -153,4 +163,3 @@ RootFinder_test1_SOURCES = RootFinder_test1.cpp
 RootFinder_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
 $(top_srcdir)/src/math/libEGMath.a
 RootFinder_test1_LDFLAGS = -static
-

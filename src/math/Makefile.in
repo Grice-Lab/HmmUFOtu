@@ -139,7 +139,7 @@ libEGMath_a_AR = $(AR) $(ARFLAGS)
 libEGMath_a_LIBADD =
 am_libEGMath_a_OBJECTS = Stats.$(OBJEXT) LinearAlgebraBasic.$(OBJEXT) \
 	DirichletModel.$(OBJEXT) DirichletDensity.$(OBJEXT) \
-	DirichletMixture.$(OBJEXT)
+	DirichletMixture.$(OBJEXT) RootFinder.$(OBJEXT)
 libEGMath_a_OBJECTS = $(am_libEGMath_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -250,6 +250,7 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
@@ -321,6 +322,7 @@ psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target = @target@
 target_alias = @target_alias@
@@ -340,7 +342,8 @@ lib_LIBRARIES = libEGMath.a
 libEGMath_a_SOURCES = Stats.cpp  LinearAlgebraBasic.cpp \
 DirichletModel.cpp \
 DirichletDensity.cpp \
-DirichletMixture.cpp
+DirichletMixture.cpp \
+RootFinder.cpp
 
 all: all-am
 
@@ -422,6 +425,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DirichletMixture.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DirichletModel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearAlgebraBasic.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RootFinder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stats.Po@am__quote@
 
 .cpp.o:

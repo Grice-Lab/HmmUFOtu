@@ -118,7 +118,8 @@ am_libHmmUFOtu_a_OBJECTS = HmmUFOtuConst.$(OBJEXT) \
 	DNA.$(OBJEXT) SeqCommons.$(OBJEXT) PrimarySeq.$(OBJEXT) \
 	DigitalSeq.$(OBJEXT) SeqIO.$(OBJEXT) BandedHMMP7Bg.$(OBJEXT) \
 	BandedHMMP7Prior.$(OBJEXT) BandedHMMP7.$(OBJEXT) MSA.$(OBJEXT) \
-	CSFMIndex.$(OBJEXT) PhyloTree.$(OBJEXT) DNASubModel.$(OBJEXT) \
+	CSFMIndex.$(OBJEXT) NewickTree.$(OBJEXT) \
+	PhyloTreeUnrooted.$(OBJEXT) DNASubModel.$(OBJEXT) \
 	GTR.$(OBJEXT)
 libHmmUFOtu_a_OBJECTS = $(am_libHmmUFOtu_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
@@ -296,6 +297,7 @@ LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
@@ -367,6 +369,7 @@ psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
+subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target = @target@
 target_alias = @target_alias@
@@ -402,7 +405,8 @@ BandedHMMP7Prior.cpp \
 BandedHMMP7.cpp \
 MSA.cpp \
 CSFMIndex.cpp \
-PhyloTree.cpp \
+NewickTree.cpp \
+PhyloTreeUnrooted.cpp \
 DNASubModel.cpp \
 GTR.cpp
 
@@ -540,7 +544,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IUPACAmino.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IUPACNucl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSA.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PhyloTree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewickTree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PhyloTreeUnrooted.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PrimarySeq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqCommons.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqIO.Po@am__quote@
