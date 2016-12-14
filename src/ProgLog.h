@@ -19,21 +19,11 @@ using std::endl;
 
 class ProgLog {
 public:
-	/* nested enum */
-	enum LogLevel {
-		LOG_NOTHING,
-//		LOG_CRITICAL,
-		LOG_ERROR,
-		LOG_WARNING,
-		LOG_INFO,
-		LOG_DEBUG
-	};
-
 	/* constructors */
 	/**
 	 * construct a ProgLog using given output stream
 	 */
-	explicit ProgLog(ostream& out, LogLevel level = LOG_NOTHING)
+	explicit ProgLog(ostream& out, LOG_LEVEL level = LOG_NOTHING)
 	: out(out), level(level) {  }
 	/* disable copy and assignment constructors */
 private:
@@ -42,11 +32,11 @@ private:
 
 public:
 	/* member methods */
-	LogLevel getLevel() const {
+	LOG_LEVEL getLevel() const {
 		return level;
 	}
 
-	void setLevel(LogLevel level) {
+	void setLevel(LOG_LEVEL level) {
 		this->level = level;
 	}
 
@@ -65,9 +55,7 @@ public:
 
 private:
 	ostream& out; /* underlying output stream */
-	LogLevel level;
-
-
+	LOG_LEVEL level;
 };
 
 /* namespace static variables */

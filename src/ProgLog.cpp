@@ -11,8 +11,8 @@ namespace EGriceLab {
 
 using namespace std;
 
-ProgLog errorLog(cerr, ProgLog::LOG_ERROR);
-ProgLog warningLog(cerr, ProgLog::LOG_WARNING);
-ProgLog infoLog(cerr, ProgLog::LOG_INFO);
+ProgLog errorLog(cerr, LOG_ERROR);
+ProgLog warningLog(cerr, LOG_WARNING);
+ProgLog infoLog(cerr, LOG_INFO);
 
 } /* namespace EGriceLab */
