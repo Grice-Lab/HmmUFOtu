@@ -12,7 +12,7 @@
 
 namespace EGriceLab {
 /* per-application variables */
-static int VERBOSE_LEVEL = 2; /* default verbose level is LOG_WARNING */
+extern int VERBOSE_LEVEL; /* DEFAULT VERBOSE LEVEL */
 
 }
 
