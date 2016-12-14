@@ -12,12 +12,7 @@
 
 namespace EGriceLab {
 /* per-application variables */
-static int verbose = 0;
-
-void printVerboseInfo(const std::string& message) {
-	if(verbose > 0)
-		std::cerr << message << std::endl;
-}
+static int VERBOSE_LEVEL = 2; /* default verbose level is LOG_WARNING */
 
 }
 

@@ -449,8 +449,7 @@ ostream& PTUnrooted::saveEdge(ostream& out, const PTUNodePtr& node1, const PTUNo
 	double length = getBranchLength(node1, node2);
 	out.write((const char*) &length, sizeof(double));
 
-	return out;
-}
+	return out;}
 
 istream& PTUnrooted::loadEdge(istream& in) {
 	long id1, id2;
