@@ -15,6 +15,8 @@
 namespace EGriceLab {
 using namespace std;
 using namespace EGriceLab;
+using Eigen::Map;
+using Eigen::Matrix4Xd;
 
 istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
 	char* buf = NULL;
@@ -31,7 +33,7 @@ istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
 
 	in.read((char*) &nSeq, sizeof(DigitalSeq::size_type));
 	buf = new char[nSeq + 1];
-	in.read(buf, (nSeq + 1) * sizeof(int8_t)); /* read the null terminal */
+	in.read(buf, nSeq + 1); /* read the null terminal */
 	seq.assign((const int8_t*) buf, nSeq);
 	delete[] buf;
 
@@ -57,7 +59,7 @@ ostream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::save(ostream& out) const {
 	out.write((const char*) &nName, sizeof(string::size_type));
 	out.write(name.c_str(), nName + 1);
 	out.write((const char*) &nSeq, sizeof(DigitalSeq::size_type));
-	out.write((const char*) seq.c_str(), (nSeq + 1) * sizeof(int8_t));
+	out.write((const char*) seq.c_str(), nSeq + 1);
 	out.write((const char*) &nAnno, sizeof(string::size_type));
 	out.write(anno.c_str(), nAnno + 1);
 	out.write((const char*) &annoDist, sizeof(double));
@@ -440,8 +442,8 @@ ostream& PTUnrooted::save(ostream& out) const {
 }
 
 ostream& PTUnrooted::saveEdge(ostream& out, const PTUNodePtr& node1, const PTUNodePtr& node2) const {
-	out.write((const char*) &node1->id, sizeof(long));
-	out.write((const char*) &node2->id, sizeof(long));
+	out.write((const char*) &(node1->id), sizeof(long));
+	out.write((const char*) &(node2->id), sizeof(long));
 	bool flag = isParent(node1, node2);
 	out.write((const char*) &flag, sizeof(bool));
 	double length = getBranchLength(node1, node2);
@@ -463,7 +465,7 @@ istream& PTUnrooted::loadEdge(istream& in) {
 	const PTUNodePtr& node2 = id2node[id2];
 	node1->neighbors.push_back(node2);
 	if(isParent)
-		node1->parent = node2;
+		node2->parent = node1;
 	node2length[node1][node2] = length;
 
 	return in;
@@ -471,18 +473,19 @@ istream& PTUnrooted::loadEdge(istream& in) {
 
 istream& PTUnrooted::loadLeafCost(istream& in) {
 	leafCost.resize(4, 5);
-	for(Matrix4Xd::Index j = 0; j < 5; ++j) /* Eigen matrix is by default column-major stored */
-		for(Matrix4d::Index i = 0; i < 4; ++i)
-			in.read((char*) &(leafCost(i, j)), sizeof(double));
-
+	double* buf = new double[leafCost.size()];
+	in.read((char*) buf, leafCost.size() * sizeof(double));
+	leafCost = Map<Matrix4Xd>(buf, leafCost.rows(), leafCost.cols()); /* copy via Map */
+	delete[] buf;
 	return in;
 }
 
 ostream& PTUnrooted::saveLeafCost(ostream& out) const {
-	for(Matrix4Xd::Index j = 0; j < 5; ++j) /* Eigen matrix is by default column-major stored */
-		for(Matrix4Xd::Index i = 0; i < 4; ++i)
-			out.write((const char*) &(leafCost(i, j)), sizeof(double));
-
+	double* buf = new double[leafCost.size()];
+	Map<Matrix4Xd> leafCostMap(buf, leafCost.rows(), leafCost.cols());
+	leafCostMap = leafCost; /* copy via Map */
+	out.write((const char*) buf, leafCost.size() * sizeof(double));
+	delete[] buf;
 	return out;
 }
 
@@ -491,24 +494,23 @@ istream& PTUnrooted::loadEdgeCost(istream& in) {
 	in.read((char*) &id1, sizeof(long));
 	in.read((char*) &id2, sizeof(long));
 
-	Matrix4Xd inCost(4, csLen);
-	for(Matrix4Xd::Index j = 0; j < csLen; ++j)
-		for(Matrix4Xd::Index i = 0; i < 4; ++i)
-			in.read((char*) &(inCost(i, j)), sizeof(double));
+	double* buf = new double[4 * csLen];
+	in.read((char*) buf, 4 * csLen * sizeof(double));
+	Map<Matrix4Xd> inCostMap(buf, 4, csLen); /* a customized map */
 	/* assign this cost */
-	node2cost[id2node[id1]][id2node[id2]] = inCost;
-
+	node2cost[id2node[id1]][id2node[id2]] = inCostMap;
+	delete[] buf;
 	return in;
 }
 
 ostream& PTUnrooted::saveEdgeCost(ostream& out, const PTUNodePtr& node1, const PTUNodePtr& node2) const {
-	out.write((const char*) &node1->id, sizeof(long));
-	out.write((const char*) &node2->id, sizeof(long));
-	const Matrix4Xd& inCost = getBranchCost(node1, node2);
-	for(Matrix4Xd::Index j = 0; j < csLen; ++j)
-		for(Matrix4Xd::Index i = 0; i < 4; ++i)
-			out.write((const char*) &(inCost(i, j)), sizeof(double));
-
+	out.write((const char*) &(node1->id), sizeof(long));
+	out.write((const char*) &(node2->id), sizeof(long));
+	double* buf = new double[4 * csLen];
+	Map<Matrix4Xd> inCostMap(buf, 4, csLen);
+	inCostMap = getBranchCost(node1, node2); /* copy the matrix */
+	out.write((const char*) buf, inCostMap.size() * sizeof(double));
+	delete[] buf;
 	return out;
 }
 
@@ -530,11 +532,11 @@ ostream& PTUnrooted::saveRoot(ostream& out) const {
 	/* save root id */
 	out.write((const char*) &(root->id), sizeof(long));
 	/* save root cost */
-	const Matrix4Xd& rootCost = getBranchCost(root, NULL);
-	for(Matrix4Xd::Index j = 0; j < csLen; ++j)
-		for(Matrix4Xd::Index i = 0; i < 4; ++i)
-			out.write((const char*) &(rootCost(i, j)), sizeof(double));
-
+	double* buf = new double[4 * csLen];
+	Map<Matrix4Xd> rootCostMap(buf, 4, csLen);
+	rootCostMap = getBranchCost(root, NULL); /* copy the matrix */
+	out.write((const char*) buf, rootCostMap.size() * sizeof(double));
+	delete[] buf;
 	return out;
 }
 

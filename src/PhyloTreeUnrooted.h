@@ -38,6 +38,7 @@ using std::map;
 using std::istream;
 using std::ostream;
 using Eigen::Matrix4Xd;
+using Eigen::Matrix4d;
 using Eigen::RowVectorXd;
 using boost::shared_ptr;
 using boost::unordered_map;

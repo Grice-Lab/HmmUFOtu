@@ -119,22 +119,6 @@ MSA& MSA::prune() {
 	updateWeightedCounts();
 	isPruned = true;
 
-	cerr << "alphabet: " << alphabet << endl;
-	cerr << "name: " << name << endl;
-	cerr << "numSeq: " << numSeq << endl;
-	cerr << "csLen: " << csLen << endl;
-	cerr << "seqNames.size(): " << seqNames.size() << endl;
-	cerr << "concatMSA.length(): " << concatMSA.length() << endl;
-	cerr << "CS.length(): " << CS.length() << endl;
-	cerr << "startIdx.size(): " << startIdx.size() << endl;
-	cerr << "endIdx.size(): " << endIdx.size() << endl;
-	cerr << "lenIdx.size(): " << lenIdx.size() << endl;
-	cerr << "resCount.size(): " << resCount.size() << endl;
-	cerr << "gapCount.rows(): " << gapCount.rows() << endl;
-	cerr << "seqWeight.rows(): " << seqWeight.rows() << endl;
-	cerr << "resWCount.size(): " << resWCount.size() << endl;
-	cerr << "gapWCount.rows(): " << gapWCount.rows() << endl;
-
 	return *this;
 }
 
@@ -475,22 +459,6 @@ istream& MSA::load(istream& in) {
 	in.read((char*) bufd, sizeof(double) * gapWCount.rows());
 	gapWCount = Map<VectorXd>(bufd, gapWCount.rows()); /* copy by assign */
 	delete[] bufd;
-
-	cerr << "alphabet: " << alphabet << endl;
-	cerr << "name: " << name << endl;
-	cerr << "numSeq: " << numSeq << endl;
-	cerr << "csLen: " << csLen << endl;
-	cerr << "seqNames.size(): " << seqNames.size() << endl;
-	cerr << "concatMSA.length(): " << concatMSA.length() << endl;
-	cerr << "CS.length(): " << CS.length() << endl;
-	cerr << "startIdx.size(): " << startIdx.size() << endl;
-	cerr << "endIdx.size(): " << endIdx.size() << endl;
-	cerr << "lenIdx.size(): " << lenIdx.size() << endl;
-	cerr << "resCount.size(): " << resCount.size() << endl;
-	cerr << "gapCount.rows(): " << gapCount.rows() << endl;
-	cerr << "seqWeight.rows(): " << seqWeight.rows() << endl;
-	cerr << "resWCount.size(): " << resWCount.size() << endl;
-	cerr << "gapWCount.rows(): " << gapWCount.rows() << endl;
 
 	return in;
 }
