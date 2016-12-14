@@ -15,7 +15,7 @@
 #include "SeqCommons.h"
 
 namespace EGriceLab {
-using namespace Eigen;
+using Eigen::Vector4d;
 /*
  * A class to represent the background transition and emission distributions of a null banded p7 model,
  * consisting the bg state G and dummy end state F, like the T in plan 7 architecture
