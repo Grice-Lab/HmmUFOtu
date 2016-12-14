@@ -12,4 +12,3 @@ namespace EGriceLab {
 int VERBOSE_LEVEL = 2; /* DEFAULT VERBOSE LEVEL */
 
 }
-
