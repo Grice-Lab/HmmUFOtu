@@ -11,13 +11,13 @@
 #include <cmath>
 #include "GTR.h"
 #include "StringUtils.h"
+#include "ProgLog.h"
 
 namespace EGriceLab {
 using namespace std;
 using namespace Eigen;
 
 const string GTR::name = "GTR";
-
 
 istream& GTR::read(istream& in) {
 	string line, tag, value;
@@ -29,8 +29,8 @@ istream& GTR::read(istream& in) {
 		if(tag == "Type:") {
 			in >> tag; // read in model type
 			if(tag != modelType()) {
-				cerr << "Unmatched Model Type!" << endl;
-				cerr << "Trying to read in a " << tag << " model into a " << modelType() << " object" << endl;
+				errorLog << "Unmatched Model Type!" << endl;
+				errorLog << "Trying to read in a " << tag << " model into a " << modelType() << " object" << endl;
 				in.setstate(ios_base::badbit);
 				return in;
 			}
@@ -49,13 +49,12 @@ istream& GTR::read(istream& in) {
 				std::getline(in, line); /* ignore the entire line */
 		}
 		else {
-			cerr << "Un-recognized line found in GTR Model file: tag: " << tag << endl << line << endl;
+			errorLog << "Un-recognized line found in GTR Model file: tag: " << tag << endl << line << endl;
 			in.setstate(ios_base::badbit);
 			return in;
 		}
 	}
 	setQfromParams();
-	cerr << "Q set " << endl;
 	return in;
 }
 
@@ -69,7 +68,6 @@ ostream& GTR::write(ostream& out) const {
 }
 
 void GTR::trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) {
-	cerr << "Training GTR model using " << Pv.size() << " observed data" << endl;
 	/* estimate pi using mean f */
 	pi = f / f.sum();
 //	assert(isValidFreq(pi));
@@ -116,7 +114,7 @@ void GTR::setQfromParams() {
 	 */
 	EigenSolver<Matrix4d> es(Q);
 	if(es.info() != Eigen::Success) {
-		cerr << "Cannot perform EigenSolver on rate matrix Q:" << endl << Q << endl;
+		errorLog << "Cannot perform EigenSolver on rate matrix Q:" << endl << Q << endl;
 		abort();
 	}
 	lambda = es.eigenvalues().real();

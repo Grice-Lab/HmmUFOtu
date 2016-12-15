@@ -24,6 +24,7 @@
 #include <boost/unordered_map.hpp>
 
 #include "HmmUFOtuConst.h"
+#include "ProgLog.h"
 #include "StringUtils.h"
 #include "SeqCommons.h"
 #include "DigitalSeq.h"
@@ -355,6 +356,13 @@ public:
 	PTUNodePtr setRoot(const PTUNodePtr& newRoot);
 
 	/**
+	 * set tree root at the ith node, return the old node id
+	 */
+	size_t setRoot(size_t newRootId) {
+		return setRoot(id2node[newRootId])->id;
+	}
+
+	/**
 	 * test whether the cost (message) of node u -> v of site j has been evaluated
 	 */
 	bool isEvaluated(const PTUNodePtr u, const PTUNodePtr v, int j) const {
@@ -578,7 +586,7 @@ inline Matrix4Xd PTUnrooted::evaluate(const DNASubModel& model) {
 inline Matrix4Xd PTUnrooted::evaluate(const PTUNodePtr& node, const DNASubModel& model) {
 	Matrix4Xd costMat(4, csLen);
 	for(int j = 0; j < csLen; ++j) {
-//		std::cerr << "Evaluating at site " << j << std::endl;
+//		infoLog << "Evaluating at site " << j << "\r";
 		costMat.col(j) = evaluate(node, j, model);
 	}
 	return costMat;
@@ -589,7 +597,7 @@ inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {
 	if(format == "newick")
 		return writeTreeNewick(out, root) << ";";
 	else {
-		std::cerr << "Cannot write PTUnrooted tree, unknown tree format " << format << std::endl;
+		errorLog << "Cannot write PTUnrooted tree, unknown tree format " << format << std::endl;
 		out.setstate(std::ios_base::failbit);
 		return out;
 	}

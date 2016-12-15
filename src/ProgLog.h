@@ -62,6 +62,7 @@ private:
 extern ProgLog errorLog;
 extern ProgLog warningLog;
 extern ProgLog infoLog;
+extern ProgLog debugLog;
 
 } /* namespace EGriceLab */
 

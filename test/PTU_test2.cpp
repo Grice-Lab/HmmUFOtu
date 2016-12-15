@@ -24,7 +24,7 @@ int main(int argc, const char* argv[]) {
 
 	ifstream in(argv[1]);
 	ifstream msaIn(argv[2]);
-	ofstream out(argv[3]);
+	ofstream out(argv[3], ios_base::out | ios_base::binary);
 
 	if(!in.is_open()) {
 		cerr << "Unable to open " << argv[1] << endl;

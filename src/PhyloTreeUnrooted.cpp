@@ -164,7 +164,7 @@ PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRo
 		return root;
 
 	newRoot->parent = NULL; // root has no parent
-	node2cost[newRoot][NULL] = Matrix4Xd::Constant(4, csLen, inf); // new cache for dummy branch
+//	node2cost[newRoot][NULL] = Matrix4Xd::Constant(4, csLen, inf); // new cache for dummy branch
 	/* DFS of this tree starting from newRoot */
 	boost::unordered_set<PTUNodePtr> visited;
 	stack<PTUNodePtr> S;
@@ -198,10 +198,11 @@ void PhyloTreeUnrooted::resetCost() {
 }
 
 void PhyloTreeUnrooted::initInCost() {
-	node2cost[root][NULL] = Matrix4Xd::Constant(4, csLen, inf); /* initiate the dummy root -> NULL cost */
-	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u)
-		for(vector<PTUNodePtr>::iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
+	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u) {
+		for(vector<PTUNodePtr>::iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v) /* u->children */
 			node2cost[*u][*v] = Matrix4Xd::Constant(4, csLen, inf);
+		node2cost[*u][NULL] = Matrix4Xd::Constant(4, csLen, inf); /* initiate the dummy u -> NULL cost */
+	}
 }
 
 void PhyloTreeUnrooted::initLeafCost(const DNASubModel& model) {
@@ -213,13 +214,14 @@ void PhyloTreeUnrooted::initLeafCost(const DNASubModel& model) {
 }
 
 Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j, const DNASubModel& model) {
-	Vector4d costVec = Vector4d::Zero();
+	Vector4d costVec;
 
 	if(node->isLeaf() && !node->isRoot()) { /* this is a leaf node, but not leafRoot */
-		return node->seq[j] >= 0 ? leafCost.col(node->seq[j]) /* a base observed */ : leafCost.col(4) /* a gap observed */;
+		costVec = node->seq[j] >= 0 ? leafCost.col(node->seq[j]) /* a base observed */ : leafCost.col(4) /* a gap observed */;
 //		cerr << "Leaf node " << node->name << " evaluated at site " << j << " cost: "  << costVec.transpose() << endl;
 	}
 	else { /* this is an internal node, all bases are treated as missing data */
+		costVec.setZero();
 		for(vector<PTUNodePtr>::iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) { /* check each child */
 			if(!isChild(*child, node)) /* ignore non-child neighbor */
 				continue;
@@ -231,20 +233,21 @@ Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j, const DNASub
 			else {
 				// cerr << "P:" << P << endl;
 				inCost = evaluate(*child, j, model); /* evaluate this child recursively */
-				if( (inCost.array() != inCost.array()).any() ) {
-					cerr << "Warning: NaN values generated in cost from node id " << (*child)->id << " name " << (*child)->name
-							<< " to node id " << node->id << " name " << node->name <<
-							" with cost " << inCost.transpose() << endl;
-				}
+//				if( (inCost.array() != inCost.array()).any() ) {
+//					errorLog << "Warning: NaN values generated in cost from node id " << (*child)->id << " name " << (*child)->name
+//							 << " to node id " << node->id << " name " << node->name <<
+//							" with cost " << inCost.transpose() << endl;
+//				}
 				node2cost[*child][node].col(j) = inCost; /* cache this cost */
 			}
 
 			/* convolute the inCost with Pr */
 			double scale = 0; /* potential scaling factor to avoid numeric overflow */
-			if((inCost.array() != inf).any() && (inCost.array() > MAX_COST_EXP).all()) { /* need re-scale only the min cost efficient is too large */
-				scale = inCost.minCoeff() - MAX_COST_EXP;
+			double minCost = inCost.minCoeff();
+			if(minCost != inf && minCost > MAX_COST_EXP) { /* need re-scale only the min cost efficient is too large */
+				scale = minCost - MAX_COST_EXP;
 				inCost.array() -= scale;
-//				cerr << "scaling at " << scale << " to avoid numeric underflow" << endl;
+//				debugLog << "scaling at " << scale << " to avoid numeric underflow" << endl;
 			}
 			const Matrix4d& P = model.Pr(node2length[*child][node]);
 
@@ -297,7 +300,7 @@ double PTUnrooted::treeCost(int j, const DNASubModel& model) {
 }
 
 vector<Matrix4d> PTUnrooted::getModelTraningSetGoldman() const {
-	cerr << "Training data using Gojobori method" << endl;
+	debugLog << "Training data using Gojobori method" << endl;
 	vector<Matrix4d> data; // store observed base transition counts
 	/* check every node of this tree */
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
@@ -337,7 +340,7 @@ vector<Matrix4d> PTUnrooted::getModelTraningSetGojobori() const {
 								data.push_back(DNASubModel::calcTransFreq3Seq(seq0, seq1, seq2));
 		}
 	}
-	cerr << "Gojobori data prepared" << endl;
+	debugLog << "Gojobori data prepared" << endl;
 	return data;
 }
 
@@ -356,13 +359,13 @@ istream& PTUnrooted::load(istream& in) {
 	string pname, pver;
 	readProgName(in, pname);
 	if(pname != progName) {
-		cerr << "Not a PTUnrooted object file" << endl;
+		errorLog << "Not a PTUnrooted object file" << endl;
 		in.setstate(ios_base::failbit);
 		return in;
 	}
 	readProgVersion(in, pver);
 	if(cmpVersion(progVersion, pver) < 0) {
-		cerr << "You are trying using an older version " << (progName + progVersion) <<
+		errorLog << "You are trying using an older version " << (progName + progVersion) <<
 				" to read a newer PTUnrooted data file that was build by " << (pname + pver) << endl;
 		in.setstate(ios_base::failbit);
 		return in;
@@ -403,18 +406,18 @@ ostream& PTUnrooted::save(ostream& out) const {
 	/* save program info */
 	writeProgName(out, progName);
 	writeProgVersion(out, progVersion);
-	cerr << "program info saved" << endl;
+	debugLog << "program info saved" << endl;
 
 	/* write global information */
 	size_t nNodes = numNodes();
 	out.write((const char*) &nNodes, sizeof(size_t));
 	out.write((const char*) &csLen, sizeof(int));
-	cerr << "global information saved" << endl;
+	debugLog << "global information saved" << endl;
 
 	/* write each node */
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
 		(*node)->save(out);
-	cerr << "all nodes saved" << endl;
+	debugLog << "all nodes saved" << endl;
 
 	/* write all edges */
 	size_t nEdges = numEdges();
@@ -422,21 +425,21 @@ ostream& PTUnrooted::save(ostream& out) const {
 	for(vector<PTUNodePtr>::const_iterator u = id2node.begin(); u != id2node.end(); ++u)
 		for(vector<PTUNodePtr>::const_iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
 			saveEdge(out, *u, *v);
-	cerr << "all edge saved" << endl;
+	debugLog << "all edge saved" << endl;
 
 	/* write edge costs */
 	for(vector<PTUNodePtr>::const_iterator u = id2node.begin(); u != id2node.end(); ++u)
 		for(vector<PTUNodePtr>::const_iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
 			saveEdgeCost(out, *u, *v);
-	cerr << "edge costs saved" << endl;
+	debugLog << "edge costs saved" << endl;
 
 	/* write leaf cost */
 	saveLeafCost(out);
-	cerr << "leaf cost saved" << endl;
+	debugLog << "leaf cost saved" << endl;
 
 	/* save root */
 	saveRoot(out);
-	cerr << "Root saved" << endl;
+	debugLog << "Root saved" << endl;
 
 	return out;
 }
@@ -514,27 +517,31 @@ ostream& PTUnrooted::saveEdgeCost(ostream& out, const PTUNodePtr& node1, const P
 }
 
 istream& PTUnrooted::loadRoot(istream& in) {
-	/* load root id */
+	/* set current root */
 	long rootId;
 	in.read((char*) &rootId, sizeof(long));
 	root = id2node[rootId];
-	/* load root cost */
-	Matrix4Xd rootCost(4, csLen);
-	for(Matrix4Xd::Index j = 0; j < csLen; ++j)
-		for(Matrix4Xd::Index i = 0; i < 4; ++i)
-			in.read((char*) &(rootCost(i, j)), sizeof(double));
-	node2cost[root][NULL] = rootCost;
+	/* load all root costs */
+	double* buf = new double[4 * csLen];
+	Map<Matrix4Xd> rootCostMap(buf, 4, csLen);
+	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
+		in.read((char*) buf, rootCostMap.size() * sizeof(double));
+		node2cost[*node][NULL] = rootCostMap; /* copy the cost */
+	}
+
 	return in;
 }
 
 ostream& PTUnrooted::saveRoot(ostream& out) const {
-	/* save root id */
+	/* save current root id */
 	out.write((const char*) &(root->id), sizeof(long));
-	/* save root cost */
+	/* save all root costs */
 	double* buf = new double[4 * csLen];
 	Map<Matrix4Xd> rootCostMap(buf, 4, csLen);
-	rootCostMap = getBranchCost(root, NULL); /* copy the matrix */
-	out.write((const char*) buf, rootCostMap.size() * sizeof(double));
+	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
+		rootCostMap = getBranchCost(*node, NULL); /* copy the matrix of this node */
+		out.write((const char*) buf, rootCostMap.size() * sizeof(double));
+	}
 	delete[] buf;
 	return out;
 }

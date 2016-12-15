@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <eigen3/Eigen/Dense>
+#include <cassert>
 #include "DNASubModel.h"
 
 namespace EGriceLab {
@@ -80,6 +81,9 @@ private:
 };
 
 inline Matrix4d GTR::Pr(double t, double r) const {
+	assert(t * r >= 0);
+	if(t * r == 0)
+		return Matrix4d::Identity(); /* identity matrix */
 	return U * (lambda * (t * r)).array().exp().matrix().asDiagonal() * U_1;
 }
 
