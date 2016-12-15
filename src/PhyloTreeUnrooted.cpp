@@ -191,7 +191,6 @@ PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRo
 }
 
 void PhyloTreeUnrooted::resetCost() {
-	node2cost[root][NULL].setConstant(inf); /* reset root dummy cost */
 	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u)
 		for(vector<PTUNodePtr>::iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
 			node2cost[*u][*v].setConstant(inf);
@@ -201,7 +200,6 @@ void PhyloTreeUnrooted::initInCost() {
 	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u) {
 		for(vector<PTUNodePtr>::iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v) /* u->children */
 			node2cost[*u][*v] = Matrix4Xd::Constant(4, csLen, inf);
-		node2cost[*u][NULL] = Matrix4Xd::Constant(4, csLen, inf); /* initiate the dummy u -> NULL cost */
 	}
 }
 
@@ -258,8 +256,6 @@ Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j, const DNASub
 //		cerr << "Internal node " << node->id << " evaluated at site " << j << " cost: "  << costVec.transpose() << endl;
 	}
 
-	if(node->isRoot()) /* the inCost message of root also needed to be stored */
-		node2cost[node][NULL].col(j) = costVec;
 	return costVec;
 }
 
@@ -288,12 +284,12 @@ ostream& PTUnrooted::writeTreeNewick(ostream& out, const PTUNodePtr& node) const
 }
 
 double PTUnrooted::treeCost(int j, const DNASubModel& model) {
-	Vector4d cost = !isEvaluated(root, NULL, j) ? /* tree site not evaluated */
-		evaluate(root, j, model) /* evaluate if neccessary */ : node2cost[root][NULL].col(j) /* use cached value */;
+	Vector4d cost = evaluate(root, j, model);
 
 	double scale = 0; /* scale factor to avoid potential numeric underflow */
-	if((cost.array() != inf).any() && (cost.array() > MAX_COST_EXP).all()) { /* need re-scale only the min cost efficient is too large */
-		scale = cost.minCoeff() - MAX_COST_EXP;
+	double minCost = cost.minCoeff();
+	if(minCost != inf && minCost > MAX_COST_EXP) { /* need re-scale only the min cost efficient is too large */
+		scale = minCost - MAX_COST_EXP;
 		cost.array() -= scale;
 	}
 	return -::log(model.getPi().dot((-cost).array().exp().matrix())) + scale;
@@ -521,13 +517,6 @@ istream& PTUnrooted::loadRoot(istream& in) {
 	long rootId;
 	in.read((char*) &rootId, sizeof(long));
 	root = id2node[rootId];
-	/* load all root costs */
-	double* buf = new double[4 * csLen];
-	Map<Matrix4Xd> rootCostMap(buf, 4, csLen);
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		in.read((char*) buf, rootCostMap.size() * sizeof(double));
-		node2cost[*node][NULL] = rootCostMap; /* copy the cost */
-	}
 
 	return in;
 }
@@ -535,14 +524,6 @@ istream& PTUnrooted::loadRoot(istream& in) {
 ostream& PTUnrooted::saveRoot(ostream& out) const {
 	/* save current root id */
 	out.write((const char*) &(root->id), sizeof(long));
-	/* save all root costs */
-	double* buf = new double[4 * csLen];
-	Map<Matrix4Xd> rootCostMap(buf, 4, csLen);
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		rootCostMap = getBranchCost(*node, NULL); /* copy the matrix of this node */
-		out.write((const char*) buf, rootCostMap.size() * sizeof(double));
-	}
-	delete[] buf;
 	return out;
 }
 

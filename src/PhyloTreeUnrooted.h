@@ -390,7 +390,7 @@ public:
 	/**
 	 * reset the cached cost of edge u->v
 	 */
-	void resetCost(const PTUNodePtr u, const PTUNodePtr v) {
+	void resetCost(const PTUNodePtr& u, const PTUNodePtr& v) {
 		node2cost[u][v].setConstant(inf);
 	}
 
