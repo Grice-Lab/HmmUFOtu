@@ -434,7 +434,7 @@ public:
 	 * @param node  new root of this tree
 	 * @param j  the jth aligned site
 	 * @param model  DNA substitution model, must be a time-reversible model
-	 * @return  cost vector of observing this tree at the jth site at this root
+	 * @return  cost vector of observing this tree at the jth site of this edge
 	 */
 	Vector4d evaluate(const PTUNodePtr& u, const PTUNodePtr& v, int j, const DNASubModel& model);
 
