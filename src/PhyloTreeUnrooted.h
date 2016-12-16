@@ -554,6 +554,12 @@ public:
 	static PTUNodePtr lastLeaf(PTUNodePtr node);
 	static PTUNodePtr randomLeaf(PTUNodePtr node);
 
+	/* return dot product between a Matrix and a vector, scale the vector if necessary */
+	static Vector4d dot_product_scaled(const Matrix4d& X, const Vector4d& V);
+
+	/* return dot product between two vectors, scale the second vector if necessary */
+	static double dot_product_scaled(const Vector4d& P, const Vector4d& V);
+
 	/* member fields */
 private:
 	int csLen; /* number of aligned sites */
@@ -685,7 +691,22 @@ inline PTUnrooted::PTUNodePtr PhyloTreeUnrooted::randomLeaf(PTUNodePtr node) {
 	return node;
 }
 
+inline Vector4d PTUnrooted::dot_product_scaled(const Matrix4d& X, const Vector4d& V) {
+	Vector4d Y;
+	double minV = V.minCoeff();
+	double scale = minV != inf && minV > MAX_COST_EXP ? minV - MAX_COST_EXP : 0;
 
+	for(Vector4d::Index i = 0; i < Y.rows(); ++i)
+		Y(i) = -::log(X.row(i).dot(((-V).array() + scale).exp().matrix())) + scale;
+	return Y;
+}
+
+inline double PTUnrooted::dot_product_scaled(const Vector4d& P, const Vector4d& V) {
+	double minV = V.minCoeff();
+	double scale = minV != inf && minV > MAX_COST_EXP ? minV - MAX_COST_EXP : 0;
+
+	return -::log(P.dot(((-V).array() + scale).exp().matrix())) + scale;
+}
 
 } /* namespace EGriceLab */
 
