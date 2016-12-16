@@ -615,13 +615,14 @@ inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {
 }
 
 inline double PTUnrooted::getBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) const {
-	BranchLenMap::const_iterator resultOuter = node2length.find(u);
-	if(resultOuter == node2length.end())
-		return -1;
-	else {
-		boost::unordered_map<PTUNodePtr, double>::const_iterator resultInner = resultOuter->second.find(v);
-		return resultInner == resultOuter->second.end() ? -1 : resultInner->second;
-	}
+	return node2length.at(u).at(v);
+//	BranchLenMap::const_iterator resultOuter = node2length.find(u);
+//	if(resultOuter == node2length.end())
+//		return -1;
+//	else {
+//		boost::unordered_map<PTUNodePtr, double>::const_iterator resultInner = resultOuter->second.find(v);
+//		return resultInner == resultOuter->second.end() ? -1 : resultInner->second;
+//	}
 }
 
 inline Matrix4Xd PTUnrooted::getBranchCost(const PTUNodePtr& u, const PTUNodePtr& v) const {

@@ -113,6 +113,7 @@ am__v_AR_1 =
 libHmmUFOtu_a_AR = $(AR) $(ARFLAGS)
 libHmmUFOtu_a_LIBADD =
 am_libHmmUFOtu_a_OBJECTS = HmmUFOtuConst.$(OBJEXT) \
+	HmmUFOtuEnv.$(OBJEXT) ProgLog.$(OBJEXT) \
 	CommandOptions.$(OBJEXT) DegenAlphabet.$(OBJEXT) \
 	StringUtils.$(OBJEXT) IUPACNucl.$(OBJEXT) IUPACAmino.$(OBJEXT) \
 	DNA.$(OBJEXT) SeqCommons.$(OBJEXT) PrimarySeq.$(OBJEXT) \
@@ -390,6 +391,8 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 noinst_LIBRARIES = libHmmUFOtu.a
 libHmmUFOtu_a_SOURCES = \
 HmmUFOtuConst.cpp \
+HmmUFOtuEnv.cpp \
+ProgLog.cpp \
 CommandOptions.cpp \
 DegenAlphabet.cpp \
 StringUtils.cpp \
@@ -541,12 +544,14 @@ include ./$(DEPDIR)/DigitalSeq.Po
 include ./$(DEPDIR)/GTR.Po
 include ./$(DEPDIR)/HmmUFOtu.Po
 include ./$(DEPDIR)/HmmUFOtuConst.Po
+include ./$(DEPDIR)/HmmUFOtuEnv.Po
 include ./$(DEPDIR)/IUPACAmino.Po
 include ./$(DEPDIR)/IUPACNucl.Po
 include ./$(DEPDIR)/MSA.Po
 include ./$(DEPDIR)/NewickTree.Po
 include ./$(DEPDIR)/PhyloTreeUnrooted.Po
 include ./$(DEPDIR)/PrimarySeq.Po
+include ./$(DEPDIR)/ProgLog.Po
 include ./$(DEPDIR)/SeqCommons.Po
 include ./$(DEPDIR)/SeqIO.Po
 include ./$(DEPDIR)/StringUtils.Po

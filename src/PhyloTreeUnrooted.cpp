@@ -242,6 +242,7 @@ Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& u, const PTUNodePtr& v, i
 				inCost.array() -= scale;
 //				debugLog << "scaling at " << scale << " to avoid numeric underflow" << endl;
 			}
+
 			const Matrix4d& P = model.Pr(node2length[*child][u]);
 
 			for(Vector4d::Index i = 0; i < inCost.rows(); ++i)
@@ -251,7 +252,8 @@ Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& u, const PTUNodePtr& v, i
 //		cerr << "Internal node " << node->id << " evaluated at site " << j << " cost: "  << costVec.transpose() << endl;
 	}
 
-	return node2cost[u][v].col(j) = costVec;
+	node2cost[u][v].col(j) = costVec;
+	return costVec;
 }
 
 ostream& PTUnrooted::writeTreeNewick(ostream& out, const PTUNodePtr& node) const {
