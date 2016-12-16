@@ -100,9 +100,10 @@ noinst_PROGRAMS = dna_test1$(EXEEXT) nucl_test1$(EXEEXT) \
 	dm_mixture_train1$(EXEEXT) dm_mixture_train2$(EXEEXT) \
 	DD_IO_test1$(EXEEXT) NT_IO_test1$(EXEEXT) NT_IO_test2$(EXEEXT) \
 	PTU_IO_test1$(EXEEXT) PTU_IO_test2$(EXEEXT) \
-	PTU_IO_test3$(EXEEXT) PTU_test1$(EXEEXT) PTU_test2$(EXEEXT) \
-	PTU_test3$(EXEEXT) dna_model_IO_test1$(EXEEXT) \
-	dna_model_test1$(EXEEXT) RootFinder_test1$(EXEEXT)
+	PTU_IO_test3$(EXEEXT) PTU_IO_test4$(EXEEXT) PTU_test1$(EXEEXT) \
+	PTU_test2$(EXEEXT) PTU_test3$(EXEEXT) \
+	dna_model_IO_test1$(EXEEXT) dna_model_test1$(EXEEXT) \
+	RootFinder_test1$(EXEEXT)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -188,6 +189,12 @@ PTU_IO_test3_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
 PTU_IO_test3_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(PTU_IO_test3_LDFLAGS) $(LDFLAGS) -o $@
+am_PTU_IO_test4_OBJECTS = PTU_IO_test4.$(OBJEXT)
+PTU_IO_test4_OBJECTS = $(am_PTU_IO_test4_OBJECTS)
+PTU_IO_test4_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_IO_test4_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(PTU_IO_test4_LDFLAGS) $(LDFLAGS) -o $@
 am_PTU_test1_OBJECTS = PTU_test1.$(OBJEXT)
 PTU_test1_OBJECTS = $(am_PTU_test1_OBJECTS)
 PTU_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu.a
@@ -345,8 +352,8 @@ SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
 	$(MSAIO_test4_SOURCES) $(MSA_test1_SOURCES) \
 	$(NT_IO_test1_SOURCES) $(NT_IO_test2_SOURCES) \
 	$(PTU_IO_test1_SOURCES) $(PTU_IO_test2_SOURCES) \
-	$(PTU_IO_test3_SOURCES) $(PTU_test1_SOURCES) \
-	$(PTU_test2_SOURCES) $(PTU_test3_SOURCES) \
+	$(PTU_IO_test3_SOURCES) $(PTU_IO_test4_SOURCES) \
+	$(PTU_test1_SOURCES) $(PTU_test2_SOURCES) $(PTU_test3_SOURCES) \
 	$(RootFinder_test1_SOURCES) $(amino_test1_SOURCES) \
 	$(bHMM_IO_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) \
@@ -361,8 +368,8 @@ DIST_SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
 	$(MSAIO_test4_SOURCES) $(MSA_test1_SOURCES) \
 	$(NT_IO_test1_SOURCES) $(NT_IO_test2_SOURCES) \
 	$(PTU_IO_test1_SOURCES) $(PTU_IO_test2_SOURCES) \
-	$(PTU_IO_test3_SOURCES) $(PTU_test1_SOURCES) \
-	$(PTU_test2_SOURCES) $(PTU_test3_SOURCES) \
+	$(PTU_IO_test3_SOURCES) $(PTU_IO_test4_SOURCES) \
+	$(PTU_test1_SOURCES) $(PTU_test2_SOURCES) $(PTU_test3_SOURCES) \
 	$(RootFinder_test1_SOURCES) $(amino_test1_SOURCES) \
 	$(bHMM_IO_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
 	$(banded_align_known_seed_test1_SOURCES) \
@@ -618,6 +625,9 @@ PTU_IO_test2_LDFLAGS = -static
 PTU_IO_test3_SOURCES = PTU_IO_test3.cpp
 PTU_IO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 PTU_IO_test3_LDFLAGS = -static
+PTU_IO_test4_SOURCES = PTU_IO_test4.cpp
+PTU_IO_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_IO_test4_LDFLAGS = -static
 PTU_test1_SOURCES = PTU_test1.cpp
 PTU_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 PTU_test1_LDFLAGS = -static
@@ -737,6 +747,10 @@ PTU_IO_test3$(EXEEXT): $(PTU_IO_test3_OBJECTS) $(PTU_IO_test3_DEPENDENCIES) $(EX
 	@rm -f PTU_IO_test3$(EXEEXT)
 	$(AM_V_CXXLD)$(PTU_IO_test3_LINK) $(PTU_IO_test3_OBJECTS) $(PTU_IO_test3_LDADD) $(LIBS)
 
+PTU_IO_test4$(EXEEXT): $(PTU_IO_test4_OBJECTS) $(PTU_IO_test4_DEPENDENCIES) $(EXTRA_PTU_IO_test4_DEPENDENCIES) 
+	@rm -f PTU_IO_test4$(EXEEXT)
+	$(AM_V_CXXLD)$(PTU_IO_test4_LINK) $(PTU_IO_test4_OBJECTS) $(PTU_IO_test4_LDADD) $(LIBS)
+
 PTU_test1$(EXEEXT): $(PTU_test1_OBJECTS) $(PTU_test1_DEPENDENCIES) $(EXTRA_PTU_test1_DEPENDENCIES) 
 	@rm -f PTU_test1$(EXEEXT)
 	$(AM_V_CXXLD)$(PTU_test1_LINK) $(PTU_test1_OBJECTS) $(PTU_test1_LDADD) $(LIBS)
@@ -824,6 +838,7 @@ include ./$(DEPDIR)/NT_IO_test2.Po
 include ./$(DEPDIR)/PTU_IO_test1.Po
 include ./$(DEPDIR)/PTU_IO_test2.Po
 include ./$(DEPDIR)/PTU_IO_test3.Po
+include ./$(DEPDIR)/PTU_IO_test4.Po
 include ./$(DEPDIR)/PTU_test1.Po
 include ./$(DEPDIR)/PTU_test2.Po
 include ./$(DEPDIR)/PTU_test3.Po

@@ -22,6 +22,7 @@ NT_IO_test2 \
 PTU_IO_test1 \
 PTU_IO_test2 \
 PTU_IO_test3 \
+PTU_IO_test4 \
 PTU_test1 \
 PTU_test2 \
 PTU_test3 \
@@ -134,6 +135,10 @@ PTU_IO_test2_LDFLAGS = -static
 PTU_IO_test3_SOURCES = PTU_IO_test3.cpp
 PTU_IO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 PTU_IO_test3_LDFLAGS = -static
+
+PTU_IO_test4_SOURCES = PTU_IO_test4.cpp
+PTU_IO_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_IO_test4_LDFLAGS = -static
 
 PTU_test1_SOURCES = PTU_test1.cpp
 PTU_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a

@@ -57,9 +57,16 @@ int main(int argc, const char* argv[]) {
 		return -1;
 	}
 
+	double maxCostDiff = 0;
+	double prevCost = 0;
 	for(size_t i = 0; i < tree.numNodes(); ++i) {
 		tree.setRoot(i);
 		double cost = tree.treeCost(model);
 		out << "Tree cost at node " << i << " isLeaf? " << tree.getRoot()->isLeaf() << " cost: " << cost << endl;
+		if(prevCost != 0 && ::abs(cost - prevCost) > maxCostDiff)
+			maxCostDiff = ::abs(cost - prevCost);
+		prevCost = cost;
 	}
+	out << "Max cost difference of all nodes: " << maxCostDiff << endl;
+	out << "Max relative cost difference of all nodes: " << maxCostDiff / prevCost << endl;
 }
