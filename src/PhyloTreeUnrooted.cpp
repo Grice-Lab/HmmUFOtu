@@ -272,11 +272,12 @@ double PTUnrooted::treeCost(int j, const DNASubModel& model) {
 //	evaluate(root, j, model); /* evaluate first */
 	Vector4d rootCost = Vector4d::Zero();
 	for(vector<PTUNodePtr>::const_iterator child = root->neighbors.begin(); child != root->neighbors.end(); ++child)
-		rootCost += dot_product_scaled(model.Pr(node2length[*child][root]), node2cost[*child][root]);
+		if(isChild(*child, root)) /* a real child */
+			rootCost += dot_product_scaled(model.Pr(node2length[*child][root]), node2cost[*child][root].col(j));
 
 	/* all incoming cost collected */
 	if(root->isLeaf()) /* this is a leaf root, need add in the cost of leaf without convolution */
-		rootCost =+ root->seq[j] >= 0 ? leafCost.col(root->seq[j]) /* a base observed */ : leafCost.col(4) /* a gap observed */;
+		rootCost += (root->seq[j] >= 0 ? leafCost.col(root->seq[j]) /* a base observed */ : leafCost.col(4)); /* a gap observed */
 
 	/* final convolution */
 	return dot_product_scaled(model.getPi(), rootCost);
