@@ -365,8 +365,8 @@ public:
 	/**
 	 * test whether the cost (message) of node u -> v of site j has been evaluated
 	 */
-	bool isEvaluated(const PTUNodePtr u, const PTUNodePtr v, int j) const {
-		return (node2cost.find(u)->second.find(v)->second.col(j).array() != inf).any();
+	bool isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int j) const {
+		return (node2cost.at(u).at(v).col(j).array() != INVALID_COST).all();
 	}
 
 	/**
@@ -378,7 +378,7 @@ public:
 	 * initiate the leaf cost to all inf
 	 */
 	void initLeafCost() {
-		leafCost = Matrix4Xd::Constant(4, 5, inf);
+		leafCost = Matrix4Xd::Constant(4, 5, INVALID_COST);
 	}
 
 	/**
@@ -391,7 +391,7 @@ public:
 	 * reset the cached cost of edge u->v
 	 */
 	void resetCost(const PTUNodePtr& u, const PTUNodePtr& v) {
-		node2cost[u][v].setConstant(inf);
+		node2cost[u][v].setConstant(INVALID_COST);
 	}
 
 	/**
@@ -403,7 +403,7 @@ public:
 	 * reset the cached leaf cost
 	 */
 	void resetLeafCost() {
-		leafCost.setConstant(inf);
+		leafCost.setConstant(INVALID_COST);
 	}
 
 	/**
@@ -553,7 +553,7 @@ private:
 	PTUNodePtr root; /* root node of this tree */
 	vector<PTUNodePtr> id2node; /* indexed tree nodes */
 
-	BranchLenMap node2length; /* branch length index storing all L*L pairs */
+	BranchLenMap node2length; /* branch length index storing edge length */
 	CostMap node2cost; /* cached cost message sending from u -> v, before conjugating into the Pr(v) of the branch-length */
 	Matrix4Xd leafCost; /* cached 4 X 5 leaf cost matrix,
 						with each column the pre-computed cost of observing A, C, G, T or - at any given site */
@@ -561,6 +561,7 @@ private:
 public:
 	/* static fields */
 	static const double MAX_COST_EXP;
+	static const double INVALID_COST;
 };
 
 inline size_t PTUnrooted::numEdges() const {
@@ -622,7 +623,6 @@ inline Matrix4Xd PTUnrooted::getBranchCost(const PTUNodePtr& u, const PTUNodePtr
 		return resultInner == resultOuter->second.end() ? Matrix4Xd() : resultInner->second;
 	}
 }
-
 
 inline double PTUnrooted::treeCost(int start, int end, const DNASubModel& model) {
 	double cost = 0;

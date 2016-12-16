@@ -92,9 +92,9 @@ int main(int argc, const char* argv[]) {
 
 	for(size_t i = 0; i < tree.numNodes(); ++i) {
 		tree.setRoot(i);
-		infoLog << "Evaluating tree at node " << i << endl;
+//		infoLog << "Evaluating tree at node " << i << endl;
 		tree.evaluate(model);
-		double treeCost = tree.treeCost(model);
+//		double treeCost = tree.treeCost(model);
 	}
 	clock_t t3 = clock();
 	infoLog << "All possible tree evaluated, total eclipsed time: " << (t3 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;

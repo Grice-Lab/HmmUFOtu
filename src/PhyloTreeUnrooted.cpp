@@ -18,6 +18,9 @@ using namespace EGriceLab;
 using Eigen::Map;
 using Eigen::Matrix4Xd;
 
+const double PhyloTreeUnrooted::MAX_COST_EXP = -DBL_MIN_EXP / 2; /* use half of the DBL_MIN_EXP to avoid numeric-underflow */
+const double PhyloTreeUnrooted::INVALID_COST = -1;
+
 istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
 	char* buf = NULL;
 	string::size_type nName, nAnno;
@@ -66,7 +69,6 @@ ostream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::save(ostream& out) const {
 	return out;
 }
 
-const double PhyloTreeUnrooted::MAX_COST_EXP = -DBL_MIN_EXP / 2; /* use half of the DBL_MIN_EXP to avoid numeric-underflow */
 
 PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 	/* construct PTUNode by DFS of the NewickTree */
@@ -193,14 +195,13 @@ PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRo
 void PhyloTreeUnrooted::resetCost() {
 	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u)
 		for(vector<PTUNodePtr>::iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
-			node2cost[*u][*v].setConstant(inf);
+			node2cost[*u][*v].setConstant(INVALID_COST);
 }
 
 void PhyloTreeUnrooted::initInCost() {
-	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u) {
+	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u)
 		for(vector<PTUNodePtr>::iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v) /* u->children */
-			node2cost[*u][*v] = Matrix4Xd::Constant(4, csLen, inf);
-	}
+			node2cost[*u][*v] = Matrix4Xd::Constant(4, csLen, INVALID_COST);
 }
 
 void PhyloTreeUnrooted::initLeafCost(const DNASubModel& model) {
@@ -212,14 +213,13 @@ void PhyloTreeUnrooted::initLeafCost(const DNASubModel& model) {
 }
 
 Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j, const DNASubModel& model) {
-	Vector4d costVec;
+	Vector4d costVec = Vector4d::Zero();
 
 	if(node->isLeaf() && !node->isRoot()) { /* this is a leaf node, but not leafRoot */
-		costVec = node->seq[j] >= 0 ? leafCost.col(node->seq[j]) /* a base observed */ : leafCost.col(4) /* a gap observed */;
+		return node->seq[j] >= 0 ? leafCost.col(node->seq[j]) /* a base observed */ : leafCost.col(4) /* a gap observed */;
 //		cerr << "Leaf node " << node->name << " evaluated at site " << j << " cost: "  << costVec.transpose() << endl;
 	}
 	else { /* this is an internal node, all bases are treated as missing data */
-		costVec.setZero();
 		for(vector<PTUNodePtr>::iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) { /* check each child */
 			if(!isChild(*child, node)) /* ignore non-child neighbor */
 				continue;
