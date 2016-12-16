@@ -212,33 +212,28 @@ void PhyloTreeUnrooted::initLeafCost(const DNASubModel& model) {
 	leafCost.col(4) = - model.getPi().array().log();
 }
 
-Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j, const DNASubModel& model) {
-	Vector4d costVec = Vector4d::Zero();
+Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& u, const PTUNodePtr& v, int j, const DNASubModel& model) {
+	if(isEvaluated(u, v, j))
+		return node2cost[u][v].col(j);
+	Vector4d costVec;
 
-	if(node->isLeaf() && !node->isRoot()) { /* this is a leaf node, but not leafRoot */
-		return node->seq[j] >= 0 ? leafCost.col(node->seq[j]) /* a base observed */ : leafCost.col(4) /* a gap observed */;
+	if(u->isLeaf()) { /* this is a leaf node */
+		costVec = u->seq[j] >= 0 ? leafCost.col(u->seq[j]) /* a base observed */ : leafCost.col(4) /* a gap observed */;
 //		cerr << "Leaf node " << node->name << " evaluated at site " << j << " cost: "  << costVec.transpose() << endl;
 	}
 	else { /* this is an internal node, all bases are treated as missing data */
-		for(vector<PTUNodePtr>::iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) { /* check each child */
-			if(!isChild(*child, node)) /* ignore non-child neighbor */
+		costVec.setZero();
+		for(vector<PTUNodePtr>::const_iterator child = u->neighbors.begin(); child != u->neighbors.end(); ++child) { /* check each child */
+			if(!isChild(*child, u)) /* ignore non-child neighbor */
 				continue;
 
 			/* check whether this incoming cost from child has been evaluated */
-			Vector4d inCost;
-			if(isEvaluated(*child, node, j))
-				inCost = node2cost[*child][node].col(j); /* use cached incoming cost */
-			else {
-				// cerr << "P:" << P << endl;
-				inCost = evaluate(*child, j, model); /* evaluate this child recursively */
+			Vector4d inCost = evaluate(*child, u, j, model); /* evaluate recursively */
 //				if( (inCost.array() != inCost.array()).any() ) {
 //					errorLog << "Warning: NaN values generated in cost from node id " << (*child)->id << " name " << (*child)->name
 //							 << " to node id " << node->id << " name " << node->name <<
 //							" with cost " << inCost.transpose() << endl;
 //				}
-				node2cost[*child][node].col(j) = inCost; /* cache this cost */
-			}
-
 			/* convolute the inCost with Pr */
 			double scale = 0; /* potential scaling factor to avoid numeric overflow */
 			double minCost = inCost.minCoeff();
@@ -247,7 +242,7 @@ Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j, const DNASub
 				inCost.array() -= scale;
 //				debugLog << "scaling at " << scale << " to avoid numeric underflow" << endl;
 			}
-			const Matrix4d& P = model.Pr(node2length[*child][node]);
+			const Matrix4d& P = model.Pr(node2length[*child][u]);
 
 			for(Vector4d::Index i = 0; i < inCost.rows(); ++i)
 				costVec(i) += -::log(P.row(i).dot((-inCost).array().exp().matrix())) + scale;
@@ -256,7 +251,7 @@ Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j, const DNASub
 //		cerr << "Internal node " << node->id << " evaluated at site " << j << " cost: "  << costVec.transpose() << endl;
 	}
 
-	return costVec;
+	return node2cost[u][v].col(j) = costVec;
 }
 
 ostream& PTUnrooted::writeTreeNewick(ostream& out, const PTUNodePtr& node) const {
@@ -284,15 +279,34 @@ ostream& PTUnrooted::writeTreeNewick(ostream& out, const PTUNodePtr& node) const
 }
 
 double PTUnrooted::treeCost(int j, const DNASubModel& model) {
-	Vector4d cost = evaluate(root, j, model);
+//	evaluate(root, j, model); /* evaluate first */
+	Vector4d rootCost = Vector4d::Zero();
+	for(vector<PTUNodePtr>::const_iterator child = root->neighbors.begin(); child != root->neighbors.end(); ++child) {
+		Vector4d inCost = node2cost[*child][root];
+		double scale = 0; /* scale factor to avoid potential numeric underflow */
+		double minCost = inCost.minCoeff();
+		if(minCost != inf && minCost > MAX_COST_EXP) { /* need re-scale only the min cost efficient is too large */
+			scale = minCost - MAX_COST_EXP;
+			inCost.array() -= scale;
 
+		}
+		const Matrix4d& P = model.Pr(node2length[*child][root]);
+
+		for(Vector4d::Index i = 0; i < inCost.rows(); ++i)
+			rootCost(i) += -::log(P.row(i).dot((-inCost).array().exp().matrix())) + scale;
+	}
+	/* all incoming cost collected */
+	if(root->isLeaf()) /* this is a leaf root, need add in the cost of leaf without convolution */
+		rootCost =+ root->seq[j] >= 0 ? leafCost.col(root->seq[j]) /* a base observed */ : leafCost.col(4) /* a gap observed */;
+
+	/* final convolution */
 	double scale = 0; /* scale factor to avoid potential numeric underflow */
-	double minCost = cost.minCoeff();
+	double minCost = rootCost.minCoeff();
 	if(minCost != inf && minCost > MAX_COST_EXP) { /* need re-scale only the min cost efficient is too large */
 		scale = minCost - MAX_COST_EXP;
-		cost.array() -= scale;
+		rootCost.array() -= scale;
 	}
-	return -::log(model.getPi().dot((-cost).array().exp().matrix())) + scale;
+	return -::log(model.getPi().dot((-rootCost).array().exp().matrix())) + scale;
 }
 
 vector<Matrix4d> PTUnrooted::getModelTraningSetGoldman() const {

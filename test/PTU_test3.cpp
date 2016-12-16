@@ -92,7 +92,7 @@ int main(int argc, const char* argv[]) {
 
 	for(size_t i = 0; i < tree.numNodes(); ++i) {
 		tree.setRoot(i);
-//		infoLog << "Evaluating tree at node " << i << endl;
+		infoLog << "Evaluating tree at node " << i << endl;
 		tree.evaluate(model);
 //		double treeCost = tree.treeCost(model);
 	}

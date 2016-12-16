@@ -409,26 +409,34 @@ public:
 	/**
 	 * evaluate the likelihood at current root by treating it as the root of this PTUnrooted
 	 * @param model  DNA substitution model, must be a time-reversible model
-	 * @return  cost matrix of observing this tree at this root
 	 */
-	Matrix4Xd evaluate(const DNASubModel& model);
+	void evaluate(const DNASubModel& model) {
+		evaluate(root, model);
+	}
 
 	/**
 	 * evaluate the likelihood at given node by treating it as the root of this PTUnrooted
 	 * @param node  new root of this tree
 	 * @param model  DNA substitution model, must be a time-reversible model
-	 * @return  cost matrix of observing this tree at this root
 	 */
-	Matrix4Xd evaluate(const PTUNodePtr& node, const DNASubModel& model);
+	void evaluate(const PTUNodePtr& node, const DNASubModel& model);
 
 	/**
-	 * evaluate the likelihood of a given node and site by treating it as the root of this PTUnrooted
+	 * evaluate a given node at the jth site, given a DNA model
+	 * @param node  new root of this tree
+	 * @param j  the jth aligned site
+	 * @param model  DNA substitution model, must be a time-reversible model
+	 */
+	void evaluate(const PTUNodePtr& node, int j, const DNASubModel& model);
+
+	/**
+	 * evaluate the incoming cost u->v at the jth site, given a DNA model
 	 * @param node  new root of this tree
 	 * @param j  the jth aligned site
 	 * @param model  DNA substitution model, must be a time-reversible model
 	 * @return  cost vector of observing this tree at the jth site at this root
 	 */
-	Vector4d evaluate(const PTUNodePtr& node, int j, const DNASubModel& model);
+	Vector4d evaluate(const PTUNodePtr& u, const PTUNodePtr& v, int j, const DNASubModel& model);
 
 	/**
 	 * calculate the entire tree cost given a DNA sub model
@@ -580,18 +588,20 @@ inline size_t PTUnrooted::numLeaves() const {
 	return nLeaves;
 }
 
-inline Matrix4Xd PTUnrooted::evaluate(const DNASubModel& model) {
-	return evaluate(root, model);
-}
-
-inline Matrix4Xd PTUnrooted::evaluate(const PTUNodePtr& node, const DNASubModel& model) {
-	Matrix4Xd costMat(4, csLen);
+inline void PTUnrooted::evaluate(const PTUNodePtr& node, const DNASubModel& model) {
 	for(int j = 0; j < csLen; ++j) {
 //		infoLog << "Evaluating at site " << j << "\r";
-		costMat.col(j) = evaluate(node, j, model);
+		evaluate(node, j, model);
 	}
-	return costMat;
 }
+
+inline void PTUnrooted::evaluate(const PTUNodePtr& node, int j, const DNASubModel& model) {
+	for(vector<PTUNodePtr>::iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
+		if(isChild(*child, node) && !isEvaluated(*child, node, j))
+			evaluate(*child, node, j, model);
+	}
+}
+
 
 inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {
 	StringUtils::toLower(format);
