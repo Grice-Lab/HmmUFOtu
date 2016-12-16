@@ -1,12 +1,11 @@
-# Ignore Autotools cache
+# Ignore all logs
+*.log
+
+# Ignore Autotools cache recursively
 **/*.cache
 **/.deps
-# Ignore any Eclipse metadata
+# Ignore any Eclipse metadata recursively
 **/.autotools
 **/.cproject
 **/.project
 **/.settings
-# binary files
-hmmufotu
-hmmufotu-train
-hmmufotu-train-dm

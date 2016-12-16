@@ -1,3 +1,15 @@
+# Ignore all
+*
+
+# Unignore all dirs
+
+!*/
+
+# Unignore all files with extentions
+!*.*
+
+# Ignore all logs, objects and archives
+*.log
 *.o
 *.a
-*.log
+**/.deps
