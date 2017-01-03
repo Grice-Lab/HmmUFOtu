@@ -80,6 +80,11 @@ public:
 	 */
 	virtual ostream& write(ostream& out) const = 0;
 
+	/**
+	 * copy this base object and return the new object's address
+	 */
+	virtual DNASubModel* clone() const = 0;
+
 public:
 	/* static methods */
 	/** calculate the p-distance between two aligned DigitalSeq */

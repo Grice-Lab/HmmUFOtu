@@ -121,7 +121,7 @@ am_libHmmUFOtu_a_OBJECTS = HmmUFOtuConst.$(OBJEXT) \
 	BandedHMMP7Prior.$(OBJEXT) BandedHMMP7.$(OBJEXT) MSA.$(OBJEXT) \
 	CSFMIndex.$(OBJEXT) NewickTree.$(OBJEXT) \
 	PhyloTreeUnrooted.$(OBJEXT) DNASubModel.$(OBJEXT) \
-	GTR.$(OBJEXT)
+	GTR.$(OBJEXT) DNASubModelFactory.$(OBJEXT)
 libHmmUFOtu_a_OBJECTS = $(am_libHmmUFOtu_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
@@ -411,7 +411,8 @@ CSFMIndex.cpp \
 NewickTree.cpp \
 PhyloTreeUnrooted.cpp \
 DNASubModel.cpp \
-GTR.cpp
+GTR.cpp \
+DNASubModelFactory.cpp
 
 hmmufotu_SOURCES = HmmUFOtu.cpp
 hmmufotu_LDADD = libHmmUFOtu.a math/libEGMath.a
@@ -539,6 +540,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CommandOptions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DNA.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DNASubModel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DNASubModelFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DegenAlphabet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DigitalSeq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GTR.Po@am__quote@

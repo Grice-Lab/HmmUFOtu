@@ -346,10 +346,24 @@ public:
 	long loadMSA(const MSA& msa);
 
 	/**
-	 * Set the underlying DNA Sub Model
+	 * Set the underlying DNA Sub Model as a copy of given model
 	 */
 	void setModel(const DNASubModel& model) {
 		this->model.reset(model.clone());
+	}
+
+	/**
+	 * Set the underlying DNA Sub Model as the owner of this object
+	 */
+	void setModel(DNASubModel* model) {
+		this->model.reset(model);
+	}
+
+	/**
+	 * Set the underlying DNA Sub Model as a copy of this object
+	 */
+	void setModel(const DNASubModel* model) {
+		this->model.reset(model->clone());
 	}
 
 	/**

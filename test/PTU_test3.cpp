@@ -12,6 +12,7 @@
 #include "PhyloTreeUnrooted.h"
 #include "GTR.h"
 #include "ProgLog.h"
+#include "DNASubModelFactory.h"
 
 using namespace std;
 using namespace EGriceLab;
@@ -79,8 +80,8 @@ int main(int argc, const char* argv[]) {
 		infoLog << "MSA loaded successfully, read in " << nRead << " nodes with " << tree.numAlignSites() << " numSites" << endl;
 	}
 
-	GTR model;
-	gtrIn >> model;
+	DNASubModel* model = DNASubModelFactory::createModel("GTR");
+	gtrIn >> *model;
 	infoLog << "DNA model loaded" << endl;
 	tree.setModel(model);
 	infoLog << "DNA model set" << endl;
