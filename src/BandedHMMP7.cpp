@@ -1098,6 +1098,48 @@ std::string BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
 	return aSeq;
 }
 
+DigitalSeq BandedHMMP7::buildGlobalAlignDS(const ViterbiScores& vs,
+		const ViterbiAlignPath& vpath) const {
+	assert(vs.seq != NULL);
+	DigitalSeq aSeq;
+	int profileNLen = vpath.alnStart - 1;
+	int profileCLen = vpath.K - vpath.alnEnd;
+	int seqNLen = vpath.alnFrom - 1;
+	int seqCLen = vpath.L - vpath.alnTo;
+
+	/* place N state residues to the beginning and ending of the unmatched up-stream of the profile */
+	int NHalf = std::max(profileNLen / 2, seqNLen / 2);
+	int CHalf = std::max(profileCLen / 2, seqCLen / 2);
+	for(int i = 0; i < NHalf; ++i) /* put half the N residues at the beginning of the N' */
+		aSeq.push_back(vs.seq->encodeAt(i - 1));
+	if(profileNLen > 2 * NHalf)
+		aSeq.append(profileNLen - 2 * NHalf, DegenAlphabet::GAP_SYM); /* add the middle gaps, if any */
+	for(int i = profileNLen - NHalf; i < profileNLen; ++i) /* put half the N residues at the beginning */
+		aSeq.push_back(vs.seq->encodeAt(i - 1)); /* put half the N residues at the end of the N' */
+
+	/* place aligned residues */
+	int i = vpath.alnFrom;
+	for(string::const_iterator it = vpath.alnPath.begin(); it != vpath.alnPath.end(); ++it) {
+		switch(*it) {
+		case 'M': case 'I': /* both case consumes residues on seq */
+			aSeq.push_back(vs.seq->encodeAt(i - 1));
+			i++;
+			break;
+		case 'D': /* gap relative to profile */
+			aSeq.push_back(DegenAlphabet::GAP_SYM);
+			break;
+		default:
+			break; // do nothing
+		}
+	}
+	for(int i = vpath.alnTo; i < vpath.alnTo + CHalf; ++i) /* put half the N residues at the beginning of the N' */
+		aSeq.push_back(vs.seq->encodeAt(i - 1));
+	aSeq.append(profileCLen - 2 * CHalf, DegenAlphabet::GAP_SYM); /* add the middle gaps, if any */
+	for(int i = vpath.K - NHalf; i < vpath.K; ++i) /* put half the N residues at the beginning */
+		aSeq.push_back(vs.seq->encodeAt(i - 1)); /* put half the N residues at the end of the N' */
+	return aSeq;
+}
+
 void BandedHMMP7::wingRetract() {
 	if(wingRetracted) // already wing-retracted
 		return;

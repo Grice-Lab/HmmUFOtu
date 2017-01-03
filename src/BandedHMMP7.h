@@ -305,10 +305,9 @@ public:
 	 * fill the TRACE matrix with states
 	 * @param vpath  a ViterbiAlignPath
 	 * @param csStart  1-based start on consensus of MSA
-	 * @param csEnd  1-based end on profile on consensus of MSA
+	 * @param csEnd  1-based end on consensus of MSA
 	 * @param csFrom  1-based start on sequence
 	 * @param csTo  1-based end on sequence
-	 * @param cs the matching sequence, including gaps
 	 */
 	void addKnownAlignPath(ViterbiAlignPath& vpath, const CSLoc& csLoc, int csFrom, int csTo) const;
 
@@ -341,6 +340,14 @@ public:
 	 */
 	string buildGlobalAlignSeq(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
 
+	/**
+	 * Build the global aligned DigitalSeq using calculated scores and backtrace path
+	 * @param vs  a ViterbiScores with Viterbi Scores initiated
+	 * @param vpath  a ViterbiAlignPath of the DP values by one of the calcViterbiScores methods
+	 * @return  the global aligned sequence of the query seq
+	 */
+	DigitalSeq buildGlobalAlignDS(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
+
 	/* static member methods */
 	static BandedHMMP7 build(const MSA& msa, double symfrac,
 			const BandedHMMP7Prior& prior, const string& name = "unnamed");
@@ -360,8 +367,6 @@ public:
 	 * the model is usually raw counts or scaled by calling scale()
 	 */
 	void normalize();
-
-
 
 private:
 	/* core fields */
