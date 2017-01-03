@@ -21,6 +21,7 @@
 #include <cassert>
 #include <eigen3/Eigen/Dense>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/unordered_map.hpp>
 
 #include "HmmUFOtuConst.h"
@@ -57,6 +58,8 @@ public:
 
 	typedef shared_ptr<PTUNode> PTUNodePtr; /* use boost shared_ptr to hold node pointers */
 	typedef shared_ptr<const PTUNode> PTUNodeConstPtr; /* use boost shared_ptr to hold node pointers */
+
+	typedef shared_ptr<DNASubModel> ModelPtr; /* use boost shared_ptr to hold DNA Sub Model */
 
 	/**
 	 * A PTUnrooed node that stores its basic information and neighbors
@@ -343,6 +346,20 @@ public:
 	long loadMSA(const MSA& msa);
 
 	/**
+	 * Set the underlying DNA Sub Model
+	 */
+	void setModel(const DNASubModel& model) {
+		this->model.reset(model.clone());
+	}
+
+	/**
+	 * Get the underlying DNA Sub Model
+	 */
+	const DNASubModel& getModel() const {
+		return *model;
+	}
+
+	/**
 	 * save this object to an output in binary format
 	 */
 	ostream& save(ostream& out) const;
@@ -375,17 +392,9 @@ public:
 	void initInCost();
 
 	/**
-	 * initiate the leaf cost to all inf
+	 * initiate the leaf cost
 	 */
-	void initLeafCost() {
-		leafCost = Matrix4Xd::Constant(4, 5, INVALID_COST);
-	}
-
-	/**
-	 * initiate the leaf cost given a DNA Sub-model for faster computation
-	 * @param model  any Time-reversible DNA substitution model
-	 */
-	void initLeafCost(const DNASubModel& model);
+	void initLeafCost();
 
 	/**
 	 * reset the cached cost of edge u->v
@@ -408,53 +417,49 @@ public:
 
 	/**
 	 * evaluate the likelihood at current root by treating it as the root of this PTUnrooted
-	 * @param model  DNA substitution model, must be a time-reversible model
 	 */
-	void evaluate(const DNASubModel& model) {
-		evaluate(root, model);
+	void evaluate() {
+		evaluate(root);
 	}
 
 	/**
 	 * evaluate the likelihood at given node by treating it as the root of this PTUnrooted
 	 * @param node  new root of this tree
-	 * @param model  DNA substitution model, must be a time-reversible model
 	 */
-	void evaluate(const PTUNodePtr& node, const DNASubModel& model);
+	void evaluate(const PTUNodePtr& node);
 
 	/**
 	 * evaluate a given node at the jth site, given a DNA model
 	 * @param node  new root of this tree
 	 * @param j  the jth aligned site
-	 * @param model  DNA substitution model, must be a time-reversible model
 	 */
-	void evaluate(const PTUNodePtr& node, int j, const DNASubModel& model);
+	void evaluate(const PTUNodePtr& node, int j);
 
 	/**
-	 * evaluate the incoming cost u->v at the jth site, given a DNA model
+	 * evaluate the incoming cost u->v at the jth site
 	 * @param node  new root of this tree
 	 * @param j  the jth aligned site
-	 * @param model  DNA substitution model, must be a time-reversible model
 	 * @return  cost vector of observing this tree at the jth site of this edge
 	 */
-	Vector4d evaluate(const PTUNodePtr& u, const PTUNodePtr& v, int j, const DNASubModel& model);
+	Vector4d evaluate(const PTUNodePtr& u, const PTUNodePtr& v, int j);
 
 	/**
-	 * calculate the entire tree cost given a DNA sub model
+	 * calculate the entire tree
 	 * evaluate the tree if necessary
 	 */
-	double treeCost(const DNASubModel& model);
+	double treeCost();
 
 	/**
-	 * calculate the entire tree cost at given region using given a DNA sub model
+	 * calculate the entire tree cost at given region
 	 * both start and end are 0-based inclusive
 	 */
-	double treeCost(int start, int end, const DNASubModel& model);
+	double treeCost(int start, int end);
 
 	/**
-	 * calculate the entire tree cost at j-th site given a DNA sub model
+	 * calculate the entire tree cost at j-th site
 	 * evaluate the tree if neccessary
 	 */
-	double treeCost(int j, const DNASubModel& model);
+	double treeCost(int j);
 
 	/**
 	 * write this PTUnrooted tree structure into output in given format
@@ -531,6 +536,16 @@ private:
 	 */
 	ostream& saveRoot(ostream& out) const;
 
+	/**
+	 * load DNA model from a binary input in text model
+	 */
+	istream& loadModel(istream& in);
+
+	/**
+	 * save DNA model to a binary output in text model
+	 */
+	ostream& saveModel(ostream& out) const;
+
 public:
 	/* static methods */
 	/**
@@ -572,6 +587,8 @@ private:
 	Matrix4Xd leafCost; /* cached 4 X 5 leaf cost matrix,
 						with each column the pre-computed cost of observing A, C, G, T or - at any given site */
 
+	ModelPtr model; /* DNA Model used to evluate this tree, needed to be stored with this tree */
+
 public:
 	/* static fields */
 	static const double MAX_COST_EXP;
@@ -594,17 +611,17 @@ inline size_t PTUnrooted::numLeaves() const {
 	return nLeaves;
 }
 
-inline void PTUnrooted::evaluate(const PTUNodePtr& node, const DNASubModel& model) {
+inline void PTUnrooted::evaluate(const PTUNodePtr& node) {
 	for(int j = 0; j < csLen; ++j) {
 //		infoLog << "Evaluating at site " << j << "\r";
-		evaluate(node, j, model);
+		evaluate(node, j);
 	}
 }
 
-inline void PTUnrooted::evaluate(const PTUNodePtr& node, int j, const DNASubModel& model) {
+inline void PTUnrooted::evaluate(const PTUNodePtr& node, int j) {
 	for(vector<PTUNodePtr>::iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
 		if(isChild(*child, node) && !isEvaluated(*child, node, j))
-			evaluate(*child, node, j, model);
+			evaluate(*child, node, j);
 	}
 }
 
@@ -641,15 +658,15 @@ inline Matrix4Xd PTUnrooted::getBranchCost(const PTUNodePtr& u, const PTUNodePtr
 	}
 }
 
-inline double PTUnrooted::treeCost(int start, int end, const DNASubModel& model) {
+inline double PTUnrooted::treeCost(int start, int end) {
 	double cost = 0;
 	for(int j = start; j <= end; ++j)
-		cost += treeCost(j, model);
+		cost += treeCost(j);
 	return cost;
 }
 
-inline double PTUnrooted::treeCost(const DNASubModel& model) {
-	return treeCost(0, csLen - 1, model);
+inline double PTUnrooted::treeCost() {
+	return treeCost(0, csLen - 1);
 }
 
 inline vector<Matrix4d> PTUnrooted::getModelTransitionSet(string method) const {

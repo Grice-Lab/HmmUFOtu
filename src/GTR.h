@@ -63,6 +63,14 @@ public:
 	 */
 	virtual void trainParams(const vector<Matrix4d>& Pv, const Vector4d& f);
 
+	/**
+	 * copy this object and return the new object's address
+	 * @override  base class method
+	 */
+	virtual GTR* clone() const {
+		return new GTR(*this);
+	}
+
 private:
 	static const string name;
 

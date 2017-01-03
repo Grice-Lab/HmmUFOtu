@@ -75,15 +75,17 @@ int main(int argc, const char* argv[]) {
 	GTR model;
 	modelIn >> model;
 	cerr << "DNA model loaded" << endl;
+	tree.setModel(model);
+	cerr << "DNA model set" << endl;
 
 	clock_t t1 = clock();
 	tree.initInCost();
-	tree.initLeafCost(model);
+	tree.initLeafCost();
 	clock_t t2 = clock();
 	cerr << "Tree cost initiated, total eclipsed time: " << (t2 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 
-	tree.evaluate(tree.getRoot(), model);
-	double treeCost = tree.treeCost(model);
+	tree.evaluate(tree.getRoot());
+	double treeCost = tree.treeCost();
 	clock_t t3 = clock();
 	cerr << "Tree evaluated, total eclipsed time: " << (t3 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 	cerr << "Final tree cost: " << treeCost << endl;

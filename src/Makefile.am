@@ -29,7 +29,8 @@ CSFMIndex.cpp \
 NewickTree.cpp \
 PhyloTreeUnrooted.cpp \
 DNASubModel.cpp \
-GTR.cpp
+GTR.cpp \
+DNASubModelFactory.cpp
 
 # Build the executables
 bin_PROGRAMS=hmmufotu hmmufotu-train-dm hmmufotu-train

@@ -11,6 +11,7 @@
 #include <cmath>
 #include "HmmUFOtuConst.h"
 #include "PhyloTreeUnrooted.h"
+#include "DNASubModelFactory.h"
 
 namespace EGriceLab {
 using namespace std;
@@ -204,15 +205,19 @@ void PhyloTreeUnrooted::initInCost() {
 			node2cost[*u][*v] = Matrix4Xd::Constant(4, csLen, INVALID_COST);
 }
 
-void PhyloTreeUnrooted::initLeafCost(const DNASubModel& model) {
+void PhyloTreeUnrooted::initLeafCost() {
 	leafCost.resize(4, 5);
-	/* initiate the non-gap (0..3) columns */
-	leafCost.leftCols(4).setConstant(inf);
-	leafCost.leftCols(4).diagonal().setConstant(0);
-	leafCost.col(4) = - model.getPi().array().log();
+	if(model == NULL) /* no model provided yet */
+		leafCost.setConstant(INVALID_COST);
+	else {
+		/* initiate the non-gap (0..3) columns */
+		leafCost.leftCols(4).setConstant(inf);
+		leafCost.leftCols(4).diagonal().setConstant(0);
+		leafCost.col(4) = - model->getPi().array().log();
+	}
 }
 
-Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& u, const PTUNodePtr& v, int j, const DNASubModel& model) {
+Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& u, const PTUNodePtr& v, int j) {
 	if(isEvaluated(u, v, j))
 		return node2cost[u][v].col(j);
 	Vector4d costVec;
@@ -228,14 +233,14 @@ Vector4d PhyloTreeUnrooted::evaluate(const PTUNodePtr& u, const PTUNodePtr& v, i
 				continue;
 
 			/* check whether this incoming cost from child has been evaluated */
-			const Vector4d& inCost = evaluate(*child, u, j, model); /* evaluate recursively */
+			const Vector4d& inCost = evaluate(*child, u, j); /* evaluate recursively */
 //				if( (inCost.array() != inCost.array()).any() ) {
 //					errorLog << "Warning: NaN values generated in cost from node id " << (*child)->id << " name " << (*child)->name
 //							 << " to node id " << node->id << " name " << node->name <<
 //							" with cost " << inCost.transpose() << endl;
 //				}
 			/* convolute the inCost with Pr */
-			costVec += dot_product_scaled(model.Pr(node2length[*child][u]), inCost);
+			costVec += dot_product_scaled(model->Pr(node2length[*child][u]), inCost);
 		}
 //		cerr << "Internal node " << node->id << " evaluated at site " << j << " cost: "  << costVec.transpose() << endl;
 	}
@@ -268,19 +273,19 @@ ostream& PTUnrooted::writeTreeNewick(ostream& out, const PTUNodePtr& node) const
 	return out;
 }
 
-double PTUnrooted::treeCost(int j, const DNASubModel& model) {
+double PTUnrooted::treeCost(int j) {
 //	evaluate(root, j, model); /* evaluate first */
 	Vector4d rootCost = Vector4d::Zero();
 	for(vector<PTUNodePtr>::const_iterator child = root->neighbors.begin(); child != root->neighbors.end(); ++child)
 		if(isChild(*child, root)) /* a real child */
-			rootCost += dot_product_scaled(model.Pr(node2length[*child][root]), node2cost[*child][root].col(j));
+			rootCost += dot_product_scaled(model->Pr(node2length[*child][root]), node2cost[*child][root].col(j));
 
 	/* all incoming cost collected */
 	if(root->isLeaf()) /* this is a leaf root, need add in the cost of leaf without convolution */
 		rootCost += (root->seq[j] >= 0 ? leafCost.col(root->seq[j]) /* a base observed */ : leafCost.col(4)); /* a gap observed */
 
 	/* final convolution */
-	return dot_product_scaled(model.getPi(), rootCost);
+	return dot_product_scaled(model->getPi(), rootCost);
 }
 
 vector<Matrix4d> PTUnrooted::getModelTraningSetGoldman() const {
@@ -383,6 +388,9 @@ istream& PTUnrooted::load(istream& in) {
 	/* load root */
 	loadRoot(in);
 
+	/* load model */
+	loadModel(in);
+
 	return in;
 }
 
@@ -390,18 +398,18 @@ ostream& PTUnrooted::save(ostream& out) const {
 	/* save program info */
 	writeProgName(out, progName);
 	writeProgVersion(out, progVersion);
-	debugLog << "program info saved" << endl;
+//	debugLog << "program info saved" << endl;
 
 	/* write global information */
 	size_t nNodes = numNodes();
 	out.write((const char*) &nNodes, sizeof(size_t));
 	out.write((const char*) &csLen, sizeof(int));
-	debugLog << "global information saved" << endl;
+//	debugLog << "global information saved" << endl;
 
 	/* write each node */
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
 		(*node)->save(out);
-	debugLog << "all nodes saved" << endl;
+//	debugLog << "all nodes saved" << endl;
 
 	/* write all edges */
 	size_t nEdges = numEdges();
@@ -409,21 +417,25 @@ ostream& PTUnrooted::save(ostream& out) const {
 	for(vector<PTUNodePtr>::const_iterator u = id2node.begin(); u != id2node.end(); ++u)
 		for(vector<PTUNodePtr>::const_iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
 			saveEdge(out, *u, *v);
-	debugLog << "all edge saved" << endl;
+//	debugLog << "all edge saved" << endl;
 
 	/* write edge costs */
 	for(vector<PTUNodePtr>::const_iterator u = id2node.begin(); u != id2node.end(); ++u)
 		for(vector<PTUNodePtr>::const_iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
 			saveEdgeCost(out, *u, *v);
-	debugLog << "edge costs saved" << endl;
+//	debugLog << "edge costs saved" << endl;
 
 	/* write leaf cost */
 	saveLeafCost(out);
-	debugLog << "leaf cost saved" << endl;
+//	debugLog << "leaf cost saved" << endl;
 
 	/* save root */
 	saveRoot(out);
-	debugLog << "Root saved" << endl;
+//	debugLog << "Root saved" << endl;
+
+	/* save model */
+	saveModel(out);
+//	debugLog << "Model saved" << endl;
 
 	return out;
 }
@@ -512,6 +524,25 @@ istream& PTUnrooted::loadRoot(istream& in) {
 ostream& PTUnrooted::saveRoot(ostream& out) const {
 	/* save current root id */
 	out.write((const char*) &(root->id), sizeof(long));
+	return out;
+}
+
+istream& PTUnrooted::loadModel(istream& in) {
+	string type, line;
+	in >> type;
+	in.ignore(); /* ignore the next '\n' character */
+	/* create the model with a newly created object */
+	model.reset(DNASubModelFactory::createModel(type));
+	/* read model */
+	in >> *model;
+
+	return in;
+}
+
+ostream& PTUnrooted::saveModel(ostream& out) const {
+	out << model->modelType() << endl;
+	out << *model << endl;
+
 	return out;
 }
 

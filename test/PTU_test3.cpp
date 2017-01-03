@@ -69,11 +69,11 @@ int main(int argc, const char* argv[]) {
 	long nRead = tree.loadMSA(msa);
 	if(nRead == -1) {
 		cerr << "Unable to read PhyloTree" << endl;
-		return -1;
+		return 1;
 	}
 	else if(nRead != nLeaves) {
 		cerr << "Loaded in " << nRead << " nodes from MSA but expecting " << nLeaves << " leaves in the PhyloTree " << endl;
-		return -1;
+		return 1;
 	}
 	else {
 		infoLog << "MSA loaded successfully, read in " << nRead << " nodes with " << tree.numAlignSites() << " numSites" << endl;
@@ -82,20 +82,25 @@ int main(int argc, const char* argv[]) {
 	GTR model;
 	gtrIn >> model;
 	infoLog << "DNA model loaded" << endl;
+	tree.setModel(model);
+	infoLog << "DNA model set" << endl;
 	infoLog << "MAX_COST_EXP: " << PhyloTreeUnrooted::MAX_COST_EXP << endl;
 
 	clock_t t1 = clock();
 	tree.initInCost();
-	tree.initLeafCost(model);
+	tree.initLeafCost();
 	clock_t t2 = clock();
 	infoLog << "Tree cost initiated, total eclipsed time: " << (t2 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 
+	EGriceLab::PTUnrooted::PTUNodePtr oldRoot = tree.getRoot();
 	for(size_t i = 0; i < tree.numNodes(); ++i) {
 		tree.setRoot(i);
 		infoLog << "Evaluating tree at node " << i << endl;
-		tree.evaluate(model);
+		tree.evaluate();
 //		double treeCost = tree.treeCost(model);
 	}
+	/* reset root to original */
+	tree.setRoot(oldRoot);
 	clock_t t3 = clock();
 	infoLog << "All possible tree evaluated, total eclipsed time: " << (t3 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 
@@ -103,6 +108,6 @@ int main(int argc, const char* argv[]) {
 		infoLog << "Tree saved successfully" << endl;
 	else {
 		cerr << "Unable to save tree" << endl;
-		return -1;
+		return 1;
 	}
 }

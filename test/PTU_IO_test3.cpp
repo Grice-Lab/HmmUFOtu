@@ -33,7 +33,8 @@ int main(int argc, const char* argv[]) {
 	}
 
 	PTUnrooted tree;
-	if(tree.load(in)) {
+	tree.load(in);
+	if(!in.bad()){
 		cerr << "PTUnrooted loaded successfully, total " << tree.numNodes() << " nodes loaded" << endl;
 		cerr << "Root id: " << tree.getRoot()->getId() << endl;
 	}
@@ -42,7 +43,9 @@ int main(int argc, const char* argv[]) {
 		return -1;
 	}
 
-	if(tree.save(out))
+	tree.save(out);
+
+	if(!out.bad())
 		cerr << "PTUnrooted saved successfully" << endl;
 	else {
 		cerr << "Unable to save tree" << endl;
