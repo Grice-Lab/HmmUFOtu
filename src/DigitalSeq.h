@@ -101,6 +101,11 @@ public:
 	 */
 	DigitalSeq& append(const string& str);
 
+	/**
+	 * Re-introduce all base class append methods
+	 */
+	using basic_string<int8_t>::append;
+
 private:
 	const DegenAlphabet* abc;
 	string name;

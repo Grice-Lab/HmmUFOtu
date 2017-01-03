@@ -144,6 +144,7 @@ private:
 	//int8_t gap_map[INT8_MAX + 1]; /* internal map for gaps */
 	map<char, string> degen_map; // map for degenerative synonymous
 
+public:
 	static const int8_t INVALID_SYM = -1;
 	static const int8_t GAP_SYM = -2; /* encoded gap symbol */
 	static const char DEFAULT_GAP_CHAR = '-';
