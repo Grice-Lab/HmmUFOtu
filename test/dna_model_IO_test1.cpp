@@ -8,7 +8,6 @@
 #include <iostream>
 #include <fstream>
 #include "MSA.h"
-#include "PhyloTree.h"
 #include "DNASubModel.h"
 #include "GTR.h"
 

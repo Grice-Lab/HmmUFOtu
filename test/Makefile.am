@@ -26,6 +26,7 @@ PTU_IO_test4 \
 PTU_test1 \
 PTU_test2 \
 PTU_test3 \
+PTU_test4 \
 dna_model_IO_test1 \
 dna_model_test1 \
 RootFinder_test1
@@ -151,6 +152,10 @@ PTU_test2_LDFLAGS = -static
 PTU_test3_SOURCES = PTU_test3.cpp
 PTU_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
 PTU_test3_LDFLAGS = -static
+
+PTU_test4_SOURCES = PTU_test4.cpp
+PTU_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_test4_LDFLAGS = -static
 
 dna_model_IO_test1_SOURCES = dna_model_IO_test1.cpp
 dna_model_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a

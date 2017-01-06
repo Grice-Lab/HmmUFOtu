@@ -9,7 +9,9 @@
 #include <boost/unordered_set.hpp>
 #include <cfloat>
 #include <cmath>
+#include <algorithm>
 #include "HmmUFOtuConst.h"
+#include "ProgLog.h"
 #include "PhyloTreeUnrooted.h"
 #include "DNASubModelFactory.h"
 
@@ -21,6 +23,7 @@ using Eigen::Matrix4Xd;
 
 const double PhyloTreeUnrooted::MAX_COST_EXP = -DBL_MIN_EXP / 2; /* use half of the DBL_MIN_EXP to avoid numeric-underflow */
 const double PhyloTreeUnrooted::INVALID_COST = -1;
+const double PhyloTreeUnrooted::BRANCH_EPS = 1e-7;
 
 istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
 	char* buf = NULL;
@@ -35,12 +38,10 @@ istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
 	name.assign(buf, nName); // override the original value
 	delete[] buf;
 
-	in.read((char*) &nSeq, sizeof(DigitalSeq::size_type));
-	buf = new char[nSeq + 1];
-	in.read(buf, nSeq + 1); /* read the null terminal */
-	seq.assign((const int8_t*) buf, nSeq);
-	delete[] buf;
+	/* read seq */
+	seq.load(in);
 
+	/* read annotation */
 	in.read((char*) &nAnno, sizeof(string::size_type));
 	buf = new char[nAnno + 1];
 	in.read(buf, nAnno + 1); /* read the null terminal */
@@ -62,8 +63,11 @@ ostream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::save(ostream& out) const {
 	out.write((const char*) &id, sizeof(long));
 	out.write((const char*) &nName, sizeof(string::size_type));
 	out.write(name.c_str(), nName + 1);
-	out.write((const char*) &nSeq, sizeof(DigitalSeq::size_type));
-	out.write((const char*) seq.c_str(), nSeq + 1);
+
+	/* write seq, if not NULL */
+	seq.save(out);
+
+	/* write annotation */
 	out.write((const char*) &nAnno, sizeof(string::size_type));
 	out.write(anno.c_str(), nAnno + 1);
 	out.write((const char*) &annoDist, sizeof(double));
@@ -544,6 +548,124 @@ ostream& PTUnrooted::saveModel(ostream& out) const {
 	out << *model << endl;
 
 	return out;
+}
+
+PTUnrooted PTUnrooted::copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const {
+	PTUnrooted tree; /* construct an empty tree */
+	tree.model = model; /* copy the model */
+	tree.csLen = csLen; /* copy csLen */
+
+	/* construct new copies of nodes */
+	PTUNodePtr newU(new PTUNode(u->id, u->name, u->seq, u->anno, u->annoDist));
+	PTUNodePtr newV(new PTUNode(v->id, v->name, v->seq, v->anno, v->annoDist));
+	newU->neighbors.push_back(newV);
+	newV->neighbors.push_back(newU);
+
+	/* add nodes */
+	tree.id2node.push_back(newU);
+	tree.id2node.push_back(newV);
+	tree.root = newU;
+	/* set branch and costs */
+	tree.node2length[newU][newV] = tree.node2length[newV][newU] = getBranchLength(u, v);
+	tree.node2cost[newU][newV] = getBranchCost(u, v);
+	tree.node2cost[newV][newU] = getBranchCost(v, u);
+	tree.leafCost = leafCost;
+
+	tree.setRoot(newU);
+
+	return tree;
+}
+
+double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v,
+		int start, int end) {
+	double v0 = getBranchLength(u, v);
+
+	double q0 = ::exp(-v0);
+	double p0 = 1 - q0;
+
+	double p = p0;
+	double q = q0;
+
+	Vector4d pi = model->getPi();
+	cerr << "pi: " << pi.transpose() << endl;
+
+	/* Felsenstein's iterative optimizing algorithm */
+	while(p >= 0 && p <= 1) {
+		for(int j = start, p = 0; j <= end; ++j) {
+			const Vector4d& costU = evaluate(u, v, j);
+			const Vector4d& costV = evaluate(v, u, j);
+			double A = ::exp(-dot_product_scaled(pi, costU + costV));
+			double B = ::exp(- dot_product_scaled(pi, costU) - dot_product_scaled(pi, costV));
+			cerr << "A: " << A << " B: " << B << endl;
+			p += B * p0 / (A * q0 + B * p0);
+			q = 1 - p;
+		}
+		p /= (end - start + 1);
+		q = 1 - p;
+
+		if(::fabs(p - p0) < BRANCH_EPS)
+			break;
+		// update p0 and q0
+		p0 = p;
+		q0 = 1 - p0;
+		// reset evaluated cost
+	}
+	cerr << "p0: " << p0 << " v: " << -::log(q0) << " cost: " << treeCost(start, end) << endl;
+
+	return node2length[u][v] = node2length[v][u] = -::log(q0);
+}
+
+double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v, double d0) {
+	assert(seq.length() == csLen); /* make sure this is an aligned seq */
+
+	/* break the connection of u and v */
+	u->neighbors.erase(std::find(u->neighbors.begin(), u->neighbors.end(), v));
+	v->neighbors.erase(std::find(v->neighbors.begin(), v->neighbors.end(), u));
+
+	/* create a new interior root */
+	PTUNodePtr r(new PTUNode(v->id, v->name, csLen));
+	/* create a new leaf with given seq */
+	PTUNodePtr n(new PTUNode(v->id, v->name, seq));
+
+	/* place r at the middle-point of u and v */
+	double v0 = getBranchLength(u, v);
+	u->neighbors.push_back(r);
+	v->neighbors.push_back(r);
+	r->neighbors.push_back(u);
+	r->neighbors.push_back(v);
+	node2length[u][r] = node2length[r][u] = v0 / 2;
+	node2length[v][r] = node2length[r][v] = v0 / 2;
+	node2cost[u][r] = node2cost[u][v];
+	node2cost[v][r] = node2cost[v][u];
+	node2cost[r][u] = node2cost[r][v] = Matrix4Xd::Constant(4, csLen, INVALID_COST);
+
+	/* place r with initial branch length */
+	n->neighbors.push_back(r);
+	r->neighbors.push_back(n);
+	node2length[r][n] = node2length[n][r] = d0;
+	node2cost[r][n] = node2cost[n][r] = Matrix4Xd::Constant(4, csLen, INVALID_COST);
+
+	setRoot(r);
+
+	/* find the evaluation region */
+	int start = -1;
+	int end = -1;
+	for(int j = 0; j < csLen; ++j) {
+		if(seq[j] >= 0) { /* valid symbol */
+			if(start == -1)
+				start = j;
+			end = j;
+		}
+	}
+//	optimizeBranchLength(u, r, start, end);
+//	optimizeBranchLength(v, r, start, end);
+
+	double vn = optimizeBranchLength(n, r, start, end);
+	/* annotate the new root */
+	r->anno = v->anno;
+	r->annoDist = v0 / 2 + vn;
+
+	return treeCost(start, end);
 }
 
 } /* namespace EGriceLab */

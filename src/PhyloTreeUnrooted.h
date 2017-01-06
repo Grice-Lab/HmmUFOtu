@@ -81,11 +81,22 @@ public:
 		: id(id), name(name), annoDist(0) {  }
 
 		/**
-		 * Construct a PTUNode with a given id, name and sequence
+		 * Construct a PTUNode with a given id, name, sequence, and optionally annotation and annotation-dist
 		 */
-		PhyloTreeUnrootedNode(long id, const string& name, const DigitalSeq& seq)
-		: id(id), name(name), seq(seq), annoDist(0)
+		PhyloTreeUnrootedNode(long id, const string& name, const DigitalSeq& seq,
+				const string& anno = "", double annoDist = 0)
+		: id(id), name(name), seq(seq), anno(anno), annoDist(annoDist)
 		{ }
+
+		/**
+		 * Construct a PTUNode with a given id, name, unobserved seq with given length, and optionally annotation and annotation-dist
+		 */
+		PhyloTreeUnrootedNode(long id, const string& name, size_t length,
+				const string& anno = "", double annoDist = 0)
+		: id(id), name(name), seq(SeqCommons::nuclAbc, name), anno(anno), annoDist(annoDist)
+		{
+			seq.append(length, DegenAlphabet::GAP_SYM);
+		}
 
 		/* Member methods */
 		/* Getters and Setters */
@@ -291,11 +302,6 @@ public:
 	/** Construct a PTUnrooted from a Newick Tree */
 	PhyloTreeUnrooted(const NewickTree& ntree);
 
-	/* disable the copy and assignment constructors */
-private:
-	PhyloTreeUnrooted(const PhyloTreeUnrooted& other);
-	PhyloTreeUnrooted& operator=(const PhyloTreeUnrooted& other);
-
 public:
 
 	/* member methods */
@@ -451,11 +457,20 @@ public:
 
 	/**
 	 * evaluate the incoming cost u->v at the jth site
-	 * @param node  new root of this tree
+	 * @param u  child root
+	 * @param v  parent root
 	 * @param j  the jth aligned site
-	 * @return  cost vector of observing this tree at the jth site of this edge
+	 * @return  cost vector of observing this branch at site j site of this edge
 	 */
 	Vector4d evaluate(const PTUNodePtr& u, const PTUNodePtr& v, int j);
+
+	/**
+	 * evaluate the incoming cost u->v at all sites
+	 * @param u  child root
+	 * @param v  parent root
+	 * @return  cost matrix of observing this tree branch
+	 */
+	Matrix4Xd evaluate(const PTUNodePtr& u, const PTUNodePtr& v);
 
 	/**
 	 * calculate the entire tree
@@ -507,6 +522,36 @@ public:
 	 * get estimated base frequency (pi) using this tree
 	 */
 	Vector4d getModelFreqEst() const;
+
+	/**
+	 * make a copy a subtree with only two nodes, u and v
+	 * edges u->v and v->u should has already been evaluated
+	 * @return  a new PhyloTreeUnrooted with only two nodes, and root set to u
+	 */
+	PTUnrooted copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const;
+
+	/**
+	 * iteratively optimize the length of branch u->v using Felsenstein's algorithm
+	 * in given CSRegion [start-end]
+	 * return the updated branch length v
+	 */
+	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end);
+
+	/**
+	 * iteratively optimize the length of branch u->v using Felsenstein's algorithm
+	 * return the updated branch length v
+	 */
+	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) {
+		return optimizeBranchLength(u, v, 0, csLen - 1);
+	}
+
+	/**
+	 * place an additional seq at given branch with given initial branch length
+	 * the tree should be just a small copy of a subtree of an evaluated global tree
+	 * after placement, tree will be re-rooted to the new internal root, and branch length optimized
+	 * @return  the final cost of this subtree
+	 */
+	double placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v, double d0);
 
 private:
 	/**
@@ -601,12 +646,14 @@ private:
 	Matrix4Xd leafCost; /* cached 4 X 5 leaf cost matrix,
 						with each column the pre-computed cost of observing A, C, G, T or - at any given site */
 
-	ModelPtr model; /* DNA Model used to evluate this tree, needed to be stored with this tree */
+	ModelPtr model; /* DNA Model used to evaluate this tree, needed to be stored with this tree */
 
 public:
 	/* static fields */
 	static const double MAX_COST_EXP;
 	static const double INVALID_COST;
+
+	static const double BRANCH_EPS;
 };
 
 inline size_t PTUnrooted::numEdges() const {
@@ -615,7 +662,6 @@ inline size_t PTUnrooted::numEdges() const {
 		nEdges += (*nodeIt)->numNeighbors();
 	return nEdges;
 }
-
 
 inline size_t PTUnrooted::numLeaves() const {
 	size_t nLeaves = 0;
@@ -637,6 +683,13 @@ inline void PTUnrooted::evaluate(const PTUNodePtr& node, int j) {
 		if(isChild(*child, node) && !isEvaluated(*child, node, j))
 			evaluate(*child, node, j);
 	}
+}
+
+inline Matrix4Xd PTUnrooted::evaluate(const PTUNodePtr& u, const PTUNodePtr& v) {
+	Matrix4Xd cost(4, csLen);
+	for(int j = 0; j < csLen; ++j)
+		cost.col(j) = evaluate(u, v, j);
+	return cost;
 }
 
 
