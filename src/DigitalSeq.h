@@ -37,7 +37,7 @@ public:
 	 * @param name  name of this ds
 	 * @param str  string of this ds
 	 */
-	DigitalSeq(const DegenAlphabet* abc, const string& name, const string& str = "");
+	DigitalSeq(const DegenAlphabet* abc, const string& name = "", const string& str = "");
 
 	/**
 	 Construct a DigitalSeq from a PrimrarySeq
@@ -50,6 +50,10 @@ public:
 	/* Getters and Setters */
 	const DegenAlphabet* getAbc() const {
 		return abc;
+	}
+
+	void setAbc(const DegenAlphabet* abc) {
+		this->abc = abc;
 	}
 
 	const string& getName() const {
@@ -65,6 +69,7 @@ public:
 	 * Return the string representation of this DigitalSeq
 	 */
 	string toString() const;
+
 	/**
 	 * Generate the reverse complement copy of this DigitalSeq
 	 * return a new copy in reverse complement version
@@ -87,6 +92,13 @@ public:
 	}
 
 	/**
+	 * Alias of toString method
+	 */
+	string decode() const {
+		return toString();
+	}
+
+	/**
 	 * test whether the encoded value position i is a symbol
 	 * param i  position within this object
 	 * @return  true if ith code is a symbol
@@ -105,6 +117,16 @@ public:
 	 * Re-introduce all base class append methods
 	 */
 	using basic_string<int8_t>::append;
+
+	/**
+	 * load data from input
+	 */
+	istream& load(istream& in);
+
+	/**
+	 * save this seq to output in binary format
+	 */
+	ostream& save(ostream& out) const;
 
 private:
 	const DegenAlphabet* abc;

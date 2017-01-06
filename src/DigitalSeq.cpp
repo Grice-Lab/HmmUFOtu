@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <cstdlib>
 #include "DigitalSeq.h"
+#include "SeqCommons.h"
 using namespace std;
 
 namespace EGriceLab {
@@ -89,6 +90,67 @@ ostream& operator<<(ostream& os, const DigitalSeq& dSeq) {
 	for(DigitalSeq::const_iterator it = dSeq.begin(); it != dSeq.end(); ++it)
 		os << dSeq.abc->decode(*it);
 	return os;
+}
+
+ostream& DigitalSeq::save(ostream& out) const {
+	/* empty flag */
+	bool initiated = abc != NULL;
+	out.write((const char*) &initiated, sizeof(bool));
+	if(!initiated)
+		return out;
+
+	string alphabet = abc->getName();
+	string::size_type nAlphabet = alphabet.length();
+	string::size_type nName = name.length();
+	DigitalSeq::size_type len = length();
+
+	/* save basic info */
+	out.write((const char*) &nAlphabet, sizeof(string::size_type));
+	out.write(alphabet.c_str(), nAlphabet + 1); /* write null terminal */
+	out.write((const char*) &nName, sizeof(string::size_type));
+	out.write(name.c_str(), nName + 1); /* write null terminal */
+	out.write((const char*) &len, sizeof(DigitalSeq::size_type));
+
+	/* save encoded seq */
+	out.write((const char*) c_str(), (len + 1) * sizeof(int8_t)); /* write terminal null */
+	return out;
+}
+
+istream& DigitalSeq::load(istream& in) {
+	/* read flag */
+	bool initiated;
+	in.read((char*) &initiated, sizeof(bool));
+	if(!initiated)
+		return in;
+
+	string::size_type nAlphabet, nName;
+	string alphabet;
+	DigitalSeq::size_type len;
+	char* buf = NULL;
+
+	/* load basic info */
+	in.read((char*) &nAlphabet, sizeof(string::size_type));
+	buf = new char[nAlphabet + 1];
+	in.read(buf, nAlphabet + 1);
+	alphabet.assign(buf, nAlphabet);
+	delete[] buf;
+	abc = SeqCommons::getAlphabetByName(alphabet); // set alphabet by name
+
+	in.read((char*) &nName, sizeof(string::size_type));
+	buf = new char[nName + 1];
+	in.read(buf, nName + 1);
+	name.assign(buf, nName);
+	delete[] buf;
+
+	in.read((char*) &len, sizeof(DigitalSeq::size_type));
+
+	/* load encoded seq */
+	buf = new char[(len + 1) * sizeof(int8_t)];
+	in.read(buf, len + 1);
+	assign((int8_t*) buf, len); /* override old data */
+	delete[] buf;
+
+	return in;
 }
 
 } /* namespace EGriceLab */
