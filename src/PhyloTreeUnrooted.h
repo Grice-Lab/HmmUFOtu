@@ -541,9 +541,9 @@ public:
 	Vector4d getModelFreqEst() const;
 
 	/**
-	 * make a copy a subtree with only two nodes, u and v
+	 * make a copy of subtree with only two nodes and a branch u and v
 	 * edges u->v and v->u should has already been evaluated
-	 * @return  a new PhyloTreeUnrooted with only two nodes, and root set to u
+	 * @return  a new PhyloTreeUnrooted with only two nodes, and new root set to u
 	 */
 	PTUnrooted copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const;
 

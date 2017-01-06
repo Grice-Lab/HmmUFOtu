@@ -232,7 +232,7 @@ Vector4d PhyloTreeUnrooted::cost(const PTUNodePtr& node, int j) {
 		if(isChild(*child, node)) /* a child neighbor */
 			costVec += dot_product_scaled(model->Pr(node2length[*child][node]), cost(*child, j)); /* evaluate child recursively */
 	}
-	if(node->isLeaf()) /* is a leaf root */
+	if(node->isLeaf() && !node->seq.empty()) /* is a leaf root with assigned seq */
 		costVec += node->seq[j] >= 0 ? leafCost.col(node->seq[j]) /* a base observed */ : leafCost.col(4) /* a gap observed */;
 
 	/* cache this conditional cost for non-root node */
@@ -573,34 +573,37 @@ ostream& PTUnrooted::saveModel(ostream& out) const {
 }
 
 PTUnrooted PTUnrooted::copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const {
+	assert(isParent(v, u));
+
 	PTUnrooted tree; /* construct an empty tree */
+	long id = 0;
 	tree.model = model; /* copy the model */
 	tree.csLen = csLen; /* copy csLen */
 
 	/* construct new copies of nodes */
-	PTUNodePtr newU(new PTUNode(u->id, u->name, u->seq, u->anno, u->annoDist));
-	PTUNodePtr newV(new PTUNode(v->id, v->name, v->seq, v->anno, v->annoDist));
+	PTUNodePtr newV(new PTUNode(id++, v->name, v->seq, v->anno, v->annoDist));
+	PTUNodePtr newU(new PTUNode(id++, u->name, u->seq, u->anno, u->annoDist));
 	newU->neighbors.push_back(newV);
 	newV->neighbors.push_back(newU);
+	newU->parent = newV;
 
 	/* add nodes */
-	tree.id2node.push_back(newU);
 	tree.id2node.push_back(newV);
-	tree.root = newU;
+	tree.id2node.push_back(newU);
 	/* set branch and costs */
 	tree.node2length[newU][newV] = tree.node2length[newV][newU] = getBranchLength(u, v);
 	tree.node2cost[newU][newV] = getBranchCost(u, v);
 	tree.node2cost[newV][newU] = getBranchCost(v, u);
 	tree.leafCost = leafCost;
 
-	tree.setRoot(newU);
+	tree.setRoot(newV);
 
 	return tree;
 }
 
 double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v,
 		int start, int end) {
-	assert(u->parent == v);
+	assert(isParent(v, u));
 
 	double v0 = getBranchLength(u, v);
 
@@ -610,21 +613,20 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 	double p = p0;
 	double q = q0;
 
-	Vector4d pi = model->getPi();
-	cerr << "pi: " << pi.transpose() << endl;
+	const Vector4d& pi = model->getPi();
 
 	/* Felsenstein's iterative optimizing algorithm */
 	while(p >= 0 && p <= 1) {
+//		cerr << "p0: " << p0 << " v: " << -::log(q0) << endl;
+
 		for(int j = start, p = 0; j <= end; ++j) {
 			const Vector4d& costU = cost(u, j);
 			const Vector4d& costV = cost(v, j);
 			double logA = -dot_product_scaled(pi, costU + costV);
 			double logB = - dot_product_scaled(pi, costU) - dot_product_scaled(pi, costV);
-			cerr << "Before scaling: logA: " << logA << " B: " << logB << endl;
 			double scale = std::max(logA, logB);
-			logA += scale;
-			logB += scale;
-			cerr << "After scaling: logA: " << logA << " B: " << logB << endl;
+			logA -= scale;
+			logB -= scale;
 			p += ::exp(logB) * p0 / (::exp(logA) * q0 + ::exp(logB) * p0);
 			q = 1 - p;
 		}
@@ -640,22 +642,24 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 		node2length[u][v] = node2length[v][u] = -::log(q0);
 		node2cost[u][v].setConstant(INVALID_COST);
 	}
-	cerr << "p0: " << p0 << " v: " << -::log(q0) << " cost: " << treeCost(start, end) << endl;
 
 	return node2length[u][v] = node2length[v][u] = -::log(q0);
 }
 
 double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v, double d0) {
 	assert(seq.length() == csLen); /* make sure this is an aligned seq */
+	assert(isParent(v, u));
 
 	/* break the connection of u and v */
 	u->neighbors.erase(std::find(u->neighbors.begin(), u->neighbors.end(), v));
 	v->neighbors.erase(std::find(v->neighbors.begin(), v->neighbors.end(), u));
 
 	/* create a new interior root */
-	PTUNodePtr r(new PTUNode(v->id, v->name, csLen));
+	PTUNodePtr r(new PTUNode(numNodes(), v->name, csLen));
 	/* create a new leaf with given seq */
-	PTUNodePtr n(new PTUNode(v->id, v->name, seq));
+	PTUNodePtr n(new PTUNode(numNodes() + 1, v->name, seq));
+	id2node.push_back(r);
+	id2node.push_back(n);
 
 	/* place r at the middle-point of u and v */
 	double v0 = getBranchLength(u, v);
@@ -663,6 +667,8 @@ double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PT
 	v->neighbors.push_back(r);
 	r->neighbors.push_back(u);
 	r->neighbors.push_back(v);
+	u->parent = r;
+	r->parent = v;
 	node2length[u][r] = node2length[r][u] = v0 / 2;
 	node2length[v][r] = node2length[r][v] = v0 / 2;
 	node2cost[u][r] = node2cost[u][v];
@@ -672,10 +678,11 @@ double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PT
 	/* place r with initial branch length */
 	n->neighbors.push_back(r);
 	r->neighbors.push_back(n);
+	n->parent = r;
 	node2length[r][n] = node2length[n][r] = d0;
 	node2cost[r][n] = node2cost[n][r] = Matrix4Xd::Constant(4, csLen, INVALID_COST);
 
-	setRoot(r);
+	setRoot(v);
 
 	/* find the evaluation region */
 	int start = -1;
@@ -691,6 +698,7 @@ double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PT
 //	optimizeBranchLength(v, r, start, end);
 
 	double vn = optimizeBranchLength(n, r, start, end);
+
 	/* annotate the new root */
 	r->anno = v->anno;
 	r->annoDist = v0 / 2 + vn;

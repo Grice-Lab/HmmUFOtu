@@ -50,13 +50,13 @@ int main(int argc, const char* argv[]) {
 	}
 	size_t N = tree.numNodes();
 
-	infoLog << "Trying to place first leaf ";
+	infoLog << "Trying to place first leaf" << endl;
 	DigitalSeq seq;
 	for(int i = 0; i < N; ++i) {
 		cerr << i << endl;
 		const PTUnrooted::PTUNodePtr& node = tree.getNode(i);
 		if(node->isLeaf()) {
-			infoLog << "found at node " << i << " name: " << node->getName() << endl;
+			out << "Placing read copied from node " << i << " name: " << node->getName() << endl;
 			seq = tree.getNode(i)->getSeq();
 			break;
 		}
@@ -66,10 +66,11 @@ int main(int argc, const char* argv[]) {
 		PTUnrooted::PTUNodePtr node = tree.getNode(i);
 		if(node->isRoot())
 			continue;
-		infoLog << "Copying subtree at node " << i << endl;
+//		infoLog << "Copying subtree at node " << i << endl;
 		PTUnrooted subtree = tree.copySubTree(node, node->getParent());
-		infoLog << "Placing read at subtree" << endl;
-		double cost = subtree.placeSeq(seq, subtree.getNode(0), subtree.getNode(1), 0.03);
-		out << "Read placed at node " << subtree.getRoot()->getId() << " name: " << subtree.getRoot()->getName() << " cost: " << cost << endl;
+//		infoLog << "Placing read at subtree" << endl;
+		double cost = subtree.placeSeq(seq, subtree.getNode(1), subtree.getNode(0), 0.03);
+		out << "Read placed at node " << node->getId() << " name: " << node->getName()
+				<< " cost: " << cost << endl;
 	}
 }
