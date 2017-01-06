@@ -403,7 +403,15 @@ public:
 	 * test whether the cost (message) of node u -> v of site j has been evaluated
 	 */
 	bool isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int j) const {
-		return (node2cost.at(u).at(v).col(j).array() != INVALID_COST).all();
+		CostMap::const_iterator outerResult = node2cost.find(u);
+		if(outerResult != node2cost.end()) {
+			unordered_map<PTUNodePtr, Matrix4Xd>::const_iterator innerResult = outerResult->second.find(v);
+			if(innerResult != outerResult->second.end())
+				return innerResult->second.cols() == csLen && /* Matrix is initiated */
+						(innerResult->second.col(j).array() != INVALID_COST).all(); /* values are not invalid */
+		}
+
+		return false;
 	}
 
 	/**
@@ -436,45 +444,54 @@ public:
 	}
 
 	/**
-	 * evaluate the likelihood at current root by treating it as the root of this PTUnrooted
+	 * evaluate the log-likelihood (cost) of the entire tree
+	 * @return  cost matrix of the entire tree
 	 */
-	void evaluate() {
-		evaluate(root);
+	Matrix4Xd cost() {
+		return cost(root);
 	}
 
 	/**
-	 * evaluate the likelihood at given node by treating it as the root of this PTUnrooted
-	 * @param node  new root of this tree
+	 * evaluate the log-likelihood (cost) at the jth site of the entire tree
+	 * @return  cost vector at the jth site
 	 */
-	void evaluate(const PTUNodePtr& node);
+	Vector4d cost(int j) {
+		return cost(root, j);
+	}
 
 	/**
-	 * evaluate a given node at the jth site, given a DNA model
-	 * @param node  new root of this tree
+	 * evaluate the conditional cost of a subtree, rooted at given node
+	 * @param node  subtree root
+	 * @return  conditional cost matrix of the subtree
+	 */
+	Matrix4Xd cost(const PTUNodePtr& node);
+
+	/**
+	 * evaluate the conditional cost of the jth site of a subtree, rooted at given node
+	 * @param node  subtree root
+	 * @param j  the jth aligned site
+	 * @return  conditional cost at the jth site
+	 */
+	Vector4d cost(const PTUNodePtr& node, int j);
+
+	/**
+	 * evaluate the entire tree
+	 */
+	void evaluate() {
+		for(int j = 0; j < csLen; ++j)
+			evaluate(root, j);
+	}
+
+	/**
+	 * evaluate every child of this node at the jth site of a subtree, rooted at given node
+	 * but does not calculate the cost of this node itself
+	 * @param node  subtree root
 	 * @param j  the jth aligned site
 	 */
 	void evaluate(const PTUNodePtr& node, int j);
 
 	/**
-	 * evaluate the incoming cost u->v at the jth site
-	 * @param u  child root
-	 * @param v  parent root
-	 * @param j  the jth aligned site
-	 * @return  cost vector of observing this branch at site j site of this edge
-	 */
-	Vector4d evaluate(const PTUNodePtr& u, const PTUNodePtr& v, int j);
-
-	/**
-	 * evaluate the incoming cost u->v at all sites
-	 * @param u  child root
-	 * @param v  parent root
-	 * @return  cost matrix of observing this tree branch
-	 */
-	Matrix4Xd evaluate(const PTUNodePtr& u, const PTUNodePtr& v);
-
-	/**
-	 * calculate the entire tree
-	 * evaluate the tree if necessary
+	 * calculate the entire tree cost
 	 */
 	double treeCost();
 
@@ -596,6 +613,16 @@ private:
 	ostream& saveRoot(ostream& out) const;
 
 	/**
+	 * load root cost for every node
+	 */
+	istream& loadRootCost(istream& in);
+
+	/**
+	 * save root cost for every node
+	 */
+	ostream& saveRootCost(ostream& out) const;
+
+	/**
 	 * load DNA model from a binary input in text model
 	 */
 	istream& loadModel(istream& in);
@@ -671,27 +698,12 @@ inline size_t PTUnrooted::numLeaves() const {
 	return nLeaves;
 }
 
-inline void PTUnrooted::evaluate(const PTUNodePtr& node) {
-	for(int j = 0; j < csLen; ++j) {
-//		infoLog << "Evaluating at site " << j << "\r";
-		evaluate(node, j);
-	}
-}
-
-inline void PTUnrooted::evaluate(const PTUNodePtr& node, int j) {
-	for(vector<PTUNodePtr>::iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
-		if(isChild(*child, node) && !isEvaluated(*child, node, j))
-			evaluate(*child, node, j);
-	}
-}
-
-inline Matrix4Xd PTUnrooted::evaluate(const PTUNodePtr& u, const PTUNodePtr& v) {
-	Matrix4Xd cost(4, csLen);
+inline Matrix4Xd PTUnrooted::cost(const PTUNodePtr& node) {
+	Matrix4Xd costVec(4, csLen);
 	for(int j = 0; j < csLen; ++j)
-		cost.col(j) = evaluate(u, v, j);
-	return cost;
+		costVec.col(j) = cost(node, j);
+	return costVec;
 }
-
 
 inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {
 	StringUtils::toLower(format);
@@ -734,6 +746,10 @@ inline double PTUnrooted::treeCost(int start, int end) {
 
 inline double PTUnrooted::treeCost() {
 	return treeCost(0, csLen - 1);
+}
+
+inline double PTUnrooted::treeCost(int j) {
+	return dot_product_scaled(model->getPi(), cost(j));
 }
 
 inline vector<Matrix4d> PTUnrooted::getModelTransitionSet(string method) const {

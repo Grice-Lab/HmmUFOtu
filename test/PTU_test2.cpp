@@ -84,7 +84,7 @@ int main(int argc, const char* argv[]) {
 	clock_t t2 = clock();
 	cerr << "Tree cost initiated, total eclipsed time: " << (t2 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 
-	tree.evaluate(tree.getRoot());
+	tree.cost(tree.getRoot());
 	double treeCost = tree.treeCost();
 	clock_t t3 = clock();
 	cerr << "Tree evaluated, total eclipsed time: " << (t3 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;

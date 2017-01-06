@@ -98,7 +98,6 @@ int main(int argc, const char* argv[]) {
 		tree.setRoot(i);
 		infoLog << "Evaluating tree at node " << i << endl;
 		tree.evaluate();
-//		double treeCost = tree.treeCost(model);
 	}
 	/* reset root to original */
 	tree.setRoot(oldRoot);
