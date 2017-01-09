@@ -83,7 +83,7 @@ int main(int argc, const char* argv[]) {
 //		infoLog << "Copying subtree at node " << i << endl;
 		PTUnrooted subtree = tree.copySubTree(node, node->getParent());
 //		infoLog << "Placing read at subtree" << endl;
-		subtree.placeSeq(seq, subtree.getNode(1), subtree.getNode(0), 0.03, start, end);
+		subtree.placeSeq(seq, subtree.getNode(1), subtree.getNode(0), start, end);
 
 		double vn = subtree.getBranchLength(subtree.getNode(subtree.numNodes() - 2), subtree.getNode(subtree.numNodes() - 1));
 

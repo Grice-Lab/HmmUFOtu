@@ -602,6 +602,25 @@ PTUnrooted PTUnrooted::copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) con
 	return tree;
 }
 
+double PTUnrooted::estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end) {
+	assert(isParent(v, u));
+	const Vector4d& pi = model->getPi();
+
+	const Matrix4Xd& costU = node2cost[u][v];
+	const Matrix4Xd& costV = node2cost[v][u];
+
+	double p = 0;
+	for(int j = start; j <= end; ++j) {
+		double logA = dot_product_scaled(pi, costU.col(j) + costV.col(j));
+		double logB = dot_product_scaled(pi, costU.col(j)) + dot_product_scaled(pi, costV.col(j));
+		double scale = std::min(logA, logB);
+		logA -= scale;
+		logB -= scale;
+		p += ::exp(-logB) / (::exp(-logA) + ::exp(-logB));
+	}
+	return p / (end - start + 1);
+}
+
 double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v,
 		int start, int end) {
 	assert(isParent(v, u));
@@ -630,14 +649,11 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 			logA -= scale;
 			logB -= scale;
 			p += ::exp(-logB) * p0 / (::exp(-logA) * q0 + ::exp(-logB) * p0);
-//			cerr << "j: " << j << " logA: " << logA << " logB: " << logB << endl;
-//			cerr << "j:" << j << " B / (Aq + Bp): " << ::exp(-logB) * p0 / (::exp(-logA) * q0 + ::exp(-logB) * p0)
-//					<< " p: " << p << endl;
 		}
 		p /= (end - start + 1);
 		q = 1 - p;
 
-		if(::fabs(p - p0) < BRANCH_EPS)
+		if(::fabs(q - q0) < BRANCH_EPS)
 			break;
 		// update p0 and q0
 		p0 = p;
@@ -648,7 +664,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 }
 
 PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-		double d0, int start, int end) {
+		int start, int end) {
 	assert(seq.length() == csLen); /* make sure this is an aligned seq */
 	assert(isParent(v, u));
 
@@ -681,7 +697,6 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 	n->neighbors.push_back(r);
 	r->neighbors.push_back(n);
 	n->parent = r;
-	node2length[r][n] = node2length[n][r] = d0;
 	node2cost[r][n] = node2cost[n][r] = Matrix4Xd::Constant(4, csLen, INVALID_COST);
 
 	/* evaluate subtree new branches*/
@@ -689,6 +704,7 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 	evaluate(n); /* r->n cost evaluated */
 	setRoot(r);
 	evaluate(r); /* n->r cost evaluated */
+	node2length[r][n] = node2length[n][r] = estimateBranchLength(n, r, start, end); /* n->r branch length estimated */
 
 	double vn = optimizeBranchLength(n, r, start, end);
 

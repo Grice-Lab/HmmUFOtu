@@ -551,6 +551,22 @@ public:
 	PTUnrooted copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const;
 
 	/**
+	 * estimate branch length by comparing the two direction cost
+	 * in given region [start-end]
+	 * return the estimated branch length
+	 */
+	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end);
+
+	/**
+	 * estimate branch length by comparing the two direction cost
+	 * in the entire region
+	 * return the estimated branch length
+	 */
+	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) {
+		return estimateBranchLength(u, v, 0, csLen - 1);
+	}
+
+	/**
 	 * iteratively optimize the length of branch u->v using Felsenstein's algorithm
 	 * in given CSRegion [start-end]
 	 * return the updated branch length v
@@ -578,7 +594,7 @@ public:
 	 * @return  the modified tree, with r and n appended at the end of all nodes
 	 */
 	PTUnrooted& placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-			double d0, int start, int end);
+			int start, int end);
 
 	/**
 	 * place an additional seq (n) at given branch with given initial branch length
@@ -590,9 +606,8 @@ public:
 	 * @param d0  estimiated initial branch length n->r
 	 * @return  the modified tree, with r and n appended at the end of all nodes
 	 */
-	PTUnrooted& placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-			double d0) {
-		return placeSeq(seq, u, v, 0, csLen -1, d0);
+	PTUnrooted& placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v) {
+		return placeSeq(seq, u, v, 0, csLen -1);
 	}
 
 private:
