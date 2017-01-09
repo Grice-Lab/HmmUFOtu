@@ -23,7 +23,7 @@ using Eigen::Matrix4Xd;
 
 const double PhyloTreeUnrooted::MAX_COST_EXP = -DBL_MIN_EXP / 2; /* use half of the DBL_MIN_EXP to avoid numeric-underflow */
 const double PhyloTreeUnrooted::INVALID_COST = -1;
-const double PhyloTreeUnrooted::BRANCH_EPS = 1e-7;
+const double PhyloTreeUnrooted::BRANCH_EPS = 1e-6;
 
 istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
 	char* buf = NULL;
@@ -196,6 +196,7 @@ PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRo
 	root = newRoot;
 	return oldRoot;
 }
+
 
 void PhyloTreeUnrooted::resetCost() {
 	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u)
@@ -614,21 +615,24 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 	double q = q0;
 
 	const Vector4d& pi = model->getPi();
+//	cerr << "p0: " << p0 << " q0: " << q0 << " v0: " << v0 << endl;
 
+	const Matrix4Xd& costU = node2cost[u][v];
+	const Matrix4Xd& costV = node2cost[v][u];
 	/* Felsenstein's iterative optimizing algorithm */
 	while(p >= 0 && p <= 1) {
-//		cerr << "p0: " << p0 << " v: " << -::log(q0) << endl;
-
-		for(int j = start, p = 0; j <= end; ++j) {
-			const Vector4d& costU = cost(u, j);
-			const Vector4d& costV = cost(v, j);
-			double logA = -dot_product_scaled(pi, costU + costV);
-			double logB = - dot_product_scaled(pi, costU) - dot_product_scaled(pi, costV);
-			double scale = std::max(logA, logB);
+//		cerr << "p: " << p << " q: " << q << " v: " << -::log(q) << endl;
+		p = 0;
+		for(int j = start; j <= end; ++j) {
+			double logA = dot_product_scaled(pi, costU.col(j) + costV.col(j));
+			double logB = dot_product_scaled(pi, costU.col(j)) + dot_product_scaled(pi, costV.col(j));
+			double scale = std::min(logA, logB);
 			logA -= scale;
 			logB -= scale;
-			p += ::exp(logB) * p0 / (::exp(logA) * q0 + ::exp(logB) * p0);
-			q = 1 - p;
+			p += ::exp(-logB) * p0 / (::exp(-logA) * q0 + ::exp(-logB) * p0);
+//			cerr << "j: " << j << " logA: " << logA << " logB: " << logB << endl;
+//			cerr << "j:" << j << " B / (Aq + Bp): " << ::exp(-logB) * p0 / (::exp(-logA) * q0 + ::exp(-logB) * p0)
+//					<< " p: " << p << endl;
 		}
 		p /= (end - start + 1);
 		q = 1 - p;
@@ -637,16 +641,14 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 			break;
 		// update p0 and q0
 		p0 = p;
-		q0 = 1 - p0;
-		// reset evaluated branch length and cost
-		node2length[u][v] = node2length[v][u] = -::log(q0);
-		node2cost[u][v].setConstant(INVALID_COST);
+		q0 = q;
 	}
 
 	return node2length[u][v] = node2length[v][u] = -::log(q0);
 }
 
-double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v, double d0) {
+PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
+		double d0, int start, int end) {
 	assert(seq.length() == csLen); /* make sure this is an aligned seq */
 	assert(isParent(v, u));
 
@@ -682,28 +684,21 @@ double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PT
 	node2length[r][n] = node2length[n][r] = d0;
 	node2cost[r][n] = node2cost[n][r] = Matrix4Xd::Constant(4, csLen, INVALID_COST);
 
-	setRoot(v);
-
-	/* find the evaluation region */
-	int start = -1;
-	int end = -1;
-	for(int j = 0; j < csLen; ++j) {
-		if(seq[j] >= 0) { /* valid symbol */
-			if(start == -1)
-				start = j;
-			end = j;
-		}
-	}
-//	optimizeBranchLength(u, r, start, end);
-//	optimizeBranchLength(v, r, start, end);
+	/* evaluate subtree new branches*/
+	setRoot(n);
+	evaluate(n); /* r->n cost evaluated */
+	setRoot(r);
+	evaluate(r); /* n->r cost evaluated */
 
 	double vn = optimizeBranchLength(n, r, start, end);
 
-	/* annotate the new root */
+	/* annotate the new nodes */
 	r->anno = v->anno;
-	r->annoDist = v0 / 2 + vn;
+	r->annoDist = v0 / 2;
+	n->anno = r->anno;
+	n->annoDist = r->annoDist + vn / 2;
 
-	return treeCost(start, end);
+	return *this;
 }
 
 } /* namespace EGriceLab */

@@ -400,19 +400,14 @@ public:
 	}
 
 	/**
+	 * test whether the cost (message) of node u -> v of all site j has been evaluated
+	 */
+	bool isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v) const;
+
+	/**
 	 * test whether the cost (message) of node u -> v of site j has been evaluated
 	 */
-	bool isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int j) const {
-		CostMap::const_iterator outerResult = node2cost.find(u);
-		if(outerResult != node2cost.end()) {
-			unordered_map<PTUNodePtr, Matrix4Xd>::const_iterator innerResult = outerResult->second.find(v);
-			if(innerResult != outerResult->second.end())
-				return innerResult->second.cols() == csLen && /* Matrix is initiated */
-						(innerResult->second.col(j).array() != INVALID_COST).all(); /* values are not invalid */
-		}
-
-		return false;
-	}
+	bool isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int j) const;
 
 	/**
 	 * initiate the cached incoming cost of between every node u and every neighbor v
@@ -478,8 +473,15 @@ public:
 	 * evaluate the entire tree
 	 */
 	void evaluate() {
+		evaluate(root);
+	}
+
+	/**
+	 * evaluate the subtree at given node
+	 */
+	void evaluate(const PTUNodePtr& node) {
 		for(int j = 0; j < csLen; ++j)
-			evaluate(root, j);
+			evaluate(node, j);
 	}
 
 	/**
@@ -543,7 +545,8 @@ public:
 	/**
 	 * make a copy of subtree with only two nodes and a branch u and v
 	 * edges u->v and v->u should has already been evaluated
-	 * @return  a new PhyloTreeUnrooted with only two nodes, and new root set to u
+	 * @return  a new PhyloTreeUnrooted with only two nodes and a branch u->v,
+	 * with root set as v
 	 */
 	PTUnrooted copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const;
 
@@ -563,12 +566,34 @@ public:
 	}
 
 	/**
-	 * place an additional seq at given branch with given initial branch length
-	 * the tree should be just a small copy of a subtree of an evaluated global tree
-	 * after placement, tree will be re-rooted to the new internal root, and branch length optimized
-	 * @return  the final cost of this subtree
+	 * place an additional seq (n) at given branch with given initial branch length
+	 * after placement, tree will be re-rooted to the new internal root r,
+	 * and new branch length n->r will be optimized according the given region [start, end]
+	 * @param  new seq to be placed
+	 * @param u  branch start (u->v)
+	 * @param v  branch end (u->v)
+	 * @param start  seq start position (non-gap start)
+	 * @param end  seq end position (non-gap end)
+	 * @param d0  estimiated initial branch length n->r
+	 * @return  the modified tree, with r and n appended at the end of all nodes
 	 */
-	double placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v, double d0);
+	PTUnrooted& placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
+			double d0, int start, int end);
+
+	/**
+	 * place an additional seq (n) at given branch with given initial branch length
+	 * after placement, tree will be re-rooted to the new internal root r,
+	 * and new branch length n->r will be optimized according the entire region [0, csLen-1]
+	 * @param  new seq to be placed
+	 * @param u  branch start (u->v)
+	 * @param v  branch end (u->v)
+	 * @param d0  estimiated initial branch length n->r
+	 * @return  the modified tree, with r and n appended at the end of all nodes
+	 */
+	PTUnrooted& placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
+			double d0) {
+		return placeSeq(seq, u, v, 0, csLen -1, d0);
+	}
 
 private:
 	/**
@@ -699,6 +724,9 @@ inline size_t PTUnrooted::numLeaves() const {
 }
 
 inline Matrix4Xd PTUnrooted::cost(const PTUNodePtr& node) {
+	if(isEvaluated(node, node->parent))
+		return node2cost[node][node->parent];
+
 	Matrix4Xd costVec(4, csLen);
 	for(int j = 0; j < csLen; ++j)
 		costVec.col(j) = cost(node, j);
@@ -714,6 +742,30 @@ inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {
 		out.setstate(std::ios_base::failbit);
 		return out;
 	}
+}
+
+inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v) const {
+	CostMap::const_iterator outerResult = node2cost.find(u);
+	if(outerResult != node2cost.end()) {
+		unordered_map<PTUNodePtr, Matrix4Xd>::const_iterator innerResult = outerResult->second.find(v);
+		if(innerResult != outerResult->second.end())
+			return innerResult->second.cols() == csLen && /* Matrix is initiated */
+					(innerResult->second.array() != INVALID_COST).all(); /* values are all valid */
+	}
+
+	return false;
+}
+
+inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int j) const {
+	CostMap::const_iterator outerResult = node2cost.find(u);
+	if(outerResult != node2cost.end()) {
+		unordered_map<PTUNodePtr, Matrix4Xd>::const_iterator innerResult = outerResult->second.find(v);
+		if(innerResult != outerResult->second.end())
+			return innerResult->second.cols() == csLen && /* Matrix is initiated */
+					(innerResult->second.col(j).array() != INVALID_COST).all(); /* values are not invalid */
+	}
+
+	return false;
 }
 
 inline double PTUnrooted::getBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) const {

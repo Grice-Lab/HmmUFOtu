@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <ctime>
+#include <cfloat>
 #include "MSA.h"
 #include "PhyloTreeUnrooted.h"
 #include "GTR.h"
@@ -52,7 +53,7 @@ int main(int argc, const char* argv[]) {
 
 	infoLog << "Trying to place first leaf" << endl;
 	DigitalSeq seq;
-	for(int i = 0; i < N; ++i) {
+	for(size_t i = 0; i < N; ++i) {
 		cerr << i << endl;
 		const PTUnrooted::PTUNodePtr& node = tree.getNode(i);
 		if(node->isLeaf()) {
@@ -62,15 +63,38 @@ int main(int argc, const char* argv[]) {
 		}
 	}
 
-	for(int i = 0; i < N; ++i) {
+	/* find the evaluation region */
+	int start, end;
+	for(start = 0; start < seq.length(); ++start)
+		if(seq[start] >= 0) /* valid symbol */
+			break;
+
+	for(end = seq.length() - 1; end >= 0; --end)
+		if(seq[end] >= 0) /* valid symbol */
+			break;
+
+	double minCost = DBL_MAX;
+	size_t minIdx = 0;
+
+	for(size_t i = 0; i < N; ++i) {
 		PTUnrooted::PTUNodePtr node = tree.getNode(i);
 		if(node->isRoot())
 			continue;
 //		infoLog << "Copying subtree at node " << i << endl;
 		PTUnrooted subtree = tree.copySubTree(node, node->getParent());
 //		infoLog << "Placing read at subtree" << endl;
-		double cost = subtree.placeSeq(seq, subtree.getNode(1), subtree.getNode(0), 0.03);
-		out << "Read placed at node " << node->getId() << " name: " << node->getName()
-				<< " cost: " << cost << endl;
+		subtree.placeSeq(seq, subtree.getNode(1), subtree.getNode(0), 0.03, start, end);
+
+		double vn = subtree.getBranchLength(subtree.getNode(subtree.numNodes() - 2), subtree.getNode(subtree.numNodes() - 1));
+
+		double tc = subtree.treeCost(start, end);
+		if(tc < minCost) {
+			minCost = tc;
+			minIdx = i;
+		}
+		out << "Read placed at node " << node->getId() << " name: " << node->getName() <<
+				" new branch length: " << vn
+				<< " cost: " << tc << endl;
 	}
+	out << "Best placement position found at node " << minIdx << " minCost: " << minCost << endl;
 }
