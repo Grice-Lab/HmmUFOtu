@@ -40,7 +40,7 @@ DNASubModelFactory.cpp
 # Build the executables
 bin_PROGRAMS=hmmufotu hmmufotu-train-dm hmmufotu-train
 
-hmmufotu_SOURCES=HmmUFOtu.cpp
+hmmufotu_SOURCES=hmmufotu.cpp
 hmmufotu_LDADD = libHmmUFOtu_common.a math/libEGMath.a
 hmmufotu_LDFLAGS = -static
 
