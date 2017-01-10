@@ -7,7 +7,8 @@
 
 #include <iostream>
 #include <fstream>
-#include "HmmUFOtu.h"
+#include "HmmUFOtu_common.h"
+#include "HmmUFOtu_hmm.h"
 
 using namespace std;
 using namespace EGriceLab;
