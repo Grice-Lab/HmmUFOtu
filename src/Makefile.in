@@ -133,7 +133,7 @@ am_libHmmUFOtu_phylo_a_OBJECTS = NewickTree.$(OBJEXT) \
 libHmmUFOtu_phylo_a_OBJECTS = $(am_libHmmUFOtu_phylo_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_hmmufotu_OBJECTS = HmmUFOtu.$(OBJEXT)
+am_hmmufotu_OBJECTS = hmmufotu.$(OBJEXT)
 hmmufotu_OBJECTS = $(am_hmmufotu_OBJECTS)
 hmmufotu_DEPENDENCIES = libHmmUFOtu_common.a math/libEGMath.a
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -431,7 +431,7 @@ DNASubModel.cpp \
 GTR.cpp \
 DNASubModelFactory.cpp
 
-hmmufotu_SOURCES = HmmUFOtu.cpp
+hmmufotu_SOURCES = hmmufotu.cpp
 hmmufotu_LDADD = libHmmUFOtu_common.a math/libEGMath.a
 hmmufotu_LDFLAGS = -static
 hmmufotu_train_dm_SOURCES = hmmufotu-train-dm.cpp
@@ -571,7 +571,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DegenAlphabet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DigitalSeq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GTR.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HmmUFOtu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HmmUFOtuConst.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HmmUFOtuEnv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IUPACAmino.Po@am__quote@
@@ -585,6 +584,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqIO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StringUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-train-dm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_train-hmmufotu-train.Po@am__quote@
 
 .cpp.o:
