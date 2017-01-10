@@ -110,24 +110,32 @@ AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
-libHmmUFOtu_a_AR = $(AR) $(ARFLAGS)
-libHmmUFOtu_a_LIBADD =
-am_libHmmUFOtu_a_OBJECTS = HmmUFOtuConst.$(OBJEXT) \
+libHmmUFOtu_common_a_AR = $(AR) $(ARFLAGS)
+libHmmUFOtu_common_a_LIBADD =
+am_libHmmUFOtu_common_a_OBJECTS = HmmUFOtuConst.$(OBJEXT) \
 	HmmUFOtuEnv.$(OBJEXT) ProgLog.$(OBJEXT) \
 	CommandOptions.$(OBJEXT) DegenAlphabet.$(OBJEXT) \
 	StringUtils.$(OBJEXT) IUPACNucl.$(OBJEXT) IUPACAmino.$(OBJEXT) \
 	DNA.$(OBJEXT) SeqCommons.$(OBJEXT) PrimarySeq.$(OBJEXT) \
-	DigitalSeq.$(OBJEXT) SeqIO.$(OBJEXT) BandedHMMP7Bg.$(OBJEXT) \
-	BandedHMMP7Prior.$(OBJEXT) BandedHMMP7.$(OBJEXT) MSA.$(OBJEXT) \
-	CSFMIndex.$(OBJEXT) NewickTree.$(OBJEXT) \
+	DigitalSeq.$(OBJEXT) SeqIO.$(OBJEXT) MSA.$(OBJEXT)
+libHmmUFOtu_common_a_OBJECTS = $(am_libHmmUFOtu_common_a_OBJECTS)
+libHmmUFOtu_hmm_a_AR = $(AR) $(ARFLAGS)
+libHmmUFOtu_hmm_a_LIBADD =
+am_libHmmUFOtu_hmm_a_OBJECTS = BandedHMMP7Bg.$(OBJEXT) \
+	BandedHMMP7Prior.$(OBJEXT) BandedHMMP7.$(OBJEXT) \
+	CSFMIndex.$(OBJEXT)
+libHmmUFOtu_hmm_a_OBJECTS = $(am_libHmmUFOtu_hmm_a_OBJECTS)
+libHmmUFOtu_phylo_a_AR = $(AR) $(ARFLAGS)
+libHmmUFOtu_phylo_a_LIBADD =
+am_libHmmUFOtu_phylo_a_OBJECTS = NewickTree.$(OBJEXT) \
 	PhyloTreeUnrooted.$(OBJEXT) DNASubModel.$(OBJEXT) \
 	GTR.$(OBJEXT) DNASubModelFactory.$(OBJEXT)
-libHmmUFOtu_a_OBJECTS = $(am_libHmmUFOtu_a_OBJECTS)
+libHmmUFOtu_phylo_a_OBJECTS = $(am_libHmmUFOtu_phylo_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_hmmufotu_OBJECTS = HmmUFOtu.$(OBJEXT)
 hmmufotu_OBJECTS = $(am_hmmufotu_OBJECTS)
-hmmufotu_DEPENDENCIES = libHmmUFOtu.a math/libEGMath.a
+hmmufotu_DEPENDENCIES = libHmmUFOtu_common.a math/libEGMath.a
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -137,14 +145,16 @@ hmmufotu_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(CXXFLAGS) $(hmmufotu_LDFLAGS) $(LDFLAGS) -o $@
 am_hmmufotu_train_OBJECTS = hmmufotu_train-hmmufotu-train.$(OBJEXT)
 hmmufotu_train_OBJECTS = $(am_hmmufotu_train_OBJECTS)
-hmmufotu_train_DEPENDENCIES = libHmmUFOtu.a math/libEGMath.a
+hmmufotu_train_DEPENDENCIES = libHmmUFOtu_common.a libHmmUFOtu_hmm.a \
+	math/libEGMath.a
 hmmufotu_train_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(AM_CXXFLAGS) $(CXXFLAGS) $(hmmufotu_train_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_hmmufotu_train_dm_OBJECTS = hmmufotu-train-dm.$(OBJEXT)
 hmmufotu_train_dm_OBJECTS = $(am_hmmufotu_train_dm_OBJECTS)
-hmmufotu_train_dm_DEPENDENCIES = libHmmUFOtu.a math/libEGMath.a
+hmmufotu_train_dm_DEPENDENCIES = libHmmUFOtu_common.a \
+	libHmmUFOtu_hmm.a math/libEGMath.a
 hmmufotu_train_dm_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(AM_CXXFLAGS) $(CXXFLAGS) $(hmmufotu_train_dm_LDFLAGS) \
@@ -183,10 +193,13 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libHmmUFOtu_a_SOURCES) $(hmmufotu_SOURCES) \
+SOURCES = $(libHmmUFOtu_common_a_SOURCES) $(libHmmUFOtu_hmm_a_SOURCES) \
+	$(libHmmUFOtu_phylo_a_SOURCES) $(hmmufotu_SOURCES) \
 	$(hmmufotu_train_SOURCES) $(hmmufotu_train_dm_SOURCES)
-DIST_SOURCES = $(libHmmUFOtu_a_SOURCES) $(hmmufotu_SOURCES) \
-	$(hmmufotu_train_SOURCES) $(hmmufotu_train_dm_SOURCES)
+DIST_SOURCES = $(libHmmUFOtu_common_a_SOURCES) \
+	$(libHmmUFOtu_hmm_a_SOURCES) $(libHmmUFOtu_phylo_a_SOURCES) \
+	$(hmmufotu_SOURCES) $(hmmufotu_train_SOURCES) \
+	$(hmmufotu_train_dm_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -387,9 +400,9 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/libcds/include
 
 
-# Build a convenient library
-noinst_LIBRARIES = libHmmUFOtu.a
-libHmmUFOtu_a_SOURCES = \
+# Build convenient libraries
+noinst_LIBRARIES = libHmmUFOtu_common.a libHmmUFOtu_hmm.a libHmmUFOtu_phylo.a
+libHmmUFOtu_common_a_SOURCES = \
 HmmUFOtuConst.cpp \
 HmmUFOtuEnv.cpp \
 ProgLog.cpp \
@@ -403,11 +416,15 @@ SeqCommons.cpp \
 PrimarySeq.cpp \
 DigitalSeq.cpp \
 SeqIO.cpp \
+MSA.cpp
+
+libHmmUFOtu_hmm_a_SOURCES = \
 BandedHMMP7Bg.cpp \
 BandedHMMP7Prior.cpp \
 BandedHMMP7.cpp \
-MSA.cpp \
-CSFMIndex.cpp \
+CSFMIndex.cpp
+
+libHmmUFOtu_phylo_a_SOURCES = \
 NewickTree.cpp \
 PhyloTreeUnrooted.cpp \
 DNASubModel.cpp \
@@ -415,13 +432,13 @@ GTR.cpp \
 DNASubModelFactory.cpp
 
 hmmufotu_SOURCES = HmmUFOtu.cpp
-hmmufotu_LDADD = libHmmUFOtu.a math/libEGMath.a
+hmmufotu_LDADD = libHmmUFOtu_common.a math/libEGMath.a
 hmmufotu_LDFLAGS = -static
 hmmufotu_train_dm_SOURCES = hmmufotu-train-dm.cpp
-hmmufotu_train_dm_LDADD = libHmmUFOtu.a math/libEGMath.a
+hmmufotu_train_dm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a
 hmmufotu_train_dm_LDFLAGS = -static
 hmmufotu_train_SOURCES = hmmufotu-train.cpp
-hmmufotu_train_LDADD = libHmmUFOtu.a math/libEGMath.a
+hmmufotu_train_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a
 hmmufotu_train_CPPFLAGS = -DDATA=$(pkgdatadir)
 hmmufotu_train_LDFLAGS = -static
 all: all-recursive
@@ -461,10 +478,20 @@ $(am__aclocal_m4_deps):
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
 
-libHmmUFOtu.a: $(libHmmUFOtu_a_OBJECTS) $(libHmmUFOtu_a_DEPENDENCIES) $(EXTRA_libHmmUFOtu_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libHmmUFOtu.a
-	$(AM_V_AR)$(libHmmUFOtu_a_AR) libHmmUFOtu.a $(libHmmUFOtu_a_OBJECTS) $(libHmmUFOtu_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libHmmUFOtu.a
+libHmmUFOtu_common.a: $(libHmmUFOtu_common_a_OBJECTS) $(libHmmUFOtu_common_a_DEPENDENCIES) $(EXTRA_libHmmUFOtu_common_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libHmmUFOtu_common.a
+	$(AM_V_AR)$(libHmmUFOtu_common_a_AR) libHmmUFOtu_common.a $(libHmmUFOtu_common_a_OBJECTS) $(libHmmUFOtu_common_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libHmmUFOtu_common.a
+
+libHmmUFOtu_hmm.a: $(libHmmUFOtu_hmm_a_OBJECTS) $(libHmmUFOtu_hmm_a_DEPENDENCIES) $(EXTRA_libHmmUFOtu_hmm_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libHmmUFOtu_hmm.a
+	$(AM_V_AR)$(libHmmUFOtu_hmm_a_AR) libHmmUFOtu_hmm.a $(libHmmUFOtu_hmm_a_OBJECTS) $(libHmmUFOtu_hmm_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libHmmUFOtu_hmm.a
+
+libHmmUFOtu_phylo.a: $(libHmmUFOtu_phylo_a_OBJECTS) $(libHmmUFOtu_phylo_a_DEPENDENCIES) $(EXTRA_libHmmUFOtu_phylo_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libHmmUFOtu_phylo.a
+	$(AM_V_AR)$(libHmmUFOtu_phylo_a_AR) libHmmUFOtu_phylo.a $(libHmmUFOtu_phylo_a_OBJECTS) $(libHmmUFOtu_phylo_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libHmmUFOtu_phylo.a
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \

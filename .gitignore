@@ -9,3 +9,5 @@
 **/.cproject
 **/.project
 **/.settings
+# Ignore Autotools genereated Makefiles
+**/Makefile

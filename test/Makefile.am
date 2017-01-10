@@ -32,66 +32,72 @@ dna_model_test1 \
 RootFinder_test1
 
 dna_test1_SOURCES = dna_test1.cpp
-dna_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+dna_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
 
 nucl_test1_SOURCES = nucl_test1.cpp
-nucl_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+nucl_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
 
 amino_test1_SOURCES = amino_test1.cpp
-amino_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+amino_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
 
 seqIO_test1_SOURCES = seqIO_test1.cpp
-seqIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+seqIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
 
 bHMM_IO_test1_SOURCES = bHMM_IO_test1.cpp
-bHMM_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a $(top_srcdir)/src/math/libEGMath.a
+bHMM_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a
 
 banded_align_known_seed_test1_SOURCES = banded_align_known_seed_test1.cpp
-banded_align_known_seed_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a $(top_srcdir)/src/math/libEGMath.a
+banded_align_known_seed_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a
 
 MSAIO_test1_SOURCES = MSAIO_test1.cpp
-MSAIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+MSAIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
 
 MSAIO_test2_SOURCES = MSAIO_test2.cpp
-MSAIO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+MSAIO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
 
 MSAIO_test3_SOURCES = MSAIO_test3.cpp
-MSAIO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+MSAIO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
 
 MSAIO_test4_SOURCES = MSAIO_test4.cpp
-MSAIO_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+MSAIO_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
 
 MSA_test1_SOURCES = MSA_test1.cpp
-MSA_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+MSA_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
 
 FMIO_test1_SOURCES = FMIO_test1.cpp
-FMIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+FMIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la
 FMIO_test1_LDFLAGS = -static
 
 FMIO_test2_SOURCES = FMIO_test2.cpp
-FMIO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+FMIO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la
 FMIO_test2_LDFLAGS = -static
 
 banded_align_csfm_test1_SOURCES = banded_align_csfm_test1.cpp
-banded_align_csfm_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+banded_align_csfm_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la
 banded_align_csfm_test1_LDFLAGS = -static
 
 banded_pair_csfm_test1_SOURCES = banded_pair_csfm_test1.cpp
-banded_pair_csfm_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+banded_pair_csfm_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la
 banded_pair_csfm_test1_LDFLAGS = -static
 
 dm_density_train1_SOURCES = dm_density_train1.cpp
-dm_density_train1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+dm_density_train1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
@@ -99,77 +105,86 @@ $(top_srcdir)/src/libcds/src/libcds.la
 dm_density_train1_LDFLAGS = -static
 
 dm_mixture_train1_SOURCES = dm_mixture_train1.cpp
-dm_mixture_train1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+dm_mixture_train1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la
 dm_mixture_train1_LDFLAGS = -static
 
 dm_mixture_train2_SOURCES = dm_mixture_train2.cpp
-dm_mixture_train2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+dm_mixture_train2_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la
 dm_mixture_train2_LDFLAGS = -static
 
 DD_IO_test1_SOURCES = DD_IO_test1.cpp
-DD_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+DD_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/math/libEGMath.a
 DD_IO_test1_LDFLAGS = -static
 
 NT_IO_test1_SOURCES = NT_IO_test1.cpp
-NT_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+NT_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a
 NT_IO_test1_LDFLAGS = -static
 
 NT_IO_test2_SOURCES = NT_IO_test2.cpp
-NT_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+NT_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a
 NT_IO_test2_LDFLAGS = -static
 
 PTU_IO_test1_SOURCES = PTU_IO_test1.cpp
-PTU_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a
 PTU_IO_test1_LDFLAGS = -static
 
 PTU_IO_test2_SOURCES = PTU_IO_test2.cpp
-PTU_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a
 PTU_IO_test2_LDFLAGS = -static
 
 PTU_IO_test3_SOURCES = PTU_IO_test3.cpp
-PTU_IO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_IO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a
 PTU_IO_test3_LDFLAGS = -static
 
 PTU_IO_test4_SOURCES = PTU_IO_test4.cpp
-PTU_IO_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_IO_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a
 PTU_IO_test4_LDFLAGS = -static
 
 PTU_test1_SOURCES = PTU_test1.cpp
-PTU_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a
 PTU_test1_LDFLAGS = -static
 
 PTU_test2_SOURCES = PTU_test2.cpp
-PTU_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a
 PTU_test2_LDFLAGS = -static
 
 PTU_test3_SOURCES = PTU_test3.cpp
-PTU_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a
 PTU_test3_LDFLAGS = -static
 
 PTU_test4_SOURCES = PTU_test4.cpp
-PTU_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+PTU_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a
 PTU_test4_LDFLAGS = -static
 
 dna_model_IO_test1_SOURCES = dna_model_IO_test1.cpp
-dna_model_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+dna_model_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a
 dna_model_IO_test1_LDFLAGS = -static
 
 dna_model_test1_SOURCES = dna_model_test1.cpp
-dna_model_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
+dna_model_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a
 dna_model_test1_LDFLAGS = -static
 
-#dna_model_test2_SOURCES = dna_model_test2.cpp
-#dna_model_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu.a
-#dna_model_test2_LDFLAGS = -static
-
 RootFinder_test1_SOURCES = RootFinder_test1.cpp
-RootFinder_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu.a \
+RootFinder_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/math/libEGMath.a
 RootFinder_test1_LDFLAGS = -static
