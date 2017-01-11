@@ -121,6 +121,7 @@ public:
 	 * @param i  seq position
 	 * @param j  CS position
 	 * @return  residual at this pos
+	 * @throws out_of_range exception if out of range
 	 */
 	char residualAt(unsigned i, unsigned j) const;
 
@@ -167,6 +168,7 @@ public:
 	 * Get the alignment string at given pos
 	 * @param j  CS position
 	 * @return  the alignment at the j-th CS pos
+	 * @throws  out_of_range exception of j is out of range
 	 */
 	string alignAt(unsigned j) const;
 
@@ -232,6 +234,13 @@ public:
 	 * @return  fraction of gaps at this pos
 	 */
 	double gapFrac(unsigned j) const;
+
+	/**
+	 * Get the weighted fraction of gaps of at given pos
+	 * @param j  CS position
+	 * @return  weighted fraction of gaps at this pos
+	 */
+	double gapWFrac(unsigned j) const;
 
 	/**
 	 * Get the fraction of symbols of at given pos
@@ -399,9 +408,7 @@ inline const string& MSA::seqNameAt(unsigned i) const {
 }
 
 inline char MSA::residualAt(unsigned i, unsigned j) const {
-/*	if(!(i >= 0 && i < numSeq && j >= 0 && j < csLen))
-		throw out_of_range("residual is out of range");*/
-	return concatMSA[i * csLen + j];
+	return concatMSA.at(i * csLen + j);
 }
 
 inline int8_t MSA::encodeAt(unsigned i, unsigned j) const {
@@ -421,11 +428,9 @@ inline DigitalSeq MSA::dsAt(unsigned i) const {
 }
 
 inline string MSA::alignAt(unsigned j) const {
-	if(!(j >= 0 && j < csLen)) // only check j range once
-		throw out_of_range("CS pos is out of range");
 	string aln;
 	for(unsigned i = 0; i < numSeq; ++i)
-		aln.push_back(concatMSA[i * csLen + j]);
+		aln.push_back(concatMSA.at(i * csLen + j));
 	return aln;
 }
 

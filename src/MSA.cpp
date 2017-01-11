@@ -25,16 +25,10 @@ using namespace Math;
 const double DEFAULT_CONSENSUS_FRAC = 0.5;
 
 char MSA::CSResidualAt(unsigned j) const {
-	if(!(j >= 0 && j < csLen)) // check range once
-		throw out_of_range("CS pos is out of range");
-
-	return CS.empty() ? '\0' /* not calculated yet */ : CS[j];
+	return CS.empty() ? '\0' /* not calculated yet */ : CS.at(j);
 }
 
 char MSA::CSBaseAt(unsigned j) const {
-	if(!(j >= 0 && j < csLen)) // check range once
-		throw out_of_range("CS pos is out of range");
-
 	MatrixXd::Index max;
 	VectorXd freq = resWCount.col(j);
 	freq.maxCoeff(&max);
@@ -42,19 +36,19 @@ char MSA::CSBaseAt(unsigned j) const {
 }
 
 double MSA::identityAt(unsigned j) const {
-	if(!(j >= 0 && j < csLen)) // check range once
-		throw out_of_range("CS pos is out of range");
 	return resCount.col(j).maxCoeff() / static_cast<double>(numSeq);
 }
 
 double MSA::wIdentityAt(unsigned j) const {
-	if(!(j >= 0 && j < csLen)) // check range once
-		throw out_of_range("CS pos is out of range");
 	return resWCount.col(j).maxCoeff() / numSeq;
 }
 
 double MSA::gapFrac(unsigned j) const {
 	return gapCount(j) / static_cast<double>(numSeq);
+}
+
+double MSA::gapWFrac(unsigned j) const {
+	return gapWCount(j) / numSeq;
 }
 
 double MSA::symFrac(unsigned j) const {
