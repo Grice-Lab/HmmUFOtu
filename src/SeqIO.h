@@ -30,15 +30,6 @@ public:
 	 */
 	SeqIO(const string& filename, const string& alphabet, const string& format, Mode mode = READ, bool verify = false );
 
-/*
-	~SeqIO() {
-		if(in.is_open())
-			in.close();
-		if(out.is_open())
-			out.close();
-	}
-*/
-
 	/* Getters and Setters */
 	const string& getFilename() const {
 		return filename;
@@ -53,6 +44,16 @@ public:
 	}
 
 	/* member methods */
+	/**
+	 * close underlying iostreams explicitly
+	 */
+	void close() {
+		if(in.is_open())
+			in.close();
+		if(out.is_open())
+			out.close();
+	}
+
 	/**
 	 * test whether this file has next PrimarySeq
 	 * @return true if everything is good and has symbol indicating nextSeq exists
