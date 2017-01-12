@@ -91,7 +91,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = hmmufotu$(EXEEXT) hmmufotu-train-dm$(EXEEXT) \
-	hmmufotu-train$(EXEEXT)
+	hmmufotu-train$(EXEEXT) hmmufotu-sim$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -143,6 +143,13 @@ am__v_lt_1 =
 hmmufotu_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(hmmufotu_LDFLAGS) $(LDFLAGS) -o $@
+am_hmmufotu_sim_OBJECTS = hmmufotu-sim.$(OBJEXT)
+hmmufotu_sim_OBJECTS = $(am_hmmufotu_sim_OBJECTS)
+hmmufotu_sim_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_common.a \
+	math/libEGMath.a
+hmmufotu_sim_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(hmmufotu_sim_LDFLAGS) $(LDFLAGS) -o $@
 am_hmmufotu_train_OBJECTS = hmmufotu_train-hmmufotu-train.$(OBJEXT)
 hmmufotu_train_OBJECTS = $(am_hmmufotu_train_OBJECTS)
 hmmufotu_train_DEPENDENCIES = libHmmUFOtu_common.a libHmmUFOtu_hmm.a \
@@ -195,11 +202,12 @@ am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libHmmUFOtu_common_a_SOURCES) $(libHmmUFOtu_hmm_a_SOURCES) \
 	$(libHmmUFOtu_phylo_a_SOURCES) $(hmmufotu_SOURCES) \
-	$(hmmufotu_train_SOURCES) $(hmmufotu_train_dm_SOURCES)
+	$(hmmufotu_sim_SOURCES) $(hmmufotu_train_SOURCES) \
+	$(hmmufotu_train_dm_SOURCES)
 DIST_SOURCES = $(libHmmUFOtu_common_a_SOURCES) \
 	$(libHmmUFOtu_hmm_a_SOURCES) $(libHmmUFOtu_phylo_a_SOURCES) \
-	$(hmmufotu_SOURCES) $(hmmufotu_train_SOURCES) \
-	$(hmmufotu_train_dm_SOURCES)
+	$(hmmufotu_SOURCES) $(hmmufotu_sim_SOURCES) \
+	$(hmmufotu_train_SOURCES) $(hmmufotu_train_dm_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -441,6 +449,9 @@ hmmufotu_train_SOURCES = hmmufotu-train.cpp
 hmmufotu_train_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a
 hmmufotu_train_CPPFLAGS = -DDATA=$(pkgdatadir)
 hmmufotu_train_LDFLAGS = -static
+hmmufotu_sim_SOURCES = hmmufotu-sim.cpp
+hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
+hmmufotu_sim_LDFLAGS = -static
 all: all-recursive
 
 .SUFFIXES:
@@ -546,6 +557,10 @@ hmmufotu$(EXEEXT): $(hmmufotu_OBJECTS) $(hmmufotu_DEPENDENCIES) $(EXTRA_hmmufotu
 	@rm -f hmmufotu$(EXEEXT)
 	$(AM_V_CXXLD)$(hmmufotu_LINK) $(hmmufotu_OBJECTS) $(hmmufotu_LDADD) $(LIBS)
 
+hmmufotu-sim$(EXEEXT): $(hmmufotu_sim_OBJECTS) $(hmmufotu_sim_DEPENDENCIES) $(EXTRA_hmmufotu_sim_DEPENDENCIES) 
+	@rm -f hmmufotu-sim$(EXEEXT)
+	$(AM_V_CXXLD)$(hmmufotu_sim_LINK) $(hmmufotu_sim_OBJECTS) $(hmmufotu_sim_LDADD) $(LIBS)
+
 hmmufotu-train$(EXEEXT): $(hmmufotu_train_OBJECTS) $(hmmufotu_train_DEPENDENCIES) $(EXTRA_hmmufotu_train_DEPENDENCIES) 
 	@rm -f hmmufotu-train$(EXEEXT)
 	$(AM_V_CXXLD)$(hmmufotu_train_LINK) $(hmmufotu_train_OBJECTS) $(hmmufotu_train_LDADD) $(LIBS)
@@ -583,6 +598,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqCommons.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqIO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StringUtils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-sim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-train-dm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_train-hmmufotu-train.Po@am__quote@

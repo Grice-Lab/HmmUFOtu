@@ -38,7 +38,11 @@ GTR.cpp \
 DNASubModelFactory.cpp
 
 # Build the executables
-bin_PROGRAMS=hmmufotu hmmufotu-train-dm hmmufotu-train
+bin_PROGRAMS = \
+hmmufotu \
+hmmufotu-train-dm \
+hmmufotu-train \
+hmmufotu-sim
 
 hmmufotu_SOURCES=hmmufotu.cpp
 hmmufotu_LDADD = libHmmUFOtu_common.a math/libEGMath.a
@@ -52,3 +56,7 @@ hmmufotu_train_SOURCES = hmmufotu-train.cpp
 hmmufotu_train_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a
 hmmufotu_train_CPPFLAGS = -DDATA=$(pkgdatadir)
 hmmufotu_train_LDFLAGS = -static
+
+hmmufotu_sim_SOURCES = hmmufotu-sim.cpp
+hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
+hmmufotu_sim_LDFLAGS = -static
