@@ -5,6 +5,7 @@
  *      Author: zhengqi
  */
 #include <fstream>
+#include <cctype>
 #include "SeqIO.h"
 
 namespace EGriceLab {
@@ -44,8 +45,11 @@ PrimarySeq SeqIO::nextFastaSeq() {
 	tag = in.get();
 	if(tag != fastaHead)
 		throw ios_base::failure("inputfile " + filename + " is not a valid FASTA format");
+
 	in >> id; // read the next word as id
-	getline(in, desc); // read the remaining as desc
+	while(::isspace(in.peek()) && in.peek() != '\n') // ignore non-newline white spaces
+		in.get();
+	getline(in, desc); // read the remaining as desc, if any
 	while(in.peek() != EOF && in.peek() != fastaHead) {
 		getline(in, line);
 		seq += line;
@@ -61,7 +65,9 @@ PrimarySeq SeqIO::nextFastqSeq() {
 	if(tag != fastqHead)
 		throw ios_base::failure("inputfile " + filename + " is not a valid FASTQ format");
 	in >> id; // read the next word as id
-	getline(in, desc); // read the remaining as desc
+	while(::isspace(in.peek()) && in.peek() != '\n') // ignore non-newline white spaces
+		in.get();
+	getline(in, desc); // read the remaining as description
 	getline(in, seq);  // read seq line
 	getline(in, line); // ignore sep line
 	getline(in, qual); // read qual line
@@ -69,7 +75,7 @@ PrimarySeq SeqIO::nextFastqSeq() {
 }
 
 void SeqIO::writeFastaSeq(const PrimarySeq& seq) {
-	out << fastaHead << seq.getId() << seq.getDesc() << endl;
+	out << fastaHead << seq.getId() << (!seq.getDesc().empty() ? " " + seq.getDesc() : "") << endl;
 	const char* seqPtr = seq.getSeq().c_str();
 	for(size_t i = 0, r = seq.length(); i < seq.length(); i += kMaxFastaLine, r -= kMaxFastaLine) {
 		out.write(seqPtr + i, r >= kMaxFastaLine ? kMaxFastaLine : r); /* use unformated write for performance */
@@ -78,7 +84,7 @@ void SeqIO::writeFastaSeq(const PrimarySeq& seq) {
 }
 
 void SeqIO::writeFastqSeq(const PrimarySeq& seq) {
-	out << fastqHead << seq.getId() << seq.getDesc() << endl;
+	out << fastqHead << seq.getId() << (!seq.getDesc().empty() ? " " + seq.getDesc() : "") << endl;
 	out << seq.getSeq() << endl;
 	out << fastqSep << endl << seq.getQual() << endl;
 }
