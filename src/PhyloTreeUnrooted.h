@@ -375,8 +375,8 @@ public:
 	/**
 	 * Get the underlying DNA Sub Model
 	 */
-	const DNASubModel& getModel() const {
-		return *model;
+	const ModelPtr& getModel() const {
+		return model;
 	}
 
 	/**
