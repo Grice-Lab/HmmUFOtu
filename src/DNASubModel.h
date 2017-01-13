@@ -87,8 +87,16 @@ public:
 
 public:
 	/* static methods */
+	/**
+	 * calculate the p-distance between two aligned DigitalSeq in given region [start, end]
+	 */
+	static double pDist(const DigitalSeq& seq1, const DigitalSeq& seq2,
+			DigitalSeq::size_type start, DigitalSeq::size_type end);
+
 	/** calculate the p-distance between two aligned DigitalSeq */
-	static double pDist(const DigitalSeq& seq1, const DigitalSeq& seq2);
+	static double pDist(const DigitalSeq& seq1, const DigitalSeq& seq2) {
+		return pDist(seq1, seq2, 0, seq1.length());
+	}
 
 	/** calculate the observed transition frequencies using Goldman (two-sequence) method */
 	static Matrix4d calcTransFreq2Seq(const DigitalSeq& seq1, const DigitalSeq& seq2);

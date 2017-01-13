@@ -70,12 +70,13 @@ Vector4d DNASubModel::calcBaseFreq(const DigitalSeq& seq) {
 	return f;
 }
 
-double DNASubModel::pDist(const DigitalSeq& seq1, const DigitalSeq& seq2) {
+double DNASubModel::pDist(const DigitalSeq& seq1, const DigitalSeq& seq2,
+		DigitalSeq::size_type start, DigitalSeq::size_type end) {
 	assert(seq1.getAbc() == seq2.getAbc());
 	assert(seq1.length() == seq2.length());
 	int d = 0;
 	int N = 0;
-	for(DigitalSeq::size_type i = 0; i < seq1.length(); ++i) {
+	for(DigitalSeq::size_type i = start; i != end; ++i) {
 		int b1 = seq1[i];
 		int b2 = seq2[i];
 		if(b1 >= 0 && b2 >= 0) {
