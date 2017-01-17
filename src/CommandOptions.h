@@ -31,6 +31,10 @@ public:
 		return hasOpt(name) ? opts.find(name)->second : "";
 	}
 
+	const char* getOptStr(const string& name) const {
+		return hasOpt(name) ? opts.find(name)->second.c_str() : "";
+	}
+
 	int numMainOpts() const {
 		return mainOpts.size();
 	}
