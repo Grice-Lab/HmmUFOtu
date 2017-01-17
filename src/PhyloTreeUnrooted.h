@@ -439,6 +439,15 @@ public:
 	}
 
 	/**
+	 * evaluate the conditional cost of the jth site of a subtree, rooted at given node
+	 * this is the base for all evaluate/cost methods
+	 * @param node  subtree root
+	 * @param j  the jth aligned site
+	 * @return  conditional cost at the jth site
+	 */
+	Vector4d cost(const PTUNodePtr& node, int j);
+
+	/**
 	 * evaluate the log-likelihood (cost) of the entire tree
 	 * @return  cost matrix of the entire tree
 	 */
@@ -460,14 +469,6 @@ public:
 	 * @return  conditional cost matrix of the subtree
 	 */
 	Matrix4Xd cost(const PTUNodePtr& node);
-
-	/**
-	 * evaluate the conditional cost of the jth site of a subtree, rooted at given node
-	 * @param node  subtree root
-	 * @param j  the jth aligned site
-	 * @return  conditional cost at the jth site
-	 */
-	Vector4d cost(const PTUNodePtr& node, int j);
 
 	/**
 	 * evaluate the entire tree
@@ -493,21 +494,37 @@ public:
 	void evaluate(const PTUNodePtr& node, int j);
 
 	/**
-	 * calculate the entire tree cost
+	 * calculate the subtree cost at j-th site
+	 * evaluate the tree if necessary
+	 * this is the basis for all other treeCost methods
 	 */
-	double treeCost();
+	double treeCost(const PTUNodePtr& node, int j);
 
 	/**
-	 * calculate the entire tree cost at given region
-	 * both start and end are 0-based inclusive
+	 * calculate the cost of the subtree in a given range [start, end]
+	 */
+	double treeCost(const PTUNodePtr& node, int start, int end);
+
+	/**
+	 * calculate the cost of the subtree in a whole length
+	 */
+	double treeCost(const PTUNodePtr& node);
+
+	/**
+	 * calculate the entire tree cost at j-th site
+	 * evaluate the tree if necessary
+	 */
+	double treeCost(int j);
+
+	/**
+	 * calculate the entire tree cost in a given range [start, end]
 	 */
 	double treeCost(int start, int end);
 
 	/**
-	 * calculate the entire tree cost at j-th site
-	 * evaluate the tree if neccessary
+	 * calculate the entire tree cost in the whole length
 	 */
-	double treeCost(int j);
+	double treeCost();
 
 	/**
 	 * write this PTUnrooted tree structure into output in given format
@@ -804,20 +821,33 @@ inline Matrix4Xd PTUnrooted::getBranchCost(const PTUNodePtr& u, const PTUNodePtr
 	}
 }
 
+inline double PTUnrooted::treeCost(int j) {
+	return treeCost(root, j);
+}
+
 inline double PTUnrooted::treeCost(int start, int end) {
-	double cost = 0;
-	for(int j = start; j <= end; ++j)
-		cost += treeCost(j);
-	return cost;
+	return treeCost(root, start, end);
 }
 
 inline double PTUnrooted::treeCost() {
-	return treeCost(0, csLen - 1);
+	return treeCost(root);
 }
 
-inline double PTUnrooted::treeCost(int j) {
-	return dot_product_scaled(model->getPi(), cost(j));
+inline double PTUnrooted::treeCost(const PTUNodePtr& node, int j) {
+	return dot_product_scaled(model->getPi(), cost(node, j));
 }
+
+inline double PTUnrooted::treeCost(const PTUNodePtr& node, int start, int end) {
+	double cost = 0;
+	for(int j = start; j <= end; ++j)
+		cost += treeCost(node, j);
+	return cost;
+}
+
+inline double PTUnrooted::treeCost(const PTUNodePtr& node) {
+	return treeCost(node, 0, csLen - 1);
+}
+
 
 inline vector<Matrix4d> PTUnrooted::getModelTransitionSet(string method) const {
 	StringUtils::toLower(method);
