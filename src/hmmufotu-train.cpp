@@ -8,6 +8,9 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstdlib>
+#include <cstring>
+#include <cerrno>
 #include "HmmUFOtu_common.h"
 #include "HmmUFOtu_hmm.h"
 #include "EGMath.h"
@@ -44,19 +47,19 @@ int main(int argc, char *argv[]) {
 	CommandOptions cmdOpts(argc, argv);
 	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
 		printUsage(argv[0]);
-		return -1;
+		return EXIT_SUCCESS;
 	}
 	if(cmdOpts.numMainOpts() != 1) {
 		cerr << "Error:" << endl;
 		printUsage(argv[0]);
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	infn = cmdOpts.getMainOpt(0);
 	in.open(infn.c_str());
 	if(!in.is_open()) {
-		cerr << "Unable to open " << infn << endl;
-		return -1;
+		cerr << "Unable to open " << infn << " : " << ::strerror(errno)<< endl;
+		return EXIT_FAILURE;
 	}
 
 	if(cmdOpts.hasOpt("-o")) {
@@ -64,7 +67,7 @@ int main(int argc, char *argv[]) {
 		of.open(outfn.c_str());
 		if(!of.is_open()) {
 			cerr << "Unable to write to " << outfn << endl;
-			return -1;
+			return EXIT_FAILURE;
 		}
 	}
 	ostream& out = outfn.empty() ? cout : of;

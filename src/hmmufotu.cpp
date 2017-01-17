@@ -9,7 +9,6 @@
  */
 
 #include <iostream>
-#include "HmmUFOtu_common.h"
 
 using namespace std;
 
