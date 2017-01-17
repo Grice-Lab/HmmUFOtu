@@ -42,10 +42,11 @@ bin_PROGRAMS = \
 hmmufotu \
 hmmufotu-train-dm \
 hmmufotu-train \
-hmmufotu-sim
+hmmufotu-sim \
+hmmufotu-place
 
 hmmufotu_SOURCES=hmmufotu.cpp
-hmmufotu_LDADD = libHmmUFOtu_common.a math/libEGMath.a
+#hmmufotu_LDADD = libHmmUFOtu_common.a math/libEGMath.a
 hmmufotu_LDFLAGS = -static
 
 hmmufotu_train_dm_SOURCES=hmmufotu-train-dm.cpp
@@ -58,5 +59,9 @@ hmmufotu_train_CPPFLAGS = -DDATA=$(pkgdatadir)
 hmmufotu_train_LDFLAGS = -static
 
 hmmufotu_sim_SOURCES = hmmufotu-sim.cpp
-hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
+hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
 hmmufotu_sim_LDFLAGS = -static
+
+hmmufotu_place_SOURCES = hmmufotu-place.cpp
+hmmufotu_place_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
+hmmufotu_place_LDFLAGS = -static
