@@ -1,7 +1,7 @@
 /*
  * PhyloTreeUnrooted.h
  *  An Unrooted Phylogenic Tree (PTUnrooted)
- *  A PTUnrooted can be evaluated from any node as its root and yields same cost
+ *  A PTUnrooted can be evaluated from any node as its root and yields same loglik
  *  as long as using a time-reversible DNA substitution model
  *  Internal Tree nodes are number indexed from 0 to N-1
  *  Created on: Dec 1, 2016
@@ -292,7 +292,7 @@ public:
 		double annoDist;
 	};
 
-	typedef unordered_map<PTUNodePtr, unordered_map<PTUNodePtr, Matrix4Xd> > CostMap;
+	typedef unordered_map<PTUNodePtr, unordered_map<PTUNodePtr, Matrix4Xd> > LoglikMap;
 	typedef unordered_map<PTUNodePtr, unordered_map<PTUNodePtr, double> > BranchLenMap;
 
 	/* constructors */
@@ -343,10 +343,10 @@ public:
 	double getBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) const;
 
 	/**
-	 * get branch cost from u->v, before convoluted into the Pr(length)
+	 * get branch loglik from u->v, before convoluted into the Pr(length)
 	 * @return uinitiated matrix if not exists
 	 */
-	Matrix4Xd getBranchCost(const PTUNodePtr& u, const PTUNodePtr& v) const;
+	Matrix4Xd getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const;
 
 	/** Load sequences from MSA into this this */
 	size_t loadMSA(const MSA& msa);
@@ -409,75 +409,75 @@ public:
 	}
 
 	/**
-	 * test whether the cost (message) of node u -> v of all site j has been evaluated
+	 * test whether the loglik (message) of node u -> v of all site j has been evaluated
 	 */
 	bool isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v) const;
 
 	/**
-	 * test whether the cost (message) of node u -> v of site j has been evaluated
+	 * test whether the loglik (message) of node u -> v of site j has been evaluated
 	 */
 	bool isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int j) const;
 
 	/**
-	 * initiate the cached incoming cost of between every node u and every neighbor v
+	 * initiate the cached incoming loglik of between every node u and every neighbor v
 	 */
-	void initInCost();
+	void initInLoglik();
 
 	/**
-	 * initiate the leaf cost
+	 * initiate the leaf loglik
 	 */
-	void initLeafCost();
+	void initLeafLoglik();
 
 	/**
-	 * reset the cached cost of edge u->v
+	 * reset the cached loglik of edge u->v
 	 */
-	void resetCost(const PTUNodePtr& u, const PTUNodePtr& v) {
-		node2cost[u][v].setConstant(INVALID_COST);
+	void resetLoglik(const PTUNodePtr& u, const PTUNodePtr& v) {
+		node2loglik[u][v].setConstant(INVALID_LOGLIK);
 	}
 
 	/**
-	 * reset the cached cost of every node
+	 * reset the cached loglik of every node
 	 */
-	void resetCost();
+	void resetLoglik();
 
 	/**
-	 * reset the cached leaf cost
+	 * reset the cached leaf loglik
 	 */
-	void resetLeafCost() {
-		leafCost.setConstant(INVALID_COST);
+	void resetLeafLoglik() {
+		leafLoglik.setConstant(INVALID_LOGLIK);
 	}
 
 	/**
-	 * evaluate the conditional cost of the jth site of a subtree, rooted at given node
-	 * this is the base for all evaluate/cost methods
+	 * evaluate the conditional loglik of the jth site of a subtree, rooted at given node
+	 * this is the base for all evaluate/loglik methods
 	 * @param node  subtree root
 	 * @param j  the jth aligned site
-	 * @return  conditional cost at the jth site
+	 * @return  conditional loglik at the jth site
 	 */
-	Vector4d cost(const PTUNodePtr& node, int j);
+	Vector4d loglik(const PTUNodePtr& node, int j);
 
 	/**
-	 * evaluate the log-likelihood (cost) of the entire tree
-	 * @return  cost matrix of the entire tree
+	 * evaluate the log-likelihood (loglik) of the entire tree
+	 * @return  loglik matrix of the entire tree
 	 */
-	Matrix4Xd cost() {
-		return cost(root);
+	Matrix4Xd loglik() {
+		return loglik(root);
 	}
 
 	/**
-	 * evaluate the log-likelihood (cost) at the jth site of the entire tree
-	 * @return  cost vector at the jth site
+	 * evaluate the log-likelihood (loglik) at the jth site of the entire tree
+	 * @return  loglik vector at the jth site
 	 */
-	Vector4d cost(int j) {
-		return cost(root, j);
+	Vector4d loglik(int j) {
+		return loglik(root, j);
 	}
 
 	/**
-	 * evaluate the conditional cost of a subtree, rooted at given node
+	 * evaluate the conditional loglik of a subtree, rooted at given node
 	 * @param node  subtree root
-	 * @return  conditional cost matrix of the subtree
+	 * @return  conditional loglik matrix of the subtree
 	 */
-	Matrix4Xd cost(const PTUNodePtr& node);
+	Matrix4Xd loglik(const PTUNodePtr& node);
 
 	/**
 	 * evaluate the entire tree
@@ -496,44 +496,44 @@ public:
 
 	/**
 	 * evaluate every child of this node at the jth site of a subtree, rooted at given node
-	 * but does not calculate the cost of this node itself
+	 * but does not calculate the loglik of this node itself
 	 * @param node  subtree root
 	 * @param j  the jth aligned site
 	 */
 	void evaluate(const PTUNodePtr& node, int j);
 
 	/**
-	 * calculate the subtree cost at j-th site
+	 * calculate the subtree loglik at j-th site
 	 * evaluate the tree if necessary
-	 * this is the basis for all other treeCost methods
+	 * this is the basis for all other treeLoglik methods
 	 */
-	double treeCost(const PTUNodePtr& node, int j);
+	double treeLoglik(const PTUNodePtr& node, int j);
 
 	/**
-	 * calculate the cost of the subtree in a given range [start, end]
+	 * calculate the loglik of the subtree in a given range [start, end]
 	 */
-	double treeCost(const PTUNodePtr& node, int start, int end);
+	double treeLoglik(const PTUNodePtr& node, int start, int end);
 
 	/**
-	 * calculate the cost of the subtree in a whole length
+	 * calculate the loglik of the subtree in a whole length
 	 */
-	double treeCost(const PTUNodePtr& node);
+	double treeLoglik(const PTUNodePtr& node);
 
 	/**
-	 * calculate the entire tree cost at j-th site
+	 * calculate the entire tree loglik at j-th site
 	 * evaluate the tree if necessary
 	 */
-	double treeCost(int j);
+	double treeLoglik(int j);
 
 	/**
-	 * calculate the entire tree cost in a given range [start, end]
+	 * calculate the entire tree loglik in a given range [start, end]
 	 */
-	double treeCost(int start, int end);
+	double treeLoglik(int start, int end);
 
 	/**
-	 * calculate the entire tree cost in the whole length
+	 * calculate the entire tree loglik in the whole length
 	 */
-	double treeCost();
+	double treeLoglik();
 
 	/**
 	 * write this PTUnrooted tree structure into output in given format
@@ -563,6 +563,9 @@ public:
 	 */
 	vector<Matrix4d> getModelTraningSetGoldman() const;
 
+	vector<PTUNodePtr> getLeafHits(const DigitalSeq& seq, double maxPDist,
+			int start = 0, int end = csLen - 1) const;
+
 	/**
 	 * get estimated base frequency (pi) using this tree
 	 */
@@ -577,14 +580,14 @@ public:
 	PTUnrooted copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const;
 
 	/**
-	 * estimate branch length by comparing the two direction cost
+	 * estimate branch length by comparing the two direction loglik
 	 * in given region [start-end]
 	 * return the estimated branch length
 	 */
 	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end);
 
 	/**
-	 * estimate branch length by comparing the two direction cost
+	 * estimate branch length by comparing the two direction loglik
 	 * in the entire region
 	 * return the estimated branch length
 	 */
@@ -649,24 +652,24 @@ private:
 	ostream& saveEdge(ostream& out, const PTUNodePtr& node1, const PTUNodePtr& node2) const;
 
 	/**
-	 * load the edge cost node1->node2 from a binary input
+	 * load the edge loglik node1->node2 from a binary input
 	 */
-	istream& loadEdgeCost(istream& in);
+	istream& loadEdgeLoglik(istream& in);
 
 	/**
-	 * save the edge cost node1->node2 to a binary output
+	 * save the edge loglik node1->node2 to a binary output
 	 */
-	ostream& saveEdgeCost(ostream& out, const PTUNodePtr& node, const PTUNodePtr& node2) const;
+	ostream& saveEdgeLoglik(ostream& out, const PTUNodePtr& node, const PTUNodePtr& node2) const;
 
 	/**
-	 * load leaf cost from a binary input
+	 * load leaf loglik from a binary input
 	 */
-	istream& loadLeafCost(istream& in);
+	istream& loadLeafLoglik(istream& in);
 
 	/**
-	 * save leaf cost to a binary outout
+	 * save leaf loglik to a binary outout
 	 */
-	ostream& saveLeafCost(ostream& out) const;
+	ostream& saveLeafLoglik(ostream& out) const;
 
 	/**
 	 * load root information from a binary input
@@ -679,14 +682,14 @@ private:
 	ostream& saveRoot(ostream& out) const;
 
 	/**
-	 * load root cost for every node
+	 * load root loglik for every node
 	 */
-	istream& loadRootCost(istream& in);
+	istream& loadRootLoglik(istream& in);
 
 	/**
-	 * save root cost for every node
+	 * save root loglik for every node
 	 */
-	ostream& saveRootCost(ostream& out) const;
+	ostream& saveRootLoglik(ostream& out) const;
 
 	/**
 	 * load DNA model from a binary input in text model
@@ -742,16 +745,16 @@ private:
 	vector<PTUNodePtr> id2node; /* indexed tree nodes */
 
 	BranchLenMap node2length; /* branch length index storing edge length */
-	CostMap node2cost; /* cached cost message sending from u -> v, before conjugating into the Pr(v) of the branch-length */
-	Matrix4Xd leafCost; /* cached 4 X 5 leaf cost matrix,
-						with each column the pre-computed cost of observing A, C, G, T or - at any given site */
+	LoglikMap node2loglik; /* cached loglik message sending from u -> v, before conjugating into the Pr(v) of the branch-length */
+	Matrix4Xd leafLoglik; /* cached 4 X 5 leaf loglik matrix,
+						with each column the pre-computed loglik of observing A, C, G, T or - at any given site */
 
 	ModelPtr model; /* DNA Model used to evaluate this tree, needed to be stored with this tree */
 
 public:
 	/* static fields */
-	static const double MAX_COST_EXP;
-	static const double INVALID_COST;
+	static const double MIN_LOGLIK_EXP;
+	static const double INVALID_LOGLIK;
 
 	static const double BRANCH_EPS;
 	static const char ANNO_FIELD_SEP = '\t';
@@ -779,14 +782,14 @@ inline size_t PTUnrooted::numLeaves() const {
 	return nLeaves;
 }
 
-inline Matrix4Xd PTUnrooted::cost(const PTUNodePtr& node) {
+inline Matrix4Xd PTUnrooted::loglik(const PTUNodePtr& node) {
 	if(isEvaluated(node, node->parent))
-		return node2cost[node][node->parent];
+		return node2loglik[node][node->parent];
 
-	Matrix4Xd costVec(4, csLen);
+	Matrix4Xd loglikVec(4, csLen);
 	for(int j = 0; j < csLen; ++j)
-		costVec.col(j) = cost(node, j);
-	return costVec;
+		loglikVec.col(j) = loglik(node, j);
+	return loglikVec;
 }
 
 inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {
@@ -801,24 +804,24 @@ inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {
 }
 
 inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v) const {
-	CostMap::const_iterator outerResult = node2cost.find(u);
-	if(outerResult != node2cost.end()) {
+	LoglikMap::const_iterator outerResult = node2loglik.find(u);
+	if(outerResult != node2loglik.end()) {
 		unordered_map<PTUNodePtr, Matrix4Xd>::const_iterator innerResult = outerResult->second.find(v);
 		if(innerResult != outerResult->second.end())
 			return innerResult->second.cols() == csLen && /* Matrix is initiated */
-					(innerResult->second.array() != INVALID_COST).all(); /* values are all valid */
+					(innerResult->second.array() != INVALID_LOGLIK).all(); /* values are all valid */
 	}
 
 	return false;
 }
 
 inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int j) const {
-	CostMap::const_iterator outerResult = node2cost.find(u);
-	if(outerResult != node2cost.end()) {
+	LoglikMap::const_iterator outerResult = node2loglik.find(u);
+	if(outerResult != node2loglik.end()) {
 		unordered_map<PTUNodePtr, Matrix4Xd>::const_iterator innerResult = outerResult->second.find(v);
 		if(innerResult != outerResult->second.end())
 			return innerResult->second.cols() == csLen && /* Matrix is initiated */
-					(innerResult->second.col(j).array() != INVALID_COST).all(); /* values are not invalid */
+					(innerResult->second.col(j).array() != INVALID_LOGLIK).all(); /* values are not invalid */
 	}
 
 	return false;
@@ -835,9 +838,9 @@ inline double PTUnrooted::getBranchLength(const PTUNodePtr& u, const PTUNodePtr&
 //	}
 }
 
-inline Matrix4Xd PTUnrooted::getBranchCost(const PTUNodePtr& u, const PTUNodePtr& v) const {
-	CostMap::const_iterator resultOuter = node2cost.find(u);
-	if(resultOuter == node2cost.end())
+inline Matrix4Xd PTUnrooted::getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const {
+	LoglikMap::const_iterator resultOuter = node2loglik.find(u);
+	if(resultOuter == node2loglik.end())
 		return Matrix4Xd();
 	else {
 		boost::unordered_map<PTUNodePtr, Matrix4Xd>::const_iterator resultInner = resultOuter->second.find(v);
@@ -845,31 +848,31 @@ inline Matrix4Xd PTUnrooted::getBranchCost(const PTUNodePtr& u, const PTUNodePtr
 	}
 }
 
-inline double PTUnrooted::treeCost(int j) {
-	return treeCost(root, j);
+inline double PTUnrooted::treeLoglik(int j) {
+	return treeLoglik(root, j);
 }
 
-inline double PTUnrooted::treeCost(int start, int end) {
-	return treeCost(root, start, end);
+inline double PTUnrooted::treeLoglik(int start, int end) {
+	return treeLoglik(root, start, end);
 }
 
-inline double PTUnrooted::treeCost() {
-	return treeCost(root);
+inline double PTUnrooted::treeLoglik() {
+	return treeLoglik(root);
 }
 
-inline double PTUnrooted::treeCost(const PTUNodePtr& node, int j) {
-	return dot_product_scaled(model->getPi(), cost(node, j));
+inline double PTUnrooted::treeLoglik(const PTUNodePtr& node, int j) {
+	return dot_product_scaled(model->getPi(), loglik(node, j));
 }
 
-inline double PTUnrooted::treeCost(const PTUNodePtr& node, int start, int end) {
-	double cost = 0;
+inline double PTUnrooted::treeLoglik(const PTUNodePtr& node, int start, int end) {
+	double loglik = 0;
 	for(int j = start; j <= end; ++j)
-		cost += treeCost(node, j);
-	return cost;
+		loglik += treeLoglik(node, j);
+	return loglik;
 }
 
-inline double PTUnrooted::treeCost(const PTUNodePtr& node) {
-	return treeCost(node, 0, csLen - 1);
+inline double PTUnrooted::treeLoglik(const PTUNodePtr& node) {
+	return treeLoglik(node, 0, csLen - 1);
 }
 
 
@@ -914,19 +917,19 @@ inline PTUnrooted::PTUNodePtr PhyloTreeUnrooted::randomLeaf(PTUNodePtr node) {
 
 inline Vector4d PTUnrooted::dot_product_scaled(const Matrix4d& X, const Vector4d& V) {
 	Vector4d Y;
-	double minV = V.minCoeff();
-	double scale = minV != inf && minV > MAX_COST_EXP ? minV - MAX_COST_EXP : 0;
+	double maxV = V.maxCoeff();
+	double scale = maxV != infV && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
 
 	for(Vector4d::Index i = 0; i < Y.rows(); ++i)
-		Y(i) = -::log(X.row(i).dot(((-V).array() + scale).exp().matrix())) + scale;
+		Y(i) = ::log(X.row(i).dot((V.array() + scale).exp().matrix())) - scale;
 	return Y;
 }
 
 inline double PTUnrooted::dot_product_scaled(const Vector4d& P, const Vector4d& V) {
-	double minV = V.minCoeff();
-	double scale = minV != inf && minV > MAX_COST_EXP ? minV - MAX_COST_EXP : 0;
+	double maxV = V.maxCoeff();
+	double scale = maxV != inf && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
 
-	return -::log(P.dot(((-V).array() + scale).exp().matrix())) + scale;
+	return ::log(P.dot((V.array() + scale).exp().matrix())) - scale;
 }
 
 inline void PTUnrooted::formatName() {

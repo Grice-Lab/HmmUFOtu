@@ -73,8 +73,8 @@ int main(int argc, const char* argv[]) {
 		if(seq[end] >= 0) /* valid symbol */
 			break;
 
-	double minCost = DBL_MAX;
-	size_t minIdx = 0;
+	double maxLoglik = EGriceLab::infV;
+	size_t maxIdx = 0;
 
 	for(size_t i = 0; i < N; ++i) {
 		PTUnrooted::PTUNodePtr node = tree.getNode(i);
@@ -87,14 +87,14 @@ int main(int argc, const char* argv[]) {
 
 		double vn = subtree.getBranchLength(subtree.getNode(subtree.numNodes() - 2), subtree.getNode(subtree.numNodes() - 1));
 
-		double tc = subtree.treeCost(start, end);
-		if(tc < minCost) {
-			minCost = tc;
-			minIdx = i;
+		double tl = subtree.treeLoglik(start, end);
+		if(tl > maxLoglik) {
+			maxLoglik = tl;
+			maxIdx = i;
 		}
 		out << "Read placed at node " << node->getId() << " name: " << node->getName() <<
 				" new branch length: " << vn
-				<< " cost: " << tc << endl;
+				<< " loglik: " << tl << endl;
 	}
-	out << "Best placement position found at node " << minIdx << " minCost: " << minCost << endl;
+	out << "Best placement position found at node " << maxIdx << " minLoglik: " << maxLoglik << endl;
 }

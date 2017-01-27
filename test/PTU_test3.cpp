@@ -101,13 +101,12 @@ int main(int argc, const char* argv[]) {
 	infoLog << "DNA model loaded" << endl;
 	tree.setModel(model);
 	infoLog << "DNA model set" << endl;
-	infoLog << "MAX_COST_EXP: " << PhyloTreeUnrooted::MAX_COST_EXP << endl;
 
 	clock_t t1 = clock();
-	tree.initInCost();
-	tree.initLeafCost();
+	tree.initInLoglik();
+	tree.initLeafLoglik();
 	clock_t t2 = clock();
-	infoLog << "Tree cost initiated, total eclipsed time: " << (t2 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
+	infoLog << "Tree loglik initiated, total eclipsed time: " << (t2 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 
 	EGriceLab::PTUnrooted::PTUNodePtr oldRoot = tree.getRoot();
 	for(size_t i = 0; i < tree.numNodes(); ++i) {

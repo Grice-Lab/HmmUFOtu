@@ -44,12 +44,12 @@ void printUsage(const string& progName) {
 	     << "            -o  FILE           : write output to FILE instead of stdout" << endl
 		 << "            -f|--fmt  STRING   : output format [" << DEFAULT_FMT << "]" << endl
 		 << "            -r|--remove-gap    : remove gaps in generated reads, seq will be unaligned" << endl
-		 << "            -u|--mean-len  DBL : mean read length [" << DEFAULT_MEAN_LEN << "]" << endl
+		 << "            -m|--mean-len  DBL : mean read length [" << DEFAULT_MEAN_LEN << "]" << endl
 		 << "            -s|--sd-len  DBL   : standard deviation of read length [" << DEFAULT_SD_LEN << "]" << endl
-		 << "            -m|--min-len  DBL  : minimum read length, 0 for no limit [" << DEFAULT_MIN_LEN << "]" << endl
-		 << "            -n|--max-len  DBL  : maximum read length, 0 for no limit [" << DEFAULT_MAX_LEN << "]" << endl
+		 << "            -l|--min-len  DBL  : minimum read length, 0 for no limit [" << DEFAULT_MIN_LEN << "]" << endl
+		 << "            -u|--max-len  DBL  : maximum read length, 0 for no limit [" << DEFAULT_MAX_LEN << "]" << endl
 		 << "            -S|--seed  INT     : random seed used for simulation, for debug purpose" << endl
-		 << "            -w|--unweighted   : do not weight each branch by their conditional cost by default" << endl
+		 << "            -u|--unweighted   : do not weight each branch by their conditional loglik by default" << endl
 		 << "            -v  FLAG           : enable verbose information" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
@@ -130,11 +130,11 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("--fmt"))
 		fmt = StringUtils::toLower(cmdOpts.getOpt("--fmt"));
 
-	if(cmdOpts.hasOpt("-w") || cmdOpts.hasOpt("--unweighted"))
+	if(cmdOpts.hasOpt("-u") || cmdOpts.hasOpt("--unweighted"))
 		doWeight = false;
 
-	if(cmdOpts.hasOpt("-u"))
-		meanLen = ::atof(cmdOpts.getOptStr("-u"));
+	if(cmdOpts.hasOpt("-m"))
+		meanLen = ::atof(cmdOpts.getOptStr("-m"));
 	if(cmdOpts.hasOpt("--mean-len"))
 		meanLen = ::atof(cmdOpts.getOptStr("--mean-len"));
 
@@ -143,8 +143,8 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("--sd-len"))
 		sdLen = ::atof(cmdOpts.getOptStr("--sd-len"));
 
-	if(cmdOpts.hasOpt("-m"))
-		minLen = ::atof(cmdOpts.getOptStr("-m"));
+	if(cmdOpts.hasOpt("-l"))
+		minLen = ::atof(cmdOpts.getOptStr("-l"));
 	if(cmdOpts.hasOpt("--min-len"))
 		minLen = ::atof(cmdOpts.getOptStr("--min-len"));
 	if(!(minLen >= 0)) {
@@ -152,8 +152,8 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	if(cmdOpts.hasOpt("-n"))
-		maxLen = ::atof(cmdOpts.getOptStr("-n"));
+	if(cmdOpts.hasOpt("-u"))
+		maxLen = ::atof(cmdOpts.getOptStr("-u"));
 	if(cmdOpts.hasOpt("--max-len"))
 		maxLen = ::atof(cmdOpts.getOptStr("--max-len"));
 	if(!(maxLen >= 0 && maxLen >= minLen)) {
@@ -203,10 +203,10 @@ int main(int argc, char* argv[]) {
 	if(doWeight) {
 		infoLog << "Setting branch sampling weights ..." << endl;
 		for(size_t i = 0; i < numNodes; ++i)
-			nodeWeight(i) = ptu.treeCost(ptu.getNode(i));
-		/* normalize nodeWeight at log scale */
-		nodeWeight = nodeWeight.maxCoeff() / nodeWeight.array();
-//		nodeWeight = (-nodeWeight).array().exp().eval();
+//			nodeWeight(i) = 1 / (-ptu.treeLoglik(ptu.getNode(i)));
+			nodeWeight(i) = ptu.treeLoglik(ptu.getNode(i));
+		nodeWeight.array() -= nodeWeight.maxCoeff();
+		nodeWeight = nodeWeight.array().exp();
 	}
 	else
 		nodeWeight.setOnes(); /* use all equal weights */
@@ -267,10 +267,11 @@ int main(int argc, char* argv[]) {
 			if(isGap && !removeGap)
 				seq.push_back(gapSym);
 			else {
-				/* calculate the conditional cost of this read */
-				Vector4d rCost = PTUnrooted::dot_product_scaled(model->Pr(vc), ptu.cost(cNode, j));
-				/* reset the probabilities of the base distribution */
-				basePrMap = (-rCost).array().exp();
+				/* calculate the conditional loglik of this read */
+				Vector4d rLoglik = PTUnrooted::dot_product_scaled(model->Pr(vc), ptu.loglik(cNode, j));
+				/* normalize and reset the probabilities of the base distribution */
+				rLoglik.array() -= rLoglik.maxCoeff();
+				basePrMap = rLoglik.array().exp();
 				base_dist.param(BaseParam(basePr));
 				seq.push_back(abc->decode(base_dist(rng)));
 			}

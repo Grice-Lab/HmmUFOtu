@@ -1,6 +1,6 @@
 /*
  * PTU_IO_test4.cpp
- *  Load PTUnrooted and test the tree costs
+ *  Load PTUnrooted and test the tree logliks
  *  Created on: Dec 16, 2016
  *      Author: zhengqi
  */
@@ -17,8 +17,8 @@ using namespace EGriceLab;
 
 int main(int argc, const char* argv[]) {
 	if(argc != 3) {
-		cerr << "Test tree cost on every node on a saved PTUnrooted tree" << endl;
-		cerr << "Usage:  " << argv[0] << " PTU-DB-IN COST-OUT" << endl;
+		cerr << "Test tree loglik on every node on a saved PTUnrooted tree" << endl;
+		cerr << "Usage:  " << argv[0] << " PTU-DB-IN LOGLIK-OUT" << endl;
 		return 1;
 	}
 
@@ -45,16 +45,16 @@ int main(int argc, const char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	double maxCostDiff = 0;
-	double prevCost = 0;
+	double maxLoglikDiff = 0;
+	double prevLoglik = 0;
 	for(size_t i = 0; i < tree.numNodes(); ++i) {
 		tree.setRoot(i);
-		double cost = tree.treeCost();
-		out << "Tree cost at node " << i << " isLeaf? " << tree.getRoot()->isLeaf() << " cost: " << cost << endl;
-		if(prevCost != 0 && ::abs(cost - prevCost) > maxCostDiff)
-			maxCostDiff = ::abs(cost - prevCost);
-		prevCost = cost;
+		double loglik = tree.treeLoglik();
+		out << "Tree loglik at node " << i << " isLeaf? " << tree.getRoot()->isLeaf() << " loglik: " << loglik << endl;
+		if(prevLoglik != 0 && ::abs(loglik - prevLoglik) > maxLoglikDiff)
+			maxLoglikDiff = ::abs(loglik - prevLoglik);
+		prevLoglik = loglik;
 	}
-	out << "Max cost difference of all nodes: " << maxCostDiff << endl;
-	out << "Max relative cost difference of all nodes: " << maxCostDiff / prevCost << endl;
+	out << "Max loglik difference of all nodes: " << maxLoglikDiff << endl;
+	out << "Max relative loglik difference of all nodes: " << maxLoglikDiff / prevLoglik << endl;
 }

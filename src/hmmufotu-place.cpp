@@ -30,9 +30,9 @@ void printUsage(const string& progName) {
 	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <MSA-INFILE> [options]" << endl
 		 << "MSA-INFILE : multiple-sequence aligned input" << endl
 		 << "Options:    -o  FILE           : write output to FILE instead of stdout" << endl
-		 << "            -T  TAXA-FILE      : in addition to the placement output, write the taxa summary table to TAXA-FILE" << endl
-		 << "            -d|--pdist         : maximum p-dist between placed read and observed leaves during the optimal search" << endl
-		 << "            -q                 : minimum Q-value (negative log10 of the error) required for a read placement [" << DEFAULT_MIN_Q << "]"
+		 << "            -T  FILE           : in addition to the placement output, write the taxa summary table to TAXA-FILE" << endl
+		 << "            -d|--pdist  DBL    : maximum p-dist between placed read and observed leaves during the optimal search [" << DEFAULT_MAX_PDIST << "]" << endl
+		 << "            -q  DBL            : minimum Q-value (negative log10 of the error) required for a read placement [" << DEFAULT_MIN_Q << "]" << endl
 		 << "            -v  FLAG           : enable verbose information" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
 			continue;
 		}
 
-		double minCost = EGriceLab::inf;
+		double maxLoglik = EGriceLab::infV;
 		PTUnrooted::PTUNodePtr bestNode;
 		/* Use a LA (leaf-ancestor) search algorithm */
 		vector<PTUnrooted::PTUNodePtr> leafHits;
@@ -168,13 +168,13 @@ int main(int argc, char* argv[]) {
 				PTUnrooted subtree = ptu.copySubTree(node, node->getParent());
 				subtree.placeSeq(seq, subtree.getNode(1), subtree.getNode(0), start, end);
 				double vn = subtree.getBranchLength(subtree.getNode(subtree.numNodes() - 2), subtree.getNode(subtree.numNodes() - 1));
-				double tc = subtree.treeCost(start, end);
+				double tc = subtree.treeLoglik(start, end);
 
 //				infoLog << "Read " << read.getId() << " placed at node " << node->getId() <<
 //						" new branch length: " << vn
 //						<< " cost: " << tc << endl;
-				if(tc < minCost) {
-					minCost = tc;
+				if(tc > maxLoglik) {
+					maxLoglik = tc;
 					bestNode = node;
 				}
 				node = node->getParent();

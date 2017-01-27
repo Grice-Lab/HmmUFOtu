@@ -79,16 +79,16 @@ int main(int argc, const char* argv[]) {
 	cerr << "DNA model set" << endl;
 
 	clock_t t1 = clock();
-	tree.initInCost();
-	tree.initLeafCost();
+	tree.initInLoglik();
+	tree.initLeafLoglik();
 	clock_t t2 = clock();
-	cerr << "Tree cost initiated, total eclipsed time: " << (t2 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
+	cerr << "Tree loglik initiated, total eclipsed time: " << (t2 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 
-	tree.cost(tree.getRoot());
-	double treeCost = tree.treeCost();
+	tree.loglik(tree.getRoot());
+	double treeLoglik = tree.treeLoglik();
 	clock_t t3 = clock();
 	cerr << "Tree evaluated, total eclipsed time: " << (t3 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
-	cerr << "Final tree cost: " << treeCost << endl;
+	cerr << "Final tree loglik: " << treeLoglik << endl;
 
 	if(tree.save(out))
 		cerr << "Tree saved successfully" << endl;
