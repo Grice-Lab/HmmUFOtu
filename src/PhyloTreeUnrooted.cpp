@@ -5,9 +5,11 @@
  *      Author: zhengqi
  */
 
+#include <sstream>
 #include <stack>
 #include <boost/unordered_set.hpp>
 #include <cfloat>
+#include <cctype>
 #include <cmath>
 #include <algorithm>
 #include "HmmUFOtuConst.h"
@@ -24,6 +26,14 @@ using Eigen::Matrix4Xd;
 const double PhyloTreeUnrooted::MAX_COST_EXP = -DBL_MIN_EXP / 2; /* use half of the DBL_MIN_EXP to avoid numeric-underflow */
 const double PhyloTreeUnrooted::INVALID_COST = -1;
 const double PhyloTreeUnrooted::BRANCH_EPS = 1e-6;
+
+const string PhyloTreeUnrooted::KINDOM_PREFIX = "k__";
+const string PhyloTreeUnrooted::PHYLUM_PREFIX = "p__";
+const string PhyloTreeUnrooted::CLASS_PREFIX = "c__";
+const string PhyloTreeUnrooted::ORDER_PREFIX = "o__";
+const string PhyloTreeUnrooted::FAMILY_PREFIX = "f__";
+const string PhyloTreeUnrooted::GENUS_PREFIX = "g__";
+const string PhyloTreeUnrooted::SPECIES_PREFIX = "s__";
 
 istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
 	char* buf = NULL;
@@ -131,7 +141,7 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 
 }
 
-long PhyloTreeUnrooted::loadMSA(const MSA& msa) {
+size_t PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 	const DegenAlphabet* abc = msa.getAbc();
 	if(abc != SeqCommons::nuclAbc) {
 		cerr << "PhyloTreeUnrooted can only read in MSA in dna alphabet" << endl;
@@ -152,7 +162,7 @@ long PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 			nameIdx[name] = i;
 		}
 	}
-	long assigned = 0;
+	size_t assigned = 0;
 	/* assign seq to each nodes of the tree, ignore nodes cannot be found (unnamed, etc) */
 	for(vector<PTUNodePtr>::iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt) {
 		assert(nodeIt - id2node.begin() == (*nodeIt)->id);
@@ -165,6 +175,27 @@ long PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 	}
 	return assigned;
 }
+
+istream& PTUnrooted::loadAnnotation(istream& in) {
+	cerr << "Loading tree annotation" << endl;
+	string line, name, anno;
+	boost::unordered_map<string, string> name2anno;
+	while(getline(in, line)) {
+		istringstream lineIn(line);
+		std::getline(lineIn, name, ANNO_FIELD_SEP);
+		std::getline(lineIn, anno, ANNO_FIELD_SEP);
+		name2anno[name] = anno;
+	}
+
+	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
+		boost::unordered_map<string, string>::const_iterator result = name2anno.find((*node)->name);
+		if(result != name2anno.end())
+			(*node)->name = result->second;
+	}
+
+	return in;
+}
+
 
 PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRoot) {
 	if(newRoot == NULL || newRoot == root) /* no need to set */
@@ -716,6 +747,28 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 //	n->annoDist = node2length[r][n] / 2;
 
 	return *this;
+}
+
+string& PhyloTreeUnrooted::formatTaxaName(string& taxa) {
+	if(taxa.empty())
+		return taxa;
+	/* remove white spaces */
+	taxa.erase(std::remove_if(taxa.begin(), taxa.end(), ::isspace), taxa.end());
+
+	/* append tailing ; if necessary */
+	if(taxa.back() != ';')
+		taxa.push_back(';');
+
+	/* remove empty taxa */
+	StringUtils::removeAll(taxa, KINDOM_PREFIX + ';');
+	StringUtils::removeAll(taxa, PHYLUM_PREFIX + ';');
+	StringUtils::removeAll(taxa, CLASS_PREFIX + ';');
+	StringUtils::removeAll(taxa, ORDER_PREFIX + ';');
+	StringUtils::removeAll(taxa, FAMILY_PREFIX + ';');
+	StringUtils::removeAll(taxa, GENUS_PREFIX + ';');
+	StringUtils::removeAll(taxa, SPECIES_PREFIX + ';');
+
+	return taxa;
 }
 
 } /* namespace EGriceLab */

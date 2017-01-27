@@ -1,6 +1,6 @@
 /*
  * PTU_test3.cpp
- *  test PTUnrooted evaluating at all posible nodes
+ *  build a PTUnrooted tree index that pre-evaluating at all possible nodes
  *  Created on: Dec 8, 2016
  *      Author: zhengqi
  */
@@ -18,34 +18,39 @@ using namespace std;
 using namespace EGriceLab;
 
 int main(int argc, const char* argv[]) {
-	if(argc != 5) {
+	if(argc != 6) {
 		cerr << "Evaluate a tree all possible nodes" << endl;
-		cerr << "Usage:  " << argv[0] << " TREE-INFILE MSA-INFILE GTR-FILE OUTFILE" << endl;
+		cerr << "Usage:  " << argv[0] << " TREE-INFILE ANNO-INFILE MSA-INFILE GTR-FILE OUTFILE" << endl;
 		return -1;
 	}
 
 	ENABLE_INFO();
 
 	ifstream in(argv[1]);
-	ifstream msaIn(argv[2]);
-	ifstream gtrIn(argv[3]);
-	ofstream out(argv[4], ios_base::out | ios_base::binary);
+	ifstream annoIn(argv[2]);
+	ifstream msaIn(argv[3]);
+	ifstream gtrIn(argv[4]);
+	ofstream out(argv[5], ios_base::out | ios_base::binary);
 
 	if(!in.is_open()) {
 		cerr << "Unable to open " << argv[1] << endl;
-		return -1;
+		return EXIT_FAILURE;
+	}
+	if(!annoIn.is_open()) {
+		cerr << "Unable to open " << argv[2]<< endl;
+		return EXIT_FAILURE;
 	}
 	if(!msaIn.is_open()) {
-		cerr << "Unable to open " << argv[2] << endl;
-		return -1;
+		cerr << "Unable to open " << argv[3] << endl;
+		return EXIT_FAILURE;
 	}
 	if(!gtrIn.is_open()) {
-		cerr << "Unable to open " << argv[3] << endl;
-		return -1;
+		cerr << "Unable to open " << argv[4] << endl;
+		return EXIT_FAILURE;
 	}
 	if(!out.is_open()) {
-		cerr << "Unable to open " << argv[4] << endl;
-		return -1;
+		cerr << "Unable to open " << argv[5] << endl;
+		return EXIT_FAILURE;
 	}
 
 	MSA msa;
@@ -70,15 +75,26 @@ int main(int argc, const char* argv[]) {
 	long nRead = tree.loadMSA(msa);
 	if(nRead == -1) {
 		cerr << "Unable to read PhyloTree" << endl;
-		return 1;
+		return EXIT_FAILURE;
 	}
 	else if(nRead != nLeaves) {
 		cerr << "Loaded in " << nRead << " nodes from MSA but expecting " << nLeaves << " leaves in the PhyloTree " << endl;
-		return 1;
+		return EXIT_FAILURE;
 	}
 	else {
 		infoLog << "MSA loaded successfully, read in " << nRead << " nodes with " << tree.numAlignSites() << " numSites" << endl;
 	}
+
+	tree.loadAnnotation(annoIn);
+	if(annoIn.bad()) {
+		cerr << "Failed to load annotation " << argv[2] << endl;
+		return EXIT_FAILURE;
+	}
+	else
+		cerr << "Taxa annotation loaded" << endl;
+
+	tree.formatName();
+	cerr << "Tree node names formatted" << endl;
 
 	DNASubModel* model = DNASubModelFactory::createModel("GTR");
 	gtrIn >> *model;

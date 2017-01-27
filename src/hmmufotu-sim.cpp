@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_SUCCESS;
 	}
 
-	if(cmdOpts.numMainOpts() != 1) {
+	if(!(cmdOpts.numMainOpts() == 1 && cmdOpts.hasOpt("-o") && cmdOpts.hasOpt("-N"))) {
 		cerr << "Error:" << endl;
 		printUsage(argv[0]);
 		return EXIT_FAILURE;
@@ -204,9 +204,9 @@ int main(int argc, char* argv[]) {
 		infoLog << "Setting branch sampling weights ..." << endl;
 		for(size_t i = 0; i < numNodes; ++i)
 			nodeWeight(i) = ptu.treeCost(ptu.getNode(i));
-		/* normalize nodeWeight */
-		nodeWeight.array() -= nodeWeight.minCoeff();
-		nodeWeight = (-nodeWeight).array().exp().eval();
+		/* normalize nodeWeight at log scale */
+		nodeWeight = nodeWeight.maxCoeff() / nodeWeight.array();
+//		nodeWeight = (-nodeWeight).array().exp().eval();
 	}
 	else
 		nodeWeight.setOnes(); /* use all equal weights */
@@ -253,7 +253,7 @@ int main(int argc, char* argv[]) {
 
 		/* simulate a read at [start, end] */
 		sprintf(rid, "r%d", n);
-		sprintf(desc, "ParentID=%ld;ChildID=%ld;ParentName=%s;ChildName=%s;ChildDist=%f;Start=%d;End=%d;Len=%d;",
+		sprintf(desc, "ID=%ld->%ld;Name=\"%s->%s\";ChildDist=%f;Start=%d;End=%d;Len=%d;",
 				pNode->getId(), cNode->getId(), pNode->getName().c_str(), cNode->getName().c_str(),
 				vc, start, end, end - start + 1);
 

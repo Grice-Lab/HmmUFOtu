@@ -109,5 +109,18 @@ bool StringUtils::containsAny(const string& str, const string& query) {
 	return false;
 }
 
+string& StringUtils::removeAll(string& str, const string& pattern) {
+	string::size_type n = pattern.length();
+	for(string::size_type i = str.find(pattern); i!= string::npos; i = str.find(pattern))
+		str.erase(i, n);
+	return str;
+}
+
+string& StringUtils::removeEnd(string& str, const string& suffix) {
+	if(str.rfind(suffix) == str.length() - suffix.length())
+		str.erase(str.end() - suffix.length(), str.end());
+	return str;
+}
+
 
 } /* namespace EGriceLab */

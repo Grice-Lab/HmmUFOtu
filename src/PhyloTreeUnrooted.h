@@ -349,7 +349,16 @@ public:
 	Matrix4Xd getBranchCost(const PTUNodePtr& u, const PTUNodePtr& v) const;
 
 	/** Load sequences from MSA into this this */
-	long loadMSA(const MSA& msa);
+	size_t loadMSA(const MSA& msa);
+
+	/** Load tab-delimited annotation file of tree nodes into this tree */
+	istream& loadAnnotation(istream& in);
+
+	/** format node names to exclude white spaces and unprintable characters */
+	void formatName();
+
+	/** format node annotations to exclude white spaces and unprintable characters */
+	void formatAnnotation();
 
 	/**
 	 * Set the underlying DNA Sub Model as a copy of given model
@@ -718,6 +727,13 @@ public:
 	/* return dot product between two vectors, scale the second vector if necessary */
 	static double dot_product_scaled(const Vector4d& P, const Vector4d& V);
 
+	/**
+	 * format taxonomy name, removes white spaces and unnecessary unnamed taxa prefix
+	 * @param taxa  taxa name to be formated
+	 * @return  the formated name
+	 */
+	static string& formatTaxaName(string& taxa);
+
 	/* member fields */
 private:
 	int csLen; /* number of aligned sites */
@@ -738,6 +754,14 @@ public:
 	static const double INVALID_COST;
 
 	static const double BRANCH_EPS;
+	static const char ANNO_FIELD_SEP = '\t';
+	static const string KINDOM_PREFIX;
+	static const string PHYLUM_PREFIX;
+	static const string CLASS_PREFIX;
+	static const string ORDER_PREFIX;
+	static const string FAMILY_PREFIX;
+	static const string GENUS_PREFIX;
+	static const string SPECIES_PREFIX;
 };
 
 inline size_t PTUnrooted::numEdges() const {
@@ -903,6 +927,16 @@ inline double PTUnrooted::dot_product_scaled(const Vector4d& P, const Vector4d& 
 	double scale = minV != inf && minV > MAX_COST_EXP ? minV - MAX_COST_EXP : 0;
 
 	return -::log(P.dot(((-V).array() + scale).exp().matrix())) + scale;
+}
+
+inline void PTUnrooted::formatName() {
+	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
+		formatTaxaName((*node)->name);
+}
+
+inline void PTUnrooted::formatAnnotation() {
+	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
+		formatTaxaName((*node)->anno);
 }
 
 } /* namespace EGriceLab */

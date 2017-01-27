@@ -18,8 +18,8 @@ SeqIO::SeqIO(const string& filename, const string& alphabet, const string& forma
 		throw invalid_argument("Unsupported file format '" + format + "'");
 	else { } /* not possible */
 	/* register exceptions */
-	in.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-	out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
+	in.exceptions(std::ifstream::badbit);
+	out.exceptions(std::ofstream::badbit);
 
 	/* open files */
 	if(mode == READ)

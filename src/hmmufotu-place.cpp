@@ -21,7 +21,7 @@ static const string DEFAULT_FMT = "fasta";
 static const string ALPHABET = "dna";
 static const double DEFAULT_MAX_PDIST = 0.03;
 static const int DEFAULT_MIN_Q = 0;
-//static const string TBL_HEADER = "id\tdesc\tbranch_id\tbranch_name\tphylogenetic_annotation\n";
+static const string TBL_HEADER = "id\tdesc\tbranch_id\tbranch_name\tphylogenetic_annotation";
 
 /**
  * Print the usage information
@@ -121,6 +121,8 @@ int main(int argc, char* argv[]) {
 
 	const int csLen = ptu.numAlignSites();
 
+	out << TBL_HEADER << endl;
+
 	/* place each seq */
 	while(seqIn.hasNext()) {
 		const PrimarySeq& read = seqIn.nextSeq();
@@ -145,7 +147,7 @@ int main(int argc, char* argv[]) {
 			continue;
 		}
 
-		double minCost = DBL_MAX;
+		double minCost = EGriceLab::inf;
 		PTUnrooted::PTUNodePtr bestNode;
 		/* Use a LA (leaf-ancestor) search algorithm */
 		vector<PTUnrooted::PTUNodePtr> leafHits;
@@ -155,6 +157,8 @@ int main(int argc, char* argv[]) {
 				leafHits.push_back(node);
 		}
 		infoLog << "Found " << leafHits.size() << " leaf nodes for " << read.getId() << endl;
+		if(leafHits.empty())
+			continue;
 
 		NodeSet nodeSeen;
 		for(vector<PTUnrooted::PTUNodePtr>::const_iterator it = leafHits.begin(); it != leafHits.end(); ++it) {
@@ -166,18 +170,19 @@ int main(int argc, char* argv[]) {
 				double vn = subtree.getBranchLength(subtree.getNode(subtree.numNodes() - 2), subtree.getNode(subtree.numNodes() - 1));
 				double tc = subtree.treeCost(start, end);
 
-				infoLog << "Read " << read.getId() << " placed at node " << node->getId() <<
-						" new branch length: " << vn
-						<< " cost: " << tc << endl;
+//				infoLog << "Read " << read.getId() << " placed at node " << node->getId() <<
+//						" new branch length: " << vn
+//						<< " cost: " << tc << endl;
 				if(tc < minCost) {
 					minCost = tc;
 					bestNode = node;
 				}
-			}
+				node = node->getParent();
+			} /* end of this cascade */
 		} /* end each leaf */
 		out << read.getId() << "\t" << read.getDesc() << "\t"
-			<< (bestNode->getParent()->getId() + "->" + bestNode->getId()) << "\t"
-			<< (bestNode->getParent()->getId() + "->" + bestNode->getName()) << "\t"
+			<< bestNode->getParent()->getId() << "->" << bestNode->getId() << "\t"
+			<< bestNode->getParent()->getName() << "->" << bestNode->getName() << "\t"
 			<< "" << endl;
 	}
 }
