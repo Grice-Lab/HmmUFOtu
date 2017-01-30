@@ -33,14 +33,15 @@ static const int DEFAULT_NSEED = 1;
  */
 void printUsage(const string& progName) {
 	cerr << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
-		 << "Options:    MSA-FILE       : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
-		 << "            -o FILE        : write output to FILE instead of stdout" << endl
+		 << "MSA-FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
+		 << "Options:    -o FILE        : write output to FILE instead of stdout" << endl
 		 << "            -qM INT[>=2]   : number of Dirichlet Mixture model components for match state emissions [" << DEFAULT_QM << "]" << endl
 		 << "            -symfrac       : conservation threshold for an MSA site to be considered as a Match state [" << DEFAULT_SYMFRAC << "]" << endl
 		 << "            --max-it INT   : maximum iteration allowed in gradient descent training, 0 for no limit [" << MAX_ITER << "]" << endl
 		 << "            --pri-rate DBL : adjust the sequence weights so the prior information is roughly this ratio in training [" << DEFAULT_PRI_RATE << "]" << endl
 		 << "            -s|--seed INT  : random seed used in Dirichlet Mixture model training (-qM > 1) for debug purpose" << endl
-		 << "            -n number of different random initiation in Dirichlet Mixture model training [" << DEFAULT_NSEED << "]" << endl
+		 << "            -n  INT        : number of different random seeds in Dirichlet Mixture model training [" << DEFAULT_NSEED << "]" << endl
+		 << "            -v  FLAG       : enable verbose information"
 		 << "            -h|--help      : print this help and exit" << endl;
 }
 
@@ -66,14 +67,14 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.numMainOpts() != 1) {
 		cerr << "Error:" << endl;
 		printUsage(argv[0]);
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	infn = cmdOpts.getMainOpt(0);
 	in.open(infn.c_str());
 	if(!in.is_open()) {
 		cerr << "Unable to open '" << cmdOpts.getMainOpt(0) << "'" << endl;
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	if(cmdOpts.hasOpt("-o")) {
@@ -82,7 +83,7 @@ int main(int argc, char* argv[]) {
 		of.open(outfn.c_str());
 		if(!of.is_open()) {
 			cerr << "Unable to write to '" << outfn << "'" << endl;
-			return -1;
+			return EXIT_FAILURE;
 		}
 	}
 
@@ -92,28 +93,28 @@ int main(int argc, char* argv[]) {
 		qM = ::atoi(cmdOpts.getOpt("-qM").c_str());
 	if(!(qM > 1 && qM <= MAX_NUM_COMPO)) {
 		cerr << "-qM must between 2 and " << MAX_NUM_COMPO << endl;
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	if(cmdOpts.hasOpt("-symfrac"))
 		symfrac = ::atof(cmdOpts.getOpt("-symfrac").c_str());
 	if(!(symfrac >= 0 && symfrac <= 1)) {
 		cerr << "-symfrac must between 0 and 1" << endl;
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	if(cmdOpts.hasOpt("--pri-rate"))
 		priRate = ::atof(cmdOpts.getOpt("--pri-rate").c_str());
 	if(!( priRate > 0 && priRate <= 1 )) {
 		cerr << "--rate must be in (0, 1]" << endl;
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	if(cmdOpts.hasOpt("--max-it"))
 		maxIter = ::atoi(cmdOpts.getOpt("--max-it").c_str());
 	if(maxIter < 0) {
 		cerr << "--max-it must be a non-negative integer" << endl;
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	if(cmdOpts.hasOpt("-s"))
@@ -124,6 +125,9 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-n"))
 		nSeed = ::atoi(cmdOpts.getOpt("-n").c_str());
 
+	if(cmdOpts.hasOpt("-v"))
+		ENABLE_INFO();
+
 	/* guess input format */
 	if(StringUtils::endsWith(infn, ".fasta") || StringUtils::endsWith(infn, ".fas")
 		|| StringUtils::endsWith(infn, ".fa") || StringUtils::endsWith(infn, ".fna"))
@@ -132,31 +136,38 @@ int main(int argc, char* argv[]) {
 		fmt = "msa";
 	else {
 		cerr << "Unrecognized MSA file format" << endl;
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	/* set random seed */
 	srand(seed);
+
 	/* Load data */
 	MSA msa;
 	if(fmt == "msa") { /* binary file provided */
 		ifstream in(infn.c_str());
 		msa.load(in);
+		if(!in.good()) {
+			cerr << "Unable to load MSA from file '" << infn << "'" << endl;
+			return EXIT_FAILURE;
+		}
 	}
 	else
 		msa.loadMSAFile("dna", infn, fmt); /* always read DNA MSA file */
 
-	cerr << "MSA loaded" << endl;
-	msa.prune(); /* prune MSA */
-	cerr << "MSA pruned" << endl;
+	infoLog << "MSA loaded" << endl;
+
+	assert(msa.getAlphabet() == "dna");
+
+	if(!msa.isPruned()) {
+		msa.prune(); /* prune MSA if nes*/
+		infoLog << "MSA pruned" << endl;
+	}
+
 	double effN = 1 / priRate;
 	msa.sclaleWeight(effN / msa.getNumSeq());
-	cerr << "MSA weight scaled" << endl;
+	infoLog << "MSA total weight scaled as: " << effN << endl;
 
-	if(msa.getAlphabet() != "dna") {
-		cerr << "Expecting MSA in 'DNA' alphabet but found " << msa.getAlphabet() << endl;
-		return -1;
-	}
 	const int K = msa.getAbc()->getSize();
 	assert (K == 4);
 	/* construct an HMM prior */
@@ -164,13 +175,8 @@ int main(int argc, char* argv[]) {
 	/* set the # of parameters */
 	pri.setDims(K, qM);
 	pri.setMaxIter(maxIter);
-	pri.setAbsEpsCost(0);
-	pri.setRelEpsCost(1e-6);
-	pri.setAbsEpsParams(effN * 1e-4);
-//	pri.setAbsEpsParams(0);
-//	pri.setRelEpsParams(1e-6);
 
-	cerr << "Dirichlet model based HmmUFOtu prior initiated" << endl;
+	infoLog << "Dirichlet prior model initiated" << endl;
 
 	const unsigned L = msa.getCSLen();
 	const unsigned N = msa.getNumSeq();
@@ -202,14 +208,11 @@ int main(int argc, char* argv[]) {
 	for(int j = 0; j < L - 1; ++j) {
 		bool matchFlag = msa.symWFrac(j) >= symfrac;
 		for(int i = 0; i < N; ++i) {
-//			cerr << "seqStart:" << msa->seqStart(i) << " seqEnd:" << msa->seqEnd(i) << endl;
-//			if(j < msa->seqStart(i) || j > msa->seqEnd(i)) /* ignore 5' and 3' hanging gaps */
-//				continue;
 			double w = msa.getSeqWeight(i);
 			bool resFlag = msa.encodeAt(i, j) >= 0;
 			if(!matchFlag && !resFlag) /* ignore phantom positions */
 				continue;
-			/* search to next non-phentome position */
+			/* search to next non-phantom position */
 			bool matchFlagN = false;
 			bool resFlagN = false;
 			int k = j + 1;
@@ -256,26 +259,22 @@ int main(int argc, char* argv[]) {
 			cDT++;
 	} /* end each position */
 
-//	cerr << "cMT:" << cMT << endl;
-//	cerr << "cIT:" << cIT << endl;
-//	cerr << "cDT:" << cDT << endl;
 	dataMT.conservativeResize(3, cMT);
 	dataIT.conservativeResize(2, cIT);
 	dataDT.conservativeResize(2, cDT);
-	cerr << "Transition training date prepared" << endl;
+	infoLog << "Transition training data prepared" << endl;
 
 	/* train DM models */
-
 	/* iteratively train ME */
 	double costME = inf;
 	int bestIdx = 0;
 
 	/* make a copy of the original model */
 	DirichletMixture model(pri.dmME);
+	infoLog << "Training Match Emission model" <<endl;
 	for(int i = 1; i <= nSeed; ++i) {
-		cerr << "Training Match Emission model on random seed " << i << endl;
 		double cost = model.trainML(dataME);
-		cerr << "seed " << i << " trained, final cost: " << cost << endl;
+		cerr << "  seed " << i << " trained, cost: " << cost << endl;
 		if(cost < costME) { // a better model found
 			pri.dmME = model; // copy back
 			bestIdx = i;
@@ -283,24 +282,24 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	if(!isnan(costME))
-		cerr << "Best Match Emission found at seed " << bestIdx << endl;
+		infoLog << "Best Match Emission model found at seed " << bestIdx << endl;
 	else {
-		cerr << "Unable to train the match emission model" << endl;
-		return -1;
+		cerr << "Unable to train Match Emission model" << endl;
+		return EXIT_FAILURE;
 	}
 
 	double costIE = pri.dmIE.trainML(dataIE);
-	cerr << "Insert Emission model trained" << endl;
+	infoLog << "Insert Emission model trained" << endl;
 
 	double costMT = pri.dmMT.trainML(dataMT);
-	cerr << "Match Transition model trained" << endl;
+	infoLog << "Match Transition model trained" << endl;
 
 	double costIT = pri.dmIT.trainML(dataIT);
-	cerr << "Insert Transition model trained" << endl;
+	infoLog << "Insert Transition model trained" << endl;
 
 	double costDT = pri.dmDT.trainML(dataDT);
-	cerr << "Delete Transition model trained" << endl;
+	infoLog << "Delete Transition model trained" << endl;
 
 	/* output */
-	out << pri << endl;
+	out << pri;
 }

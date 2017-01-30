@@ -26,6 +26,15 @@ using Math::DirichletDensity;
 using Math::DirichletMixture;
 
 struct BandedHMMP7Prior {
+	/* constructors */
+	BandedHMMP7Prior() {
+		setMaxIter(DEFAULT_MAX_ITER);
+		setAbsEpsCost(DEFAULT_ABS_EPS_COST);
+		setRelEpsCost(DEFAULT_REL_EPS_COST);
+		setAbsEpsParams(DEFAULT_ABS_EPS_COST);
+		setRelEpsParams(DEFAULT_REL_EPS_COST);
+	}
+
 	/* member fields */
 	DirichletMixture dmME; /* mixture for match emissions */
 	DirichletDensity dmIE; /* density for insertion emissions */
@@ -48,6 +57,13 @@ struct BandedHMMP7Prior {
 	friend istream& operator>>(istream& in, BandedHMMP7Prior& pri);
 	/** write content into output */
 	friend ostream& operator<<(ostream& out, const BandedHMMP7Prior& pri);
+
+	/* static members */
+	static const int DEFAULT_MAX_ITER = 0;
+	static const double DEFAULT_ABS_EPS_COST;
+	static const double DEFAULT_REL_EPS_COST;
+	static const double DEFAULT_ABS_EPS_PARAMS;
+	static const double DEFAULT_REL_EPS_PARAMS;
 };
 
 inline istream& operator>>(istream& in, BandedHMMP7Prior& pri) {
