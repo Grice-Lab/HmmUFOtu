@@ -270,6 +270,7 @@ public:
 			return neighbors.size();
 		}
 
+
 	private:
 		/**
 		 * save this node information but not its edges to a binary file
@@ -359,6 +360,11 @@ public:
 
 	/** format node annotations to exclude white spaces and unprintable characters */
 	void formatAnnotation();
+
+	/**
+	 * annotate every node of this tree by checking their ancestors' names
+	 */
+	void annotate();
 
 	/**
 	 * Set the underlying DNA Sub Model as a copy of given model
@@ -564,7 +570,11 @@ public:
 	vector<Matrix4d> getModelTraningSetGoldman() const;
 
 	vector<PTUNodePtr> getLeafHits(const DigitalSeq& seq, double maxPDist,
-			int start = 0, int end = csLen - 1) const;
+			int start, int end) const;
+
+	vector<PTUNodePtr> getLeafHits(const DigitalSeq& seq, double maxPDist) const {
+		return getLeafHits(seq, maxPDist, 0, csLen - 1);
+	}
 
 	/**
 	 * get estimated base frequency (pi) using this tree
@@ -736,6 +746,8 @@ public:
 	 * @return  the formated name
 	 */
 	static string& formatTaxaName(string& taxa);
+
+	static bool isCanonicalName(const string& taxa);
 
 	/* member fields */
 private:
@@ -940,6 +952,17 @@ inline void PTUnrooted::formatName() {
 inline void PTUnrooted::formatAnnotation() {
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
 		formatTaxaName((*node)->anno);
+}
+
+inline bool PhyloTreeUnrooted::isCanonicalName(const string& taxa) {
+	return !taxa.empty() &&
+			(StringUtils::startsWith(taxa, KINDOM_PREFIX) ||
+			StringUtils::startsWith(taxa, PHYLUM_PREFIX) ||
+			StringUtils::startsWith(taxa, CLASS_PREFIX) ||
+			StringUtils::startsWith(taxa, ORDER_PREFIX) ||
+			StringUtils::startsWith(taxa, FAMILY_PREFIX) ||
+			StringUtils::startsWith(taxa, GENUS_PREFIX) ||
+			StringUtils::startsWith(taxa, SPECIES_PREFIX));
 }
 
 } /* namespace EGriceLab */

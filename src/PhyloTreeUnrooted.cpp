@@ -63,6 +63,7 @@ istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
 	return in;
 }
 
+
 ostream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::save(ostream& out) const {
 
 	/* get aux length */
@@ -778,6 +779,21 @@ vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHits(const DigitalSeq& seq, do
 	}
 	return hits;
 }
+
+void PhyloTreeUnrooted::annotate() {
+	for(vector<PTUNodePtr>::const_iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt) {
+		/* find first named ancestor of this node, if any */
+		PTUNodePtr node(*nodeIt);
+		while(!node->isRoot() && !isCanonicalName(node->name)) {
+			(*nodeIt)->annoDist += getBranchLength(node, node->parent);
+			node = node->parent;
+		}
+		(*nodeIt)->anno = isCanonicalName(node->name) ? node->name + "Other;" : "other;";
+		cerr << "ID: " << (*nodeIt)->id << " Name: "
+			 << (*nodeIt)->name << " anno: " << (*nodeIt)->anno << " annoDist: " << (*nodeIt)->annoDist << endl;
+	}
+}
+
 
 } /* namespace EGriceLab */
 
