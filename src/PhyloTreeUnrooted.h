@@ -15,6 +15,7 @@
 #include <vector>
 #include <limits>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <cstddef>
 #include <cstdlib>
@@ -115,6 +116,8 @@ public:
 		const string& getName() const {
 			return name;
 		}
+
+		const string& getLabel() const;
 
 		const PTUNodePtr& getParent() const {
 			return parent;
@@ -792,6 +795,13 @@ inline size_t PTUnrooted::numLeaves() const {
 		if((*nodeIt)->isLeaf())
 			nLeaves++;
 	return nLeaves;
+}
+
+inline const std::string& PTUnrooted::PTUNode::getLabel() const {
+	string label;
+	std::ostringstream os(label);
+	os << anno << annoDist << ';';
+	return label;
 }
 
 inline Matrix4Xd PTUnrooted::loglik(const PTUNodePtr& node) {

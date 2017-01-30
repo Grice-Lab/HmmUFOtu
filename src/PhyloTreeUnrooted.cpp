@@ -742,7 +742,7 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 	r->anno = v->anno;
 	r->annoDist = v0 / 2;
 	n->anno = r->anno;
-	n->annoDist = r->annoDist + vn / 2;
+	n->annoDist = r->annoDist + vn;
 //	n->annoDist = node2length[r][n] / 2;
 
 	return *this;
