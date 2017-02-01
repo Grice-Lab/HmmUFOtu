@@ -97,7 +97,7 @@ ostream& DirichletDensity::print(ostream& out) const {
 	out << FILE_HEADER << endl;
 	out << "Training cost: " << getTrainingCost() << endl;
 	out << "K: " << getK() << endl;
-	out << "alpha: " << endl;
+	out << "alpha:" << endl;
 	out << alpha.transpose().format(FULL_FORMAT) << endl;
 	return out;
 }
