@@ -31,8 +31,8 @@ struct BandedHMMP7Prior {
 		setMaxIter(DEFAULT_MAX_ITER);
 		setAbsEpsCost(DEFAULT_ABS_EPS_COST);
 		setRelEpsCost(DEFAULT_REL_EPS_COST);
-		setAbsEpsParams(DEFAULT_ABS_EPS_COST);
-		setRelEpsParams(DEFAULT_REL_EPS_COST);
+		setAbsEpsParams(DEFAULT_ABS_EPS_PARAMS);
+		setRelEpsParams(DEFAULT_REL_EPS_PARAMS);
 	}
 
 	/* member fields */

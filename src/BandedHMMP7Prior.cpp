@@ -12,7 +12,7 @@ namespace EGriceLab {
 const double BandedHMMP7Prior::DEFAULT_ABS_EPS_COST = 0;
 const double BandedHMMP7Prior::DEFAULT_REL_EPS_COST = 1e-6;
 const double BandedHMMP7Prior::DEFAULT_ABS_EPS_PARAMS = 0;
-const double BandedHMMP7Prior::DEFAULT_REL_EPS_PARAMS = 1e-6;
+const double BandedHMMP7Prior::DEFAULT_REL_EPS_PARAMS = 1e-4;
 
 ostream& operator<<(ostream& out, const BandedHMMP7Prior& pri) {
 	out << "Match emission:" << endl << pri.dmME;
