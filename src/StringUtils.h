@@ -72,7 +72,14 @@ public:
 	 * @param @suffix  suffix of filename
 	 * @return a new string with directory path and suffix trimmed
 	 */
-	static string basename(string path, string suffix = "");
+	static string basename(string path, string suffix);
+
+	/**
+	 * Get basename of a path/filename, trim all leading path tailing suffix, if any
+	 * @param @path  pathname
+	 * @return a new string with directory path and suffix trimmed
+	 */
+	static string basename(string path);
 
 	/**
 	 * Remove leading and tailing quotes from a given string
