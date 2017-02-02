@@ -17,7 +17,6 @@ using namespace std;
 using namespace EGriceLab;
 
 /** default values */
-static const string DEFAULT_FMT = "fasta";
 static const string ALPHABET = "dna";
 static const double DEFAULT_MAX_PDIST = 0.03;
 static const int DEFAULT_MIN_Q = 0;
@@ -27,8 +26,9 @@ static const string TBL_HEADER = "id\tdesc\tbranch_id\tbranch_name\tphylogenetic
  * Print the usage information
  */
 void printUsage(const string& progName) {
-	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <MSA-INFILE> [options]" << endl
-		 << "MSA-INFILE : multiple-sequence aligned input" << endl
+	cerr << "Phylogenetic placement based taxonamy assignment for multiple-aligned sequences" << endl
+		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <MSA-INFILE> [options]" << endl
+		 << "MSA-FILE  FILE                 : multiple-sequence aligned input" << endl
 		 << "Options:    -o  FILE           : write output to FILE instead of stdout" << endl
 		 << "            -T  FILE           : in addition to the placement output, write the taxa summary table to TAXA-FILE" << endl
 		 << "            -d|--pdist  DBL    : maximum p-dist between placed read and observed leaves during the optimal search [" << DEFAULT_MAX_PDIST << "]" << endl
@@ -40,7 +40,7 @@ void printUsage(const string& progName) {
 int main(int argc, char* argv[]) {
 	/* variable declarations */
 	string infn, seqfn, outfn, taxafn;
-	string fmt = DEFAULT_FMT;
+	string fmt;
 	ifstream ptuIn;
 	ofstream of, taxaOut;
 

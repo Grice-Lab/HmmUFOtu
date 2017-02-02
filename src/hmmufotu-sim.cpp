@@ -39,7 +39,8 @@ static const double DEFAULT_MAX_LEN = 0;
  * Print the usage information
  */
 void printUsage(const string& progName) {
-	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <-o OUTPUT> <-N NUM-READS> [options]" << endl
+	cerr << "Generate simulated multiple-aligned sequences (MSA) using a pre-built HmmUFOtu database" << endl
+		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <-o OUTPUT> <-N NUM-READS> [options]" << endl
 		 << "Options:    -N  LONG           : number of reads to generate" << endl
 	     << "            -o  FILE           : write output to FILE instead of stdout" << endl
 		 << "            -f|--fmt  STRING   : output format [" << DEFAULT_FMT << "]" << endl

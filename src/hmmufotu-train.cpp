@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
+#include <ctime>
 #include "HmmUFOtu_common.h"
 #include "HmmUFOtu_hmm.h"
 #include "EGMath.h"
@@ -20,18 +21,26 @@ using namespace Eigen;
 using namespace EGriceLab;
 using namespace EGriceLab::Math;
 
+#ifndef DM_DATADIR
+#define DM_DATADIR "."
+#endif
+
 static const double DEFAULT_SYMFRAC = 0.5;
-static const string DEFAULT_DM_FILE = "gg_99_otus.dm";
+static const string DEFAULT_DM_FILE = "gg_97_otus.dm";
+static const string ALPHABET = "dna";
 
 /**
  * Print the usage information of this program
  */
 void printUsage(const string& progName) {
-	cerr << "Usage:    " << progName << "  <MSA-DB> [options]" << endl
-		 << "Options:    -o FILE          : write output to FILE instead of stdout" << endl
-		 << "            -symfrac DOUBLE  : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
-		 << "            -dm FILE         : use customized trained Dirichlet Model in FILE instead of build-in file " << endl
-		 << "            -h|--help        : print this message and exit" << endl;
+	cerr << "Train a Banded-HMM model used for HmmUFOtu program" << endl
+		 << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
+		 << "MSA-FILE  FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
+		 << "Options:    -o FILE              : write output to FILE instead of stdout" << endl
+		 << "            -f|--symfrac DOUBLE  : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
+		 << "            -dm FILE             : use customized trained Dirichlet Model in FILE instead of the build-in file " << endl
+		 << "            -v  FLAG             : enable verbose information" << endl
+		 << "            -h|--help            : print this message and exit" << endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -40,8 +49,8 @@ int main(int argc, char *argv[]) {
 	double symfrac = DEFAULT_SYMFRAC;
 	string infn;
 	string outfn;
-	string dmfn = DEFAULT_DM_FILE;
-	string line;
+	string fmt;
+	string dmfn = DM_DATADIR + string("/") + DEFAULT_DM_FILE;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -70,12 +79,14 @@ int main(int argc, char *argv[]) {
 			return EXIT_FAILURE;
 		}
 	}
-	ostream& out = outfn.empty() ? cout : of;
 
+	if(cmdOpts.hasOpt("-f"))
+		symfrac = atof(cmdOpts.getOptStr("-f"));
 	if(cmdOpts.hasOpt("-symfrac"))
-		symfrac = atof(cmdOpts.getOpt("-symfrac").c_str());
+		symfrac = atof(cmdOpts.getOptStr("-symfrac"));
 	if(!(symfrac >= 0 && symfrac <= 1)) {
-		cerr << "-symfrac must between 0 and 1" << endl;
+		cerr << "-f|--symfrac must between 0 and 1" << endl;
+		return EXIT_FAILURE;
 	}
 
 	if(cmdOpts.hasOpt("-dm"))
@@ -83,7 +94,21 @@ int main(int argc, char *argv[]) {
 	dmin.open(dmfn.c_str());
 	if(!dmin.is_open()) {
 		cerr << "Unable to open " << dmfn << endl;
-		return -1;
+		return EXIT_FAILURE;
+	}
+
+	if(cmdOpts.hasOpt("-v"))
+		ENABLE_INFO();
+
+	/* guess input format */
+	if(StringUtils::endsWith(infn, ".fasta") || StringUtils::endsWith(infn, ".fas")
+		|| StringUtils::endsWith(infn, ".fa") || StringUtils::endsWith(infn, ".fna"))
+		fmt = "fasta";
+	else if(StringUtils::endsWith(infn, ".msa"))
+		fmt = "msa";
+	else {
+		cerr << "Unrecognized MSA file format" << endl;
+		return EXIT_FAILURE;
 	}
 
 	/* Load in BandedHmmPrior for the HMM training */
@@ -91,27 +116,35 @@ int main(int argc, char *argv[]) {
 	dmin >> hmmPrior;
 	if(dmin.bad()) {
 		cerr << "Failed to read in the HMM Prior file " << endl;
-		cerr << hmmPrior << endl;
-		return -1;
+		return EXIT_FAILURE;
 	}
 
+	/* Load data */
 	MSA msa;
-	msa.load(in);
-	if(!in.good()) {
-		cerr << "Unable to load MSA database" << endl;
-		return -1;
+	if(fmt == "msa") { /* binary file provided */
+		ifstream in(infn.c_str());
+		msa.load(in);
+		if(!in.good()) {
+			cerr << "Unable to load MSA database" << endl;
+			return EXIT_FAILURE;
+		}
 	}
-	else
-		cerr << "MSA loaded, found " << msa.getNumSeq() << " X " << msa.getCSLen() << " alignments" << endl;
+	else {
+		long nLoad = msa.loadMSAFile(ALPHABET, infn, fmt);
+		if(nLoad <= 0) {
+			cerr << "Unable to load MSA file" << endl;
+			return EXIT_FAILURE;
+		}
+	}
+
+	infoLog << "MSA loaded, found " << msa.getNumSeq() << " X " << msa.getCSLen() << " aligned sequences" << endl;
+
+	ostream& out = outfn.empty() ? cout : of;
 
 	BandedHMMP7 hmm = BandedHMMP7::build(msa, symfrac, hmmPrior);
-
-	cerr << "HMM trained" << endl;
+	infoLog << "HMM profile trained" << endl;
 
 	out << hmm;
-
-	in.close();
-	if(!outfn.empty())
-	return 0;
+	infoLog << "HMM profile written" << endl;
 }
 

@@ -32,7 +32,8 @@ static const int DEFAULT_NSEED = 1;
  * Print the usage information of this program
  */
 void printUsage(const string& progName) {
-	cerr << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
+	cerr << "Train a HmmUFOtu prior model using Dirichlet Density/Mixture ML models" << endl
+		 << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
 		 << "MSA-FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
 		 << "Options:    -o FILE        : write output to FILE instead of stdout" << endl
 		 << "            -qM INT[>=2]   : number of Dirichlet Mixture model components for match state emissions [" << DEFAULT_QM << "]" << endl
@@ -41,7 +42,7 @@ void printUsage(const string& progName) {
 		 << "            --pri-rate DBL : adjust the sequence weights so the prior information is roughly this ratio in training [" << DEFAULT_PRI_RATE << "]" << endl
 		 << "            -s|--seed INT  : random seed used in Dirichlet Mixture model training (-qM > 1) for debug purpose" << endl
 		 << "            -n  INT        : number of different random seeds in Dirichlet Mixture model training [" << DEFAULT_NSEED << "]" << endl
-		 << "            -v  FLAG       : enable verbose information"
+		 << "            -v  FLAG       : enable verbose information" << endl
 		 << "            -h|--help      : print this help and exit" << endl;
 }
 
@@ -62,7 +63,7 @@ int main(int argc, char* argv[]) {
 	CommandOptions cmdOpts(argc, argv);
 	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
 		printUsage(argv[0]);
-		return 0;
+		return EXIT_SUCCESS;
 	}
 	if(cmdOpts.numMainOpts() != 1) {
 		cerr << "Error:" << endl;
@@ -79,7 +80,6 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-o")) {
 		outfn = cmdOpts.getOpt("-o");
-		cerr << "Re-directing output to " << outfn << endl;
 		of.open(outfn.c_str());
 		if(!of.is_open()) {
 			cerr << "Unable to write to '" << outfn << "'" << endl;
@@ -159,10 +159,8 @@ int main(int argc, char* argv[]) {
 
 	assert(msa.getAlphabet() == "dna");
 
-	if(!msa.isPruned()) {
-		msa.prune(); /* prune MSA if nes*/
-		infoLog << "MSA pruned" << endl;
-	}
+	msa.prune(); /* prune MSA if necessary*/
+	infoLog << "MSA pruned" << endl;
 
 	double effN = 1 / priRate;
 	msa.sclaleWeight(effN / msa.getNumSeq());
