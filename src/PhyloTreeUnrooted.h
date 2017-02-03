@@ -117,7 +117,7 @@ public:
 			return name;
 		}
 
-		const string& getLabel() const;
+		string getLabel() const;
 
 		const PTUNodePtr& getParent() const {
 			return parent;
@@ -374,13 +374,6 @@ public:
 	 */
 	void setModel(const DNASubModel& model) {
 		this->model.reset(model.clone());
-	}
-
-	/**
-	 * Set the underlying DNA Sub Model as the owner of this object
-	 */
-	void setModel(DNASubModel* model) {
-		this->model.reset(model);
 	}
 
 	/**
@@ -797,7 +790,7 @@ inline size_t PTUnrooted::numLeaves() const {
 	return nLeaves;
 }
 
-inline const std::string& PTUnrooted::PTUNode::getLabel() const {
+inline std::string PTUnrooted::PTUNode::getLabel() const {
 	string label;
 	std::ostringstream os(label);
 	os << anno << annoDist << ';';

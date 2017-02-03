@@ -16,14 +16,14 @@
 #include "HmmUFOtu_hmm.h"
 #include "EGMath.h"
 
+#ifndef DM_DATADIR
+#define DM_DATADIR "."
+#endif
+
 using namespace std;
 using namespace Eigen;
 using namespace EGriceLab;
 using namespace EGriceLab::Math;
-
-#ifndef DM_DATADIR
-#define DM_DATADIR "."
-#endif
 
 static const double DEFAULT_SYMFRAC = 0.5;
 static const string DEFAULT_DM_FILE = "gg_97_otus.dm";
@@ -142,9 +142,9 @@ int main(int argc, char *argv[]) {
 	ostream& out = outfn.empty() ? cout : of;
 
 	BandedHMMP7 hmm = BandedHMMP7::build(msa, symfrac, hmmPrior);
-	infoLog << "HMM profile trained" << endl;
+	infoLog << "Banded HMM profile trained" << endl;
 
 	out << hmm;
-	infoLog << "HMM profile written" << endl;
+	infoLog << "Banded HMM profile written" << endl;
 }
 

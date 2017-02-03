@@ -24,6 +24,12 @@ const std::string progVersion = "v1.01";
 const double inf = std::numeric_limits<double>::infinity();
 const double infV = -inf;
 
+const string MSA_FILE_SUFFIX = ".msa";
+const string CSFM_FILE_SUFFIX = ".csfm";
+const string HMM_FILE_SUFFIX = ".hmm";
+const string SUB_MODEL_FILE_SUFFIX = ".sm";
+const string PHYLOTREE_FILE_SUFFIX = ".ptu";
+
 /* stand-alone functions */
 /**
  * Compare two versions

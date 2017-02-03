@@ -32,7 +32,7 @@ istream& NewickTree::read(istream& in) {
 	bool result = qi::phrase_parse(iter, end, grammar, qi::space, *this);
 
 	if(!(result && iter == end))
-		cerr << "Parsing Newick tree failed" << endl;
+		in.setstate(ios_base::badbit);
 
 	return in;
 }

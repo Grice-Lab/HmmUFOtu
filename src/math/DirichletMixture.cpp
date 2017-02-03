@@ -118,7 +118,8 @@ double DirichletMixture::trainML(const MatrixXd& data) {
 			return NAN;
 		}
 		if(q.minCoeff() < 1.0 / data.cols()) { /* eventually no columns corresponding to this component */
-			cerr << "Potential unused (zero-coefficient) mixture component detected. Please use a smaller q for training" << endl;
+			cerr << "Potential unused (zero-coefficient) mixture component detected. " <<
+					"Consider to use a smaller q, and a different random seed to run again" << endl;
 			return NAN;
 		}
 		/* calculate new cost */
@@ -206,24 +207,24 @@ ostream& DirichletMixture::print(ostream& out) const {
 
 void DirichletMixture::momentInit(MatrixXd data) {
 	int K = getK();
-	int M = data.cols();
+	size_t M = data.cols();
 	if(M < 2 * L)
 		return; /* at least 2 data required for each component */
 
 	/* Sort data columns randomly */
 	int* idx = new int[M];
-	for(int t = 0; t < M; ++t)
+	for(size_t t = 0; t < M; ++t)
 		idx[t] = t;
 	std::random_shuffle(idx, idx + M);
 
 	MatrixXd dataSorted(K, M);
-	for(int t = 0; t < M; ++t)
+	for(size_t t = 0; t < M; ++t)
 		dataSorted.col(t) = data.col(idx[t]);
 	delete[] idx;
 
 	/* Normalize the column sum, so the observed data follows Dirichlet-Multinomial distribution */
 	double N = dataSorted.colwise().sum().maxCoeff();
-	for(int t = 0; t < M; ++t)
+	for(size_t t = 0; t < M; ++t)
 		dataSorted.col(t) *= N / dataSorted.col(t).sum();
 
 	/* Divide the data to L equal size categories and do moment-matching */

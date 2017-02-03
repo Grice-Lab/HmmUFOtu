@@ -64,8 +64,8 @@ int main(int argc, char* argv[]) {
 	}
 
 	infn = cmdOpts.getMainOpt(0);
-	if(!StringUtils::endsWith(infn, ".ptu"))
-		infn += ".ptu";
+	if(!StringUtils::endsWith(infn, MSA_FILE_SUFFIX))
+		infn += MSA_FILE_SUFFIX;
 
 	seqfn = cmdOpts.getMainOpt(1);
 	if(StringUtils::endsWith(seqfn, ".fasta") || StringUtils::endsWith(seqfn, ".fas")
