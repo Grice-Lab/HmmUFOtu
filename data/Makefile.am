@@ -1,1 +1,3 @@
-pkgdata_DATA = gg_99_otus.dm gg_97_otus.dm
+# Install package data
+dist_pkgdata_DATA = \
+gg_97_otus.dm

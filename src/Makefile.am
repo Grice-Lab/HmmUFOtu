@@ -41,7 +41,7 @@ DNASubModelFactory.cpp
 bin_PROGRAMS = \
 hmmufotu \
 hmmufotu-train-dm \
-hmmufotu-train \
+hmmufotu-train-hmm \
 hmmufotu-sim \
 hmmufotu-place
 
@@ -53,10 +53,10 @@ hmmufotu_train_dm_SOURCES=hmmufotu-train-dm.cpp
 hmmufotu_train_dm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a
 hmmufotu_train_dm_LDFLAGS = -static
 
-hmmufotu_train_SOURCES = hmmufotu-train.cpp
-hmmufotu_train_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a
-hmmufotu_train_CPPFLAGS = -DDATA=$(pkgdatadir)
-hmmufotu_train_LDFLAGS = -static
+hmmufotu_train_hmm_SOURCES = hmmufotu-train.cpp
+hmmufotu_train_hmm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a
+hmmufotu_train_hmm_CPPFLAGS = -DDM_DATADIR=\"$(pkgdatadir)\"
+hmmufotu_train_hmm_LDFLAGS = -static
 
 hmmufotu_sim_SOURCES = hmmufotu-sim.cpp
 hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
