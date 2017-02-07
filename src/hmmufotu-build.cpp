@@ -35,7 +35,8 @@ void printUsage(const string& progName) {
 		 << "            -f|--symfrac DOUBLE  : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
 		 << "            -a|--anno FILE       : use tab-delimited taxonamy annotation file for the sequences in the MSA and TREE files" << endl
 		 << "            -dm FILE             : use customized trained Dirichlet Model in FILE instead of the build-in file" << endl
-		 << "            -sm|--sub-model STR  : build a time-reversible DNA Substitution Model of given type [" << DEFAULT_SUB_MODEL << "]" << endl
+		 << "            -s|--sub-model STR   : build a time-reversible DNA Substitution Model of given type [" << DEFAULT_SUB_MODEL << "]" << endl
+		 << "            -S|--seed  INT       : random seed for ambiguish alphabet distinguishing and model training, for debug purpose" << endl
 		 << "            -v  FLAG             : enable verbose information" << endl
 		 << "            -h|--help            : print this message and exit" << endl;
 }
@@ -49,6 +50,7 @@ int main(int argc, char* argv[]) {
 	string smType = DEFAULT_SUB_MODEL;
 	double symfrac = DEFAULT_SYMFRAC;
 	string dmFn = DM_DATADIR + string("/") + DEFAULT_DM_FILE;
+	unsigned seed = time(NULL); // using time as default seed
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -105,10 +107,16 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-dm"))
 		dmFn = cmdOpts.getOpt("-dm");
 
-	if(cmdOpts.hasOpt("-sm"))
-		smType = cmdOpts.getOpt("-sm");
+	if(cmdOpts.hasOpt("-s"))
+		smType = cmdOpts.getOpt("-s");
 	if(cmdOpts.hasOpt("--sub-model"))
 		smType = cmdOpts.getOpt("--sub-model");
+
+	if(cmdOpts.hasOpt("-S"))
+		seed = ::atoi(cmdOpts.getOptStr("-S"));
+	if(cmdOpts.hasOpt("--seed"))
+		seed = ::atoi(cmdOpts.getOptStr("--seed"));
+	srand(seed);
 
 	if(cmdOpts.hasOpt("-v"))
 		ENABLE_INFO();

@@ -170,108 +170,22 @@ CSFMIndex* CSFMIndex::load(ifstream& in) {
 	return idx;
 }
 
-CSFMIndex::CSFMIndex() : abc(NULL), gapCh('\0'), csLen(0),
-		concatLen(0), C() /* zero-initiation */, csIdentity(), /* zero-initiation */
-		concat2CS(NULL), saSampled(NULL), saIdx(NULL), bwt(NULL) {
-}
-
-CSFMIndex::~CSFMIndex() {
-	//delete[] concatSeq;
-	delete[] csIdentity;
-	delete[] concat2CS;
-	delete[] saSampled;
-	delete saIdx;
-	delete bwt;
-}
-
 CSFMIndex* CSFMIndex::build(const MSA& msa) {
 	if(!(msa.getCSLen() <= UINT16_MAX))
 		throw invalid_argument("CSFMIndex cannot handle MSA with consensus length longer than " + UINT16_MAX);
 	CSFMIndex* csFM = new CSFMIndex; // allocate an empty object
 	//cerr << "FM initiated" << endl;
-	/* set basic info */
-	csFM->abc = msa.getAbc();
-	csFM->gapCh = csFM->abc->getGap()[0]; // use the default gap character
-	csFM->csLen = msa.getCSLen();
-	csFM->concatLen = msa.getMSANonGapLen() + msa.getNumSeq(); /* including one seperator per seq */
-	csFM->csSeq = ' ' + msa.getCS(); /* dummy position 0 w/ white-space */
-	csFM->csIdentity = new double[csFM->csLen + 1];
-	for(unsigned j = 0; j < csFM->csLen; ++j)
-		csFM->csIdentity[j + 1] = msa.identityAt(j);
 
-	const int32_t N = csFM->concatLen + 1;
+	/* construct basic information */
+	csFM->buildBasic(msa);
+	/* construct concatSeq related info */
+	uint8_t* concatSeq = csFM->buildConcatSeq(msa);
 
-	/* construct the concatSeq and aux data */
-	uint8_t* concatSeq = new uint8_t[N]; /* null terminated encoded string */
-	csFM->concat2CS = new uint16_t[N](); /* zero-initiate 1-based concatSeq pos to CS pos, 0 for gap pos on CS */
+    /* construct SA and BWT */
+    csFM->buildBWT(concatSeq);
 
-	string::size_type shift = 0;
-	for(unsigned i = 0; i < msa.getNumSeq(); ++i) {
-		for(unsigned j = 0; j < csFM->csLen; ++j) {
-			char c = msa.residualAt(i, j);
-			if(!csFM->abc->isGap(c)) {
-				int8_t k = csFM->abc->encode(::toupper(c)) + 1; /* encode to 1..alphabet-size range */
-				csFM->C[k]++; // count alphabet frequency
-				concatSeq[shift] = k; /* always store upper-case characters */
-				csFM->concat2CS[shift] = j + 1; /* 1-based consensus position */
-				shift++;
-			}
-		}
-		csFM->C[sepCh]++; // count the separator
-		concatSeq[shift] = sepCh; // add a separator
-		csFM->concat2CS[shift] = 0; // separator point to gap
-		shift++;
-	}
-	assert(shift == N - 1);
-	concatSeq[shift] = '\0'; // null terminal
-	csFM->C['\0']++; // count the null terminal
-
-	/* construct cumulative counts */
-    int32_t prev = csFM->C[0];
-    int32_t tmp;
-    csFM->C[0] = 0;
-    for (int i = 1; i <= csFM->abc->getSize() + 1; ++i) {
-      tmp = csFM->C[i];
-      csFM->C[i] = csFM->C[i-1] + prev;
-      prev = tmp;
-    }
-
-    /* construct SA */
-    saidx_t errn;
-    int32_t* SA = new int32_t[N];
-	errn = divsufsort(concatSeq, SA, N);
-	if(errn != 0)
-		throw runtime_error("Error: Cannot build suffix-array on forward concatenated seq");
-
-    /* construct the saSampled and saIdx */
-	csFM->saSampled = new uint32_t[N / SA_SAMPLE_RATE + 1]();
-	uint32_t* saHead = csFM->saSampled;
-	BitString B(N); /* a temp BitString for building saIdx */
-	for(uint32_t i = 0; i < N; ++i)
-		if(SA[i] % SA_SAMPLE_RATE == 0) {
-			*saHead++ = SA[i];
-			B.setBit(i);
-		}
-	//cerr << "shift:" << saHead - csFM->saSampled << endl;
-
-    csFM->saIdx = new BitSequenceRRR(B, RRR_SAMPLE_RATE);
-
-    /* construct BWT and index */
-	uint8_t* X_bwt = new uint8_t[N];
-	if(X_bwt == NULL)
-		throw runtime_error("Error: Cannot allocate BWT string for concatSeq");
-    for(int32_t i = 0; i < N; ++i)
-        if(SA[i] == 0) // matches to the null
-            X_bwt[i] = '\0'; // null terminal
-        else X_bwt[i] = concatSeq[SA[i] - 1];
-
-	/* construct RRR_compressed BWT */
-    Mapper* map = new MapperNone(); /* smart ptr no delete necessary */
-	BitSequenceBuilder* bsb = new BitSequenceBuilderRRR(RRR_SAMPLE_RATE); /* smart ptr no delete necessary */
-
-    csFM->bwt = new WaveletTreeNoptrs((uint32_t *) X_bwt, N,
-    		sizeof(uint8_t) * 8, bsb, map, true); // free the X_bwt after use
-
+    /* free temporary memories */
+    delete[] concatSeq;
 	return csFM;
 }
 
@@ -297,6 +211,101 @@ string CSFMIndex::extractCS(int32_t start, const string& pattern) const {
 	}
 	return csSeq;
 }
+
+void CSFMIndex::buildBasic(const MSA& msa) {
+	abc = msa.getAbc();
+	gapCh = abc->getGap().front(); // use the default gap character
+	csLen = msa.getCSLen();
+	concatLen = msa.getMSANonGapLen() + msa.getNumSeq(); /* including one seperator per seq */
+	csSeq = ' ' + msa.getCS(); /* dummy position 0 w/ white-space */
+	csIdentity = new double[csLen + 1];
+	for(unsigned j = 0; j < csLen; ++j)
+		csIdentity[j + 1] = msa.identityAt(j);
+}
+
+uint8_t* CSFMIndex::buildConcatSeq(const MSA& msa) {
+	const int32_t N = concatLen + 1;
+	/* construct the concatSeq update concat2CS index */
+	uint8_t* concatSeq = new uint8_t[N]; /* null terminated encoded string */
+	concat2CS = new uint16_t[N](); /* zero-initiate 1-based concatSeq pos to CS pos, 0 for gap pos on CS */
+
+	string::size_type shift = 0;
+	for(unsigned i = 0; i < msa.getNumSeq(); ++i) {
+		for(unsigned j = 0; j < csLen; ++j) {
+			char c = msa.residualAt(i, j);
+			if(!abc->isGap(c)) {
+				int8_t k = abc->encode(::toupper(c)) + 1; /* encode to 1..alphabet-size range */
+				C[k]++; // count alphabet frequency
+				concatSeq[shift] = k; /* always store upper-case characters */
+				concat2CS[shift] = j + 1; /* 1-based consensus position */
+				shift++;
+			}
+		}
+		C[sepCh]++; // count the separator
+		concatSeq[shift] = sepCh; // add a separator at the end
+		concat2CS[shift] = 0; // separator point to gap
+		shift++;
+	}
+	assert(shift == N - 1);
+	concatSeq[shift] = '\0'; // add null terminal
+	C['\0']++; // count the null terminal
+
+	/* construct cumulative counts */
+    int32_t prev = C[0];
+    int32_t tmp;
+    C[0] = 0;
+    for (int i = 1; i <= abc->getSize() + 1; ++i) {
+      tmp = C[i];
+      C[i] = C[i-1] + prev;
+      prev = tmp;
+    }
+
+	return concatSeq;
+}
+
+void CSFMIndex::buildBWT(const uint8_t* concatSeq) {
+    /* construct SA */
+    saidx_t errn;
+    const int32_t N = concatLen + 1;
+    int32_t* SA = new int32_t[N];
+
+	errn = divsufsort(concatSeq, SA, N);
+	if(errn != 0)
+		throw runtime_error("Error: Cannot build suffix-array on forward concatenated seq");
+
+    /* construct the saSampled and saIdx */
+	saSampled = new uint32_t[N / SA_SAMPLE_RATE + 1]() /* zero-initiation */;
+	uint32_t* saHead = saSampled;
+	BitString B(N); /* a temp BitString for building saIdx */
+	for(uint32_t i = 0; i < N; ++i)
+		if(SA[i] % SA_SAMPLE_RATE == 0) {
+			*saHead++ = SA[i];
+			B.setBit(i);
+		}
+	//cerr << "shift:" << saHead - csFM->saSampled << endl;
+
+    saIdx = new BitSequenceRRR(B, RRR_SAMPLE_RATE); /* use RRR implementation */
+
+    /* construct BWT and index */
+	uint8_t* X_bwt = new uint8_t[N];
+	if(X_bwt == NULL)
+		throw runtime_error("Error: Cannot allocate BWT string for concatSeq");
+    for(int32_t i = 0; i < N; ++i)
+        if(SA[i] == 0) // matches to the null
+            X_bwt[i] = '\0'; // null terminal
+        else X_bwt[i] = concatSeq[SA[i] - 1];
+
+	/* construct RRR_compressed BWT */
+    Mapper* map = new MapperNone(); /* smart ptr no delete necessary */
+	BitSequenceBuilder* bsb = new BitSequenceBuilderRRR(RRR_SAMPLE_RATE); /* bsb is a smart ptr no delete necessary */
+
+    bwt = new WaveletTreeNoptrs((uint32_t *) X_bwt, N,
+    		sizeof(uint8_t) * 8, bsb, map, true); // free the X_bwt after use
+
+    /* free temporary memories */
+    delete[] SA;
+}
+
 
 } /* namespace EGriceLab */
 

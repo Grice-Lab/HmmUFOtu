@@ -23,6 +23,8 @@ int main(int argc, char *argv[]) {
 		cerr << "Unable to load MSA file '" << argv[1] << "'" << endl;
 		return -1;
 	}
+	msa.prune();
+	cerr << "MSA pruned" << endl;
 
 	CSFMIndex* fmIdx = CSFMIndex::build(msa);
 

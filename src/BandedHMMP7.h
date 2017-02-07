@@ -695,11 +695,11 @@ private:
 	/**
 	 * Read a BandedHMMP7 profile from an hmm file
 	 */
-	friend istream& operator>>(istream& is, BandedHMMP7& hmm);
+	friend istream& operator>>(istream& in, BandedHMMP7& hmm);
 	/**
 	 * Write a BandedHMMP7 profile into a file in hmm format
 	 */
-	friend ostream& operator<<(ostream& os, const BandedHMMP7& hmm);
+	friend ostream& operator<<(ostream& out, const BandedHMMP7& hmm);
 
 	friend class RelativeEntropyTargetFunc;
 

@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <fstream>
+#include <algorithm>
 #include "MSA.h"
 #include "BandedHMMCommons.h"
 #include "divsufsort.h"
@@ -24,6 +25,14 @@ namespace EGriceLab {
  */
 class CSFMIndex {
 public:
+	/* constructors */
+	/** Default constructor, zero-initiate all members */
+	CSFMIndex() : abc(NULL), gapCh('\0'), csLen(0),
+			concatLen(0), C(), csIdentity(NULL), concat2CS(NULL),
+			saSampled(NULL), saIdx(NULL), bwt(NULL) {
+	}
+
+	/** Destructor */
 	virtual ~CSFMIndex();
 
 	/**
@@ -32,6 +41,13 @@ public:
 	 * @return a fresh allocated CSFMIndex
 	 */
 	static CSFMIndex* build(const MSA& msa);
+
+	/** test whether this CSFMIndex object is fully initiated */
+	bool isInitiated() const {
+		return abc != NULL && gapCh != '\0' && csLen > 0
+				&& concatLen > 0 && C != NULL && concat2CS != NULL
+				&& saSampled != NULL && saIdx != NULL && bwt != NULL;
+	}
 
 	/**
 	 * Save this object to ofstream
@@ -79,9 +95,10 @@ public:
 	static const unsigned RRR_SAMPLE_RATE = 8; /* RRR sample rate for BWT */
 	static const char sepCh = '\0';
 
+	/* friend functions */
+	friend void swap(CSFMIndex& lhs, CSFMIndex& rhs);
+
 private:
-	/* private default constructor */
-	CSFMIndex();
 	/* disable the copy and assignment constructor */
 	CSFMIndex(const CSFMIndex& other);
 	CSFMIndex& operator=(const CSFMIndex& other);
@@ -102,6 +119,19 @@ private:
 	 */
 	string extractCS(int32_t start, const string& pattern) const;
 
+	/**
+	 * build basic information
+	 */
+	 void buildBasic(const MSA& msa);
+
+	/**
+	 * build a concatSeq and update concat2CS index from a MSA
+	 */
+	uint8_t* buildConcatSeq(const MSA& msa);
+
+	/** build saSampled, saIdx and BWT from other members */
+	void buildBWT(const uint8_t* concatSeq);
+
 	const DegenAlphabet* abc;
 	char gapCh;
 	uint16_t csLen; /* consensus length */
@@ -110,13 +140,22 @@ private:
 	int32_t C[UINT8_MAX + 1]; /* cumulative count of each alphabet frequency, with C[0] as dummy position */
 
 	string csSeq; /* 1-based consensus seq with dummy position at 0 */
-	double* csIdentity; /* 1-based consensus identity */
+	double* csIdentity; /* 1-based consensus identity index */
 
 	uint16_t* concat2CS; /* 1-based concatSeq pos to CS pos, 0 for gap pos on CS */
 	uint32_t* saSampled; /* 1-based sampled SA of concatSeq */
 	cds_static::BitSequence* saIdx; /* 1-based bit index for telling whether this SA position is sampled */
 	cds_static::WaveletTreeNoptrs* bwt; /* Wavelet-Tree transformed BWT string for forward concatSeq */
 };
+
+inline CSFMIndex::~CSFMIndex() {
+	//delete[] concatSeq;
+	delete[] csIdentity;
+	delete[] concat2CS;
+	delete[] saSampled;
+	delete saIdx;
+	delete bwt;
+}
 
 } /* namespace EGriceLab */
 
