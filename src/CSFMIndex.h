@@ -38,14 +38,14 @@ public:
 	 * @param f  ofstream to save to
 	 * @return true if saved successfully
 	 */
-	bool save(std::ofstream& f) const;
+	std::ofstream& save(std::ofstream& out) const;
 
 	/**
 	 * Create and load an CSFMIndex from a stream
 	 * @param f  ifstream to load from
 	 * @return pointer to fresh created CSFMIndex
 	 */
-	static CSFMIndex* load(std::ifstream& f);
+	static CSFMIndex* load(std::ifstream& in);
 
 	/**
 	 * Count how many times a given pattern occurs

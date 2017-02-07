@@ -103,70 +103,70 @@ CSLoc CSFMIndex::locateOne(const string& pattern) const {
     	return CSLoc();
 }
 
-bool CSFMIndex::save(ofstream& f) const {
+ofstream& CSFMIndex::save(ofstream& out) const {
 	/* write alphabet name */
 	unsigned nAlphabet = abc->getName().length();
-	f.write((char*) &nAlphabet, sizeof(unsigned));
-	f.write(abc->getName().c_str(), nAlphabet + 1); /* write the null terminal */
+	out.write((char*) &nAlphabet, sizeof(unsigned));
+	out.write(abc->getName().c_str(), nAlphabet + 1); /* write the null terminal */
 
 	/* write gap char */
-	f.write(&gapCh, sizeof(char));
+	out.write(&gapCh, sizeof(char));
 
 	/* write sizes */
-	f.write((char*) &csLen, sizeof(uint16_t));
-	f.write((char*) &concatLen, sizeof(int32_t));
+	out.write((char*) &csLen, sizeof(uint16_t));
+	out.write((char*) &concatLen, sizeof(int32_t));
 
 	/* write arrays and objects */
-	f.write((char*) C, (UINT8_MAX + 1) * sizeof(int32_t));
+	out.write((char*) C, (UINT8_MAX + 1) * sizeof(int32_t));
 
-	f.write((char*) csSeq.c_str(), csLen + 2); /* write the null terminal */
-	f.write((char*) csIdentity, (csLen + 1) * sizeof(double));
-	f.write((char*) concat2CS, (concatLen + 1) * sizeof(uint16_t));
-	f.write((char*) saSampled, (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
+	out.write((char*) csSeq.c_str(), csLen + 2); /* write the null terminal */
+	out.write((char*) csIdentity, (csLen + 1) * sizeof(double));
+	out.write((char*) concat2CS, (concatLen + 1) * sizeof(uint16_t));
+	out.write((char*) saSampled, (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
 
-	saIdx->save(f);
-	bwt->save(f);
+	saIdx->save(out);
+	bwt->save(out);
 
-	return f.good();
+	return out;
 }
 
-CSFMIndex* CSFMIndex::load(ifstream& f) {
+CSFMIndex* CSFMIndex::load(ifstream& in) {
 	CSFMIndex* idx = new CSFMIndex; /* Allocate a new object */
 	/* read alphabet by name */
 	char* buf = NULL; /* buf for reading */
 	unsigned nAlphabet;
-	f.read((char *) &nAlphabet, sizeof(unsigned));
+	in.read((char *) &nAlphabet, sizeof(unsigned));
 	buf = new char[nAlphabet + 1]; /* include the null terminal */
-	f.read(buf, nAlphabet + 1);
+	in.read(buf, nAlphabet + 1);
 	idx->abc = SeqCommons::getAlphabetByName(buf);
 	delete[] buf;
 
 	/* read gap char */
-	f.read(&idx->gapCh, sizeof(char));
+	in.read(&idx->gapCh, sizeof(char));
 
 	/* read sizes */
-	f.read((char*) &idx->csLen, sizeof(uint16_t));
-	f.read((char*) &idx->concatLen, sizeof(int32_t));
+	in.read((char*) &idx->csLen, sizeof(uint16_t));
+	in.read((char*) &idx->concatLen, sizeof(int32_t));
 
 	/* read arrays and objects */
-	f.read((char*) idx->C, (UINT8_MAX + 1) * sizeof(int32_t));
+	in.read((char*) idx->C, (UINT8_MAX + 1) * sizeof(int32_t));
 
 	buf = new char[idx->csLen + 2];
-	f.read((char*) buf, idx->csLen + 2); /* read the null terminal */
+	in.read((char*) buf, idx->csLen + 2); /* read the null terminal */
 	idx->csSeq.assign(buf, idx->csLen + 2); /* use assign to prevent memory leak */
 	delete[] buf;
 
 	idx->csIdentity = new double[idx->csLen + 1];
-	f.read((char*) idx->csIdentity, (idx->csLen + 1) * sizeof(double));
+	in.read((char*) idx->csIdentity, (idx->csLen + 1) * sizeof(double));
 
     idx->concat2CS = new uint16_t[idx->concatLen + 1];
-	f.read((char*) idx->concat2CS, (idx->concatLen + 1) * sizeof(uint16_t));
+	in.read((char*) idx->concat2CS, (idx->concatLen + 1) * sizeof(uint16_t));
 
 	idx->saSampled = new uint32_t[idx->concatLen / SA_SAMPLE_RATE + 1];
-	f.read((char*) idx->saSampled, (idx->concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
+	in.read((char*) idx->saSampled, (idx->concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
 
-	idx->saIdx = BitSequenceRRR::load(f); /* use RRR implementation */
-	idx->bwt = WaveletTreeNoptrs::load(f);
+	idx->saIdx = BitSequenceRRR::load(in); /* use RRR implementation */
+	idx->bwt = WaveletTreeNoptrs::load(in);
 	return idx;
 }
 
