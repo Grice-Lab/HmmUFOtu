@@ -130,63 +130,64 @@ ofstream& CSFMIndex::save(ofstream& out) const {
 	return out;
 }
 
-CSFMIndex* CSFMIndex::load(ifstream& in) {
-	CSFMIndex* idx = new CSFMIndex; /* Allocate a new object */
+ifstream& CSFMIndex::load(ifstream& in) {
+	clear(); /* clear old data, if any */
 	/* read alphabet by name */
 	char* buf = NULL; /* buf for reading */
 	unsigned nAlphabet;
 	in.read((char *) &nAlphabet, sizeof(unsigned));
 	buf = new char[nAlphabet + 1]; /* include the null terminal */
 	in.read(buf, nAlphabet + 1);
-	idx->abc = SeqCommons::getAlphabetByName(buf);
+	abc = SeqCommons::getAlphabetByName(buf);
 	delete[] buf;
 
 	/* read gap char */
-	in.read(&idx->gapCh, sizeof(char));
+	in.read(&gapCh, sizeof(char));
 
 	/* read sizes */
-	in.read((char*) &idx->csLen, sizeof(uint16_t));
-	in.read((char*) &idx->concatLen, sizeof(int32_t));
+	in.read((char*) &csLen, sizeof(uint16_t));
+	in.read((char*) &concatLen, sizeof(int32_t));
 
 	/* read arrays and objects */
-	in.read((char*) idx->C, (UINT8_MAX + 1) * sizeof(int32_t));
+	in.read((char*) C, (UINT8_MAX + 1) * sizeof(int32_t));
 
-	buf = new char[idx->csLen + 2];
-	in.read((char*) buf, idx->csLen + 2); /* read the null terminal */
-	idx->csSeq.assign(buf, idx->csLen + 2); /* use assign to prevent memory leak */
+	buf = new char[csLen + 2];
+	in.read((char*) buf, csLen + 2); /* read the null terminal */
+	csSeq.assign(buf, csLen + 2); /* use assign to prevent memory leak */
 	delete[] buf;
 
-	idx->csIdentity = new double[idx->csLen + 1];
-	in.read((char*) idx->csIdentity, (idx->csLen + 1) * sizeof(double));
+	csIdentity = new double[csLen + 1];
+	in.read((char*) csIdentity, (csLen + 1) * sizeof(double));
 
-    idx->concat2CS = new uint16_t[idx->concatLen + 1];
-	in.read((char*) idx->concat2CS, (idx->concatLen + 1) * sizeof(uint16_t));
+    concat2CS = new uint16_t[concatLen + 1];
+	in.read((char*) concat2CS, (concatLen + 1) * sizeof(uint16_t));
 
-	idx->saSampled = new uint32_t[idx->concatLen / SA_SAMPLE_RATE + 1];
-	in.read((char*) idx->saSampled, (idx->concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
+	saSampled = new uint32_t[concatLen / SA_SAMPLE_RATE + 1];
+	in.read((char*) saSampled, (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
 
-	idx->saIdx = BitSequenceRRR::load(in); /* use RRR implementation */
-	idx->bwt = WaveletTreeNoptrs::load(in);
-	return idx;
+	saIdx = BitSequenceRRR::load(in); /* use RRR implementation */
+	bwt = WaveletTreeNoptrs::load(in);
+	return in;
 }
 
-CSFMIndex* CSFMIndex::build(const MSA& msa) {
-	if(!(msa.getCSLen() <= UINT16_MAX))
-		throw invalid_argument("CSFMIndex cannot handle MSA with consensus length longer than " + UINT16_MAX);
-	CSFMIndex* csFM = new CSFMIndex; // allocate an empty object
-	//cerr << "FM initiated" << endl;
+CSFMIndex& CSFMIndex::build(const MSA& msa) {
+	if(!(msa.getCSLen() <= UINT16_MAX)) {
+		throw runtime_error("CSFMIndex cannot handle MSA with consensus length longer than " + UINT16_MAX);
+		return *this;
+	}
+	clear(); /* clear old data, if any */
 
 	/* construct basic information */
-	csFM->buildBasic(msa);
+	buildBasic(msa);
 	/* construct concatSeq related info */
-	uint8_t* concatSeq = csFM->buildConcatSeq(msa);
+	uint8_t* concatSeq = buildConcatSeq(msa);
 
     /* construct SA and BWT */
-    csFM->buildBWT(concatSeq);
+    buildBWT(concatSeq);
 
     /* free temporary memories */
     delete[] concatSeq;
-	return csFM;
+	return *this;
 }
 
 uint32_t CSFMIndex::accessSA(uint32_t i) const {

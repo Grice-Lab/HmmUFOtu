@@ -38,7 +38,8 @@ int main(int argc, char *argv[]) {
 	//cerr << "wing retracted" << endl;
 
 	// load CSFM index
-	CSFMIndex* idx = CSFMIndex::load(idx_in);
+	CSFMIndex idx;
+	idx.load(idx_in);
 
 	// process each training read
 	string line;
@@ -62,8 +63,8 @@ int main(int argc, char *argv[]) {
 		fwd_seed.removeGaps();
 		rev_seed.removeGaps();
 
-		const CSLoc& fwd_loc = idx->locateOne(fwd_seed.getSeq());
-		const CSLoc& rev_loc = idx->locateOne(rev_seed.getSeq());
+		const CSLoc& fwd_loc = idx.locateOne(fwd_seed.getSeq());
+		const CSLoc& rev_loc = idx.locateOne(rev_seed.getSeq());
 		//cerr << "CS: start:" << loc.start << " end:" << loc.end << " CS:" << loc.CS << endl;
 
 		//cerr << "known_start:" << known_start << " known_end:" << known_end << endl;

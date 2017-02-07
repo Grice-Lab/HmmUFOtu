@@ -26,11 +26,12 @@ int main(int argc, char *argv[]) {
 	msa.prune();
 	cerr << "MSA pruned" << endl;
 
-	CSFMIndex* fmIdx = CSFMIndex::build(msa);
+	CSFMIndex csfm;
+	csfm.build(msa);
 
 	cerr << "FM-index built" << endl;
 
-	if(!fmIdx->save(out)) {
+	if(!csfm.save(out)) {
 		cerr << "Unable to save CS-FMindex database" << endl;
 		return -1;
 	}

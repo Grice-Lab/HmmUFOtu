@@ -32,15 +32,17 @@ public:
 			saSampled(NULL), saIdx(NULL), bwt(NULL) {
 	}
 
-	/** Destructor */
-	virtual ~CSFMIndex();
+	/** Virtual destructor */
+	virtual ~CSFMIndex() {
+		clear();
+	}
 
 	/**
-	 * Build an CSFMIndex from a MSA object
+	 * Build an CSFMIndex from a MSA object, old data is removed
 	 * @param msa  pointer to an MSA object
 	 * @return a fresh allocated CSFMIndex
 	 */
-	static CSFMIndex* build(const MSA& msa);
+	CSFMIndex& build(const MSA& msa);
 
 	/** test whether this CSFMIndex object is fully initiated */
 	bool isInitiated() const {
@@ -48,6 +50,8 @@ public:
 				&& concatLen > 0 && C != NULL && concat2CS != NULL
 				&& saSampled != NULL && saIdx != NULL && bwt != NULL;
 	}
+
+	virtual void clear();
 
 	/**
 	 * Save this object to ofstream
@@ -61,7 +65,7 @@ public:
 	 * @param f  ifstream to load from
 	 * @return pointer to fresh created CSFMIndex
 	 */
-	static CSFMIndex* load(std::ifstream& in);
+	std::ifstream& load(std::ifstream& in);
 
 	/**
 	 * Count how many times a given pattern occurs
@@ -148,7 +152,7 @@ private:
 	cds_static::WaveletTreeNoptrs* bwt; /* Wavelet-Tree transformed BWT string for forward concatSeq */
 };
 
-inline CSFMIndex::~CSFMIndex() {
+inline void CSFMIndex::clear() {
 	//delete[] concatSeq;
 	delete[] csIdentity;
 	delete[] concat2CS;

@@ -30,11 +30,12 @@ int main(int argc, char *argv[]) {
 	else
 		infoLog << "outfile opened successfully" << endl;
 
-	CSFMIndex* fmIdx = CSFMIndex::load(in);
+	CSFMIndex csfm;
+	csfm.load(in);
 
 	infoLog << "FM index loaded" << endl;
 
-	if(!fmIdx->save(out)) {
+	if(!csfm.save(out)) {
 		cerr << "Unable to save CS-FMindex database" << endl;
 		return -1;
 	}

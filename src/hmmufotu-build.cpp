@@ -175,8 +175,9 @@ int main(int argc, char* argv[]) {
 	infoLog << "MSA database created for " << msa.getNumSeq() << " X " << msa.getCSLen() << " aligned sequences" << endl;
 
 	/* build csfm */
-	CSFMIndex* csfm = CSFMIndex::build(msa);
-	if(csfm != NULL)
+	CSFMIndex csfm;
+	csfm.build(msa);
+	if(csfm.isInitiated())
 		infoLog << "CSFM index built" << endl;
 	else {
 		cerr << "Unable to build CSFM index" << endl;
@@ -258,7 +259,7 @@ int main(int argc, char* argv[]) {
 	}
 	infoLog << "MSA saved" << endl;
 
-	if(!csfm->save(csfmOut)) {
+	if(!csfm.save(csfmOut)) {
 		cerr << "Unable to save CSFM index: " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
