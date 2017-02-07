@@ -9,7 +9,8 @@
 #include <stdexcept>
 #include <cstdlib>
 #include "DigitalSeq.h"
-#include "SeqCommons.h"
+
+#include "AlphabetFactory.h"
 using namespace std;
 
 namespace EGriceLab {
@@ -134,7 +135,7 @@ istream& DigitalSeq::load(istream& in) {
 	in.read(buf, nAlphabet + 1);
 	alphabet.assign(buf, nAlphabet);
 	delete[] buf;
-	abc = SeqCommons::getAlphabetByName(alphabet); // set alphabet by name
+	abc = AlphabetFactory::getAlphabetByName(alphabet); // set alphabet by name
 
 	in.read((char*) &nName, sizeof(string::size_type));
 	buf = new char[nName + 1];

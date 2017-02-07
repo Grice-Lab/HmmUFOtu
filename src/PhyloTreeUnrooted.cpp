@@ -144,8 +144,8 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 
 size_t PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 	const DegenAlphabet* abc = msa.getAbc();
-	if(abc != SeqCommons::nuclAbc) {
-		cerr << "PhyloTreeUnrooted can only read in MSA in dna alphabet" << endl;
+	if(abc->getAlias() != "DNA") {
+		cerr << "PhyloTreeUnrooted can only read in MSA in DNA alphabet" << endl;
 		return -1;
 	}
 	const unsigned numSeq = msa.getNumSeq();

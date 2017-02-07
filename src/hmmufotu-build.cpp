@@ -36,7 +36,6 @@ void printUsage(const string& progName) {
 		 << "            -a|--anno FILE       : use tab-delimited taxonamy annotation file for the sequences in the MSA and TREE files" << endl
 		 << "            -dm FILE             : use customized trained Dirichlet Model in FILE instead of the build-in file" << endl
 		 << "            -s|--sub-model STR   : build a time-reversible DNA Substitution Model of given type [" << DEFAULT_SUB_MODEL << "]" << endl
-		 << "            -S|--seed  INT       : random seed for ambiguish alphabet distinguishing and model training, for debug purpose" << endl
 		 << "            -v  FLAG             : enable verbose information" << endl
 		 << "            -h|--help            : print this message and exit" << endl;
 }
@@ -50,7 +49,6 @@ int main(int argc, char* argv[]) {
 	string smType = DEFAULT_SUB_MODEL;
 	double symfrac = DEFAULT_SYMFRAC;
 	string dmFn = DM_DATADIR + string("/") + DEFAULT_DM_FILE;
-	unsigned seed = time(NULL); // using time as default seed
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -111,12 +109,6 @@ int main(int argc, char* argv[]) {
 		smType = cmdOpts.getOpt("-s");
 	if(cmdOpts.hasOpt("--sub-model"))
 		smType = cmdOpts.getOpt("--sub-model");
-
-	if(cmdOpts.hasOpt("-S"))
-		seed = ::atoi(cmdOpts.getOptStr("-S"));
-	if(cmdOpts.hasOpt("--seed"))
-		seed = ::atoi(cmdOpts.getOptStr("--seed"));
-	srand(seed);
 
 	if(cmdOpts.hasOpt("-v"))
 		ENABLE_INFO();
@@ -218,7 +210,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 	else
-		infoLog << "MSA loaded into Phylogenetic Tree with " << nRead << " nodes X " << tree.numAlignSites() << " aligned sites" << endl;
+		infoLog << "MSA loaded into Phylogenetic Tree" << endl;
 	if(annoIn.is_open()) {
 		tree.loadAnnotation(annoIn);
 		if(annoIn.bad()) {
@@ -246,7 +238,7 @@ int main(int argc, char* argv[]) {
 	for(size_t i = 0; i < numNodes; ++i) {
 		tree.setRoot(i);
 		tree.evaluate();
-		infoLog << (i + 1) << "/" << numNodes << "\r";
+		infoLog << (i + 1) << "/" << numNodes << " nodes evaluated\r";
 	}
 	/* reset root to original */
 	tree.setRoot(oldRoot);

@@ -19,6 +19,7 @@
 #include <stdint.h> /* for fixed size integers */
 #include <iostream>
 #include "HmmUFOtuConst.h"
+#include "AlphabetFactory.h"
 #include "BandedHMMP7Bg.h"
 #include "BandedHMMP7Prior.h"
 #include "BandedHMMCommons.h"
@@ -55,7 +56,7 @@ public:
 	/**
 	 * Construct a BandedHMMP7 with given length
 	 */
-	BandedHMMP7(const string& name, int K, const DegenAlphabet* abc = SeqCommons::nuclAbc);
+	BandedHMMP7(const string& name, int K, const DegenAlphabet* abc);
 
 	/* nested members */
 	/* enum members of all P7 states

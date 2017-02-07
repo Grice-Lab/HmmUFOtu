@@ -12,7 +12,7 @@ namespace EGriceLab {
 using namespace std;
 
 SeqIO::SeqIO(const string& filename, const string& alphabet, const string& format, Mode mode, bool verify) :
-	filename(filename), abc(SeqCommons::getAlphabetByName(alphabet)), format(format), mode(mode) {
+	filename(filename), abc(AlphabetFactory::getAlphabetByName(alphabet)), format(format), mode(mode) {
 	/* check format support */
 	if(!(format == "fasta" || format == "fastq"))
 		throw invalid_argument("Unsupported file format '" + format + "'");

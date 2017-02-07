@@ -32,7 +32,7 @@ DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const st
 
 	// set the synon_map
 	for(map<char, string>::const_iterator it = degen_map.begin(); it != degen_map.end(); ++it)
-		sym_map[it->first] = encode(it->second[::rand() % it->second.length()]); /* set synom map to a random symbol coding */
+		sym_map[it->first] = encode(it->second.front()); /* set synom map to the first symbol */
 
 	// set the gap_sym
 	for(string::const_iterator it = gap.begin(); it != gap.end(); ++it)

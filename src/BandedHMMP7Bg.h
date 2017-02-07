@@ -11,8 +11,9 @@
 #include <cassert>
 #include <limits>
 #include <eigen3/Eigen/Dense>
+
+#include "AlphabetFactory.h"
 #include "IUPACNucl.h"
-#include "SeqCommons.h"
 
 namespace EGriceLab {
 using Eigen::Vector4d;
@@ -26,7 +27,7 @@ public:
 	/*
 	 * constructor with given size
 	 */
-	explicit BandedHMMP7Bg(int size, const IUPACNucl* abc = SeqCommons::nuclAbc)
+	explicit BandedHMMP7Bg(int size, const DegenAlphabet* abc = AlphabetFactory::getAlphabetByName("DNA"))
 	: K(size), nuclAbc(abc) {
 		init_bgFreq();
 		init_transPr();

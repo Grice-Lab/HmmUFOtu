@@ -25,10 +25,10 @@
 #include <boost/make_shared.hpp>
 #include <boost/unordered_map.hpp>
 
+#include "AlphabetFactory.h"
 #include "HmmUFOtuConst.h"
 #include "ProgLog.h"
 #include "StringUtils.h"
-#include "SeqCommons.h"
 #include "DigitalSeq.h"
 #include "NewickTree.h"
 #include "MSA.h"
@@ -94,7 +94,8 @@ public:
 		 */
 		PhyloTreeUnrootedNode(long id, const string& name, size_t length,
 				const string& anno = "", double annoDist = 0)
-		: id(id), name(name), seq(SeqCommons::nuclAbc, name), anno(anno), annoDist(annoDist)
+		: id(id), name(name), seq(AlphabetFactory::getAlphabetByName("DNA"), name),
+		  anno(anno), annoDist(annoDist)
 		{
 			seq.append(length, DegenAlphabet::GAP_SYM);
 		}

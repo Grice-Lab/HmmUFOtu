@@ -8,6 +8,7 @@
 #ifndef SRC_HMMUFOTU_COMMON_H_
 #define SRC_HMMUFOTU_COMMON_H_
 
+#include "AlphabetFactory.h"
 #include "HmmUFOtuDef.h"
 #include "HmmUFOtuConst.h"
 #include "HmmUFOtuEnv.h"
@@ -16,7 +17,6 @@
 #include "DegenAlphabet.h"
 #include "IUPACNucl.h"
 #include "IUPACAmino.h"
-#include "SeqCommons.h"
 #include "DigitalSeq.h"
 #include "PrimarySeq.h"
 #include "SeqIO.h"

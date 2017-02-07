@@ -23,6 +23,7 @@ public:
 	/* customized constructors */
 	/**
 	 * Construct a DegenAlphabet with given name, symbol, expanded synonymous, and a map between sym and synon
+	 * ambigus characters are resolved arbitrary
 	 * @param name  DegenAlphabet name
 	 * @param sym_str  symbol string, redundant characters will be removed
 	 * @param synon_str  additional synonymous characters, redundant will be removed

@@ -1,5 +1,5 @@
 /*
- * SeqCommons.h
+ * AlphabetFactory.h
  *
  *  Created on: Jul 22, 2015
  *      Author: zhengqi
@@ -17,15 +17,14 @@ namespace EGriceLab {
 /**
  * A class for storing common static objects for BioSeq related classes
  */
-class SeqCommons {
+class AlphabetFactory {
 public:
-	/* shared static objects intented to be used by other class */
-	//static const DNA* const dnaAbc;
-	static const IUPACNucl* const nuclAbc;
-	static const IUPACAmino* const aminoAbc;
-
 	/* static methods */
 	static const DegenAlphabet* getAlphabetByName(const string& alphabet);
+
+private:
+	static const DegenAlphabet* nuclAbc;
+	static const DegenAlphabet* aminoAbc;
 };
 
 } /* namespace EGriceLab */

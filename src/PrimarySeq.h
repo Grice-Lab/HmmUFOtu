@@ -12,8 +12,9 @@
 #include <iostream>
 #include <stdexcept>
 #include <climits>
+
+#include "AlphabetFactory.h"
 #include "StringUtils.h"
-#include "SeqCommons.h"
 
 namespace EGriceLab {
 using std::string;
@@ -38,7 +39,7 @@ public:
 	 */
 	PrimarySeq(const string& alphabet, const string& id, const string& seq,
 			const string& desc = "", const string& qual = "") :
-	abc(SeqCommons::getAlphabetByName(alphabet)), id(id), seq(seq),
+	abc(AlphabetFactory::getAlphabetByName(alphabet)), id(id), seq(seq),
 	desc(desc), qual(qual), phredShift(DEFAULT_PHRED_SHIFT) {
 		if(!isValidate())
 			throw invalid_argument("Your sequence '" + seq + " ' contains invalid alphabet characters");

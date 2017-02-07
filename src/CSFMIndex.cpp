@@ -138,7 +138,7 @@ ifstream& CSFMIndex::load(ifstream& in) {
 	in.read((char *) &nAlphabet, sizeof(unsigned));
 	buf = new char[nAlphabet + 1]; /* include the null terminal */
 	in.read(buf, nAlphabet + 1);
-	abc = SeqCommons::getAlphabetByName(buf);
+	abc = AlphabetFactory::getAlphabetByName(buf);
 	delete[] buf;
 
 	/* read gap char */
@@ -153,7 +153,7 @@ ifstream& CSFMIndex::load(ifstream& in) {
 
 	buf = new char[csLen + 2];
 	in.read((char*) buf, csLen + 2); /* read the null terminal */
-	csSeq.assign(buf, csLen + 2); /* use assign to prevent memory leak */
+	csSeq.assign(buf, csLen + 1); /* use assign to prevent memory leak */
 	delete[] buf;
 
 	csIdentity = new double[csLen + 1];
@@ -220,6 +220,7 @@ void CSFMIndex::buildBasic(const MSA& msa) {
 	concatLen = msa.getMSANonGapLen() + msa.getNumSeq(); /* including one seperator per seq */
 	csSeq = ' ' + msa.getCS(); /* dummy position 0 w/ white-space */
 	csIdentity = new double[csLen + 1];
+	csIdentity[0] = 0; /* dummy value */
 	for(unsigned j = 0; j < csLen; ++j)
 		csIdentity[j + 1] = msa.identityAt(j);
 }

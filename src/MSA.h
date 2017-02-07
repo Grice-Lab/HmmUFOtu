@@ -13,7 +13,8 @@
 #include <stdexcept>
 #include <eigen3/Eigen/Dense>
 #include <cmath>
-#include "SeqCommons.h"
+
+#include "AlphabetFactory.h"
 #include "StringUtils.h"
 #include "PrimarySeq.h"
 #include "DigitalSeq.h"
@@ -349,7 +350,7 @@ public:
 	 * construct an MSA with given alphabet
 	 * @throw invalid_argument if the alphabet is not known
 	 */
-	explicit MSA(const string& alphabet = "dna") : alphabet(alphabet), abc(SeqCommons::getAlphabetByName(alphabet)),
+	explicit MSA(const string& alphabet = "dna") : alphabet(alphabet), abc(AlphabetFactory::getAlphabetByName(alphabet)),
 		numSeq(0), csLen(0), isPruned(false)
 	{  }
 

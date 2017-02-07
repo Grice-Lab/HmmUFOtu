@@ -18,7 +18,7 @@ StringUtils.cpp \
 IUPACNucl.cpp \
 IUPACAmino.cpp \
 DNA.cpp \
-SeqCommons.cpp \
+AlphabetFactory.cpp \
 PrimarySeq.cpp \
 DigitalSeq.cpp \
 SeqIO.cpp \

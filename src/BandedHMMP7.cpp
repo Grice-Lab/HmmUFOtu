@@ -96,7 +96,7 @@ istream& operator>>(istream& in, BandedHMMP7& hmm) {
 							"Not allowed alphabet '" + abc
 									+ "' in the HMM input file! Must be DNA");
 				// override the alphabet
-				hmm.abc = SeqCommons::nuclAbc;
+				hmm.abc = AlphabetFactory::getAlphabetByName("DNA");
 			} else if (tag == "STATS") {
 				string mode;
 				string distrib;

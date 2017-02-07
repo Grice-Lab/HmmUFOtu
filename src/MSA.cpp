@@ -377,7 +377,7 @@ istream& MSA::load(istream& in) {
 	in.read(buf, nAlphabet + 1); /* read the null terminal */
 	alphabet.assign(buf, nAlphabet); // override the original alphabet
 	delete[] buf;
-	abc = SeqCommons::getAlphabetByName(alphabet);
+	abc = AlphabetFactory::getAlphabetByName(alphabet);
 	in.read((char*) &nName, sizeof(string::size_type));
 	buf = new char[nName + 1];
 	in.read(buf, nName + 1); /* read the null terminal */
