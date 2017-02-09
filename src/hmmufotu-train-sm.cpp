@@ -19,6 +19,7 @@ using namespace EGriceLab;
 /** default values */
 static const string ALPHABET = "dna";
 static const string DEFAULT_SUB_MODEL_TYPE = "GTR";
+static const string DEFAULT_TRAINING_METHOD = "Gojobori";
 
 /**
  * Print the usage information
@@ -30,6 +31,7 @@ void printUsage(const string& progName) {
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
 		 << "Options:    -o FILE              : write output to FILE instead of stdout" << endl
 		 << "            -s|--sub-model STR   : build a time-reversible DNA Substitution Model of given type [" << DEFAULT_SUB_MODEL_TYPE << "]" << endl
+		 << "            -m|--method  STR     : model training method using known phylogenetic tree data, either Gojobori or Goldman [" << DEFAULT_TRAINING_METHOD << "]"
 		 << "            -v  FLAG             : enable verbose information" << endl
 		 << "            -h|--help            : print this message and exit" << endl;
 }
@@ -41,6 +43,7 @@ int main(int argc, char* argv[]) {
 	ofstream of;
 	string fmt;
 	string smType = DEFAULT_SUB_MODEL_TYPE;
+	string method = DEFAULT_TRAINING_METHOD;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -81,6 +84,11 @@ int main(int argc, char* argv[]) {
 		smType = cmdOpts.getOpt("-s");
 	if(cmdOpts.hasOpt("--sub-model"))
 		smType = cmdOpts.getOpt("--sub-model");
+
+	if(cmdOpts.hasOpt("-m"))
+		method = cmdOpts.getOpt("-m");
+	if(cmdOpts.hasOpt("--method"))
+		method = cmdOpts.getOpt("--method");
 
 	if(cmdOpts.hasOpt("-v"))
 		ENABLE_INFO();
@@ -152,7 +160,7 @@ int main(int argc, char* argv[]) {
 
 	/* train DNA sub model */
 	DNASubModel* model = DNASubModelFactory::createModel(smType);
-	model->trainParams(tree.getModelTransitionSet(), tree.getModelFreqEst());
+	model->trainParams(tree.getModelTransitionSet(method), tree.getModelFreqEst());
 	infoLog << "DNA Substitution Model trained" << endl;
 
 	/* output */

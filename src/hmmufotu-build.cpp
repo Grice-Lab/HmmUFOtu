@@ -28,7 +28,8 @@ static const string DEFAULT_SUB_MODEL = "GTR";
  * Print the usage information
  */
 void printUsage(const string& progName) {
-	cerr << "Usage:    " << progName << "  <MSA-FILE> <TREE-FILE> [options]" << endl
+	cerr << "Build a HmmUFOtu database" << endl
+		 << "Usage:    " << progName << "  <MSA-FILE> <TREE-FILE> [options]" << endl
 		 << "MSA-FILE  FILE                   : multiple-sequence aligned (MSA) input" << endl
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
 		 << "Options:    -n  STR              : database name, use MSA-FILE by default" << endl
