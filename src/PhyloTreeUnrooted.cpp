@@ -178,7 +178,6 @@ size_t PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 }
 
 istream& PTUnrooted::loadAnnotation(istream& in) {
-	cerr << "Loading tree annotation" << endl;
 	string line, name, anno;
 	boost::unordered_map<string, string> name2anno;
 	while(getline(in, line)) {

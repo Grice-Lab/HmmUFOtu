@@ -23,6 +23,7 @@ AC_PROG_CXX
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CHECK_FUNCS([sqrt isnan])
+AC_CHECK_FUNCS([strerror])
 
 AC_CONFIG_FILES([Makefile
 								 data/Makefile

@@ -31,7 +31,7 @@ void printUsage(const string& progName) {
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
 		 << "Options:    -o FILE              : write output to FILE instead of stdout" << endl
 		 << "            -s|--sub-model STR   : build a time-reversible DNA Substitution Model of given type [" << DEFAULT_SUB_MODEL_TYPE << "]" << endl
-		 << "            -m|--method  STR     : model training method using known phylogenetic tree data, either Gojobori or Goldman [" << DEFAULT_TRAINING_METHOD << "]"
+		 << "            -m|--method  STR     : model training method using known phylogenetic tree data, either 'Gojobori' or 'Goldman' [" << DEFAULT_TRAINING_METHOD << "]" << endl
 		 << "            -v  FLAG             : enable verbose information" << endl
 		 << "            -h|--help            : print this message and exit" << endl;
 }

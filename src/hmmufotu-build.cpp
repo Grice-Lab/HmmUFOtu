@@ -15,14 +15,18 @@
 #define DM_DATADIR "."
 #endif
 
+#ifndef SM_DATADIR
+#define SM_DATADIR "."
+#endif
+
 using namespace std;
 using namespace EGriceLab;
 
 /** default values */
 static const double DEFAULT_SYMFRAC = 0.5;
 static const string DEFAULT_DM_FILE = "gg_97_otus.dm";
+static const string DEFAULT_SM_FILE = "gg_97_otus.sm";
 static const string ALPHABET = "dna";
-static const string DEFAULT_SUB_MODEL = "GTR";
 
 /**
  * Print the usage information
@@ -33,10 +37,10 @@ void printUsage(const string& progName) {
 		 << "MSA-FILE  FILE                   : multiple-sequence aligned (MSA) input" << endl
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
 		 << "Options:    -n  STR              : database name, use MSA-FILE by default" << endl
-		 << "            -f|--symfrac DOUBLE  : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
-		 << "            -a|--anno FILE       : use tab-delimited taxonamy annotation file for the sequences in the MSA and TREE files" << endl
-		 << "            -dm FILE             : use customized trained Dirichlet Model in FILE instead of the build-in file" << endl
-		 << "            -s|--sub-model STR   : build a time-reversible DNA Substitution Model of given type [" << DEFAULT_SUB_MODEL << "]" << endl
+		 << "            -f|--symfrac  DOUBLE : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
+		 << "            -a|--anno  FILE      : use tab-delimited taxonamy annotation file for the sequences in the MSA and TREE files" << endl
+		 << "            -dm  FILE            : use customized trained Dirichlet Model in FILE instead of the build-in file" << endl
+		 << "            -sm  FILE            : use customized trained DNA Substitution Model in FILE instead of the build-in file" << endl
 		 << "            -v  FLAG             : enable verbose information" << endl
 		 << "            -h|--help            : print this message and exit" << endl;
 }
@@ -44,12 +48,12 @@ void printUsage(const string& progName) {
 int main(int argc, char* argv[]) {
 	/* variable declarations */
 	string seqFn, treeFn, dbName, annoFn;
-	ifstream dmIn, seqIn, treeIn, annoIn;
+	ifstream dmIn, smIn, seqIn, treeIn, annoIn;
 	ofstream msaOut, csfmOut, hmmOut, ptuOut;
 	string fmt;
-	string smType = DEFAULT_SUB_MODEL;
 	double symfrac = DEFAULT_SYMFRAC;
 	string dmFn = DM_DATADIR + string("/") + DEFAULT_DM_FILE;
+	string smFn = SM_DATADIR + string("/") + DEFAULT_SM_FILE;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -106,10 +110,8 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-dm"))
 		dmFn = cmdOpts.getOpt("-dm");
 
-	if(cmdOpts.hasOpt("-s"))
-		smType = cmdOpts.getOpt("-s");
-	if(cmdOpts.hasOpt("--sub-model"))
-		smType = cmdOpts.getOpt("--sub-model");
+	if(cmdOpts.hasOpt("-sm"))
+		smFn = cmdOpts.getOpt("-sm");
 
 	if(cmdOpts.hasOpt("-v"))
 		ENABLE_INFO();
@@ -117,7 +119,12 @@ int main(int argc, char* argv[]) {
 	/* open input files */
 	dmIn.open(dmFn.c_str());
 	if(!dmIn.is_open()) {
-		cerr << "Unable to write to '" << dmFn << "': " << ::strerror(errno) << endl;
+		cerr << "Unable to open '" << dmFn << "': " << ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
+	smIn.open(smFn.c_str());
+	if(!smIn.is_open()) {
+		cerr << "Unable to open '" << smFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 	treeIn.open(treeFn.c_str());
@@ -224,16 +231,34 @@ int main(int argc, char* argv[]) {
 	tree.formatName();
 	infoLog << "Taxa names formatted" << endl;
 
-	/* train DNA sub model */
-	DNASubModel* model = DNASubModelFactory::createModel(smType);
-	model->trainParams(tree.getModelTransitionSet(), tree.getModelFreqEst());
-	infoLog << "DNA Substitution Model trained" << endl;
+	/* read DNA sub model from model file */
+	DNASubModel* model = NULL;
+	string line, tag, type;
+	while(smIn >> tag) {
+		if(tag.front() == '#') { /* comment or header */
+			std::getline(smIn, line); /* ignore the entire line */
+			continue;
+		}
+		if(tag == "Type:") {
+			smIn >> type; // read in model type
+			model = DNASubModelFactory::createModel(type); /* dynamic construction */
+			smIn >> *model; /* read the remaining file */
+		}
+	}
+
+	if(model != NULL)
+		infoLog << "DNA Substitution Model loaded" << endl;
+	else {
+		cerr << "Unable to load DNA Substitution Model from: '" << smFn << "'" << endl;
+		return EXIT_FAILURE;
+	}
 	tree.setModel(model);
 
 	/* evaluate ptu */
 	infoLog << "Evaluating Phylogenetic Tree ..." << endl;
 	tree.initInLoglik();
 	tree.initLeafLoglik();
+
 	EGriceLab::PTUnrooted::PTUNodePtr oldRoot = tree.getRoot();
 	size_t numNodes = tree.numNodes();
 	for(size_t i = 0; i < numNodes; ++i) {

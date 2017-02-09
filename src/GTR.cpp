@@ -27,10 +27,10 @@ istream& GTR::read(istream& in) {
 			continue;
 		}
 		if(tag == "Type:") {
-			in >> tag; // read in model type
-			if(tag != modelType()) {
+			in >> value; // read in model type
+			if(value != modelType()) {
 				errorLog << "Unmatched Model Type!" << endl;
-				errorLog << "Trying to read in a " << tag << " model into a " << modelType() << " object" << endl;
+				errorLog << "Trying to read in a " << value << " model into a " << modelType() << " object" << endl;
 				in.setstate(ios_base::badbit);
 				return in;
 			}

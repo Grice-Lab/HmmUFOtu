@@ -61,8 +61,8 @@ hmmufotu_train_sm_LDFLAGS = -static
 
 hmmufotu_train_hmm_SOURCES = hmmufotu-train-hmm.cpp
 hmmufotu_train_hmm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a
-hmmufotu_train_hmm_CPPFLAGS = -DDM_DATADIR=\"$(pkgdatadir)\"
 hmmufotu_train_hmm_LDFLAGS = -static
+hmmufotu_train_hmm_CPPFLAGS = -DDM_DATADIR=\"$(pkgdatadir)\"
 
 hmmufotu_sim_SOURCES = hmmufotu-sim.cpp
 hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
@@ -76,3 +76,4 @@ hmmufotu_build_SOURCES = hmmufotu-build.cpp
 hmmufotu_build_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_build_LDFLAGS = -static
+hmmufotu_build_CPPFLAGS = -DDM_DATADIR=\"$(pkgdatadir)\" -DSM_DATADIR=\"$(pkgdatadir)\"
