@@ -50,7 +50,7 @@ void printUsage(const string& progName) {
 		 << "            -l|--min-len  DBL  : minimum read length, 0 for no limit [" << DEFAULT_MIN_LEN << "]" << endl
 		 << "            -u|--max-len  DBL  : maximum read length, 0 for no limit [" << DEFAULT_MAX_LEN << "]" << endl
 		 << "            -S|--seed  INT     : random seed used for simulation, for debug purpose" << endl
-		 << "            -u|--unweighted   : do not weight each branch by their conditional loglik by default" << endl
+		 << "            -w|--weighted      : weight each branch by their conditional log-liklihood" << endl
 		 << "            -v  FLAG           : enable verbose information" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 	string infn, msafn, ptufn, outfn;
 	string fmt(DEFAULT_FMT);
 	bool removeGap = false;
-	bool doWeight = true;
+	bool doWeight = false;
 	long N = 0;
 	ifstream msaIn, ptuIn;
 	MSA msa;
@@ -131,8 +131,8 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("--fmt"))
 		fmt = StringUtils::toLower(cmdOpts.getOpt("--fmt"));
 
-	if(cmdOpts.hasOpt("-u") || cmdOpts.hasOpt("--unweighted"))
-		doWeight = false;
+	if(cmdOpts.hasOpt("-w") || cmdOpts.hasOpt("--weighted"))
+		doWeight = true;
 
 	if(cmdOpts.hasOpt("-m"))
 		meanLen = ::atof(cmdOpts.getOptStr("-m"));
@@ -204,10 +204,8 @@ int main(int argc, char* argv[]) {
 	if(doWeight) {
 		infoLog << "Setting branch sampling weights ..." << endl;
 		for(size_t i = 0; i < numNodes; ++i)
-//			nodeWeight(i) = 1 / (-ptu.treeLoglik(ptu.getNode(i)));
-			nodeWeight(i) = ptu.treeLoglik(ptu.getNode(i));
-		nodeWeight.array() -= nodeWeight.maxCoeff();
-		nodeWeight = nodeWeight.array().exp();
+			nodeWeight(i) = 1 / (-ptu.treeLoglik(ptu.getNode(i)));
+//			nodeWeight(i) = ptu.treeLoglik(ptu.getNode(i));
 	}
 	else
 		nodeWeight.setOnes(); /* use all equal weights */
@@ -285,5 +283,4 @@ int main(int argc, char* argv[]) {
 
 		n++;
 	}
-
 }
