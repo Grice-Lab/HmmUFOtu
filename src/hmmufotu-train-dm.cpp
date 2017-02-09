@@ -1,6 +1,6 @@
 /*
  * hmmufotu-build-dm.cpp
- *
+ * train a customized Dirichlet Model using a MSA file or database
  *  Created on: Jul 15, 2016
  *      Author: zhengqi
  */
@@ -27,14 +27,15 @@ static const int MAX_NUM_COMPO = 10;
 static const double DEFAULT_PRI_RATE = 0.05;
 static const int MAX_ITER = 0;
 static const int DEFAULT_NSEED = 1;
+static const string ALPHABET = "dna";
 
 /**
  * Print the usage information of this program
  */
 void printUsage(const string& progName) {
-	cerr << "Train a HmmUFOtu prior model using Dirichlet Density/Mixture ML models" << endl
+	cerr << "Train a HmmUFOtu prior model using Dirichlet Density/Mixture ML models for " << progName << " analysis" << endl
 		 << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
-		 << "MSA-FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
+		 << "MSA-FILE  FILE             : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
 		 << "Options:    -o FILE        : write output to FILE instead of stdout" << endl
 		 << "            -qM INT[>=2]   : number of Dirichlet Mixture model components for match state emissions [" << DEFAULT_QM << "]" << endl
 		 << "            -symfrac       : conservation threshold for an MSA site to be considered as a Match state [" << DEFAULT_SYMFRAC << "]" << endl
@@ -53,7 +54,7 @@ int main(int argc, char* argv[]) {
 	double symfrac = DEFAULT_SYMFRAC;
 	double priRate = DEFAULT_PRI_RATE;
 	int maxIter = MAX_ITER;
-	string infn;
+	string inFn;
 	string outfn;
 	string fmt;
 	unsigned seed = time(NULL); // using time as default seed
@@ -71,8 +72,8 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	infn = cmdOpts.getMainOpt(0);
-	in.open(infn.c_str());
+	inFn = cmdOpts.getMainOpt(0);
+	in.open(inFn.c_str());
 	if(!in.is_open()) {
 		cerr << "Unable to open '" << cmdOpts.getMainOpt(0) << "'" << endl;
 		return EXIT_FAILURE;
@@ -82,12 +83,12 @@ int main(int argc, char* argv[]) {
 		outfn = cmdOpts.getOpt("-o");
 		of.open(outfn.c_str());
 		if(!of.is_open()) {
-			cerr << "Unable to write to '" << outfn << "'" << endl;
+			cerr << "Unable to write to '" << outfn << "': " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
 	}
 
-	ostream& out = outfn.empty() ? cout : of;
+	ostream& out = of.is_open() ? of : cout;
 
 	if(cmdOpts.hasOpt("-qM"))
 		qM = ::atoi(cmdOpts.getOpt("-qM").c_str());
@@ -129,10 +130,10 @@ int main(int argc, char* argv[]) {
 		ENABLE_INFO();
 
 	/* guess input format */
-	if(StringUtils::endsWith(infn, ".fasta") || StringUtils::endsWith(infn, ".fas")
-		|| StringUtils::endsWith(infn, ".fa") || StringUtils::endsWith(infn, ".fna"))
+	if(StringUtils::endsWith(inFn, ".fasta") || StringUtils::endsWith(inFn, ".fas")
+		|| StringUtils::endsWith(inFn, ".fa") || StringUtils::endsWith(inFn, ".fna"))
 		fmt = "fasta";
-	else if(StringUtils::endsWith(infn, ".msa"))
+	else if(StringUtils::endsWith(inFn, ".msa"))
 		fmt = "msa";
 	else {
 		cerr << "Unrecognized MSA file format" << endl;
@@ -145,22 +146,25 @@ int main(int argc, char* argv[]) {
 	/* Load data */
 	MSA msa;
 	if(fmt == "msa") { /* binary file provided */
-		ifstream in(infn.c_str());
+		ifstream in(inFn.c_str());
 		msa.load(in);
 		if(!in.good()) {
-			cerr << "Unable to load MSA from file '" << infn << "'" << endl;
+			cerr << "Unable to load MSA database from '" << inFn << "'" << endl;
 			return EXIT_FAILURE;
 		}
 	}
-	else
-		msa.loadMSAFile("dna", infn, fmt); /* always read DNA MSA file */
+	else if(msa.loadMSAFile(ALPHABET, inFn, fmt) >= 0)
+		infoLog << "MSA loaded" << endl;
+	else {
+		cerr << "Unable to load MSA seq from '" << inFn << "'" << endl;
+		return EXIT_FAILURE;
+	}
 
-	infoLog << "MSA loaded" << endl;
-
-	assert(msa.getAlphabet() == "dna");
-
-	msa.prune(); /* prune MSA if necessary*/
-	infoLog << "MSA pruned" << endl;
+	if(!msa.pruned()) {
+		msa.prune(); /* prune MSA if necessary*/
+		infoLog << "MSA pruned" << endl;
+	}
+	infoLog << "MSA database created for " << msa.getNumSeq() << " X " << msa.getCSLen() << " aligned sequences" << endl;
 
 	double effN = 1 / priRate;
 	msa.sclaleWeight(effN / msa.getNumSeq());

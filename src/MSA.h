@@ -71,6 +71,10 @@ public:
 		return seqNames;
 	}
 
+	bool pruned() const {
+		return isPruned;
+	}
+
 	/*
 	 * Get the consensus seq of this MSA
 	 * @return the consensus seq
