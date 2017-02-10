@@ -231,6 +231,9 @@ int main(int argc, char* argv[]) {
 	tree.formatName();
 	infoLog << "Taxa names formatted" << endl;
 
+	tree.annotate();
+	infoLog << "Unnamed tree nodes annotated" << endl;
+
 	/* read DNA sub model from model file */
 	DNASubModel* model = NULL;
 	string line, tag, type;

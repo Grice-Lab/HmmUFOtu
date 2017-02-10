@@ -110,6 +110,14 @@ public:
 			return annoDist;
 		}
 
+		string getAnnotation() const {
+			if(annoDist == 0)
+				return anno;
+			char dist[32]; /* _ and numbers */
+			sprintf(dist, "_%f", annoDist);
+			return anno + dist;
+		}
+
 		long getId() const {
 			return id;
 		}

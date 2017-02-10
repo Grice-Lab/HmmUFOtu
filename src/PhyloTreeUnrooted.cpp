@@ -766,6 +766,9 @@ string& PhyloTreeUnrooted::formatTaxaName(string& taxa) {
 	StringUtils::removeAll(taxa, GENUS_PREFIX + ';');
 	StringUtils::removeAll(taxa, SPECIES_PREFIX + ';');
 
+	/* remove tailing ; */
+	taxa.erase(taxa.end() - 1);
+
 	return taxa;
 }
 
@@ -787,12 +790,11 @@ void PhyloTreeUnrooted::annotate() {
 			(*nodeIt)->annoDist += getBranchLength(node, node->parent);
 			node = node->parent;
 		}
-		(*nodeIt)->anno = isCanonicalName(node->name) ? node->name + "Other;" : "other;";
-		cerr << "ID: " << (*nodeIt)->id << " Name: "
-			 << (*nodeIt)->name << " anno: " << (*nodeIt)->anno << " annoDist: " << (*nodeIt)->annoDist << endl;
+		(*nodeIt)->anno = isCanonicalName(node->name) ?
+				*nodeIt == node ? node->name : node->name + ";Other"
+						: "Other";
 	}
 }
-
 
 } /* namespace EGriceLab */
 
