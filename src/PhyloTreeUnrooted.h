@@ -773,6 +773,7 @@ public:
 	static const double MIN_LOGLIK_EXP;
 	static const double INVALID_LOGLIK;
 
+	static const double LOGLIK_EPS;
 	static const double BRANCH_EPS;
 	static const char ANNO_FIELD_SEP = '\t';
 	static const string KINDOM_PREFIX;

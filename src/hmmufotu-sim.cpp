@@ -42,7 +42,7 @@ void printUsage(const string& progName) {
 	cerr << "Generate simulated multiple-aligned sequences (MSA) using a pre-built HmmUFOtu database" << endl
 		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <-o OUTPUT> <-N NUM-READS> [options]" << endl
 		 << "Options:    -N  LONG           : number of reads to generate" << endl
-	     << "            -o  FILE           : write output to FILE instead of stdout" << endl
+	     << "            -o  FILE           : sequence OUTPUT file" << endl
 		 << "            -f|--fmt  STRING   : output format [" << DEFAULT_FMT << "]" << endl
 		 << "            -r|--remove-gap    : remove gaps in generated reads, seq will be unaligned" << endl
 		 << "            -m|--mean-len  DBL : mean read length [" << DEFAULT_MEAN_LEN << "]" << endl
@@ -253,7 +253,7 @@ int main(int argc, char* argv[]) {
 		/* simulate a read at [start, end] */
 		sprintf(rid, "r%d", n);
 		sprintf(desc, "ID=%ld->%ld;Name=\"%s->%s\";ChildDist=%f;Start=%d;End=%d;Len=%d;",
-				pNode->getId(), cNode->getId(), pNode->getName().c_str(), cNode->getName().c_str(),
+				pNode->getId(), cNode->getId(), pNode->getAnnotation().c_str(), cNode->getAnnotation().c_str(),
 				vc, start, end, end - start + 1);
 
 //		PrimarySeq seq(abc, rid, "", desc);

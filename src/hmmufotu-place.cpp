@@ -64,8 +64,8 @@ int main(int argc, char* argv[]) {
 	}
 
 	infn = cmdOpts.getMainOpt(0);
-	if(!StringUtils::endsWith(infn, MSA_FILE_SUFFIX))
-		infn += MSA_FILE_SUFFIX;
+	if(!StringUtils::endsWith(infn, PHYLOTREE_FILE_SUFFIX))
+		infn += PHYLOTREE_FILE_SUFFIX;
 
 	seqfn = cmdOpts.getMainOpt(1);
 	if(StringUtils::endsWith(seqfn, ".fasta") || StringUtils::endsWith(seqfn, ".fas")
@@ -163,26 +163,30 @@ int main(int argc, char* argv[]) {
 		NodeSet nodeSeen;
 		for(vector<PTUnrooted::PTUNodePtr>::const_iterator it = leafHits.begin(); it != leafHits.end(); ++it) {
 			PTUnrooted::PTUNodePtr node = *it; /* make a copy */
+			double prevlik = EGriceLab::infV;
 			while(!node->isRoot() && nodeSeen.find(node) == nodeSeen.end()) {
 				/* place the read here */
 				PTUnrooted subtree = ptu.copySubTree(node, node->getParent());
 				subtree.placeSeq(seq, subtree.getNode(1), subtree.getNode(0), start, end);
 				double vn = subtree.getBranchLength(subtree.getNode(subtree.numNodes() - 2), subtree.getNode(subtree.numNodes() - 1));
-				double tc = subtree.treeLoglik(start, end);
-
-//				infoLog << "Read " << read.getId() << " placed at node " << node->getId() <<
-//						" new branch length: " << vn
-//						<< " cost: " << tc << endl;
-				if(tc > maxLoglik) {
-					maxLoglik = tc;
+				double tlik = subtree.treeLoglik(start, end);
+				infoLog << "Read " << read.getId() << " placed at node " << node->getId() <<
+						" new branch length: " << vn
+						<< " log-liklihood: " << tlik << endl;
+				if(tlik < prevlik || ::abs(tlik - prevlik) < PTUnrooted::LOGLIK_EPS)
+					break;
+				if(tlik > maxLoglik) {
+					maxLoglik = tlik;
 					bestNode = node;
 				}
+
 				node = node->getParent();
+				prevlik = tlik;
 			} /* end of this cascade */
 		} /* end each leaf */
 		out << read.getId() << "\t" << read.getDesc() << "\t"
 			<< bestNode->getParent()->getId() << "->" << bestNode->getId() << "\t"
-			<< bestNode->getParent()->getName() << "->" << bestNode->getName() << "\t"
+			<< bestNode->getParent()->getAnnotation() << "->" << bestNode->getAnnotation() << "\t"
 			<< "" << endl;
 	}
 }
