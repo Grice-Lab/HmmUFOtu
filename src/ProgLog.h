@@ -13,56 +13,26 @@
 
 namespace EGriceLab {
 using std::ostream;
+using std::streambuf;
 using std::cerr;
 using std::cout;
 using std::endl;
 
-class ProgLog {
-public:
-	/* constructors */
-	/**
-	 * construct a ProgLog using given output stream
-	 */
-	explicit ProgLog(ostream& out, LOG_LEVEL level = LOG_NOTHING)
-	: out(out), level(level) {  }
-	/* disable copy and assignment constructors */
-private:
-	ProgLog(const ProgLog& other);
-	ProgLog& operator=(const ProgLog& other);
+void DISABLE_VERBOSE_MESSAGES();
 
-public:
-	/* member methods */
-	LOG_LEVEL getLevel() const {
-		return level;
-	}
+void ENABLE_ERROR();
 
-	void setLevel(LOG_LEVEL level) {
-		this->level = level;
-	}
+void ENABLE_WARNING();
 
-	template <typename T>
-	ProgLog& operator<<(const T& value) {
-		if(VERBOSE_LEVEL >= level)
-			out << value;
-		return *this;
-	}
+void ENABLE_INFO();
 
-	ProgLog& operator<<(ostream& (*pf)(ostream&)) {
-		if(VERBOSE_LEVEL >= level)
-			out << *pf;
-		return *this;
-	}
-
-private:
-	ostream& out; /* underlying output stream */
-	LOG_LEVEL level;
-};
+void ENABLE_DEBUG();
 
 /* namespace static variables */
-extern ProgLog errorLog;
-extern ProgLog warningLog;
-extern ProgLog infoLog;
-extern ProgLog debugLog;
+extern ostream errorLog;
+extern ostream warningLog;
+extern ostream infoLog;
+extern ostream debugLog;
 
 } /* namespace EGriceLab */
 

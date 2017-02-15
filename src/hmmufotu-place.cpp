@@ -170,10 +170,11 @@ int main(int argc, char* argv[]) {
 				subtree.placeSeq(seq, subtree.getNode(1), subtree.getNode(0), start, end);
 				double vn = subtree.getBranchLength(subtree.getNode(subtree.numNodes() - 2), subtree.getNode(subtree.numNodes() - 1));
 				double tlik = subtree.treeLoglik(start, end);
-				infoLog << "Read " << read.getId() << " placed at node " << node->getId() <<
-						" new branch length: " << vn
-						<< " log-liklihood: " << tlik << endl;
-				if(tlik < prevlik || ::abs(tlik - prevlik) < PTUnrooted::LOGLIK_EPS)
+//				double dbest = tlik - maxLoglik;
+//				infoLog << "Read " << read.getId() << " placed at branch " << node->getParent()->getId() << "->" << node->getId() <<
+//						" new branch length: " << vn
+//						<< " log-liklihood: " << tlik << " dbest:" << dbest << endl;
+				if(tlik <= prevlik)
 					break;
 				if(tlik > maxLoglik) {
 					maxLoglik = tlik;

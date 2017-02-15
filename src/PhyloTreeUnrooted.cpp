@@ -25,7 +25,7 @@ using Eigen::Matrix4Xd;
 
 const double PhyloTreeUnrooted::MIN_LOGLIK_EXP = DBL_MIN_EXP / 2; /* use half of the DBL_MIN_EXP to avoid numeric-underflow */
 const double PhyloTreeUnrooted::INVALID_LOGLIK = 1;
-const double PhyloTreeUnrooted::LOGLIK_EPS = 1e-4;
+const double PhyloTreeUnrooted::LOGLIK_REL_EPS = 1e-6;
 const double PhyloTreeUnrooted::BRANCH_EPS = 1e-6;
 
 const string PhyloTreeUnrooted::KINDOM_PREFIX = "k__";
@@ -736,13 +736,15 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 	evaluate(r); /* n->r loglik evaluated */
 	node2length[r][n] = node2length[n][r] = estimateBranchLength(n, r, start, end); /* n->r branch length estimated */
 
-	double vn = optimizeBranchLength(n, r, start, end);
+	double vnr = optimizeBranchLength(n, r, start, end);
+//	double vur = optimizeBranchLength(u, r, start, end);
+//	double vvr = node2length[r][v] = node2length[v][r] = v0 - vur;
 
 	/* annotate the new nodes */
 	r->anno = v->anno;
 	r->annoDist = v0 / 2;
 	n->anno = r->anno;
-	n->annoDist = r->annoDist + vn;
+	n->annoDist = r->annoDist + vnr;
 //	n->annoDist = node2length[r][n] / 2;
 
 	return *this;

@@ -22,14 +22,6 @@ enum LOG_LEVEL {
 	LOG_DEBUG
 };
 
-void DISABLE_VERBOSE_MESSAGES();
-
-void ENABLE_ERROR();
-
-void ENABLE_WARNING();
-
-void ENABLE_INFO();
-
 }
 
 #endif /* SRC_HMMUFOTUENV_H_ */
