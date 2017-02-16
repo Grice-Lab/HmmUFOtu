@@ -42,7 +42,7 @@ public:
 	 * get the Prob matrix given branch length and optionally rate factor
 	 * @override  the base class pure virtual function
 	 */
-	Matrix4d Pr(double t, double r = 1.0) const;
+	Matrix4d Pr(double t) const;
 
 	/**
 	 * read in content from input stream
@@ -88,11 +88,11 @@ private:
 	void setQfromParams();
 };
 
-inline Matrix4d GTR::Pr(double t, double r) const {
-	assert(t * r >= 0);
-	if(t * r == 0)
+inline Matrix4d GTR::Pr(double t) const {
+	assert(t >= 0);
+	if(t == 0)
 		return Matrix4d::Identity(); /* identity matrix */
-	return U * (lambda * (t * r)).array().exp().matrix().asDiagonal() * U_1;
+	return U * (lambda * t).array().exp().matrix().asDiagonal() * U_1;
 }
 
 } /* namespace EGriceLab */

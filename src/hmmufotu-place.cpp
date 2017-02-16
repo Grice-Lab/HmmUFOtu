@@ -20,7 +20,7 @@ using namespace EGriceLab;
 static const string ALPHABET = "dna";
 static const double DEFAULT_MAX_PDIST = 0.03;
 static const int DEFAULT_MIN_Q = 0;
-static const string TBL_HEADER = "id\tdesc\tbranch_id\tbranch_name\tphylogenetic_annotation";
+static const string TBL_HEADER = "id\tdesc\tbranch_id\tbranch_name\tplace_region\tphylogenetic_annotation";
 
 /**
  * Print the usage information
@@ -170,16 +170,17 @@ int main(int argc, char* argv[]) {
 				subtree.placeSeq(seq, subtree.getNode(1), subtree.getNode(0), start, end);
 				double vn = subtree.getBranchLength(subtree.getNode(subtree.numNodes() - 2), subtree.getNode(subtree.numNodes() - 1));
 				double tlik = subtree.treeLoglik(start, end);
-//				double dbest = tlik - maxLoglik;
+				nodeSeen.insert(node);
+				double dbest = tlik - maxLoglik;
 //				infoLog << "Read " << read.getId() << " placed at branch " << node->getParent()->getId() << "->" << node->getId() <<
 //						" new branch length: " << vn
 //						<< " log-liklihood: " << tlik << " dbest:" << dbest << endl;
-				if(tlik <= prevlik)
-					break;
 				if(tlik > maxLoglik) {
 					maxLoglik = tlik;
 					bestNode = node;
 				}
+				if(tlik <= prevlik)
+					break;
 
 				node = node->getParent();
 				prevlik = tlik;
@@ -188,6 +189,6 @@ int main(int argc, char* argv[]) {
 		out << read.getId() << "\t" << read.getDesc() << "\t"
 			<< bestNode->getParent()->getId() << "->" << bestNode->getId() << "\t"
 			<< bestNode->getParent()->getAnnotation() << "->" << bestNode->getAnnotation() << "\t"
-			<< "" << endl;
+			<< start << "-" << end << "\t" << endl;
 	}
 }

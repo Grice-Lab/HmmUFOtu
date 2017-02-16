@@ -46,7 +46,7 @@ public:
 	 * @param r  rate factor in variable rate ML estimates
 	 * @return  Probability rate matrix between for Bases
 	 */
-	virtual Matrix4d Pr(double t, double r = 1.0) const = 0;
+	virtual Matrix4d Pr(double t) const = 0;
 
 	/**
 	 * train model parameters using a given Phylogenetic tree and method
