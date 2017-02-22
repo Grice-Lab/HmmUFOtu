@@ -35,6 +35,7 @@ NewickTree.cpp \
 PhyloTreeUnrooted.cpp \
 DNASubModel.cpp \
 GTR.cpp \
+DiscreteGammaModel.cpp \
 DNASubModelFactory.cpp
 
 # Build the executables

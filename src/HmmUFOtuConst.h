@@ -23,6 +23,7 @@ const std::string progVersion = "v1.01";
 
 const double inf = std::numeric_limits<double>::infinity();
 const double infV = -inf;
+const double nan = std::numeric_limits<double>::quiet_NaN();
 
 const string MSA_FILE_SUFFIX = ".msa";
 const string CSFM_FILE_SUFFIX = ".csfm";
