@@ -402,6 +402,27 @@ public:
 	}
 
 	/**
+	 * Set the underlying DG Model as a copy of given model
+	 */
+	void setDGModel(const DiscreteGammaModel& dG) {
+		this->dG.reset(dG.clone());
+	}
+
+	/**
+	 * Set the underlying DNA Sub Model as a copy of this object
+	 */
+	void setDGModel(const DiscreteGammaModel* dG) {
+		this->dG.reset(dG->clone());
+	}
+
+	/**
+	 * Get the underlying Discrete Gamma Model
+	 */
+	const DGammaPtr& getDGModel() const {
+		return dG;
+	}
+
+	/**
 	 * save this object to an output in binary format
 	 */
 	ostream& save(ostream& out) const;

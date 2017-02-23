@@ -67,6 +67,13 @@ public:
 	 */
 	ostream& save(ostream& out) const;
 
+	/**
+	 * make a fresh heap copy of this object
+	 */
+	DiscreteGammaModel* clone() const {
+		return new DiscreteGammaModel(*this);
+	}
+
 	/* static methods */
 	/**
 	 * use moment-matching traning of observed number of mutations to estimate the shape parameter alpha
