@@ -649,8 +649,9 @@ PTUnrooted PTUnrooted::copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) con
 
 	PTUnrooted tree; /* construct an empty tree */
 	long id = 0;
-	tree.model = model; /* copy the model */
 	tree.csLen = csLen; /* copy csLen */
+	tree.model = model; /* copy the DNA model */
+	tree.dG = dG; /* copy DiscreteGammaModel */
 
 	/* construct new copies of nodes */
 	PTUNodePtr newV(new PTUNode(id++, v->name, v->seq, v->anno, v->annoDist));
