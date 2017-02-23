@@ -256,23 +256,44 @@ void PhyloTreeUnrooted::initLeafLoglik() {
 	}
 }
 
-Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
-	if(isEvaluated(node, node->parent, j)) /* cashed value exists */
-		return node2loglik[node][node->parent].col(j);
+Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j, double r) {
 	Vector4d loglikVec = Vector4d::Zero();
-	/* combine inLoglik of each child, if any */
 	for(vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
 		if(isChild(*child, node)) /* a child neighbor */
-			loglikVec += dot_product_scaled(model->Pr(node2length[*child][node]), loglik(*child, j)); /* evaluate child recursively */
+			loglikVec += dot_product_scaled(model->Pr(node2length[*child][node] * r), loglik(*child, j)); /* evaluate child recursively */
 	}
 	if(node->isLeaf() && !node->seq.empty()) /* is a leaf root with assigned seq */
 		loglikVec += node->seq[j] >= 0 ? leafLoglik.col(node->seq[j]) /* a base observed */ : leafLoglik.col(4) /* a gap observed */;
+	return loglikVec;
+}
 
+Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
+	if(isEvaluated(node, node->parent), j)
+		return node2loglik[node][node->parent].col(j);
+	Vector4d loglikVec;
+	if(dG == NULL)
+		loglikVec = loglik(node, j, 1); // using fixed rate
+	else {
+		Matrix4Xd loglikMat(4, dG->getK());
+		for(int k = 0; k < dG->getK(); ++k)
+			loglikMat.col(k) = loglik(node, j, dG->rate(k));
+		loglikVec = row_mean_exp_scaled(loglikMat); // use average of DiscreteGammaModel rate
+	}
 	/* cache this conditional loglik for non-root node */
 	if(!node->isRoot())
 		node2loglik[node][node->parent].col(j) = loglikVec;
 	return loglikVec;
 }
+
+int PhyloTreeUnrooted::inferState(const PTUnrooted::PTUNodePtr& node, int j) {
+	if(node->isLeaf() && !node->seq.empty())
+		return node->seq[j];
+	Vector4d logV = loglik(node, j);
+	int state;
+	logV.maxCoeff(&state);
+	return state;
+}
+
 
 void PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j) {
 	if(isEvaluated(node, node->parent, j)) /* already evaluated */
@@ -602,6 +623,24 @@ ostream& PTUnrooted::saveModel(ostream& out) const {
 	out << model->modelType() << endl;
 	out << *model << endl;
 
+	return out;
+}
+
+istream& PTUnrooted::loadDGModel(istream& in) {
+	bool modelSet;
+	in.read((char*) &modelSet, sizeof(bool));
+	if(modelSet) {
+		dG.reset(new DiscreteGammaModel()); /* construct a new model and assign to dG */
+		dG->load(in);
+	}
+	return in;
+}
+
+ostream& PTUnrooted::saveDGModel(ostream& out) const {
+	bool modelSet = dG != NULL;
+	out.write((const char*) &modelSet, sizeof(bool));
+	if(modelSet)
+		dG->save(out);
 	return out;
 }
 

@@ -33,6 +33,7 @@
 #include "NewickTree.h"
 #include "MSA.h"
 #include "DNASubModel.h"
+#include "DiscreteGammaModel.h"
 
 namespace EGriceLab {
 using std::string;
@@ -61,6 +62,7 @@ public:
 	typedef shared_ptr<const PTUNode> PTUNodeConstPtr; /* use boost shared_ptr to hold node pointers */
 
 	typedef shared_ptr<DNASubModel> ModelPtr; /* use boost shared_ptr to hold DNA Sub Model */
+	typedef shared_ptr<DiscreteGammaModel> DGammaPtr; /* use boost shared_ptr to hold DiscreteGammapModel */
 
 	/**
 	 * A PTUnrooed node that stores its basic information and neighbors
@@ -459,8 +461,20 @@ public:
 	}
 
 	/**
-	 * evaluate the conditional loglik of the jth site of a subtree, rooted at given node
+	 * evaluate the conditional loglik of the jth site of a subtree,
+	 * rooted at given node, with a given rate factor r
 	 * this is the base for all evaluate/loglik methods
+	 * @param node  subtree root
+	 * @param j  the jth aligned site
+	 * @param r  the rate factor at site j
+	 * @return  conditional loglik at the jth site
+	 */
+	Vector4d loglik(const PTUNodePtr& node, int j, double r);
+
+	/**
+	 * evaluate the conditional loglik of the jth site of a subtree, rooted at given node
+	 * this method will use either fixed rate (r===1) or a DiscreteGammaModel to evaluate the loglik
+	 * according to Yang 1994 (b)
 	 * @param node  subtree root
 	 * @param j  the jth aligned site
 	 * @return  conditional loglik at the jth site
@@ -547,6 +561,15 @@ public:
 	double treeLoglik();
 
 	/**
+	 * infer the ancestor (or real if a leaf) state (base) of given node and site
+	 * @param node  node to infer
+	 * @param j  alignment site
+	 * @return  the actual observed state if a leaf node,
+	 * or inferred state my maximazing the conditional liklihood
+	 */
+	int inferState(const PTUNodePtr& node, int j);
+
+	/**
 	 * write this PTUnrooted tree structure into output in given format
 	 */
 	ostream& writeTree(ostream& out, string format = "newick") const;
@@ -585,6 +608,14 @@ public:
 	 * get estimated base frequency (pi) using this tree
 	 */
 	Vector4d getModelFreqEst() const;
+
+	/**
+	 * estimate the total number of mutations at given site,
+	 * using ML estimation based on conditional liklihoods
+	 * @param j  site to estimate
+	 * @return  total estimated mutations at this site
+	 */
+	size_t estimateNumMutations(int j);
 
 	/**
 	 * make a copy of subtree with only two nodes and a branch u and v
@@ -707,14 +738,24 @@ private:
 	ostream& saveRootLoglik(ostream& out) const;
 
 	/**
-	 * load DNA model from a binary input in text model
+	 * load DNA model from a text input
 	 */
 	istream& loadModel(istream& in);
 
 	/**
-	 * save DNA model to a binary output in text model
+	 * save DNA model to a text output
 	 */
 	ostream& saveModel(ostream& out) const;
+
+	/**
+	 * load DiscreteGamma model from a binary input, if any
+	 */
+	istream& loadDGModel(istream& in);
+
+	/**
+	 * save DiscreteGamma model to a binary output, if not NULL
+	 */
+	ostream& saveDGModel(ostream& out) const;
 
 public:
 	/* static methods */
@@ -745,6 +786,9 @@ public:
 	/* return dot product between two vectors, scale the second vector if necessary */
 	static double dot_product_scaled(const Vector4d& P, const Vector4d& V);
 
+	/* return the rowwise mean of a given matrix at exponential scale, scale each row if neccessary */
+	static Vector4d row_mean_exp_scaled(const Matrix4Xd& X);
+
 	/**
 	 * format taxonomy name, removes white spaces and unnecessary unnamed taxa prefix
 	 * @param taxa  taxa name to be formated
@@ -767,6 +811,7 @@ private:
 						with each column the pre-computed loglik of observing A, C, G, T or - at any given site */
 
 	ModelPtr model; /* DNA Model used to evaluate this tree, needed to be stored with this tree */
+	DGammaPtr dG; /* DiscreteGammaModel used to conpensate rate-heterogeinity between alignment sites */
 
 public:
 	/* static fields */
@@ -957,6 +1002,16 @@ inline double PTUnrooted::dot_product_scaled(const Vector4d& P, const Vector4d& 
 	return ::log(P.dot((V.array() + scale).exp().matrix())) - scale;
 }
 
+inline Vector4d PTUnrooted::row_mean_exp_scaled(const Matrix4Xd& X) {
+	/* determine rowwise scaling factors */
+	Vector4d scale;
+	for(Matrix4Xd::Index i = 0; i < X.rows(); ++i) {
+		double maxV = X.row(i).maxCoeff();
+		scale(i) = maxV != inf && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
+	}
+	return (X.colwise() + scale).array().exp().rowwise().mean().log().matrix() - scale;
+}
+
 inline void PTUnrooted::formatName() {
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
 		formatTaxaName((*node)->name);
@@ -977,6 +1032,12 @@ inline bool PhyloTreeUnrooted::isCanonicalName(const string& taxa) {
 			StringUtils::startsWith(taxa, GENUS_PREFIX) ||
 			StringUtils::startsWith(taxa, SPECIES_PREFIX));
 }
+
+inline size_t estimateNumMutations(int j) {
+	size_t N = 0;
+	return N;
+}
+
 
 } /* namespace EGriceLab */
 

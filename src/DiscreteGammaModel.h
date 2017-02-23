@@ -53,8 +53,8 @@ public:
 		setRates();
 	}
 
-	double rate(int i) const {
-		return r(i);
+	double rate(int k) const {
+		return r(k);
 	}
 
 	/**

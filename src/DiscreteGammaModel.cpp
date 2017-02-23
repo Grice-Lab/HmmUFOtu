@@ -71,7 +71,7 @@ double DiscreteGammaModel::estimateShape(const VectorXi& X) {
 	if(X.cols() < 2)
 		return EGriceLab::inf; // cannot estimate alpha, use inf
 	double m = X.mean();
-	double s = (X - m).squaredNorm() / (X.cols() - 1);
+	double s = (X.array() - m).matrix().squaredNorm() / (X.cols() - 1);
 	return m * m / (s - m);
 }
 
