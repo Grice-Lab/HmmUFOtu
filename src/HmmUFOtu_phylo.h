@@ -12,6 +12,7 @@
 #include "DNASubModel.h"
 #include "GTR.h"
 #include "DNASubModelFactory.h"
+#include "DiscreteGammaModel.h"
 #include "PhyloTreeUnrooted.h"
 
 #endif /* SRC_HMMUFOTU_PHYLO_H_ */

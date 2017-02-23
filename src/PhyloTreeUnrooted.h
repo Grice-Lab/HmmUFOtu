@@ -1054,11 +1054,13 @@ inline bool PhyloTreeUnrooted::isCanonicalName(const string& taxa) {
 			StringUtils::startsWith(taxa, SPECIES_PREFIX));
 }
 
-inline size_t estimateNumMutations(int j) {
+inline size_t PhyloTreeUnrooted::estimateNumMutations(int j) {
 	size_t N = 0;
+	for(vector<PTUNodePtr>::const_iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt)
+		if(!(*nodeIt)->isRoot() && inferState(*nodeIt, j) != inferState((*nodeIt)->parent, j))
+				N++;
 	return N;
 }
-
 
 } /* namespace EGriceLab */
 
