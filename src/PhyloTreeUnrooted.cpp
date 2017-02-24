@@ -268,8 +268,9 @@ Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j, double r) {
 }
 
 Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
-	if(isEvaluated(node, node->parent), j)
+	if(isEvaluated(node, node->parent, j))
 		return node2loglik[node][node->parent].col(j);
+
 	Vector4d loglikVec;
 	if(dG == NULL)
 		loglikVec = loglik(node, j, 1); // using fixed rate
@@ -286,7 +287,7 @@ Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
 }
 
 int PhyloTreeUnrooted::inferState(const PTUnrooted::PTUNodePtr& node, int j) {
-	if(node->isLeaf() && !node->seq.empty())
+	if(!node->seq.empty())
 		return node->seq[j];
 	Vector4d logV = loglik(node, j);
 	int state;
@@ -298,7 +299,6 @@ int PhyloTreeUnrooted::inferState(const PTUnrooted::PTUNodePtr& node, int j) {
 void PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j) {
 	if(isEvaluated(node, node->parent, j)) /* already evaluated */
 		return;
-
 	for(vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) { /* check each child */
 		if(isChild(*child, node)) /* a child neighbor */
 			loglik(*child, j); /* evaluate child recursively */

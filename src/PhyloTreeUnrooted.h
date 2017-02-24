@@ -1056,9 +1056,11 @@ inline bool PhyloTreeUnrooted::isCanonicalName(const string& taxa) {
 
 inline size_t PhyloTreeUnrooted::estimateNumMutations(int j) {
 	size_t N = 0;
-	for(vector<PTUNodePtr>::const_iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt)
-		if(!(*nodeIt)->isRoot() && inferState(*nodeIt, j) != inferState((*nodeIt)->parent, j))
-				N++;
+	for(vector<PTUNodePtr>::const_iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt) {
+		if(!(*nodeIt)->isRoot() && inferState((*nodeIt), j) != inferState((*nodeIt)->parent, j)) {
+			N++;
+		}
+	}
 	return N;
 }
 

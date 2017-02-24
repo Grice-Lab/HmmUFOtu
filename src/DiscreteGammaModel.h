@@ -57,6 +57,10 @@ public:
 		return r(k);
 	}
 
+	const VectorXd& rate() const {
+		return r;
+	}
+
 	/**
 	 * load model from an input stream
 	 */
@@ -85,6 +89,8 @@ public:
 private:
 	/**
 	 * Set the break-points according to current alpha
+	 * break k is approximated with Chi-squared distribution with df = 2*alpha (Yang 1994b)
+	 * to fast speed and infinite values
 	 */
 	void setBreaks();
 

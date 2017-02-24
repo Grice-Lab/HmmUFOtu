@@ -20,7 +20,7 @@ namespace EGriceLab {
 void DiscreteGammaModel::setBreaks() {
 	gamma_distribution<double> gammaDist(alpha, alpha);
 	for(int i = 0; i < K; ++i)
-		b(i) = quantile(gammaDist, i / K);
+		b(i) = quantile(gammaDist, i / static_cast<double>(K));
 	b(K) = inf;
 }
 
@@ -28,7 +28,9 @@ void DiscreteGammaModel::setRates() {
 	for(int i = 0; i < K; ++i) {
 		double lbd = b(i);
 		double ubd = b(i+1);
-		r(i) = (gamma_p(ubd * alpha, alpha + 1) - gamma_p(lbd * alpha, alpha + 1)) / K;
+		r(i) = ubd != inf ?
+				gamma_p(alpha + 1, ubd * alpha) - gamma_p(alpha + 1, lbd * alpha) :
+				1 - gamma_p(alpha + 1, lbd * alpha);
 	}
 }
 
@@ -68,10 +70,10 @@ ostream& DiscreteGammaModel::save(ostream& out) const {
 }
 
 double DiscreteGammaModel::estimateShape(const VectorXi& X) {
-	if(X.cols() < 2)
+	if(X.rows() < 2)
 		return EGriceLab::inf; // cannot estimate alpha, use inf
 	double m = X.mean();
-	double s = (X.array() - m).matrix().squaredNorm() / (X.cols() - 1);
+	double s = (X.array() - m).matrix().squaredNorm() / (X.rows() - 1);
 	return m * m / (s - m);
 }
 

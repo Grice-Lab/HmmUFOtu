@@ -27,6 +27,9 @@ static const double DEFAULT_SYMFRAC = 0.5;
 static const string DEFAULT_DM_FILE = "gg_97_otus.dm";
 static const string DEFAULT_SM_FILE = "gg_97_otus.sm";
 static const string ALPHABET = "dna";
+static const int DEFAULT_DG_CATEGORY = 4;
+static const int MIN_DG_CATEGORY = 2;
+static const int MAX_DG_CATEGORY = 8;
 
 /**
  * Print the usage information
@@ -36,11 +39,13 @@ void printUsage(const string& progName) {
 		 << "Usage:    " << progName << "  <MSA-FILE> <TREE-FILE> [options]" << endl
 		 << "MSA-FILE  FILE                   : multiple-sequence aligned (MSA) input" << endl
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
-		 << "Options:    -n  STR              : database name, use MSA-FILE by default" << endl
+		 << "Options:    -n  STR              : database name, use MSA-FILE as prefix by default" << endl
 		 << "            -f|--symfrac  DOUBLE : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
 		 << "            -a|--anno  FILE      : use tab-delimited taxonamy annotation file for the sequences in the MSA and TREE files" << endl
 		 << "            -dm  FILE            : use customized trained Dirichlet Model in FILE instead of the build-in file" << endl
 		 << "            -sm  FILE            : use customized trained DNA Substitution Model in FILE instead of the build-in file" << endl
+		 << "            -V|--var FLAG        : enable among-site rate varation evaluation of the tree, using a Discrete Gamma Distribution based model" << endl
+		 << "            -k INT               : number of Discrete Gamma Distribution categories to evaluate the tree, ignored if -V not set [" << DEFAULT_DG_CATEGORY << "]" << endl
 		 << "            -v  FLAG             : enable verbose information" << endl
 		 << "            -h|--help            : print this message and exit" << endl;
 }
@@ -54,6 +59,8 @@ int main(int argc, char* argv[]) {
 	double symfrac = DEFAULT_SYMFRAC;
 	string dmFn = DM_DATADIR + string("/") + DEFAULT_DM_FILE;
 	string smFn = SM_DATADIR + string("/") + DEFAULT_SM_FILE;
+	bool isVar = false;
+	int K = DEFAULT_DG_CATEGORY;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -85,7 +92,12 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
+	if(cmdOpts.hasOpt("-V") || cmdOpts.hasOpt("--var"))
+		isVar = true;
+
 	dbName = StringUtils::basename(seqFn);
+	if(isVar)
+		dbName += "_dG";
 	if(cmdOpts.hasOpt("-n"))
 		dbName = cmdOpts.getOpt("-n");
 	string msaFn = dbName + MSA_FILE_SUFFIX;
@@ -112,6 +124,15 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-sm"))
 		smFn = cmdOpts.getOpt("-sm");
+
+
+	if(cmdOpts.hasOpt("-k")) {
+		K = atoi(cmdOpts.getOptStr("-k"));
+		if(!(MIN_DG_CATEGORY <= K && K <= MAX_DG_CATEGORY)) {
+			cerr << "-k must be an integer between " << MIN_DG_CATEGORY << " and " << MAX_DG_CATEGORY << endl;
+			return EXIT_FAILURE;
+		}
+	}
 
 	if(cmdOpts.hasOpt("-v"))
 		ENABLE_INFO();
@@ -257,21 +278,45 @@ int main(int argc, char* argv[]) {
 	}
 	tree.setModel(model);
 
-	/* evaluate ptu */
-	infoLog << "Evaluating Phylogenetic Tree ..." << endl;
+	/* initiation the tree costs */
 	tree.initInLoglik();
 	tree.initLeafLoglik();
 
+	/* make initial evaluation at the original root */
+	infoLog << "Evaluating Phylogenetic Tree at initial root ..." << endl;
+	tree.evaluate();
+//	infoLog << "tree log-liklihood: " << tree.treeLoglik() << endl;
+
+	/* estimate the shape parameter, if using DG model */
+	if(isVar) {
+		infoLog << "Estimating the shape parameter of the Discrete Gamma Distributin based among-site variation ..." << endl;
+		VectorXi numMut(tree.numAlignSites());
+		for(int j = 0; j < tree.numAlignSites(); ++j)
+			numMut(j) = tree.estimateNumMutations(j);
+		double alpha = DiscreteGammaModel::estimateShape(numMut);
+		if(alpha == inf)
+			cerr << "Unable to estimate the shape parameter with less than 2 alignment sites" << endl;
+		else if(alpha < 0)
+			cerr << "Unable to estimate the shape parameter with near invariant rates, reducing to fixed rate model" << endl;
+		else {
+			infoLog << "Estimated alpha = " << alpha << endl;
+			tree.setDGModel(DiscreteGammaModel(K, alpha));
+		}
+	}
+
+	infoLog << (!isVar ? "Evaluating Phylogenetic Tree on all other nodes ..."
+			: "Re-evaluating Phylogenetic Tree rooting at all possible nodes ...") << endl;
 	EGriceLab::PTUnrooted::PTUNodePtr oldRoot = tree.getRoot();
 	size_t numNodes = tree.numNodes();
 	for(size_t i = 0; i < numNodes; ++i) {
 		tree.setRoot(i);
 		tree.evaluate();
-		infoLog << (i + 1) << "/" << numNodes << " nodes evaluated\r";
+//		infoLog << (i + 1) << "/" << numNodes << " nodes evaluated\r";
 	}
 	/* reset root to original */
 	tree.setRoot(oldRoot);
-	infoLog << endl << "All possible nodes evaluated" << endl;
+//	infoLog << endl << "Tree log-liklihood: " << tree.treeLoglik() << endl;
+	infoLog << endl << "Saving database files ..." << endl;
 
 	/* write database files */
 	if(!msa.save(msaOut)) {
