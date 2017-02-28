@@ -276,29 +276,26 @@ ostream& MSA::save(ostream& out) {
 	/* save program info */
 	writeProgName(out, progName);
 	writeProgVersion(out, progVersion);
-	/* get aux length */
+	/* write aux length */
 	string::size_type nAlphabet = alphabet.length();
 	string::size_type nCS = CS.length();
 	string::size_type nName = name.length();
-	/* write basic info */
 	out.write((const char*) &nAlphabet, sizeof(string::size_type));
-	out.write(alphabet.c_str(), nAlphabet + 1);
 	out.write((const char*) &nName, sizeof(string::size_type));
-	out.write(name.c_str(), nName + 1);
-//	cerr << "alphabet written" << endl;
+	out.write((const char*) &nCS, sizeof(string::size_type));
+
+	/* write basic info */
+	StringUtils::saveString(alphabet, out);
+	StringUtils::saveString(name, out);
 	out.write((const char*) &numSeq, sizeof(unsigned));
 	out.write((const char*) &csLen, sizeof(unsigned));
-	out.write((const char*) &nCS, sizeof(string::size_type));
-	out.write(CS.c_str(), nCS + 1); /* write the null terminal */
-	//	cerr << "CS written" << endl;
+	StringUtils::saveString(CS, out);
 	out.write((const char*) &isPruned, sizeof(bool));
 	/* write seqNames */
 	for(vector<string>::const_iterator it = seqNames.begin(); it != seqNames.end(); ++it)
-//		f.write((const char*) it->length(), sizeof(string::size_type)); /* write seq length first */
-		out.write(it->c_str(), it->length() + 1); /* write the null terminal */
+		StringUtils::saveString(*it, out, it->length() + 1); /* write the null terminal */
 	/* write concatMSA */
-	out.write(concatMSA.c_str(), concatMSA.length() + 1);
-//	cerr << "concatMSA written" << endl;
+	StringUtils::saveString(concatMSA, out);
 
 	int* bufi = NULL; /* integer output buffer */
 	double* bufd = NULL; /* double output buffer */
@@ -367,30 +364,21 @@ istream& MSA::load(istream& in) {
 		in.setstate(ios_base::failbit);
 		return in;
 	}
-	/* read basic info */
-	char* buf = NULL; /* character buf */
-	int* bufi = NULL; /* integer buf */
-	double* bufd = NULL; /* double buf */
+	/* read aux length */
 	string::size_type nAlphabet, nCS, nName;
 	in.read((char*) &nAlphabet, sizeof(string::size_type));
-	buf = new char[nAlphabet + 1];
-	in.read(buf, nAlphabet + 1); /* read the null terminal */
-	alphabet.assign(buf, nAlphabet); // override the original alphabet
-	delete[] buf;
-	abc = AlphabetFactory::getAlphabetByName(alphabet);
+	in.read((char*) &nCS, sizeof(string::size_type));
 	in.read((char*) &nName, sizeof(string::size_type));
-	buf = new char[nName + 1];
-	in.read(buf, nName + 1); /* read the null terminal */
-	name.assign(buf, nName);
-	delete[] buf;
 
+	/* read basic info */
+	int* bufi = NULL; /* integer buf */
+	double* bufd = NULL; /* double buf */
+	StringUtils::loadString(alphabet, in, nAlphabet);
+	abc = AlphabetFactory::getAlphabetByName(alphabet);
+	StringUtils::loadString(name, in, nName);
 	in.read((char*) &numSeq, sizeof(unsigned));
 	in.read((char*) &csLen, sizeof(unsigned));
-	in.read((char*) &nCS, sizeof(string::size_type));
-	buf = new char[nCS + 1];
-	in.read(buf, nCS + 1);
-	CS.assign(buf, nCS); /* read the null terminal */
-	delete[] buf;
+	StringUtils::loadString(CS, in, nCS);
 	in.read((char*) &isPruned, sizeof(bool));
 
 	/* read seqNames */
@@ -404,10 +392,7 @@ istream& MSA::load(istream& in) {
 	}
 
 	/* read concatMSA */
-	buf = new char[numSeq * csLen + 1];
-	in.read(buf, numSeq * csLen + 1);
-	concatMSA.assign(buf, numSeq * csLen);
-	delete[] buf;
+	StringUtils::loadString(concatMSA, in, numSeq * csLen);
 
 	/* initiate all maticies and indices */
 	resetRawCount();

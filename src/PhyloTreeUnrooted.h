@@ -58,8 +58,13 @@ public:
 	struct PhyloTreeUnrootedNode;
 	typedef PTUnrooted::PhyloTreeUnrootedNode PTUNode;
 
+	class PhyloTreeUnrootedBranch;
+	typedef PTUnrooted::PhyloTreeUnrootedBranch PTUBranch;
+
 	typedef shared_ptr<PTUNode> PTUNodePtr; /* use boost shared_ptr to hold node pointers */
 	typedef shared_ptr<const PTUNode> PTUNodeConstPtr; /* use boost shared_ptr to hold node pointers */
+
+	typedef map<PTUNodePtr, PTUBranch> BranchMap;
 
 	typedef shared_ptr<DNASubModel> ModelPtr; /* use boost shared_ptr to hold DNA Sub Model */
 	typedef shared_ptr<DiscreteGammaModel> DGammaPtr; /* use boost shared_ptr to hold DiscreteGammapModel */
@@ -175,9 +180,9 @@ public:
 		bool isTip() const {
 			if(isLeaf())
 				return false;
-			for(vector<PTUNodePtr>::const_iterator child = neighbors.begin(); child != neighbors.end(); ++child)
-				if(isParent(*child) /* this is really a child */
-						&& !(*child)->isLeaf())
+			for(BranchMap::const_iterator child = neighbors.begin(); child != neighbors.end(); ++child)
+				if(isParent(child->first) /* this is really a child */
+						&& !child->first->isLeaf())
 					return false;
 			return true;
 		}
@@ -187,8 +192,9 @@ public:
 		 * children nodes are neighbors excluding the parent
 		 */
 		vector<PTUNodePtr> getChildren() const {
-			vector<PTUNodePtr> children (neighbors);
-			children.erase(std::remove(children.begin(), children.end(), parent), children.end());
+			vector<PTUNodePtr> children;
+			for(BranchMap::const_iterator child = neighbors.begin(); child != neighbors.end(); ++child)
+				children.push_back(child->first);
 			return children;
 		}
 
@@ -197,9 +203,9 @@ public:
 		 * return NULL if not exists
 		 */
 		PTUNodePtr firstChild() const {
-			for(vector<PTUNodePtr>::const_iterator child = neighbors.begin(); child != neighbors.end(); ++child)
-				if(isParent(*child)) // this is really a child
-					return *child;
+			for(BranchMap::const_iterator child = neighbors.begin(); child != neighbors.end(); ++child)
+				if(isParent(child->first)) // this is really a child
+					return child->first;
 			return NULL;
 		}
 
@@ -208,9 +214,9 @@ public:
 		 * return NULL if not exists
 		 */
 		PTUNodePtr lastChild() const {
-			for(vector<PTUNodePtr>::const_reverse_iterator child = neighbors.rbegin(); child != neighbors.rend(); ++child)
-				if(isParent(*child)) // this is really a child
-					return *child;
+			for(BranchMap::const_iterator child = neighbors.begin(); child != neighbors.end(); ++child)
+				if(isParent(child->first)) // this is really a child
+					return child->first;
 			return NULL;
 		}
 
@@ -284,15 +290,13 @@ public:
 			return neighbors.size();
 		}
 
-
-	private:
 		/**
-		 * save this node information but not its edges to a binary file
+		 * load data from a binary input to this node
 		 */
 		istream& load(istream& in);
 
 		/**
-		 * load the node information but not its edges from a binary file
+		 * save this node to a binrary output, ignore its edges
 		 */
 		ostream& save(ostream& out) const;
 
@@ -300,15 +304,38 @@ public:
 		long id; /* a unique id for each node */
 		string name; /* node name, need to be unique for database loading */
 		DigitalSeq seq; /* sequence of this node */
-		vector<PTUNodePtr> neighbors; /* pointers to neighbors */
+		BranchMap neighbors; /* pointers to neighbors */
 		PTUNodePtr parent; /* pointer to parent node, set to null on default */
 
 		string anno;
 		double annoDist;
 	};
 
-	typedef unordered_map<PTUNodePtr, unordered_map<PTUNodePtr, Matrix4Xd> > LoglikMap;
-	typedef unordered_map<PTUNodePtr, unordered_map<PTUNodePtr, double> > BranchLenMap;
+	class PhyloTreeUnrootedBranch {
+		friend class PhyloTreeUnrooted;
+
+	public:
+		/** default constructor */
+		PhyloTreeUnrootedBranch() : length(0) { }
+
+		/** construct a branch with given length */
+		PhyloTreeUnrootedBranch(double length) : length(length) { }
+
+		/** construct a branch with given length and loglik */
+		PhyloTreeUnrootedBranch(double length, const Matrix4Xd& loglik) :
+			length(length), loglik(loglik)
+		{ }
+
+		/** save this branch to a binary output */
+		ostream& save(ostream& out) const;
+
+		/** load data from a binary input to this branch */
+		istream& load(istream& in);
+
+	private:
+		double length; /* branch length */
+		Matrix4Xd loglik; /* outgoing message (loglik) of this branch, before convoluting into branch length */
+	};
 
 	/* constructors */
 	/** Default constructor, do nothing */
@@ -351,18 +378,59 @@ public:
 		return id2node[i];
 	}
 
+	/** add a new edge u->v with new length to this tree */
+	void addEdge(const PTUNodePtr& u, const PTUNodePtr& v, double length) {
+		u->neighbors[v] = PTUBranch(length);
+	}
+
+	/** add a new edge u->v with new length and loglik to this tree */
+	void addEdge(const PTUNodePtr& u, const PTUNodePtr& v, double length, const Matrix4Xd& loglik) {
+		u->neighbors[v] = PTUBranch(length, loglik);
+	}
+
+	/** add a new edge u->v with known branch w to this tree */
+	void addEdge(const PTUNodePtr& u, const PTUNodePtr& v, const PTUBranch& w) {
+		u->neighbors[v] = w;
+	}
+
+	/** add a new edge u->v with known branch w but updated length to this tree */
+	void addEdge(const PTUNodePtr& u, const PTUNodePtr& v, const PTUBranch& w, double length) {
+		u->neighbors[v] = w;
+		u->neighbors[v].length = length;
+	}
+
 	/**
 	 * get branch length from u -> v
-	 * @return  -1 if not exists
+	 * @throw out_of_range exception if not exists
 	 */
 	double getBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) const;
 
 	/**
-	 * get branch loglik from u->v, before convoluted into the Pr(length)
-	 * @return uinitiated matrix if not exists
+	 * set branch length from u <-> v
 	 */
-	Matrix4Xd getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const;
+	void setBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, double w);
 
+	/**
+	 * get branch loglik of u->v at site j
+	 */
+	Vector4d getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v, int j) const;
+
+	/**
+	 * set branch loglik of u->v at site j
+	 */
+	void setBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v, int j, const Vector4d& loglik);
+
+	/**
+	 * get branch loglik of u->v
+	 */
+	Matrix4d getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const;
+
+	/**
+	 * set branch loglik of u->v
+	 */
+	void setBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v, const Matrix4Xd& loglik);
+
+public:
 	/** Load sequences from MSA into this this */
 	size_t loadMSA(const MSA& msa);
 
@@ -466,7 +534,7 @@ public:
 	 * reset the cached loglik of edge u->v
 	 */
 	void resetLoglik(const PTUNodePtr& u, const PTUNodePtr& v) {
-		node2loglik[u][v].setConstant(INVALID_LOGLIK);
+		u->neighbors[v].loglik.setConstant(INVALID_LOGLIK);
 	}
 
 	/**
@@ -716,17 +784,7 @@ private:
 	 * save an edge node1->node2 to a binary output
 	 * only the relationship between node IDs are stored
 	 */
-	ostream& saveEdge(ostream& out, const PTUNodePtr& node1, const PTUNodePtr& node2) const;
-
-	/**
-	 * load the edge loglik node1->node2 from a binary input
-	 */
-	istream& loadEdgeLoglik(istream& in);
-
-	/**
-	 * save the edge loglik node1->node2 to a binary output
-	 */
-	ostream& saveEdgeLoglik(ostream& out, const PTUNodePtr& node, const PTUNodePtr& node2) const;
+	ostream& saveEdge(ostream& out, const PTUNodePtr& u, const PTUNodePtr& v, const PTUBranch& w) const;
 
 	/**
 	 * load leaf loglik from a binary input
@@ -826,8 +884,6 @@ private:
 	PTUNodePtr root; /* root node of this tree */
 	vector<PTUNodePtr> id2node; /* indexed tree nodes */
 
-	BranchLenMap node2length; /* branch length index storing edge length */
-	LoglikMap node2loglik; /* cached loglik message sending from u -> v, before conjugating into the Pr(v) of the branch-length */
 	Matrix4Xd leafLoglik; /* cached 4 X 5 leaf loglik matrix,
 						with each column the pre-computed loglik of observing A, C, G, T or - at any given site */
 
@@ -852,18 +908,18 @@ public:
 };
 
 inline size_t PTUnrooted::numEdges() const {
-	size_t nEdges = 0;
-	for(vector<PTUNodePtr>::const_iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt)
-		nEdges += (*nodeIt)->numNeighbors();
-	return nEdges;
+	size_t N = 0;
+	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
+		N += (*node)->numNeighbors();
+	return N;
 }
 
 inline size_t PTUnrooted::numLeaves() const {
-	size_t nLeaves = 0;
+	size_t N = 0;
 	for(vector<PTUNodePtr>::const_iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt)
 		if((*nodeIt)->isLeaf())
-			nLeaves++;
-	return nLeaves;
+			N++;
+	return N;
 }
 
 inline std::string PTUnrooted::PTUNode::getLabel() const {
@@ -873,15 +929,6 @@ inline std::string PTUnrooted::PTUNode::getLabel() const {
 	return label;
 }
 
-inline Matrix4Xd PTUnrooted::loglik(const PTUNodePtr& node) {
-	if(isEvaluated(node, node->parent))
-		return node2loglik[node][node->parent];
-
-	Matrix4Xd loglikVec(4, csLen);
-	for(int j = 0; j < csLen; ++j)
-		loglikVec.col(j) = loglik(node, j);
-	return loglikVec;
-}
 
 inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {
 	StringUtils::toLower(format);
@@ -895,48 +942,41 @@ inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {
 }
 
 inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v) const {
-	LoglikMap::const_iterator outerResult = node2loglik.find(u);
-	if(outerResult != node2loglik.end()) {
-		unordered_map<PTUNodePtr, Matrix4Xd>::const_iterator innerResult = outerResult->second.find(v);
-		if(innerResult != outerResult->second.end())
-			return innerResult->second.cols() == csLen && /* Matrix is initiated */
-					(innerResult->second.array() != INVALID_LOGLIK).all(); /* values are all valid */
-	}
-
-	return false;
+	BranchMap::const_iterator result = u->neighbors.find(v);
+	return result != u->neighbors.end() && // is a neighbor
+			result->second.loglik.cols() == csLen && /* is initiated */
+			(result->second.loglik.array() != INVALID_LOGLIK).all(); /* is valid */
 }
 
 inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int j) const {
-	LoglikMap::const_iterator outerResult = node2loglik.find(u);
-	if(outerResult != node2loglik.end()) {
-		unordered_map<PTUNodePtr, Matrix4Xd>::const_iterator innerResult = outerResult->second.find(v);
-		if(innerResult != outerResult->second.end())
-			return innerResult->second.cols() == csLen && /* Matrix is initiated */
-					(innerResult->second.col(j).array() != INVALID_LOGLIK).all(); /* values are not invalid */
-	}
-
-	return false;
+	BranchMap::const_iterator result = u->neighbors.find(v);
+	return result != u->neighbors.end() && // is a neighbor
+			result->second.loglik.cols() == csLen && /* is initiated */
+			(result->second.loglik.col(j).array() != INVALID_LOGLIK).all(); /* is valid */
 }
 
 inline double PTUnrooted::getBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) const {
-	return node2length.at(u).at(v);
-//	BranchLenMap::const_iterator resultOuter = node2length.find(u);
-//	if(resultOuter == node2length.end())
-//		return -1;
-//	else {
-//		boost::unordered_map<PTUNodePtr, double>::const_iterator resultInner = resultOuter->second.find(v);
-//		return resultInner == resultOuter->second.end() ? -1 : resultInner->second;
-//	}
+	return u->neighbors.at(v).length;
 }
 
-inline Matrix4Xd PTUnrooted::getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const {
-	LoglikMap::const_iterator resultOuter = node2loglik.find(u);
-	if(resultOuter == node2loglik.end())
-		return Matrix4Xd();
-	else {
-		boost::unordered_map<PTUNodePtr, Matrix4Xd>::const_iterator resultInner = resultOuter->second.find(v);
-		return resultInner == resultOuter->second.end() ? Matrix4Xd() : resultInner->second;
-	}
+inline void PTUnrooted::setBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, double w) {
+	u->neighbors[v].length = v->neighbors[u].length = w;
+}
+
+inline Vector4d PTUnrooted::getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v, int j) const {
+	return u->neighbors.at(v).loglik.col(j);
+}
+
+inline void PTUnrooted::setBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v, int j, const Vector4d& loglik) {
+	u->neighbors[v].loglik.col(j) = loglik;
+}
+
+inline Matrix4d PTUnrooted::getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const {
+	return u->neighbors.at(v).loglik;
+}
+
+inline void PTUnrooted::setBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v, const Matrix4Xd& loglik) {
+	u->neighbors[v].loglik = loglik;
 }
 
 inline double PTUnrooted::treeLoglik(int j) {
@@ -955,17 +995,9 @@ inline double PTUnrooted::treeLoglik(const PTUNodePtr& node, int j) {
 	return dot_product_scaled(model->getPi(), loglik(node, j));
 }
 
-inline double PTUnrooted::treeLoglik(const PTUNodePtr& node, int start, int end) {
-	double loglik = 0;
-	for(int j = start; j <= end; ++j)
-		loglik += treeLoglik(node, j);
-	return loglik;
-}
-
 inline double PTUnrooted::treeLoglik(const PTUNodePtr& node) {
 	return treeLoglik(node, 0, csLen - 1);
 }
-
 
 inline vector<Matrix4d> PTUnrooted::getModelTransitionSet(string method) const {
 	StringUtils::toLower(method);
@@ -975,15 +1007,6 @@ inline vector<Matrix4d> PTUnrooted::getModelTransitionSet(string method) const {
 		return getModelTraningSetGoldman();
 	else
 		throw invalid_argument("Unknown DNA substitution model training method '" + method + "'");
-}
-
-inline bool PTUnrooted::isTip(const PTUNodePtr& node) {
-	if(node->isLeaf())
-		return false;
-	for(vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child)
-		if(isChild(*child, node) && !(*child)->isLeaf())
-			return false;
-	return true;
 }
 
 inline PTUnrooted::PTUNodePtr PhyloTreeUnrooted::firstLeaf(PTUNodePtr node) {
@@ -1052,16 +1075,6 @@ inline bool PhyloTreeUnrooted::isCanonicalName(const string& taxa) {
 			StringUtils::startsWith(taxa, FAMILY_PREFIX) ||
 			StringUtils::startsWith(taxa, GENUS_PREFIX) ||
 			StringUtils::startsWith(taxa, SPECIES_PREFIX));
-}
-
-inline size_t PhyloTreeUnrooted::estimateNumMutations(int j) {
-	size_t N = 0;
-	for(vector<PTUNodePtr>::const_iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt) {
-		if(!(*nodeIt)->isRoot() && inferState((*nodeIt), j) != inferState((*nodeIt)->parent, j)) {
-			N++;
-		}
-	}
-	return N;
 }
 
 } /* namespace EGriceLab */

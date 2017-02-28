@@ -316,7 +316,7 @@ int main(int argc, char* argv[]) {
 	/* reset root to original */
 	tree.setRoot(oldRoot);
 //	infoLog << endl << "Tree log-liklihood: " << tree.treeLoglik() << endl;
-	infoLog << endl << "Saving database files ..." << endl;
+	infoLog << "Saving database files ..." << endl;
 
 	/* write database files */
 	if(!msa.save(msaOut)) {

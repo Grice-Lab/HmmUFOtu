@@ -9,9 +9,12 @@
 #ifndef STRINGUTILS_H_
 #define STRINGUTILS_H_
 #include <string>
+#include <iostream>
 
 namespace EGriceLab {
 using std::string;
+using std::istream;
+using std::ostream;
 
 class StringUtils {
 public:
@@ -120,6 +123,25 @@ public:
 	 */
 	static string& removeEnd(string& str, const string& pattern);
 
+	/**
+	 * load data from a binary input to given string, override any old data
+	 * @param str  destination string
+	 * @param in  input
+	 * @param nByte  number of bytes/charaters to load
+	 * @return  whether loading was successful
+	 */
+	static bool loadString(string& str, istream& in, string::size_type nByte);
+
+	static bool saveString(const string& str, ostream& out, string::size_type nByte) {
+		out.write(str.c_str(), nByte);
+		return out.good();
+	}
+
+	static bool saveString(const string& str, ostream& out) {
+		return saveString(str, out, str.length());
+	}
+
 }; /* end class StringUtils */
+
 } /* namespace EGriceLab */
 #endif /* STRINGUTILS_H_ */
