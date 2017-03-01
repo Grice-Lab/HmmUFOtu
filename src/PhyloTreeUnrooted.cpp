@@ -444,8 +444,9 @@ istream& PTUnrooted::load(istream& in) {
 	/* load root loglik */
 //	loadRootLoglik(in);
 
-	/* load model */
+	/* load models */
 	loadModel(in);
+	loadDGModel(in);
 
 	return in;
 }
@@ -480,13 +481,9 @@ ostream& PTUnrooted::save(ostream& out) const {
 	saveRoot(out);
 //	debugLog << "Root saved" << endl;
 
-	/* save root loglik */
-//	saveRootLoglik(out);
-//	debugLog << "Rootloglik saved" << endl;
-
-	/* save model */
+	/* save models */
 	saveModel(out);
-//	debugLog << "Model saved" << endl;
+	saveDGModel(out);
 
 	return out;
 }
