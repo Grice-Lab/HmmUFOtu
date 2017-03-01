@@ -141,7 +141,8 @@ int main(int argc, char *argv[]) {
 
 	ostream& out = outfn.empty() ? cout : of;
 
-	BandedHMMP7 hmm = BandedHMMP7::build(msa, symfrac, hmmPrior);
+	BandedHMMP7 hmm; /* construct an empty profile */
+	hmm.build(msa, symfrac, hmmPrior);
 	infoLog << "Banded HMM profile trained" << endl;
 
 	out << hmm;
