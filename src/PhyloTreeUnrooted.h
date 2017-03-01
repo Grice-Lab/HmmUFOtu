@@ -358,6 +358,11 @@ public:
 	/** Get number of leaves in this tree */
 	size_t numLeaves() const;
 
+	/** Get number of branches in this tree */
+	size_t numBranches() const {
+		return numLeaves() / 2;
+	}
+
 	/** get number of aligned sites */
 	int numAlignSites() const {
 		return csLen;
