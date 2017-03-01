@@ -367,8 +367,8 @@ istream& MSA::load(istream& in) {
 	/* read aux length */
 	string::size_type nAlphabet, nCS, nName;
 	in.read((char*) &nAlphabet, sizeof(string::size_type));
-	in.read((char*) &nCS, sizeof(string::size_type));
 	in.read((char*) &nName, sizeof(string::size_type));
+	in.read((char*) &nCS, sizeof(string::size_type));
 
 	/* read basic info */
 	int* bufi = NULL; /* integer buf */
