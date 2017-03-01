@@ -42,7 +42,7 @@ public:
 		return csLen;
 	}
 
-	int32_t getConcantLen() const {
+	int32_t getConcatLen() const {
 		return concatLen;
 	}
 
