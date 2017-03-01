@@ -465,7 +465,7 @@ public:
 	/**
 	 * Get the underlying DNA Sub Model
 	 */
-	const ModelPtr& getModel() const {
+	ModelPtr getModel() const {
 		return model;
 	}
 
@@ -486,7 +486,7 @@ public:
 	/**
 	 * Get the underlying Discrete Gamma Model
 	 */
-	const DGammaPtr& getDGModel() const {
+	DGammaPtr getDGModel() const {
 		return dG;
 	}
 
