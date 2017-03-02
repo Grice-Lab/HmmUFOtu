@@ -464,14 +464,13 @@ ostream& PTUnrooted::save(ostream& out) const {
 	/* write each node */
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
 		(*node)->save(out);
-
 	/* write all edges */
 	size_t nEdges = numEdges();
 	out.write((const char*) &nEdges, sizeof(size_t));
+
 	for(vector<PTUNodePtr>::const_iterator u = id2node.begin(); u != id2node.end(); ++u)
 		for(BranchMap::const_iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
 			saveEdge(out, *u, v->first, v->second);
-//	debugLog << "all edge saved" << endl;
 
 	/* write leaf loglik */
 	saveLeafLoglik(out);
@@ -494,24 +493,22 @@ ostream& PTUnrooted::saveEdge(ostream& out, const PTUNodePtr& u, const PTUNodePt
 	bool flag = isParent(u, v);
 	out.write((const char*) &flag, sizeof(bool));
 	w.save(out);
-
 	return out;
 }
 
 istream& PTUnrooted::loadEdge(istream& in) {
 	long id1, id2;
 	bool isParent;
-	double length;
 	in.read((char*) &id1, sizeof(long));
 	in.read((char*) &id2, sizeof(long));
 	in.read((char*) &isParent, sizeof(bool));
 
-	const PTUNodePtr& u = id2node[id1];
-	const PTUNodePtr& v = id2node[id2];
+	PTUNodePtr u = id2node[id1];
+	PTUNodePtr v = id2node[id2];
 	if(isParent)
 		v->parent = u;
 
-	u->neighbors[v].load(in); /* add a new branch to u as v, then read its data */
+	u->neighbors[v].load(in); /* add a new branch u->v, then read its data */
 
 	return in;
 }
@@ -588,13 +585,12 @@ istream& PTUnrooted::loadModel(istream& in) {
 	model.reset(DNASubModelFactory::createModel(type));
 	/* read model */
 	in >> *model;
-
 	return in;
 }
 
 ostream& PTUnrooted::saveModel(ostream& out) const {
 	out << model->modelType() << endl;
-	out << *model << endl;
+	out << *model;
 
 	return out;
 }
@@ -832,7 +828,9 @@ istream& PTUnrooted::PTUBranch::load(istream& in) {
 
 	double *buf = new double[N];
 	in.read((char*) buf, sizeof(double) * N);
-	loglik = Map<MatrixXd>(buf, 4, loglik.cols()); /* copy data */
+//	Map<Matrix4Xd> loglikMap(buf, 4, N / 4);
+//	loglik = loglikMap;
+	loglik = Map<Matrix4Xd>(buf, 4, N / 4); /* copy data */
 	delete[] buf;
 
 	return in;

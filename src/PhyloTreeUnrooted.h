@@ -428,7 +428,7 @@ public:
 	/**
 	 * get branch loglik of u->v
 	 */
-	Matrix4d getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const;
+	Matrix4Xd getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const;
 
 	/**
 	 * set branch loglik of u->v
@@ -955,6 +955,7 @@ inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v) co
 
 inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int j) const {
 	BranchMap::const_iterator result = u->neighbors.find(v);
+
 	return result != u->neighbors.end() && // is a neighbor
 			result->second.loglik.cols() == csLen && /* is initiated */
 			(result->second.loglik.col(j).array() != INVALID_LOGLIK).all(); /* is valid */
@@ -976,7 +977,7 @@ inline void PTUnrooted::setBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v
 	u->neighbors[v].loglik.col(j) = loglik;
 }
 
-inline Matrix4d PTUnrooted::getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const {
+inline Matrix4Xd PTUnrooted::getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const {
 	return u->neighbors.at(v).loglik;
 }
 
