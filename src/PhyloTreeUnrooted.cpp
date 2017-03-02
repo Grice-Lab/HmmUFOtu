@@ -36,53 +36,53 @@ const string PhyloTreeUnrooted::FAMILY_PREFIX = "f__";
 const string PhyloTreeUnrooted::GENUS_PREFIX = "g__";
 const string PhyloTreeUnrooted::SPECIES_PREFIX = "s__";
 
+bool PTUnrooted::isTip(const PTUNodePtr& node) {
+	if(node->isLeaf())
+		return false;
+	for(BranchMap::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child)
+		if(isChild(child->first, node) && !child->first->isLeaf())
+			return false;
+	return true;
+}
+
 istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
-	char* buf = NULL;
-	string::size_type nName, nAnno;
-	DigitalSeq::size_type nSeq;
+	/* read length */
+	size_t nName, nAnno;
+	in.read((char*) &nName, sizeof(string::size_type));
+	in.read((char*) &nAnno, sizeof(string::size_type));
 
 	/* read basic info */
 	in.read((char*) &id, sizeof(long));
-	in.read((char*) &nName, sizeof(string::size_type));
-	buf = new char[nName + 1];
-	in.read(buf, nName + 1); /* read the null terminal */
-	name.assign(buf, nName); // override the original value
-	delete[] buf;
+	StringUtils::loadString(name, in, nName);
 
 	/* read seq */
 	seq.load(in);
 
 	/* read annotation */
-	in.read((char*) &nAnno, sizeof(string::size_type));
-	buf = new char[nAnno + 1];
-	in.read(buf, nAnno + 1); /* read the null terminal */
-	anno.assign(buf, nAnno);
-	delete[] buf;
-
+	StringUtils::loadString(anno, in, nAnno);
 	in.read((char*) &annoDist, sizeof(double));
 
 	return in;
 }
 
-
 ostream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::save(ostream& out) const {
+	/* write length */
+	size_t nName = name.length();
+	size_t nAnno = anno.length();
+	out.write((const char*) &nName, sizeof(size_t));
+	out.write((const char*) &nAnno, sizeof(size_t));
 
-	/* get aux length */
-	string::size_type nName = name.length();
-	DigitalSeq::size_type nSeq = seq.length();
-	string::size_type nAnno = anno.length();
 	/* write basic info */
 	out.write((const char*) &id, sizeof(long));
-	out.write((const char*) &nName, sizeof(string::size_type));
-	out.write(name.c_str(), nName + 1);
+	StringUtils::saveString(name, out);
 
-	/* write seq, if not NULL */
+	/* write seq */
 	seq.save(out);
 
 	/* write annotation */
-	out.write((const char*) &nAnno, sizeof(string::size_type));
-	out.write(anno.c_str(), nAnno + 1);
+	StringUtils::saveString(anno, out);
 	out.write((const char*) &annoDist, sizeof(double));
+
 	return out;
 }
 
@@ -269,7 +269,7 @@ Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j, double r) {
 
 Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
 	if(isEvaluated(node, node->parent, j))
-		return node2loglik[node][node->parent].col(j);
+		return getBranchLoglik(node, node->parent, j);
 
 	Vector4d loglikVec;
 	if(dG == NULL)
@@ -282,8 +282,27 @@ Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
 	}
 	/* cache this conditional loglik for non-root node */
 	if(!node->isRoot())
-		node2loglik[node][node->parent].col(j) = loglikVec;
+		setBranchLoglik(node, node->parent, j, loglikVec);
 	return loglikVec;
+}
+
+Matrix4Xd PTUnrooted::loglik(const PTUNodePtr& node) {
+	if(isEvaluated(node, node->parent)) /* not a root and evaluated */
+		return getBranchLoglik(node, node->parent);
+
+	Matrix4Xd loglikMat(4, csLen);
+	for(int j = 0; j < csLen; ++j)
+		loglikMat.col(j) = loglik(node, j);
+	if(!node->isRoot())
+		setBranchLoglik(node, node->parent, loglikMat);
+	return loglikMat;
+}
+
+double PTUnrooted::treeLoglik(const PTUNodePtr& node, int start, int end) {
+	double loglik = 0;
+	for(int j = start; j <= end; ++j)
+		loglik += treeLoglik(node, j);
+	return loglik;
 }
 
 int PhyloTreeUnrooted::inferState(const PTUnrooted::PTUNodePtr& node, int j) {
@@ -419,10 +438,6 @@ istream& PTUnrooted::load(istream& in) {
 	for(size_t i = 0; i < nEdges; ++i)
 		loadEdge(in);
 
-	/* read edge logliks */
-	for(size_t i = 0; i < nEdges; ++i)
-		loadEdgeLoglik(in);
-
 	/* read leaf loglik */
 	loadLeafLoglik(in);
 
@@ -432,8 +447,9 @@ istream& PTUnrooted::load(istream& in) {
 	/* load root loglik */
 //	loadRootLoglik(in);
 
-	/* load model */
+	/* load models */
 	loadModel(in);
+	loadDGModel(in);
 
 	return in;
 }
@@ -442,19 +458,15 @@ ostream& PTUnrooted::save(ostream& out) const {
 	/* save program info */
 	writeProgName(out, progName);
 	writeProgVersion(out, progVersion);
-//	debugLog << "program info saved" << endl;
 
 	/* write global information */
 	size_t nNodes = numNodes();
 	out.write((const char*) &nNodes, sizeof(size_t));
 	out.write((const char*) &csLen, sizeof(int));
-//	debugLog << "global information saved" << endl;
 
 	/* write each node */
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
 		(*node)->save(out);
-//	debugLog << "all nodes saved" << endl;
-
 	/* write all edges */
 	size_t nEdges = numEdges();
 	out.write((const char*) &nEdges, sizeof(size_t));
@@ -477,13 +489,9 @@ ostream& PTUnrooted::save(ostream& out) const {
 	saveRoot(out);
 //	debugLog << "Root saved" << endl;
 
-	/* save root loglik */
-//	saveRootLoglik(out);
-//	debugLog << "Rootloglik saved" << endl;
-
-	/* save model */
+	/* save models */
 	saveModel(out);
-//	debugLog << "Model saved" << endl;
+	saveDGModel(out);
 
 	return out;
 }
