@@ -289,8 +289,6 @@ public:
 			return neighbors.size();
 		}
 
-
-	private:
 		/**
 		 * load data from a binary input to this node
 		 */
@@ -384,17 +382,17 @@ public:
 		return id2node[i];
 	}
 
-	/** add a new edge u->v with new length to this tree */
-	void addEdge(const PTUNodePtr& u, const PTUNodePtr& v, double length);
+	/** add a new edge u<->v to this tree */
+	void addEdge(const PTUNodePtr& u, const PTUNodePtr& v) {
+		u->neighbors.push_back(v);
+		v->neighbors.push_back(u);
+	}
 
-	/** add a new edge u->v with new length and loglik to this tree */
-	void addEdge(const PTUNodePtr& u, const PTUNodePtr& v, double length, const Matrix4Xd& loglik);
-
-	/** add a new edge u->v with known branch w to this tree */
-	void addEdge(const PTUNodePtr& u, const PTUNodePtr& v, const PTUBranch& w);
-
-	/** add a new edge u->v with known branch w but updated length to this tree */
-	void addEdge(const PTUNodePtr& u, const PTUNodePtr& v, const PTUBranch& w, double length);
+	/** remove an edge u<->v to this tree */
+	void removeEdge(const PTUNodePtr& u, const PTUNodePtr& v) {
+		u->neighbors.erase(std::find(u->neighbors.begin(), u->neighbors.end(), v));
+		v->neighbors.erase(std::find(v->neighbors.begin(), v->neighbors.end(), u));
+	}
 
 	/**
 	 * get branch from u-> v
@@ -407,21 +405,63 @@ public:
 	/**
 	 * set branch from u-> v
 	 */
-	void setBranch(const PTUNodePtr& u, const PTUNodePtr& v, const PTUNodePtr& w) {
+	void setBranch(const PTUNodePtr& u, const PTUNodePtr& v, const PTUBranch& w) {
 		node2branch[u][v] = w;
 	}
 
 	/**
-	 * get branch length from u -> v
-	 * @return  -1 if not exists
+	 * remove the branch from u->v
+	 * @return  the old branch
 	 */
-	double getBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) const;
+	PTUBranch removeBranch(const PTUNodePtr& u, const PTUNodePtr& v) {
+		boost::unordered_map<PTUNodePtr, PTUBranch>::const_iterator w = node2branch[u].find(v);
+		node2branch[u].erase(w);
+		return w->second;
+	}
 
 	/**
-	 * get branch loglik from u->v, before convoluted into the Pr(length)
-	 * @throw  out_of_range exception if not exists
+	 * get branch length from u -> v
+	 * @return  branch length u->v
+	 * @throw  out_of_range exception if branch not exists
 	 */
-	const Matrix4Xd& getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const;
+	double getBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) const {
+		return node2branch.at(u).at(v).length;
+	}
+
+	/**
+	 * set branch length from u <-> v
+	 */
+	void setBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, double w) {
+		node2branch[u][v].length = node2branch[v][u].length = w;
+	}
+
+	/**
+	 * get branch loglik of u->v at site j
+	 */
+	Vector4d getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v, int j) const {
+		return node2branch.at(u).at(v).loglik.col(j);
+	}
+
+	/**
+	 * get branch loglik of u->v at all sites
+	 */
+	const Matrix4Xd& getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const {
+		return node2branch.at(u).at(v).loglik;
+	}
+
+	/**
+	 * set branch loglik of u->v at site j
+	 */
+	void setBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v, int j, const Vector4d& loglik) {
+		node2branch[u][v].loglik.col(j) = loglik;
+	}
+
+	/**
+	 * set branch loglik of u->v at all sites
+	 */
+	void setBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v, const Matrix4Xd& loglik) {
+		node2branch[u][v].loglik = loglik;
+	}
 
 	/** Load sequences from MSA into this this */
 	size_t loadMSA(const MSA& msa);
@@ -779,16 +819,6 @@ private:
 	ostream& saveEdge(ostream& out, const PTUNodePtr& node1, const PTUNodePtr& node2) const;
 
 	/**
-	 * load the edge loglik node1->node2 from a binary input
-	 */
-	istream& loadEdgeLoglik(istream& in);
-
-	/**
-	 * save the edge loglik node1->node2 to a binary output
-	 */
-	ostream& saveEdgeLoglik(ostream& out, const PTUNodePtr& node, const PTUNodePtr& node2) const;
-
-	/**
 	 * load leaf loglik from a binary input
 	 */
 	istream& loadLeafLoglik(istream& in);
@@ -932,16 +962,6 @@ inline std::string PTUnrooted::PTUNode::getLabel() const {
 	return label;
 }
 
-inline Matrix4Xd PTUnrooted::loglik(const PTUNodePtr& node) {
-	if(isEvaluated(node, node->parent))
-		return getBranchLoglik(node, node->parent);
-
-	Matrix4Xd loglikVec(4, csLen);
-	for(int j = 0; j < csLen; ++j)
-		loglikVec.col(j) = loglik(node, j);
-	return loglikVec;
-}
-
 inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {
 	StringUtils::toLower(format);
 	if(format == "newick")
@@ -975,14 +995,6 @@ inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, in
 	return false;
 }
 
-inline double PTUnrooted::getBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) const {
-	return getBranch(u, v).length;
-}
-
-inline const Matrix4Xd& PTUnrooted::getBranchLoglik(const PTUNodePtr& u, const PTUNodePtr& v) const {
-	return getBranch(u, v).loglik;
-}
-
 inline double PTUnrooted::treeLoglik(int j) {
 	return treeLoglik(root, j);
 }
@@ -999,17 +1011,9 @@ inline double PTUnrooted::treeLoglik(const PTUNodePtr& node, int j) {
 	return dot_product_scaled(model->getPi(), loglik(node, j));
 }
 
-inline double PTUnrooted::treeLoglik(const PTUNodePtr& node, int start, int end) {
-	double loglik = 0;
-	for(int j = start; j <= end; ++j)
-		loglik += treeLoglik(node, j);
-	return loglik;
-}
-
 inline double PTUnrooted::treeLoglik(const PTUNodePtr& node) {
 	return treeLoglik(node, 0, csLen - 1);
 }
-
 
 inline vector<Matrix4d> PTUnrooted::getModelTransitionSet(string method) const {
 	StringUtils::toLower(method);
@@ -1087,16 +1091,6 @@ inline bool PhyloTreeUnrooted::isCanonicalName(const string& taxa) {
 			StringUtils::startsWith(taxa, FAMILY_PREFIX) ||
 			StringUtils::startsWith(taxa, GENUS_PREFIX) ||
 			StringUtils::startsWith(taxa, SPECIES_PREFIX));
-}
-
-inline size_t PhyloTreeUnrooted::estimateNumMutations(int j) {
-	size_t N = 0;
-	for(vector<PTUNodePtr>::const_iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt) {
-		if(!(*nodeIt)->isRoot() && inferState((*nodeIt), j) != inferState((*nodeIt)->parent, j)) {
-			N++;
-		}
-	}
-	return N;
 }
 
 } /* namespace EGriceLab */

@@ -47,9 +47,10 @@ istream& GTR::read(istream& in) {
 		else if(tag == "Q:") { // Q section for human read only
 			for(Vector4d::Index i = 0; i <= Q.rows(); ++i)
 				std::getline(in, line); /* ignore the entire line */
+			break;
 		}
 		else {
-			errorLog << "Un-recognized line found in GTR Model file: tag: " << tag << endl << line << endl;
+			errorLog << "Un-recognized line found in GTR Model input: tag: " << tag << endl << line << endl;
 			in.setstate(ios_base::badbit);
 			return in;
 		}

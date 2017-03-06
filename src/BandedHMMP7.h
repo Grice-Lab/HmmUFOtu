@@ -54,7 +54,7 @@ public:
 	 */
 	BandedHMMP7();
 	/**
-	 * Construct a BandedHMMP7 with given length
+	 * Construct a BandedHMMP7 with given length and alphabet
 	 */
 	BandedHMMP7(const string& name, int K, const DegenAlphabet* abc);
 
@@ -212,9 +212,16 @@ public:
 	void setSequenceMode(enum align_mode mode);
 
 	/**
-	 * Set the special state N and C emission frequencies. No emission for state B and E
+	 * Set the special state N and C emission frequencies using given values. No emission for state B and E
 	 */
 	void setSpEmissionFreq(const Vector4d& freq);
+
+	/**
+	 * Set the special state N and C emission frequencies using the embedded background by default.
+	 */
+	void setSpEmissionFreq() {
+		setSpEmissionFreq(hmmBg.getBgEmitPr());
+	}
 
 	/**
 	 * Get the profile location given a index of the original multiple alignment
@@ -349,9 +356,16 @@ public:
 	 */
 	DigitalSeq buildGlobalAlignDS(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
 
-	/* static member methods */
-	static BandedHMMP7 build(const MSA& msa, double symfrac,
-			const BandedHMMP7Prior& prior, const string& name = "unnamed");
+	/**
+	 * build hmm from a MSA, override any old data
+	 * @param msa  a MSA object
+	 * @param symfrac  threshold for defining a consensus site in HMM model
+	 * @param prior  Dirichlet model based prior models
+	 * @param name  optional model name
+	 * @return this object
+	 */
+	BandedHMMP7& build(const MSA& msa, double symfrac,
+			const BandedHMMP7Prior& prior, const string& name = "");
 
 	/**
 	 * Scale the current model's transition and emission matrix by a constant factor
@@ -435,38 +449,41 @@ private:
 
 	map<string, vector<string> > locOptTags; // other profile loc-specific optional tags in the match emission line
 
-	/* Initialization flags */
-	bool transInit;
-	bool emisInit;
-	bool spInit;
-	bool limitInit;
-	bool indexInit;
 	bool wingRetracted;
 
 	/**
-	 * Initialize profile transition cost matrices, but not their elements
+	 * Initialize profile transition matrices,
+	 * with all prob matrices filled with zero,
+	 * and all cost matrices filled with inf
 	 */
 	void init_transition_params();
 
 	/**
-	 * Initialize profile emission cost matrices, but not their elements
+	 * Initialize profile emission cost matrices
+	 * with all prob matrices filled with zero,
+	 * and all cost matrices filled with inf
 	 */
 	void init_emission_params();
 
 	/**
-	 * Initialize profile special parameters, but not their elements
+	 * Initialize profile special parameters
+	 * with all prob matrices filled with zero,
+	 * and all cost matrices filled with inf
 	 */
 	void init_special_params();
 
 	/**
 	 * Reset profile transition cost matrices
-	 * use 0 for normal matrices and -inf for log matrices
+	 * with all prob matrices filled with zero,
+	 * and all cost matrices filled with inf
+	 * but keep the profile size K unchanged
 	 */
 	void reset_transition_params();
 
 	/**
 	 * Reset profile emission cost matrices
-	 * use 0 for normal matrices and -inf for log matrices
+	 * with all prob matrices filled with zero,
+	 * and all cost matrices filled with inf
 	 */
 	void reset_emission_params();
 
@@ -487,9 +504,9 @@ private:
 	void init_limits();
 
 	/**
-	 * Initialize the profile loc index
+	 * reset the profile loc index
 	 */
-	void init_index();
+	void reset_index();
 
 	/**
 	 * set the profile alignment to local mode by setting entry and exit probabilities
@@ -705,6 +722,13 @@ private:
 	friend class RelativeEntropyTargetFunc;
 
 }; /* BandedHMMP7 */
+
+inline BandedHMMP7::BandedHMMP7() :
+		hmmVersion(progName + "-" + progVersion), name("unnamed"), K(0), abc(NULL),
+		hmmBg(0), nSeq(0), effN(0), wingRetracted(false) {
+	/* Assert IEE559 at construction time */
+	assert(std::numeric_limits<double>::is_iec559);
+}
 
 inline std::string BandedHMMP7::getOptTag(const string& tag) const {
 	map<string, string>::const_iterator it = optTags.find(tag);

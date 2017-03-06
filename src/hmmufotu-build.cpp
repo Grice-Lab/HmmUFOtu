@@ -44,6 +44,7 @@ void printUsage(const string& progName) {
 		 << "            -a|--anno  FILE      : use tab-delimited taxonamy annotation file for the sequences in the MSA and TREE files" << endl
 		 << "            -dm  FILE            : use customized trained Dirichlet Model in FILE instead of the build-in file" << endl
 		 << "            -sm  FILE            : use customized trained DNA Substitution Model in FILE instead of the build-in file" << endl
+		 << "            --no-hmm FLAG        : do not build the Hmm profile. Users should build the Hmm profile by 3rd party programs, i.e. HMMER3" << endl
 		 << "            -V|--var FLAG        : enable among-site rate varation evaluation of the tree, using a Discrete Gamma Distribution based model" << endl
 		 << "            -k INT               : number of Discrete Gamma Distribution categories to evaluate the tree, ignored if -V not set [" << DEFAULT_DG_CATEGORY << "]" << endl
 		 << "            -v  FLAG             : enable verbose information" << endl
@@ -59,6 +60,7 @@ int main(int argc, char* argv[]) {
 	double symfrac = DEFAULT_SYMFRAC;
 	string dmFn = DM_DATADIR + string("/") + DEFAULT_DM_FILE;
 	string smFn = SM_DATADIR + string("/") + DEFAULT_SM_FILE;
+	bool noHmm = false;
 	bool isVar = false;
 	int K = DEFAULT_DG_CATEGORY;
 
@@ -125,6 +127,8 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-sm"))
 		smFn = cmdOpts.getOpt("-sm");
 
+	if(cmdOpts.hasOpt("--no-hmm"))
+		noHmm = true;
 
 	if(cmdOpts.hasOpt("-k")) {
 		K = atoi(cmdOpts.getOptStr("-k"));
@@ -205,7 +209,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	/* build hmm */
+	/* build hmm, if requested */
 	/* Load in BandedHmmPrior for the HMM training */
 	BandedHMMP7Prior hmmPrior;
 	dmIn >> hmmPrior;
@@ -213,8 +217,11 @@ int main(int argc, char* argv[]) {
 		cerr << "Failed to read in the HMM Prior file '" << dmFn << "'" << endl;
 		return EXIT_FAILURE;
 	}
-	BandedHMMP7 hmm = BandedHMMP7::build(msa, symfrac, hmmPrior);
-	infoLog << "Banded HMM profile trained" << endl;
+	BandedHMMP7 hmm; /* construct an empty profile */
+	if(!noHmm) {
+		hmm.build(msa, symfrac, hmmPrior);
+		infoLog << "Banded HMM profile trained" << endl;
+	}
 
 	/* build ptu */
 	EGriceLab::NewickTree NTree;
@@ -316,7 +323,7 @@ int main(int argc, char* argv[]) {
 	/* reset root to original */
 	tree.setRoot(oldRoot);
 //	infoLog << endl << "Tree log-liklihood: " << tree.treeLoglik() << endl;
-	infoLog << endl << "Saving database files ..." << endl;
+	infoLog << "Saving database files ..." << endl;
 
 	/* write database files */
 	if(!msa.save(msaOut)) {
@@ -331,12 +338,14 @@ int main(int argc, char* argv[]) {
 	}
 	infoLog << "CSFM saved" << endl;
 
-	hmmOut << hmm;
-	if(hmmOut.bad()) {
-		cerr << "Unable to save HMM profile: " << ::strerror(errno) << endl;
-		return EXIT_FAILURE;
+	if(!noHmm) {
+		hmmOut << hmm;
+		if(hmmOut.bad()) {
+			cerr << "Unable to save HMM profile: " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+		infoLog << "Banded HMM profile saved" << endl;
 	}
-	infoLog << "Banded HMM profile saved" << endl;
 
 	if(!tree.save(ptuOut)) {
 		cerr << "Unable to save Phylogenetic Tree index: " << ::strerror(errno) << endl;

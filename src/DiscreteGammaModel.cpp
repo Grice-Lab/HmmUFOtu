@@ -62,7 +62,7 @@ ostream& DiscreteGammaModel::save(ostream& out) const {
 	map = b; /* copy b into buf */
 	out.write((const char*) buf, sizeof(double) * (K + 1));
 
-	map = r; /* copy r into buf */
+	map.segment(0, K) = r; /* copy r into buf */
 	out.write((const char*) buf, sizeof(double) * K);
 	delete[] buf;
 

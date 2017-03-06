@@ -32,31 +32,21 @@ const double BandedHMMP7::CONS_THRESHOLD = 0.9;
 const double BandedHMMP7::DEFAULT_ERE = 1;
 const IOFormat tabFmt(StreamPrecision, DontAlignCols, "\t", "\n", "", "", "", "");
 
-BandedHMMP7::BandedHMMP7() :
-		hmmVersion(progName + "-" + progVersion), name("unnamed"), K(0), abc(NULL),
-		hmmBg(0), nSeq(0), effN(0),
-		transInit(false), emisInit(false),
-		spInit(false), limitInit(false), indexInit(false), wingRetracted(false) {
-	/* Assert IEE559 at construction time */
-	assert(numeric_limits<double>::is_iec559);
-}
-
 BandedHMMP7::BandedHMMP7(const string& name, int K, const DegenAlphabet* abc) :
 		hmmVersion(progName + "-" + progVersion), name(name), K(K), abc(abc),
 		hmmBg(K), nSeq(0), effN(0),
-		transInit(false), emisInit(false), spInit(false), limitInit(false), indexInit(false),
+		cs2ProfileIdx() /* zero initiation */, profile2CSIdx() /* zero initiation */,
 		wingRetracted(false) {
-	if(!(abc->getName() == "IUPACNucl" && abc->getSize() == 4))
+	if(!(abc->getAlias() == "DNA" && abc->getSize() == 4))
 		throw invalid_argument("BandedHMMP7 only supports DNA alphabet");
 	/* Assert IEE559 at construction time */
 	assert(numeric_limits<double>::is_iec559);
 	init_transition_params();
 	init_emission_params();
 	init_special_params();
-	init_index();
 	init_limits();
 	enableProfileLocalMode(); // always in profile local alignment mode
-	setSpEmissionFreq(hmmBg.getBgEmitPr()); // Use bg emission freq by default
+	setSpEmissionFreq(); // set special emissions by default method
 }
 
 /* non-member friend functions */
@@ -88,6 +78,8 @@ istream& operator>>(istream& in, BandedHMMP7& hmm) {
 				int size;
 				iss >> size;
 				hmm.setProfileSize(size);
+				hmm.enableProfileLocalMode(); // always in profile local alignment mode
+				hmm.setSpEmissionFreq(); // set special emissions by default method
 			} else if (tag == "ALPH") {
 				string abc;
 				iss >> abc;
@@ -342,44 +334,40 @@ ostream& operator<<(ostream& os, const deque<BandedHMMP7::p7_state> path) {
 	return os;
 }
 
-BandedHMMP7 BandedHMMP7::build(const MSA& msa, double symfrac,
+BandedHMMP7& BandedHMMP7::build(const MSA& msa, double symfrac,
 		const BandedHMMP7Prior& prior, const string& name) {
 	if(msa.getMSALen() == 0)
 		throw invalid_argument("Empty MSA encountered");
 	if(!(symfrac > 0 && symfrac < 1))
 		throw invalid_argument("symfrac must between 0 and 1");
+
+	/* set basic info and index */
+	if(!name.empty())
+		this->name = name;
+	else
+		this->name = msa.getName();
+	abc = msa.getAbc();
+	reset_index();
 	/* determine the bHMM size */
 	const unsigned L = msa.getCSLen();
 	const unsigned N = msa.getNumSeq();
 	unsigned k = 0;
-	int cs2ProfileIdx[kMaxProfile + 1]; // MAP index from consensus index -> profile index
-	int profile2CSIdx[kMaxCS + 1]; // MAP index from profile index -> consensus index
-	for(int i = 0; i <= kMaxProfile; ++i)
-		cs2ProfileIdx[i] = 0;
-	for(int i = 1; i <= kMaxCS; ++i)
-		profile2CSIdx[i] = 0;
 
 	for(unsigned j = 0; j < L; ++j) {
 		if(msa.symWFrac(j) >= symfrac)
 			profile2CSIdx[++k] = j + 1; /* all index are 1-based */
 		cs2ProfileIdx[j+1] = k;
 	}
-	const int K = k;
-	const int csStart = profile2CSIdx[1];
-	const int csEnd = profile2CSIdx[K];
+	/* profile size calculated as current k */
+	setProfileSize(k);
 
-	BandedHMMP7 hmm(msa.getName(), K, msa.getAbc()); /* construct an empty hmm */
-
-	/* reset transition and emisison matrices */
-	hmm.reset_transition_params();
-	hmm.reset_emission_params();
-	/* copy the index */
-	std::copy(cs2ProfileIdx, cs2ProfileIdx + kMaxProfile, hmm.cs2ProfileIdx);
-	std::copy(profile2CSIdx, profile2CSIdx + kMaxCS, hmm.profile2CSIdx);
+	/* reset/init transition and emisison matrices */
+	reset_transition_params();
+	reset_emission_params();
 
 	/* train the hmm model using observed count, all index are 1-based */
 	for(unsigned j = 1; j <= L; ++j) {
-		unsigned k = cs2ProfileIdx[j];
+		k = cs2ProfileIdx[j];
 		for(unsigned i = 1; i <= N; ++i) {
 			int8_t b = msa.encodeAt(i - 1, j - 1);
 			double w = msa.getSeqWeight(i - 1); /* use weighted count */
@@ -390,12 +378,12 @@ BandedHMMP7 BandedHMMP7::build(const MSA& msa, double symfrac,
 			/* update emission frequencies */
 			if(sm == M) {
 //				cerr << "i:" << i << " j:" << j << " b:" << (int) b << " db:" << hmm.abc->decode(b) << " k:" << k << endl;
-				hmm.E_M(b, 0) += w; /* M0 as the COMPO freq */
-				hmm.E_M(b, k) += w;
+				E_M(b, 0) += w; /* M0 as the COMPO freq */
+				E_M(b, k) += w;
 			}
 			else if(sm == I) {
 //				cerr << "i:" << i << " j:" << j << " b:" << (int) b << " db:" << hmm.abc->decode(b) << " k:" << k << endl;
-				hmm.E_I(b, k) += w;
+				E_I(b, k) += w;
 			}
 			else { } // no emission
 
@@ -416,7 +404,7 @@ BandedHMMP7 BandedHMMP7::build(const MSA& msa, double symfrac,
 				continue;
 //			if(sm == D && (j < msa->seqStart(i) + 1 || j > msa->seqEnd(i) + 1)) // 5' and 3' hanging gaps are ignored
 //				continue;
-			hmm.Tmat[k](sm, smN) += w;
+			Tmat[k](sm, smN) += w;
 		} // end each seq
 	} // end each loc
 	/* update B->M1/I0/D1 and MK/IK/DK->E frequencies */
@@ -426,62 +414,62 @@ BandedHMMP7 BandedHMMP7::build(const MSA& msa, double symfrac,
 		int end = msa.seqEnd(i);
 		int8_t bStart = msa.encodeAt(i, start);
 		p7_state smStart = determineMatchingState(cs2ProfileIdx, start + 1, bStart);
-		hmm.Tmat[0](M, smStart) += w;
+		Tmat[0](M, smStart) += w;
 		int8_t bEnd = msa.encodeAt(i, end);
 		p7_state smEnd = determineMatchingState(cs2ProfileIdx, end + 1, bEnd);
-		hmm.Tmat[K](smEnd, M) += w;
+		Tmat[K](smEnd, M) += w;
 	}
-	hmm.nSeq = msa.getNumSeq();
-	hmm.effN = hmm.nSeq;
+
+	nSeq = msa.getNumSeq();
+	effN = nSeq;
 
 	/* tune the effN to target mean relative entropy */
-
-	RelativeEntropyTargetFunc entFunc(DEFAULT_ERE, hmm, prior);
-	Math::RootFinder rf(entFunc, 0, hmm.nSeq);
-	hmm.effN = rf.rootBisection();
-	if(::isnan(hmm.effN))
-		hmm.effN = hmm.nSeq;
+	RelativeEntropyTargetFunc entFunc(DEFAULT_ERE, *this, prior);
+	Math::RootFinder rf(entFunc, 0, nSeq);
+	effN = rf.rootBisection();
+	if(::isnan(effN)) /* failed to estimate effN */
+		effN = nSeq;
 //	cerr << "Final HMM EFFN: " << hmm.effN << endl;
-	hmm.scale(hmm.effN / hmm.nSeq);
-	hmm.estimateParams(prior);
+	scale(effN / nSeq);
+	estimateParams(prior);
 
 	/* set bgFreq */
-	hmm.hmmBg.setBgFreq(hmm.E_M.col(0));
-	hmm.setSpEmissionFreq(hmm.E_M.col(0));
+	hmmBg.setBgFreq(E_M.col(0));
+	setSpEmissionFreq(E_M.col(0));
 
 	/* set optional tags */
 	char value[128];
 	sprintf(value, "%d", msa.getCSLen());
-	hmm.setOptTag("MAXL", value);
+	setOptTag("MAXL", value);
 
-	hmm.setOptTag("RF", "no");
+	setOptTag("RF", "no");
 
-	hmm.setOptTag("MM", "no");
+	setOptTag("MM", "no");
 
-	hmm.setOptTag("CONS", "yes");
+	setOptTag("CONS", "yes");
 
-	hmm.setOptTag("CS", "no");
+	setOptTag("CS", "no");
 
-	hmm.setOptTag("MAP", "yes");
+	setOptTag("MAP", "yes");
 
-	sprintf(value, "%d", hmm.nSeq);
-	hmm.setOptTag("NSEQ", value);
+	sprintf(value, "%d", nSeq);
+	setOptTag("NSEQ", value);
 
-	sprintf(value, "%g", hmm.effN);
-	hmm.setOptTag("EFFN", value);
+	sprintf(value, "%g", effN);
+	setOptTag("EFFN", value);
 
 	/* set locOptTags */
-	hmm.locOptTags["CONS"].resize(K + 1);
-	hmm.locOptTags["MAP"].resize(K + 1);
+	locOptTags["CONS"].resize(K + 1);
+	locOptTags["MAP"].resize(K + 1);
 	for(int k = 1; k <= K; ++k) {
 		int map = profile2CSIdx[k];
 		sprintf(value, "%d", map);
-		hmm.setLocOptTag("MAP", value, k);
+		setLocOptTag("MAP", value, k);
 		char c = msa.CSBaseAt(map);
-		int8_t b = msa.getAbc()->encode(c);
+		int8_t b = abc->encode(c);
 		if(msa.wIdentityAt(map) < CONS_THRESHOLD)
 			c = ::tolower(c);
-		hmm.setLocOptTag("CONS", string() + c, k);
+		setLocOptTag("CONS", string() + c, k);
 	}
 
 	/* set DATE tag after all done */
@@ -490,9 +478,9 @@ BandedHMMP7 BandedHMMP7::build(const MSA& msa, double symfrac,
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 	strftime(value, 128, "%c", timeinfo);
-	hmm.setOptTag("DATE", value);
+	setOptTag("DATE", value);
 
-	return hmm;
+	return *this;
 }
 
 string BandedHMMP7::trim(const string& str, const string& whitespace) {
@@ -511,15 +499,15 @@ string BandedHMMP7::trim(const string& str, const string& whitespace) {
  }*/
 
 void BandedHMMP7::setProfileSize(int size) {
+	if(size == K) /* profile size is correct */
+		return;
 	K = size; // set self size
 	hmmBg.setSize(size); // set bg size
 	init_transition_params();
 	init_emission_params();
 	init_special_params();
-	init_index();
+	reset_index();
 	init_limits();
-	enableProfileLocalMode(); // always in profile local alignment mode
-	setSpEmissionFreq(hmmBg.getBgEmitPr()); // Use bg emission freq by default
 }
 
 void BandedHMMP7::setSequenceMode(enum align_mode mode) {
@@ -553,52 +541,53 @@ void BandedHMMP7::setSpEmissionFreq(const Vector4d& freq) {
 }
 
 void BandedHMMP7::init_transition_params() {
-	if (transInit) // already initialized
-		return;
-	/*
-	 * state 0 serves as the B state
-	 */
-	/* initiate transition matrices */
-	Tmat = vector<Matrix3d>(K + 1);
-	Tmat_cost = vector<Matrix3d>(K + 1);
-	transInit = true;
+	/* state 0 serves as the B state */
+	Tmat.clear();
+	Tmat_cost.clear();
+	for(int k = 0; k <= K; ++k) {
+		Tmat.push_back(Matrix3d::Zero());
+		Tmat_cost.push_back(Matrix3d::Constant(inf));
+	}
 }
 
 void BandedHMMP7::init_emission_params() {
-	if (emisInit) // already initialized
-		return;
 	/* state 0 serves as B state */
-	E_M = E_M_cost = Matrix4Xd(4, K + 1);
-	E_I = E_I_cost = Matrix4Xd(4, K + 1);
-	emisInit = true;
+	E_M = E_I = Matrix4Xd::Zero(4, K + 1);
+	E_M_cost = E_I_cost = Matrix4Xd::Constant(4, K + 1, inf);
 }
 
 void BandedHMMP7::init_special_params() {
-	if (spInit) // already initialized
-		return;
-	entryPr = entryPr_cost = VectorXd(K + 1);
-	exitPr = exitPr_cost = VectorXd(K + 1);
-	E_SP = E_SP_cost = Matrix4Xd(4, kNS);
-	T_SP = T_SP_cost = MatrixXd(kNS, kNS);
-	spInit = true;
+	/* entry and exit vectors */
+	entryPr = exitPr = VectorXd::Zero(K + 1);
+	entryPr_cost = exitPr_cost = VectorXd::Constant(K + 1, inf);
+	/* special matrices */
+	E_SP = Matrix4Xd::Zero(4, kNS);
+	E_SP_cost = Matrix4Xd::Constant(4, kNS, inf);
+	T_SP = MatrixXd::Zero(kNS, kNS);
+	T_SP_cost = MatrixXd::Constant(kNS, kNS, inf);
 }
 
 void BandedHMMP7::reset_transition_params() {
-	/*
-	 * state 0 serves as the B state
-	 */
+	/* state 0 serves as the B state */
+	if(!(Tmat.size() != K + 1 && Tmat_cost.size() != K + 1)) /* need initiation instead of reset */
+		return init_transition_params();
+
 	for(int k = 0; k <= K; ++k) {
 		Tmat[k].setZero();
-		Tmat_cost[k].fill(inf);
+		Tmat_cost[k].setConstant(inf);
 	}
 }
 
 void BandedHMMP7::reset_emission_params() {
 	/* state 0 serves as B state */
+	if(!(E_M.cols() == K + 1 && E_I.cols() == K + 1
+			&& E_M_cost.cols() == K + 1 && E_I_cost.cols() == K + 1)) /* need initiation instead of reset */
+		return init_emission_params();
+
 	E_M.setZero();
 	E_I.setZero();
-	E_M_cost.fill(inf);
-	E_I_cost.fill(inf);
+	E_M_cost.setConstant(inf);
+	E_I_cost.setConstant(inf);
 }
 
 /*void BandedHMMP7::normalize_transition_params() {
@@ -645,23 +634,16 @@ void BandedHMMP7::reset_emission_params() {
 }*/
 
 void BandedHMMP7::init_limits() {
-	if (limitInit) // already initialized
-		return;
-/*	insBeforeLimit = insAfterLimit = VectorXi::Constant(K + 1, static_cast<int> (kMinProfile));
-	delBeforeLimit = delAfterLimit = VectorXi::Constant(K + 1, static_cast<int> (kMinProfile));*/
-
 	gapBeforeLimit = gapAfterLimit = VectorXi(K + 1);
 	//delBeforeLimit = delAfterLimit = VectorXi(K + 1);
 	for(VectorXi::Index j = 1; j <= K; ++j) {
 		gapBeforeLimit(j) = j * kMinGapFrac;
 		gapAfterLimit(j) = (K - j) * kMinGapFrac;
 	}
-	limitInit = true;
 }
 
-void BandedHMMP7::init_index() {
-	if(indexInit) // already initialized
-		return;
+void BandedHMMP7::reset_index() {
+	/* position 0 is dummy for all indices */
 	for(int i = 0; i <= kMaxProfile; ++i)
 		cs2ProfileIdx[i] = 0;
 	for(int i = 1; i <= kMaxCS; ++i)
