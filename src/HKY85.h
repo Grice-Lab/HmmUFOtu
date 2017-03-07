@@ -1,6 +1,6 @@
 /*
  * HKY85.h
- *
+ *  HKY85 DNA Substitution Model
  *  Created on: Mar 7, 2017
  *      Author: zhengqi
  */

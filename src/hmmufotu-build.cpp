@@ -25,7 +25,7 @@ using namespace EGriceLab;
 /** default values */
 static const double DEFAULT_SYMFRAC = 0.5;
 static const string DEFAULT_DM_FILE = "gg_97_otus.dm";
-static const string DEFAULT_SM_FILE = "gg_97_otus.sm";
+static const string DEFAULT_SM_FILE = "gg_97_otus.gtr";
 static const string ALPHABET = "dna";
 static const int DEFAULT_DG_CATEGORY = 4;
 static const int MIN_DG_CATEGORY = 2;

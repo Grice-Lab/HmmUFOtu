@@ -36,6 +36,7 @@ PhyloTreeUnrooted.cpp \
 DNASubModel.cpp \
 GTR.cpp \
 HKY85.cpp \
+F81.cpp \
 DiscreteGammaModel.cpp \
 DNASubModelFactory.cpp
 
@@ -47,7 +48,8 @@ hmmufotu-train-sm \
 hmmufotu-train-hmm \
 hmmufotu-sim \
 hmmufotu-place \
-hmmufotu-build
+hmmufotu-build \
+hmmufotu-inspect
 
 hmmufotu_SOURCES=hmmufotu.cpp
 #hmmufotu_LDADD = libHmmUFOtu_common.a math/libEGMath.a
@@ -79,3 +81,8 @@ hmmufotu_build_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a libHmmUFOtu_hmm.
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_build_LDFLAGS = -static
 hmmufotu_build_CPPFLAGS = -DDM_DATADIR=\"$(pkgdatadir)\" -DSM_DATADIR=\"$(pkgdatadir)\"
+
+hmmufotu_inspect_SOURCES = hmmufotu-inspect.cpp
+hmmufotu_inspect_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a \
+libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
+hmmufotu_inspect_LDFLAGS = -static
