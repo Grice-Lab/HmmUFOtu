@@ -11,7 +11,7 @@
 #include <stdexcept>
 #include <string>
 #include "DNASubModel.h"
-#include "GTR.h"
+
 
 namespace EGriceLab {
 

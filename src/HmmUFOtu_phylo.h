@@ -11,6 +11,7 @@
 #include "NewickTree.h"
 #include "DNASubModel.h"
 #include "GTR.h"
+#include "HKY85.h"
 #include "DNASubModelFactory.h"
 #include "DiscreteGammaModel.h"
 #include "PhyloTreeUnrooted.h"

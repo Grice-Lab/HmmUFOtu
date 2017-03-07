@@ -24,14 +24,12 @@ using Eigen::Matrix4cd;
 
 class GTR : public DNASubModel {
 public:
-	/* Constructors */
-
-	/* destructor, do nothing */
+	/* virtual destructor, do nothing */
 	virtual ~GTR() { }
 
 	/* member methods */
 	virtual string modelType() const {
-		return "GTR";
+		return name;
 	}
 
 	virtual Vector4d getPi() const {
@@ -42,7 +40,7 @@ public:
 	 * get the Prob matrix given branch length and optionally rate factor
 	 * @override  the base class pure virtual function
 	 */
-	Matrix4d Pr(double t) const;
+	virtual Matrix4d Pr(double v) const;
 
 	/**
 	 * read in content from input stream
@@ -88,11 +86,11 @@ private:
 	void setQfromParams();
 };
 
-inline Matrix4d GTR::Pr(double t) const {
-	assert(t >= 0);
-	if(t == 0)
+inline Matrix4d GTR::Pr(double v) const {
+	assert(v >= 0);
+	if(v == 0)
 		return Matrix4d::Identity(); /* identity matrix */
-	return U * (lambda * t).array().exp().matrix().asDiagonal() * U_1;
+	return U * (lambda * v).array().exp().matrix().asDiagonal() * U_1;
 }
 
 } /* namespace EGriceLab */

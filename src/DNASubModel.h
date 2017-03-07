@@ -31,6 +31,9 @@ using Eigen::IOFormat;
 
 class DNASubModel {
 public:
+	/* nested enums and types */
+	enum Base { A, C, G, T };
+
 	/* Constructors */
 	/* virtual destructor, do nothing */
 	virtual ~DNASubModel() { }
@@ -42,11 +45,10 @@ public:
 	virtual Vector4d getPi() const = 0;
 
 	/** Get the P transition matrix given a branch length (in unit time ) and an optional rate factor
-	 * @param t  branch length in the unit time
-	 * @param r  rate factor in variable rate ML estimates
+	 * @param v  branch length in the unit time
 	 * @return  Probability rate matrix between for Bases
 	 */
-	virtual Matrix4d Pr(double t) const = 0;
+	virtual Matrix4d Pr(double v) const = 0;
 
 	/**
 	 * train model parameters using a given Phylogenetic tree and method
