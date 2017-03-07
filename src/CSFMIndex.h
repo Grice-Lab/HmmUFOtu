@@ -37,6 +37,15 @@ public:
 		clear();
 	}
 
+	/** getters */
+	uint16_t getCSLen() const {
+		return csLen;
+	}
+
+	int32_t getConcatLen() const {
+		return concatLen;
+	}
+
 	/**
 	 * Build an CSFMIndex from a MSA object, old data is removed
 	 * @param msa  pointer to an MSA object
