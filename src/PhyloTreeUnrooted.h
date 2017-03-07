@@ -38,7 +38,6 @@
 namespace EGriceLab {
 using std::string;
 using std::vector;
-using std::map;
 using std::istream;
 using std::ostream;
 using Eigen::Matrix4Xd;
