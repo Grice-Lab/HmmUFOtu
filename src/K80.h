@@ -31,7 +31,7 @@ public:
 		return name;
 	}
 
-	virtual const Vector4d& getPi() const {
+	virtual Vector4d getPi() const {
 		return pi;
 	}
 
@@ -75,7 +75,7 @@ private:
 	}
 
 	static const string name;
-	static const Vector4d pi = Vector4d::Constant(1.0 / 4);
+	static const Vector4d pi;
 
 	double kappa; // Ti/Tv ratio
 	double beta; // sequence diversity as 1 / (8 + 4kappa)

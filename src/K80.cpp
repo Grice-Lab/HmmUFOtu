@@ -13,6 +13,7 @@ using namespace std;
 using namespace Eigen;
 
 const string K80::name = "K80";
+const Vector4d K80::pi = Vector4d::Constant(1.0 / 4);
 
 istream& K80::read(istream& in) {
 	string line, tag, value;
