@@ -63,8 +63,6 @@ ostream& HKY85::write(ostream& out) const {
 void HKY85::trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) {
 	/* estimate pi using mean f */
 	pi = f / f.sum();
-	/* estimate beta */
-	setBeta();
 	/* estimate kappa */
 	for(vector<Matrix4d>::const_iterator P = Pv.begin(); P != Pv.end(); ++P) {
 		double Ti = (*P)(A, G) + (*P)(G, A) + (*P)(C, T) + (*P)(T, C);
@@ -72,6 +70,8 @@ void HKY85::trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) {
 		kappa += Ti / Tv;
 	}
 	kappa /= Pv.size();
+	/* estimate beta */
+	setBeta();
 }
 
 } /* namespace EGriceLab */

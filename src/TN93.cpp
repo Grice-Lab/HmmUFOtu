@@ -65,8 +65,6 @@ ostream& TN93::write(ostream& out) const {
 void TN93::trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) {
 	/* estimate pi using mean f */
 	pi = f / f.sum();
-	/* estimate beta */
-	setBeta();
 	/* estimate kr and ky */
 	for(vector<Matrix4d>::const_iterator P = Pv.begin(); P != Pv.end(); ++P) {
 		double Tr = (*P)(A, G) + (*P)(G, A);
@@ -77,6 +75,8 @@ void TN93::trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) {
 	}
 	kr /= Pv.size();
 	ky /= Pv.size();
+	/* estimate beta */
+	setBeta();
 }
 
 } /* namespace EGriceLab */
