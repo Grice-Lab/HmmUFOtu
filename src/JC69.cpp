@@ -1,21 +1,21 @@
 /*
- * K80.cpp
+ * JC69.cpp
  *
  *  Created on: Mar 7, 2017
  *      Author: zhengqi
  */
 
-#include "K80.h"
+#include "JC69.h"
 #include "ProgLog.h"
 
 namespace EGriceLab {
 using namespace std;
 using namespace Eigen;
 
-const string K80::name = "K80";
-const Vector4d K80::pi = Vector4d::Constant(1.0 / 4);
+const string JC69::name = "JC69";
+const Vector4d JC69::pi = Vector4d::Constant(1.0 / 4);
 
-istream& K80::read(istream& in) {
+istream& JC69::read(istream& in) {
 	string line, tag, value;
 	while(in >> tag) {
 		if(tag[0] == '#') { /* comment or header */
@@ -30,14 +30,11 @@ istream& K80::read(istream& in) {
 				in.setstate(ios_base::badbit);
 				return in;
 			}
-		}
-		else if(tag == "kappa:") {
-			in >> kappa;
-			std::getline(in, line); /* ignore the entire line */
+			std::getline(in, line); /* ignore the reset of line */
 			break;
 		}
 		else {
-			errorLog << "Un-recognized line found in K80 Model input: tag: " << tag << endl << line << endl;
+			errorLog << "Un-recognized line found in JC69 Model input: tag: " << tag << endl << line << endl;
 			in.setstate(ios_base::badbit);
 			return in;
 		}
@@ -46,22 +43,11 @@ istream& K80::read(istream& in) {
 	return in;
 }
 
-ostream& K80::write(ostream& out) const {
+ostream& JC69::write(ostream& out) const {
 	out << "# DNA Substitution Model" << endl;
 	out << "Type: " << modelType() << endl;
-	out << "kappa: " << kappa << endl;
 
 	return out;
-}
-
-void K80::trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) {
-	/* estimate kappa */
-	double Ti = 0, Tv = 0;
-	for(vector<Matrix4d>::const_iterator P = Pv.begin(); P != Pv.end(); ++P) {
-		Ti += (*P)(A, G) + (*P)(G, A) + (*P)(C, T) + (*P)(T, C);
-		Tv += (*P)(A, C) + (*P)(A, T) + (*P)(C, A) + (*P)(C, G) + (*P)(G, C) + (*P)(G, T) + (*P)(T, A) + (*P)(T, G);
-	}
-	kappa = Ti / Tv;
 }
 
 } /* namespace EGriceLab */

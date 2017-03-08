@@ -1,27 +1,22 @@
 /*
- * K80.h
- *  K80 DNA Substitution Model
+ * JC69.h
+ *  JC69 DNA Substitution Model
  *  Created on: Mar 8, 2017
  *      Author: zhengqi
  */
 
-#ifndef SRC_K80_H_
-#define SRC_K80_H_
+#ifndef SRC_JC69_H_
+#define SRC_JC69_H_
 
 #include <cmath>
 #include "DNASubModel.h"
 
 namespace EGriceLab {
 
-class K80: public DNASubModel {
+class JC69: public DNASubModel {
 public:
-	/* Constructors */
-
-	/** default constructor */
-	K80() : kappa(1) { }
-
 	/* destructor, do nothing */
-	virtual ~K80() { }
+	virtual ~JC69() { }
 
 	/* member methods */
 	virtual string modelType() const {
@@ -55,35 +50,30 @@ public:
 	 * train model parameters using given sets of observed base transition and frequency counts
 	 * @override  base class method
 	 */
-	virtual void trainParams(const vector<Matrix4d>& Pv, const Vector4d& f);
+	virtual void trainParams(const vector<Matrix4d>& Pv, const Vector4d& f)
+	{ }
 
 	/**
 	 * copy this object and return the new object's address
 	 * @override  base class method
 	 */
-	virtual K80* clone() const {
-		return new K80(*this);
+	virtual JC69* clone() const {
+		return new JC69(*this);
 	}
 
 private:
+
 	static const string name;
 	static const Vector4d pi;
-
-	double kappa; // Ti/Tv ratio
 };
 
-inline Matrix4d K80::Pr(double v) const {
-	Matrix4d P;
-	double beta = 1 / (2 + kappa);
-	double e = ::exp(-4 * beta * v);
-	double eV = ::exp(-2 * (1 + kappa) * beta * v);
-	P.diagonal().setConstant((1.0 + e + 2 * eV) / 4);
-	P(A,G) = P(G,A) = P(C,T) = P(T,C) = (1.0 + e - 2 * eV) / 4;
-	P(A,C) = P(A,T) = P(C,A) = P(C,G) = P(G,C) = P(G,T) = P(T,A) = P(T,G) = (1.0 - e) / 4;
+inline Matrix4d JC69::Pr(double v) const {
+	Matrix4d P = Matrix4d::Constant((1 - ::exp(-4 * v / 3)) / 4);
+	P.diagonal().setConstant((1 + 3 * ::exp(-4 * v / 3)) / 4);
 
 	return P;
 }
 
 } /* namespace EGriceLab */
 
-#endif /* SRC_K80_H_ */
+#endif /* SRC_JC69_H_ */

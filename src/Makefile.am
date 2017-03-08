@@ -38,6 +38,8 @@ GTR.cpp \
 TN93.cpp \
 HKY85.cpp \
 F81.cpp \
+K80.cpp \
+JC69.cpp \
 DiscreteGammaModel.cpp \
 DNASubModelFactory.cpp
 

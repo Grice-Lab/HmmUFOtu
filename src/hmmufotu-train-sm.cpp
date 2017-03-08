@@ -18,7 +18,7 @@ using namespace EGriceLab;
 
 /** default values */
 static const string ALPHABET = "dna";
-static const string DEFAULT_SUB_MODEL_TYPE = "GTR";
+static const string DEFAULT_SM_TYPE = "GTR";
 static const string DEFAULT_TRAINING_METHOD = "Gojobori";
 
 /**
@@ -30,7 +30,7 @@ void printUsage(const string& progName) {
 		 << "MSA-FILE  FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
 		 << "Options:    -o FILE              : write output to FILE instead of stdout" << endl
-		 << "            -s|--sub-model STR   : build a time-reversible DNA Substitution Model type, must be one of GTR, TN93, HKY85, F81, K80 or JC69 [" << DEFAULT_SUB_MODEL_TYPE << "]" << endl
+		 << "            -s|--sub-model STR   : build a time-reversible DNA Substitution Model type, must be one of GTR, TN93, HKY85, F81, K80 or JC69 [" << DEFAULT_SM_TYPE << "]" << endl
 		 << "            -m|--method  STR     : model training method using known phylogenetic tree data, either 'Gojobori' or 'Goldman' [" << DEFAULT_TRAINING_METHOD << "]" << endl
 		 << "            -v  FLAG             : enable verbose information" << endl
 		 << "            -h|--help            : print this message and exit" << endl;
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
 	ifstream msaIn, treeIn;
 	ofstream of;
 	string fmt;
-	string smType = DEFAULT_SUB_MODEL_TYPE;
+	string smType = DEFAULT_SM_TYPE;
 	string method = DEFAULT_TRAINING_METHOD;
 
 	/* parse options */

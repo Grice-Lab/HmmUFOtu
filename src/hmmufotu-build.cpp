@@ -25,7 +25,8 @@ using namespace EGriceLab;
 /** default values */
 static const double DEFAULT_SYMFRAC = 0.5;
 static const string DEFAULT_DM_FILE = "gg_97_otus.dm";
-static const string DEFAULT_SM_FILE = "gg_97_otus.gtr";
+static const string DEFAULT_SM_TYPE = "GTR";
+static const string DEFAULT_SM_NAME = "gg_97_otus";
 static const string ALPHABET = "dna";
 static const int DEFAULT_DG_CATEGORY = 4;
 static const int MIN_DG_CATEGORY = 2;
@@ -39,11 +40,12 @@ void printUsage(const string& progName) {
 		 << "Usage:    " << progName << "  <MSA-FILE> <TREE-FILE> [options]" << endl
 		 << "MSA-FILE  FILE                   : multiple-sequence aligned (MSA) input" << endl
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
-		 << "Options:    -n  STR              : database name, use MSA-FILE as prefix by default" << endl
+		 << "Options:    -n  STR              : database name (prefix), use 'MSA-FILE' by default" << endl
 		 << "            -f|--symfrac  DOUBLE : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
 		 << "            -a|--anno  FILE      : use tab-delimited taxonamy annotation file for the sequences in the MSA and TREE files" << endl
 		 << "            -dm  FILE            : use customized trained Dirichlet Model in FILE instead of the build-in file" << endl
-		 << "            -sm  FILE            : use customized trained DNA Substitution Model in FILE instead of the build-in file" << endl
+		 << "            -s|--sub-model STR   : use built-in DNA Substitution Model of this type, must be one of GTR, TN93, HKY85, F81, K80 or JC69 [" << DEFAULT_SM_TYPE << "]" << endl
+		 << "            -sm  FILE            : use customized trained DNA Substitution Model in FILE instead of the build-in model, will override -s if specified" << endl
 		 << "            --no-hmm FLAG        : do not build the Hmm profile. Users should build the Hmm profile by 3rd party programs, i.e. HMMER3" << endl
 		 << "            -V|--var FLAG        : enable among-site rate varation evaluation of the tree, using a Discrete Gamma Distribution based model" << endl
 		 << "            -k INT               : number of Discrete Gamma Distribution categories to evaluate the tree, ignored if -V not set [" << DEFAULT_DG_CATEGORY << "]" << endl
@@ -57,9 +59,10 @@ int main(int argc, char* argv[]) {
 	ifstream dmIn, smIn, seqIn, treeIn, annoIn;
 	ofstream msaOut, csfmOut, hmmOut, ptuOut;
 	string fmt;
+	string smType = DEFAULT_SM_TYPE;
 	double symfrac = DEFAULT_SYMFRAC;
 	string dmFn = DM_DATADIR + string("/") + DEFAULT_DM_FILE;
-	string smFn = SM_DATADIR + string("/") + DEFAULT_SM_FILE;
+	string smFn;
 	bool noHmm = false;
 	bool isVar = false;
 	int K = DEFAULT_DG_CATEGORY;
@@ -80,7 +83,44 @@ int main(int argc, char* argv[]) {
 	seqFn = cmdOpts.getMainOpt(0);
 	treeFn = cmdOpts.getMainOpt(1);
 
-	/* check input format */
+	if(cmdOpts.hasOpt("-V") || cmdOpts.hasOpt("--var"))
+		isVar = true;
+
+	if(cmdOpts.hasOpt("-n"))
+		dbName = cmdOpts.getOpt("-n");
+
+	if(cmdOpts.hasOpt("-f"))
+		symfrac = atof(cmdOpts.getOptStr("-f"));
+	if(cmdOpts.hasOpt("-symfrac"))
+		symfrac = atof(cmdOpts.getOptStr("-symfrac"));
+
+	if(cmdOpts.hasOpt("-a"))
+		annoFn = cmdOpts.getOpt("-a");
+	if(cmdOpts.hasOpt("--anno"))
+		annoFn = cmdOpts.getOpt("--anno");
+
+	if(cmdOpts.hasOpt("-dm"))
+		dmFn = cmdOpts.getOpt("-dm");
+
+	if(cmdOpts.hasOpt("-s"))
+		smType = cmdOpts.getOpt("-s");
+	if(cmdOpts.hasOpt("--sub-model"))
+		smType = cmdOpts.getOpt("--sub-model");
+	smFn = SM_DATADIR + string("/") + DEFAULT_SM_NAME + "_" + smType + SUB_MODEL_FILE_SUFFIX;
+
+	if(cmdOpts.hasOpt("-sm"))
+		smFn = cmdOpts.getOpt("-sm");
+
+	if(cmdOpts.hasOpt("--no-hmm"))
+		noHmm = true;
+
+	if(cmdOpts.hasOpt("-k"))
+		K = atoi(cmdOpts.getOptStr("-k"));
+
+	if(cmdOpts.hasOpt("-v"))
+		ENABLE_INFO();
+
+	/* check options */
 	if(StringUtils::endsWith(seqFn, ".fasta") || StringUtils::endsWith(seqFn, ".fas")
 		|| StringUtils::endsWith(seqFn, ".fa") || StringUtils::endsWith(seqFn, ".fna"))
 		fmt = "fasta";
@@ -94,54 +134,17 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	if(cmdOpts.hasOpt("-V") || cmdOpts.hasOpt("--var"))
-		isVar = true;
+	if(!(MIN_DG_CATEGORY <= K && K <= MAX_DG_CATEGORY)) {
+		cerr << "-k must be an integer between " << MIN_DG_CATEGORY << " and " << MAX_DG_CATEGORY << endl;
+		return EXIT_FAILURE;
+	}
 
-	dbName = StringUtils::basename(seqFn);
-	if(isVar)
-		dbName += "_dG";
-	if(cmdOpts.hasOpt("-n"))
-		dbName = cmdOpts.getOpt("-n");
-	string msaFn = dbName + MSA_FILE_SUFFIX;
-	string csfmFn = dbName + CSFM_FILE_SUFFIX;
-	string hmmFn = dbName + HMM_FILE_SUFFIX;
-	string ptuFn = dbName + PHYLOTREE_FILE_SUFFIX;
-
-	if(cmdOpts.hasOpt("-f"))
-		symfrac = atof(cmdOpts.getOptStr("-f"));
-	if(cmdOpts.hasOpt("-symfrac"))
-		symfrac = atof(cmdOpts.getOptStr("-symfrac"));
 	if(!(symfrac >= 0 && symfrac <= 1)) {
 		cerr << "-f|--symfrac must between 0 and 1" << endl;
 		return EXIT_FAILURE;
 	}
 
-	if(cmdOpts.hasOpt("-a"))
-		annoFn = cmdOpts.getOpt("-a");
-	if(cmdOpts.hasOpt("--anno"))
-		annoFn = cmdOpts.getOpt("--anno");
-
-	if(cmdOpts.hasOpt("-dm"))
-		dmFn = cmdOpts.getOpt("-dm");
-
-	if(cmdOpts.hasOpt("-sm"))
-		smFn = cmdOpts.getOpt("-sm");
-
-	if(cmdOpts.hasOpt("--no-hmm"))
-		noHmm = true;
-
-	if(cmdOpts.hasOpt("-k")) {
-		K = atoi(cmdOpts.getOptStr("-k"));
-		if(!(MIN_DG_CATEGORY <= K && K <= MAX_DG_CATEGORY)) {
-			cerr << "-k must be an integer between " << MIN_DG_CATEGORY << " and " << MAX_DG_CATEGORY << endl;
-			return EXIT_FAILURE;
-		}
-	}
-
-	if(cmdOpts.hasOpt("-v"))
-		ENABLE_INFO();
-
-	/* open input files */
+	/* open inputs */
 	dmIn.open(dmFn.c_str());
 	if(!dmIn.is_open()) {
 		cerr << "Unable to open '" << dmFn << "': " << ::strerror(errno) << endl;
@@ -164,6 +167,16 @@ int main(int argc, char* argv[]) {
 			return EXIT_FAILURE;
 		}
 	}
+
+	/* set dbName */
+	if(dbName.empty())
+		dbName = StringUtils::basename(seqFn);
+	dbName += "_" + smType + (isVar ? "_dG" : "");
+
+	string msaFn = dbName + MSA_FILE_SUFFIX;
+	string csfmFn = dbName + CSFM_FILE_SUFFIX;
+	string hmmFn = dbName + HMM_FILE_SUFFIX;
+	string ptuFn = dbName + PHYLOTREE_FILE_SUFFIX;
 
 	/* open output files */
 	msaOut.open(msaFn.c_str(), ios_base::out | ios_base::binary);

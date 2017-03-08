@@ -66,15 +66,14 @@ void TN93::trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) {
 	/* estimate pi using mean f */
 	pi = f / f.sum();
 	/* estimate kr and ky */
+	double Tr = 0, Ty = 0, Tv = 0;
 	for(vector<Matrix4d>::const_iterator P = Pv.begin(); P != Pv.end(); ++P) {
-		double Tr = (*P)(A, G) + (*P)(G, A);
-		double Ty = (*P)(C, T) + (*P)(T, C);
-		double Tv = (*P)(A, C) + (*P)(A, T) + (*P)(C, A) + (*P)(C, G) + (*P)(G, C) + (*P)(G, T) + (*P)(T, A) + (*P)(T, G);
-		kr += Tr / Tv;
-		ky += Ty / Tv;
+		Tr += (*P)(A, G) + (*P)(G, A);
+		Ty += (*P)(C, T) + (*P)(T, C);
+		Tv += (*P)(A, C) + (*P)(A, T) + (*P)(C, A) + (*P)(C, G) + (*P)(G, C) + (*P)(G, T) + (*P)(T, A) + (*P)(T, G);
 	}
-	kr /= Pv.size();
-	ky /= Pv.size();
+	kr = Tr / Tv;
+	ky = Ty / Tv;
 	/* estimate beta */
 	setBeta();
 }
