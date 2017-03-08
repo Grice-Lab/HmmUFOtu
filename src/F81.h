@@ -77,7 +77,7 @@ private:
 	static const string name;
 
 	Vector4d pi; /* base frequency */
-	double beta; // sequence diversity as 1 / (1 - piA^2 - piC^2 - piG^2 - piT^2)
+	double beta; // sequence diversity as 1 / (1 - A^2 - C^2 - G^2 - T^2)
 };
 
 inline Matrix4d F81::Pr(double v) const {

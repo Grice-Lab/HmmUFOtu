@@ -7,6 +7,7 @@
 
 #include "DNASubModelFactory.h"
 #include "GTR.h"
+#include "TN93.h"
 #include "HKY85.h"
 #include "F81.h"
 
@@ -15,6 +16,8 @@ namespace EGriceLab {
 DNASubModel* DNASubModelFactory::createModel(const string& type) {
 	if(type == "GTR")
 		return new GTR();
+	else if(type == "TN93")
+		return new TN93();
 	else if(type == "HKY85")
 		return new HKY85();
 	else if(type == "F81")

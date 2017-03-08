@@ -35,6 +35,7 @@ NewickTree.cpp \
 PhyloTreeUnrooted.cpp \
 DNASubModel.cpp \
 GTR.cpp \
+TN93.cpp \
 HKY85.cpp \
 F81.cpp \
 DiscreteGammaModel.cpp \

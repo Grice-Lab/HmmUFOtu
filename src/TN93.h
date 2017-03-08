@@ -1,30 +1,30 @@
 /*
- * HKY85.h
- *  HKY85 DNA Substitution Model
- *  Created on: Mar 7, 2017
+ * TN93.h
+ *  TN93 DNA Substitution Model
+ *  Created on: Mar 8, 2017
  *      Author: zhengqi
  */
 
-#ifndef SRC_HKY85_H_
-#define SRC_HKY85_H_
+#ifndef SRC_TN93_H_
+#define SRC_TN93_H_
 
 #include <cmath>
 #include "DNASubModel.h"
 
 namespace EGriceLab {
 
-class HKY85: public DNASubModel {
+class TN93: public DNASubModel {
 public:
 	/* Constructors */
 
 	/** default constructor */
-	HKY85() : kappa(1), pi(Vector4d::Constant(1.0/4))
+	TN93() : kr(1), ky(1), pi(Vector4d::Constant(1.0/4))
 	{
 		setBeta();
 	}
 
 	/* destructor, do nothing */
-	virtual ~HKY85() { }
+	virtual ~TN93() { }
 
 	/* member methods */
 	virtual string modelType() const {
@@ -64,32 +64,34 @@ public:
 	 * copy this object and return the new object's address
 	 * @override  base class method
 	 */
-	virtual HKY85* clone() const {
-		return new HKY85(*this);
+	virtual TN93* clone() const {
+		return new TN93(*this);
 	}
 
 private:
 	/** set beta by kappa and pi */
 	void setBeta() {
-		beta = 1 / (2 * (pi(A) + pi(G)) * (pi(C) + pi(T)) + 2 * kappa * (pi(A) * pi(G) + pi(C) * pi(T)));
+		beta = 1 / ( 2 * (pi(A) * pi(C) + pi(A) * pi(T) + pi(C) * pi(G) + pi(G) * pi(T)
+				       + kr * (pi(A) * pi(G)) + ky * (pi(C) * pi(T))));
 	}
 
 	static const string name;
 
 	Vector4d pi; /* base frequency */
-	double kappa; // Ti/Tv ratio
-	double beta; // sequence diversity as 1 / (2(A + G)(C + T) + 2kappa(A * G + C * T))
+	double kr; // Ti/Tv ratio of purines
+	double ky; // Ti/Tv ratio of pyrimidines
+	double beta; // sequence diversity as 1 / 2(AC + AT + CG + GT + kr * AG + ky * CT))
 };
 
-inline Matrix4d HKY85::Pr(double v) const {
+inline Matrix4d TN93::Pr(double v) const {
 	Matrix4d P;
 	double a = pi(A);
 	double c = pi(C);
 	double g = pi(G);
 	double t = pi(T);
 	double e = ::exp(-beta * v);
-	double eR = ::exp(-(1 + (a + g) * (kappa - 1)) * beta * v);
-	double eY = ::exp(-(1 + (c + t) * (kappa - 1)) * beta * v);
+	double eR = ::exp(-(1 + (a + g) * (kr - 1)) * beta * v);
+	double eY = ::exp(-(1 + (c + t) * (ky - 1)) * beta * v);
 
 	P(A, A) = (a * (a + g + (c + t) * e) + g * eR) / (a + g); /* self */
 	P(A, C) = c * (1 - e);                                    /* Tv */
@@ -116,4 +118,4 @@ inline Matrix4d HKY85::Pr(double v) const {
 
 } /* namespace EGriceLab */
 
-#endif /* SRC_HKY85_H_ */
+#endif /* SRC_TN93_H_ */
