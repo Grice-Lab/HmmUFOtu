@@ -43,6 +43,7 @@ istream& K80::read(istream& in) {
 		}
 	}
 
+	setBeta();
 	return in;
 }
 

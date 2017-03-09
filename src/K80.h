@@ -18,7 +18,9 @@ public:
 	/* Constructors */
 
 	/** default constructor */
-	K80() : kappa(1) { }
+	K80() : kappa(1) {
+		setBeta();
+	}
 
 	/* destructor, do nothing */
 	virtual ~K80() { }
@@ -66,15 +68,20 @@ public:
 	}
 
 private:
+	/** set beta by kappa and pi */
+	void setBeta() {
+		beta = 1 / (2 * kappa);
+	}
+
 	static const string name;
 	static const Vector4d pi;
 
 	double kappa; // Ti/Tv ratio
+	double beta;  // rate diversity
 };
 
 inline Matrix4d K80::Pr(double v) const {
 	Matrix4d P;
-	double beta = 1 / (2 + kappa);
 	double e = ::exp(-4 * beta * v);
 	double eV = ::exp(-2 * (1 + kappa) * beta * v);
 	P.diagonal().setConstant((1.0 + e + 2 * eV) / 4);
