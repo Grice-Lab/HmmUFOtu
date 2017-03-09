@@ -5,6 +5,7 @@
  *      Author: zhengqi
  */
 
+#include <iomanip>
 #include "TN93.h"
 #include "ProgLog.h"
 
@@ -57,7 +58,7 @@ ostream& TN93::write(ostream& out) const {
 	out << "# DNA Substitution Model" << endl;
 	out << "Type: " << modelType() << endl;
 	out << "pi: " << pi.transpose().format(FULL_FORMAT) << endl;
-	out << "kr: " << kr << " ky: " << ky << " beta: " << beta << endl;
+	out << std::setprecision(DBL_MAX_DIGITS) << "kr: " << kr << " ky: " << ky << " beta: " << beta << endl;
 
 	return out;
 }

@@ -5,6 +5,7 @@
  *      Author: zhengqi
  */
 
+#include <iomanip>
 #include "K80.h"
 #include "ProgLog.h"
 
@@ -50,7 +51,7 @@ istream& K80::read(istream& in) {
 ostream& K80::write(ostream& out) const {
 	out << "# DNA Substitution Model" << endl;
 	out << "Type: " << modelType() << endl;
-	out << "kappa: " << kappa << endl;
+	out << std::setprecision(DBL_MAX_DIGITS) << "kappa: " << kappa << endl;
 
 	return out;
 }

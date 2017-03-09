@@ -5,6 +5,7 @@
  *      Author: zhengqi
  */
 
+#include <iomanip>
 #include "F81.h"
 #include "ProgLog.h"
 
@@ -53,7 +54,7 @@ ostream& F81::write(ostream& out) const {
 	out << "# DNA Substitution Model" << endl;
 	out << "Type: " << modelType() << endl;
 	out << "pi: " << pi.transpose().format(FULL_FORMAT) << endl;
-	out << " beta: " << beta << endl;
+	out << std::setprecision(DBL_MAX_DIGITS) << " beta: " << beta << endl;
 
 	return out;
 }
