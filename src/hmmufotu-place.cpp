@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
 
 		NodeSet nodeSeen;
 		for(vector<PTUnrooted::PTUNodePtr>::const_iterator it = leafHits.begin(); it != leafHits.end(); ++it) {
-			PTUnrooted::PTUNodePtr node = *it; /* make a copy */
+			PTUnrooted::PTUNodePtr node = *it;
 			double prevlik = EGriceLab::infV;
 			while(!node->isRoot() && nodeSeen.find(node) == nodeSeen.end()) {
 				/* place the read here */
@@ -172,9 +172,6 @@ int main(int argc, char* argv[]) {
 				double tlik = subtree.treeLoglik(start, end);
 				nodeSeen.insert(node);
 				double dbest = tlik - maxLoglik;
-//				infoLog << "Read " << read.getId() << " placed at branch " << node->getParent()->getId() << "->" << node->getId() <<
-//						" new branch length: " << vn
-//						<< " log-liklihood: " << tlik << " dbest:" << dbest << endl;
 				if(tlik > maxLoglik) {
 					maxLoglik = tlik;
 					bestNode = node;

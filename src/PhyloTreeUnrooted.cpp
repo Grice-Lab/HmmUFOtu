@@ -646,15 +646,20 @@ double PTUnrooted::estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 	const Matrix4Xd& loglikV = getBranchLoglik(v, u);
 
 	double p = 0;
+	int N = 0;
 	for(int j = start; j <= end; ++j) {
 		double logA = dot_product_scaled(pi, loglikU.col(j) + loglikV.col(j));
 		double logB = dot_product_scaled(pi, loglikU.col(j)) + dot_product_scaled(pi, loglikV.col(j));
+		if(::isnan(logA) || ::isnan(logB))
+			continue;
 		double scale = std::max(logA, logB);
 		logA -= scale;
 		logB -= scale;
 		p += ::exp(logB) / (::exp(logA) + ::exp(logB));
+		N++;
+//		fprintf(stderr, "logA:%g logB:%g scale:%g p:%g\n", logA, logB, scale, p);
 	}
-	return p / (end - start + 1);
+	return p / N;
 }
 
 double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v,
@@ -676,15 +681,19 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 	/* Felsenstein's iterative optimizing algorithm */
 	while(p >= 0 && p <= 1) {
 		p = 0;
+		int N = 0;
 		for(int j = start; j <= end; ++j) {
 			double logA = dot_product_scaled(pi, loglikU.col(j) + loglikV.col(j));
 			double logB = dot_product_scaled(pi, loglikU.col(j)) + dot_product_scaled(pi, loglikV.col(j));
+			if(::isnan(logA) || ::isnan(logB))
+				continue;
 			double scale = std::max(logA, logB);
 			logA -= scale;
 			logB -= scale;
 			p += ::exp(logB) * p0 / (::exp(logA) * q0 + ::exp(logB) * p0);
+			N++;
 		}
-		p /= (end - start + 1);
+		p /= N;
 		q = 1 - p;
 
 		if(::fabs(q - q0) < BRANCH_EPS)
@@ -705,29 +714,30 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 	assert(isParent(v, u));
 
 	/* break the connection of u and v */
-	removeEdge(u, v);
 	double w0 = getBranchLength(u, v);
-	const PTUBranch& oldwuv = removeBranch(u, v);
-	const PTUBranch& oldwvu = removeBranch(v, u);
-
+	removeEdge(u, v);
 	/* create a new interior root */
 	PTUNodePtr r(new PTUNode(numNodes(), v->name, csLen));
 	/* create a new leaf with given seq */
 	PTUNodePtr n(new PTUNode(numNodes() + 1, v->name, seq));
+	n->parent = r;
+	u->parent = r;
+	r->parent = v;
+	v->parent = NULL; /* new root */
 	/* add new nodes */
 	id2node.push_back(r);
 	id2node.push_back(n);
-
 	/* place r at the middle-point of u and v */
 	addEdge(u, r);
 	addEdge(v, r);
-	setBranch(u, r, oldwuv);
-	setBranch(v, r, oldwvu);
+	setBranch(u, r, getBranch(u, v));
+	setBranch(v, r, getBranch(v, u));
+	assert(isEvaluated(u, r));
+	assert(isEvaluated(v, r));
 	setBranchLength(u, r, w0 / 2);
 	setBranchLength(v, r, w0 / 2);
 	setBranchLoglik(r, u, Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK));
 	setBranchLoglik(r, v, Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK));
-
 	/* place r with initial branch length */
 	addEdge(n, r);
 	setBranchLoglik(r, n, Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK));
@@ -741,7 +751,6 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 	double w0nr = estimateBranchLength(n, r, start, end); /* estimate initial n->r branch length */
 	setBranchLength(r, n, w0nr);
 	setBranchLength(n, r, w0nr);
-
 	double vnr = optimizeBranchLength(n, r, start, end);
 //	double vur = optimizeBranchLength(u, r, start, end);
 //	double vvr = node2length[r][v] = node2length[v][r] = v0 - vur;

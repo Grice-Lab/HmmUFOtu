@@ -412,10 +412,8 @@ public:
 	 * remove the branch from u->v
 	 * @return  the old branch
 	 */
-	PTUBranch removeBranch(const PTUNodePtr& u, const PTUNodePtr& v) {
-		boost::unordered_map<PTUNodePtr, PTUBranch>::const_iterator w = node2branch[u].find(v);
-		node2branch[u].erase(w);
-		return w->second;
+	void removeBranch(const PTUNodePtr& u, const PTUNodePtr& v) {
+		node2branch[u].erase(node2branch[u].find(v));
 	}
 
 	/**
@@ -428,10 +426,10 @@ public:
 	}
 
 	/**
-	 * set branch length from u <-> v
+	 * set branch length from u -> v
 	 */
 	void setBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, double w) {
-		node2branch[u][v].length = node2branch[v][u].length = w;
+		node2branch[u][v].length = w;
 	}
 
 	/**
@@ -893,8 +891,11 @@ public:
 	/* return dot product between a Matrix and a vector, scale the vector if necessary */
 	static Vector4d dot_product_scaled(const Matrix4d& X, const Vector4d& V);
 
-	/* return dot product between two vectors, scale the second vector if necessary */
+	/* return dot product between a pi vector and a loglik vector, scale the second vector if necessary */
 	static double dot_product_scaled(const Vector4d& P, const Vector4d& V);
+
+	/* return dot product between two loglik vectors, scale both if necessary */
+	static double dot_product_double_scaled(const Vector4d& V1, const Vector4d& V2);
 
 	/* return the rowwise mean of a given matrix at exponential scale, scale each row if neccessary */
 	static Vector4d row_mean_exp_scaled(const Matrix4Xd& X);
@@ -1059,6 +1060,15 @@ inline double PTUnrooted::dot_product_scaled(const Vector4d& P, const Vector4d& 
 	double scale = maxV != inf && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
 
 	return ::log(P.dot((V.array() + scale).exp().matrix())) - scale;
+}
+
+inline double PTUnrooted::dot_product_double_scaled(const Vector4d& V1, const Vector4d& V2) {
+	double maxV1 = V1.maxCoeff();
+	double maxV2 = V2.maxCoeff();
+	double scale1 = maxV1 != inf && maxV1 < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV1 : 0;
+	double scale2 = maxV2 != inf && maxV2 < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV2 : 0;
+
+	return ::log((V1.array() + scale1).exp().matrix().dot((V2.array() + scale2).exp().matrix())) - scale1 - scale2;
 }
 
 inline Vector4d PTUnrooted::row_mean_exp_scaled(const Matrix4Xd& X) {
