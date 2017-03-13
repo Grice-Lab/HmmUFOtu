@@ -283,7 +283,7 @@ int main(int argc, char* argv[]) {
 			costME = cost;
 		}
 	}
-	if(!isnan(costME))
+	if(!::isnan(costME))
 		infoLog << "Best Match Emission model found at seed " << bestIdx << endl;
 	else {
 		cerr << "Unable to train Match Emission model" << endl;
