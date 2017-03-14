@@ -423,10 +423,10 @@ public:
 	}
 
 	/**
-	 * set branch length from u -> v
+	 * set branch length from u <-> v
 	 */
 	void setBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, double w) {
-		node2branch[u][v].length = w;
+		node2branch[u][v].length = node2branch[v][u].length = w;
 	}
 
 	/**

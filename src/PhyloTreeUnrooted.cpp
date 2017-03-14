@@ -136,7 +136,6 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 				Pchild->parent = u;
 				/* update branch length */
 				setBranchLength(u, Pchild, Nchild->length);
-				setBranchLength(Pchild, u, Nchild->length);
 				S.push(&*Nchild);
 			}
 		}
@@ -751,7 +750,6 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 	setRoot(r);
 	evaluate(r); /* n->r loglik evaluated */
 	double w0nr = estimateBranchLength(n, r, start, end); /* estimate initial n->r branch length */
-	setBranchLength(r, n, w0nr);
 	setBranchLength(n, r, w0nr);
 	double vnr = optimizeBranchLength(n, r, start, end);
 //	double vur = optimizeBranchLength(u, r, start, end);
