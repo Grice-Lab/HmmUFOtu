@@ -274,6 +274,8 @@ int main(int argc, char* argv[]) {
 
 	tree.annotate();
 	infoLog << "Unnamed tree nodes annotated" << endl;
+//	for(int i = 0; i < tree.numNodes(); ++i)
+//		cerr << "nodeID " << tree.getNode(i)->getId() << " annotation: " << tree.getNode(i)->getAnnotation() << endl;
 
 	/* read DNA sub model from model file */
 	DNASubModel* model = NULL;

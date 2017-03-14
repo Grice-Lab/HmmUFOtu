@@ -34,6 +34,7 @@ static const double DEFAULT_MEAN_LEN = 500;
 static const double DEFAULT_SD_LEN = 30;
 static const double DEFAULT_MIN_LEN = 0;
 static const double DEFAULT_MAX_LEN = 0;
+static const double DEFAULT_MAX_DIST = 0.03;
 
 /**
  * Print the usage information
@@ -49,6 +50,7 @@ void printUsage(const string& progName) {
 		 << "            -s|--sd-len  DBL   : standard deviation of read length [" << DEFAULT_SD_LEN << "]" << endl
 		 << "            -l|--min-len  DBL  : minimum read length, 0 for no limit [" << DEFAULT_MIN_LEN << "]" << endl
 		 << "            -u|--max-len  DBL  : maximum read length, 0 for no limit [" << DEFAULT_MAX_LEN << "]" << endl
+		 << "            -d  DBL            : maximum distance to marge unnamed node annotation with its nearest neighbor" << endl
 		 << "            -S|--seed  INT     : random seed used for simulation, for debug purpose" << endl
 		 << "            -w|--weighted      : weight each branch by their conditional log-liklihood" << endl
 		 << "            -v  FLAG           : enable verbose information" << endl
@@ -61,6 +63,7 @@ int main(int argc, char* argv[]) {
 	string fmt(DEFAULT_FMT);
 	bool removeGap = false;
 	bool doWeight = false;
+	double maxDist = DEFAULT_MAX_DIST;
 	long N = 0;
 	ifstream msaIn, ptuIn;
 	MSA msa;
@@ -161,6 +164,9 @@ int main(int argc, char* argv[]) {
 		cerr << "-n must be non-negative and non-less than -m" << endl;
 		return EXIT_FAILURE;
 	}
+
+	if(cmdOpts.hasOpt("-d"))
+		maxDist = ::atof(cmdOpts.getOptStr("-d"));
 
 	if(cmdOpts.hasOpt("-S"))
 		seed = ::atoi(cmdOpts.getOptStr("-S"));

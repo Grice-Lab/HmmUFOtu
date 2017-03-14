@@ -149,6 +149,7 @@ int main(int argc, char* argv[]) {
 
 		double maxLoglik = EGriceLab::infV;
 		PTUnrooted::PTUNodePtr bestNode;
+		string bestAnnotation;
 		/* Use a LA (leaf-ancestor) search algorithm */
 		vector<PTUnrooted::PTUNodePtr> leafHits;
 		for(vector<PTUnrooted::PTUNodePtr>::size_type i = 0; i < ptu.numNodes(); ++i) {
@@ -167,25 +168,31 @@ int main(int argc, char* argv[]) {
 			while(!node->isRoot() && nodeSeen.find(node) == nodeSeen.end()) {
 				/* place the read here */
 				PTUnrooted subtree = ptu.copySubTree(node, node->getParent());
-				subtree.placeSeq(seq, subtree.getNode(1), subtree.getNode(0), start, end);
-				double vn = subtree.getBranchLength(subtree.getNode(subtree.numNodes() - 2), subtree.getNode(subtree.numNodes() - 1));
-				double tlik = subtree.treeLoglik(start, end);
+				const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
+				const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
+				subtree.placeSeq(seq, u, v, start, end);
+				const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
+				const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
+				double wrn = subtree.getBranchLength(r, n);
+				double treeLik = subtree.treeLoglik(start, end);
+
 				nodeSeen.insert(node);
-				double dbest = tlik - maxLoglik;
-				if(tlik > maxLoglik) {
-					maxLoglik = tlik;
+				double dbest = treeLik - maxLoglik;
+				if(treeLik > maxLoglik) {
+					maxLoglik = treeLik;
 					bestNode = node;
+					bestAnnotation = n->getAnnotation();
 				}
-				if(tlik <= prevlik)
+				if(treeLik <= prevlik)
 					break;
 
 				node = node->getParent();
-				prevlik = tlik;
+				prevlik = treeLik;
 			} /* end of this cascade */
 		} /* end each leaf */
 		out << read.getId() << "\t" << read.getDesc() << "\t"
 			<< bestNode->getParent()->getId() << "->" << bestNode->getId() << "\t"
-			<< bestNode->getParent()->getAnnotation() << "->" << bestNode->getAnnotation() << "\t"
+			<< bestAnnotation << "\t"
 			<< start << "-" << end << "\t" << endl;
 	}
 }
