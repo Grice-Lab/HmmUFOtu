@@ -774,12 +774,15 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 		wur0 = wur;
 	}
 
-	/* annotate the new nodes */
-	r->anno = v->anno;
-	r->annoDist = w0 / 2;
-	n->anno = r->anno;
-	n->annoDist = r->annoDist + wnr;
-//	n->annoDist = node2length[r][n] / 2;
+	/* annotate the new node n */
+	if(wur < w0 / 2) { /* u->r is shorter */
+		n->anno = u->anno;
+		n->annoDist = u->annoDist + wur + wnr;
+	}
+	else {
+		n->anno = v->anno;
+		v->annoDist = v->annoDist + (w0 - wur) + wnr;
+	}
 
 	return *this;
 }
@@ -846,7 +849,12 @@ void PhyloTreeUnrooted::annotate(const PTUNodePtr& node) {
 }
 
 void PhyloTreeUnrooted::annotate(const PTUNodePtr& u, const PTUNodePtr& v, boost::unordered_map<PTUNodePtr, double>& visited) {
-	visited[v] = u == NULL ? 0 : visited[u] + getBranchLength(u, v);
+	if(u == NULL)
+		visited[v] = 0;
+	else if(visited.find(v) == visited.end() || visited[u] + getBranchLength(u, v) < visited[v])
+			visited[v] = visited[u] + getBranchLength(u, v);
+	else { }
+
 	if(v->isNamed()) /* no need to further DFS search */
 		return;
 	/* recursive search */
