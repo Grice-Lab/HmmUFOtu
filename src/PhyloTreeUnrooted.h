@@ -783,8 +783,9 @@ public:
 
 	/**
 	 * place an additional seq (n) at given branch with given initial branch length
-	 * after placement, tree will be re-rooted to the new internal root r,
-	 * and new branch length n->r will be optimized according the given region [start, end]
+	 * by introducing a new internal root r, initially placed at the mid-point between u->v
+	 * during placement, tree branch lengths are optimized in the order of
+	 * n->r, then u->r/r->v jointly
 	 * @param  new seq to be placed
 	 * @param u  branch start (u->v)
 	 * @param v  branch end (u->v)

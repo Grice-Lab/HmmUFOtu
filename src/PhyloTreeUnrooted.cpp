@@ -704,7 +704,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 		q0 = q;
 	}
 
-	double w = -::log(q0); // final estimation
+	double w = -::log(q); // final estimation
 	setBranchLength(u, v, w);
 	return w;
 }
@@ -735,8 +735,8 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 	setBranch(v, r, getBranch(v, u));
 	assert(isEvaluated(u, r));
 	assert(isEvaluated(v, r));
-	setBranchLength(u, r, w0 / 2);
-	setBranchLength(v, r, w0 / 2);
+	setBranchLength(u, r, w0 * 0.5);
+	setBranchLength(v, r, w0 * 0.5);
 	setBranchLoglik(r, u, Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK));
 	setBranchLoglik(r, v, Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK));
 	/* place r with initial branch length */
@@ -746,20 +746,39 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 
 	/* evaluate subtree new branches*/
 	setRoot(n);
-	evaluate(n); /* r->n loglik evaluated */
+	evaluate(); /* r->n evaluated */
 	setRoot(r);
-	evaluate(r); /* n->r loglik evaluated */
+	evaluate(); /* n->r evaluated */
+	setRoot(u);
+	evaluate(); /* r->u evaluated */
+	setRoot(v);
+	evaluate(); /* r->v evaluted */
+
 	double w0nr = estimateBranchLength(n, r, start, end); /* estimate initial n->r branch length */
 	setBranchLength(n, r, w0nr);
-	double vnr = optimizeBranchLength(n, r, start, end);
-//	double vur = optimizeBranchLength(u, r, start, end);
-//	double vvr = node2length[r][v] = node2length[v][r] = v0 - vur;
+	double wnr = optimizeBranchLength(n, r, start, end);
+
+	/* combined optimizaition of wur and wvr, so wur + wvr = w0 */
+	double wur0 = w0 * 0.5;
+	double wur = wur0;
+	while(0 <= wur && wur <= w0) {
+		wur = optimizeBranchLength(u, r, start, end);
+		if(wur > w0) // avoid overflow
+			wur = w0;
+		setBranchLength(v, r, w0 - wur);
+		resetLoglik(r, v); /* r->v changed because branch u->r changed */
+		evaluate(v); /* re-evaluate */
+
+		if(::fabs(wur - wur0) < BRANCH_EPS)
+			break;
+		wur0 = wur;
+	}
 
 	/* annotate the new nodes */
 	r->anno = v->anno;
 	r->annoDist = w0 / 2;
 	n->anno = r->anno;
-	n->annoDist = r->annoDist + vnr;
+	n->annoDist = r->annoDist + wnr;
 //	n->annoDist = node2length[r][n] / 2;
 
 	return *this;
