@@ -473,9 +473,19 @@ public:
 	void formatAnnotation();
 
 	/**
-	 * annotate every node of this tree by checking their ancestors' names
+	 * annotate every node of this tree by checking their neighbors' names
 	 */
 	void annotate();
+
+	/**
+	 * annotate a node, either by itself or by a named nearest neighbor
+	 */
+	void annotate(const PTUNodePtr& node);
+
+	/**
+	 * annotate a node by its parent using DFS
+	 */
+	void annotate(const PTUNodePtr& u, const PTUNodePtr& v, boost::unordered_map<PTUNodePtr, double>& visited);
 
 	/**
 	 * Set the underlying DNA Sub Model as a copy of given model

@@ -8,6 +8,7 @@
 #include <sstream>
 #include <stack>
 #include <boost/unordered_set.hpp>
+#include <boost/unordered_map.hpp>
 #include <cfloat>
 #include <cctype>
 #include <cmath>
@@ -123,7 +124,7 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 			visited.insert(v);
 			/* get corresponding PTUNode */
 			const PTUNodePtr& u = nTree2PTree[v];
-			if(root == NULL)
+			if(root == NULL) // first node encountered
 				root = u;
 
 			/* add check each child of u */
@@ -135,6 +136,7 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 				Pchild->parent = u;
 				/* update branch length */
 				setBranchLength(u, Pchild, Nchild->length);
+				setBranchLength(Pchild, u, Nchild->length);
 				S.push(&*Nchild);
 			}
 		}
@@ -801,16 +803,39 @@ vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHits(const DigitalSeq& seq, do
 }
 
 void PhyloTreeUnrooted::annotate() {
-	for(vector<PTUNodePtr>::const_iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt) {
-		/* find first named ancestor of this node, if any */
-		PTUNodePtr node(*nodeIt);
-		while(!node->isRoot() && !isCanonicalName(node->name)) {
-			(*nodeIt)->annoDist += getBranchLength(node, node->parent);
-			node = node->parent;
+	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
+		annotate(*node);
+}
+
+void PhyloTreeUnrooted::annotate(const PTUNodePtr& node) {
+	if(node->isNamed()) {
+		node->anno = node->name;
+		node->annoDist = 0;
+	}
+	else {
+		boost::unordered_map<PTUNodePtr, double> visited;
+		annotate(NULL, node, visited);
+		PTUNodePtr nearestNamed = NULL;
+		double nearestDist = infV;
+		for(boost::unordered_map<PTUNodePtr, double>::const_iterator pair = visited.begin(); pair != visited.end(); ++pair) {
+			if(pair->second > nearestDist) {
+				nearestNamed = pair->first;
+				nearestDist = pair->second;
+			}
 		}
-		(*nodeIt)->anno = isCanonicalName(node->name) ?
-				*nodeIt == node ? node->name : node->name + ";Other"
-						: "Other";
+		node->anno = nearestNamed != NULL ? nearestNamed->name : "Other";
+		node->annoDist = nearestNamed != NULL ? nearestDist : 0;
+	}
+}
+
+void PhyloTreeUnrooted::annotate(const PTUNodePtr& u, const PTUNodePtr& v, boost::unordered_map<PTUNodePtr, double>& visited) {
+	visited[v] = u == NULL ? 0 : visited[u] + getBranchLength(u, v);
+	if(v->isNamed()) /* no need to further DFS search */
+		return;
+	/* recursive search */
+	for(vector<PTUNodePtr>::const_iterator w = v->neighbors.begin(); w != v->neighbors.end(); ++w) {
+		if(visited.find(*w) == visited.end()) /* not visited */
+			annotate(v, *w, visited);
 	}
 }
 
