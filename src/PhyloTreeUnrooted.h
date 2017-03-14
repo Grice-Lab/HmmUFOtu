@@ -116,13 +116,10 @@ public:
 			return annoDist;
 		}
 
-		string getAnnotation() const {
-			if(annoDist == 0)
-				return anno;
-			char dist[32]; /* _ and numbers */
-			sprintf(dist, "_%f", annoDist);
-			return anno + dist;
-		}
+		/**
+		 * Get node annotation, with an optional "Other_dist" posted if too far from its annotation source
+		 */
+		string getAnnotation(double maxDist = 0) const;
 
 		long getId() const {
 			return id;
@@ -1110,6 +1107,14 @@ inline bool PhyloTreeUnrooted::isCanonicalName(const string& taxa) {
 			StringUtils::startsWith(taxa, FAMILY_PREFIX) ||
 			StringUtils::startsWith(taxa, GENUS_PREFIX) ||
 			StringUtils::startsWith(taxa, SPECIES_PREFIX));
+}
+
+inline string PTUnrooted::PTUNode::getAnnotation(double maxDist) const {
+	if(annoDist <= maxDist)
+		return anno;
+	char dist[32]; /* _ and numbers */
+	sprintf(dist, ";Other_%f", annoDist);
+	return anno + dist;
 }
 
 } /* namespace EGriceLab */
