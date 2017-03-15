@@ -227,7 +227,8 @@ int main(int argc, char* argv[]) {
 		if(cNode->isRoot()) /* no parent branch available */
 			continue;
 		PTUnrooted::PTUNodePtr pNode = cNode->getParent();
-		double vc = branch_dist(rng) * ptu.getBranchLength(pNode, cNode);
+		double v = ptu.getBranchLength(pNode, cNode);
+		double rc = branch_dist(rng);
 
 		/* simulate a read range */
 		int start = loc_dist(rng);
@@ -243,8 +244,8 @@ int main(int argc, char* argv[]) {
 		/* simulate a read at [start, end] */
 		sprintf(rid, "r%d", n);
 		sprintf(desc, "ID=%ld->%ld;Name=\"%s->%s\";ChildDist=%f;Start=%d;End=%d;Len=%d;",
-				pNode->getId(), cNode->getId(), pNode->getAnnotation().c_str(), cNode->getAnnotation().c_str(),
-				vc, start, end, end - start + 1);
+				pNode->getId(), cNode->getId(), pNode->getAnnotation(maxDist).c_str(), cNode->getAnnotation(maxDist).c_str(),
+				v * rc, start, end, end - start + 1);
 
 //		PrimarySeq seq(abc, rid, "", desc);
 		string seq;
@@ -256,8 +257,9 @@ int main(int argc, char* argv[]) {
 			if(isGap && !removeGap)
 				seq.push_back(gapSym);
 			else {
-				/* calculate the conditional loglik of this read */
-				Vector4d rLoglik = PTUnrooted::dot_product_scaled(model->Pr(vc), ptu.loglik(cNode, j));
+				/* calculate the loglik of this branch point */
+				Vector4d rLoglik = PTUnrooted::dot_product_scaled(model->Pr(v * rc), ptu.getBranchLoglik(cNode, pNode, j)) +
+								   PTUnrooted::dot_product_scaled(model->Pr(v * (1 - rc)), ptu.getBranchLoglik(pNode, cNode, j));
 				/* normalize and reset the probabilities of the base distribution */
 				rLoglik.array() -= rLoglik.maxCoeff();
 				basePrMap = rLoglik.array().exp();
