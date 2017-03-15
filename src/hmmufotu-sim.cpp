@@ -52,7 +52,6 @@ void printUsage(const string& progName) {
 		 << "            -u|--max-len  DBL  : maximum read length, 0 for no limit [" << DEFAULT_MAX_LEN << "]" << endl
 		 << "            -d  DBL            : maximum distance to marge unnamed node annotation with its nearest neighbor" << endl
 		 << "            -S|--seed  INT     : random seed used for simulation, for debug purpose" << endl
-		 << "            -w|--weighted      : weight each branch by their conditional log-liklihood" << endl
 		 << "            -v  FLAG           : enable verbose information" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
@@ -62,7 +61,6 @@ int main(int argc, char* argv[]) {
 	string infn, msafn, ptufn, outfn;
 	string fmt(DEFAULT_FMT);
 	bool removeGap = false;
-	bool doWeight = false;
 	double maxDist = DEFAULT_MAX_DIST;
 	long N = 0;
 	ifstream msaIn, ptuIn;
@@ -77,7 +75,7 @@ int main(int argc, char* argv[]) {
 	unsigned seed = time(NULL); // using time as default seed
 
 	typedef boost::random::mt11213b RNG; /* random number generator type */
-	typedef boost::random::discrete_distribution<size_t> NodeDistrib; /* node distribution in tree */
+	typedef boost::random::uniform_int_distribution<size_t> NodeDistrib; /* node distribution in tree */
 	typedef boost::random::uniform_01<> BranchDistrib; /* branching point distribution on any branch */
 	typedef boost::random::uniform_smallint<> LocDistrib; /* location distribution on csLen */
 	typedef boost::random::normal_distribution<> SizeDistrib; /* read size distribution */
@@ -133,9 +131,6 @@ int main(int argc, char* argv[]) {
 		fmt = StringUtils::toLower(cmdOpts.getOpt("-f"));
 	if(cmdOpts.hasOpt("--fmt"))
 		fmt = StringUtils::toLower(cmdOpts.getOpt("--fmt"));
-
-	if(cmdOpts.hasOpt("-w") || cmdOpts.hasOpt("--weighted"))
-		doWeight = true;
 
 	if(cmdOpts.hasOpt("-m"))
 		meanLen = ::atof(cmdOpts.getOptStr("-m"));
@@ -205,20 +200,9 @@ int main(int argc, char* argv[]) {
 	const int csLen = ptu.numAlignSites();
 	const size_t numNodes = ptu.numNodes();
 
-	double* nodeWeightBuf = new double[numNodes];
-	Map<VectorXd> nodeWeight(nodeWeightBuf, numNodes);
-	if(doWeight) {
-		infoLog << "Setting branch sampling weights ..." << endl;
-		for(size_t i = 0; i < numNodes; ++i)
-			nodeWeight(i) = 1 / (-ptu.treeLoglik(ptu.getNode(i)));
-//			nodeWeight(i) = ptu.treeLoglik(ptu.getNode(i));
-	}
-	else
-		nodeWeight.setOnes(); /* use all equal weights */
-
 	/* constructor random sample generator and required distributions */
 	RNG rng;
-	NodeDistrib node_dist(nodeWeightBuf, nodeWeightBuf + numNodes);
+	NodeDistrib node_dist(0, numNodes - 1);
 	BranchDistrib branch_dist;
 	LocDistrib loc_dist(0, csLen - 1);
 	SizeDistrib size_dist(meanLen, sdLen);
