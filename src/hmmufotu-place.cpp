@@ -39,12 +39,11 @@ void printUsage(const string& progName) {
 
 int main(int argc, char* argv[]) {
 	/* variable declarations */
-	string infn, seqfn, outfn, taxafn;
+	string inFn, seqFn, outFn, taxaFn;
 	string fmt;
 	ifstream ptuIn;
 	ofstream of, taxaOut;
 
-	PTUnrooted ptu;
 	double maxDist = DEFAULT_MAX_PDIST;
 	double minQ = DEFAULT_MIN_Q;
 
@@ -63,23 +62,23 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	infn = cmdOpts.getMainOpt(0);
-	if(!StringUtils::endsWith(infn, PHYLOTREE_FILE_SUFFIX))
-		infn += PHYLOTREE_FILE_SUFFIX;
+	inFn = cmdOpts.getMainOpt(0);
+	if(!StringUtils::endsWith(inFn, PHYLOTREE_FILE_SUFFIX))
+		inFn += PHYLOTREE_FILE_SUFFIX;
 
-	seqfn = cmdOpts.getMainOpt(1);
-	if(StringUtils::endsWith(seqfn, ".fasta") || StringUtils::endsWith(seqfn, ".fas")
-		|| StringUtils::endsWith(seqfn, ".fa") || StringUtils::endsWith(seqfn, ".fna"))
+	seqFn = cmdOpts.getMainOpt(1);
+	if(StringUtils::endsWith(seqFn, ".fasta") || StringUtils::endsWith(seqFn, ".fas")
+		|| StringUtils::endsWith(seqFn, ".fa") || StringUtils::endsWith(seqFn, ".fna"))
 		fmt = "fasta";
-	else if(StringUtils::endsWith(seqfn, ".fastq") || StringUtils::endsWith(seqfn, ".fq"))
+	else if(StringUtils::endsWith(seqFn, ".fastq") || StringUtils::endsWith(seqFn, ".fq"))
 		fmt = "fastq";
 	else {
-		cerr << "Unrecognized format of MSA file '" << seqfn << "'" << endl;
+		cerr << "Unrecognized format of MSA file '" << seqFn << "'" << endl;
 		return EXIT_FAILURE;
 	}
 
 	if(cmdOpts.hasOpt("-o"))
-		outfn = cmdOpts.getOpt("-o");
+		outFn = cmdOpts.getOpt("-o");
 
 	if(cmdOpts.hasOpt("-d"))
 		maxDist = ::atof(cmdOpts.getOptStr("-d"));
@@ -93,27 +92,28 @@ int main(int argc, char* argv[]) {
 		ENABLE_INFO();
 
 	/* open files */
-	ptuIn.open(infn.c_str(), ios_base::in | ios_base::binary);
+	ptuIn.open(inFn.c_str(), ios_base::in | ios_base::binary);
 	if(!ptuIn.is_open()) {
-		cerr << "Unable to open '" << infn << "': " << ::strerror(errno) << endl;
+		cerr << "Unable to open '" << inFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 
-	SeqIO seqIn(seqfn, ALPHABET, fmt);
+	SeqIO seqIn(seqFn, ALPHABET, fmt);
 
-	if(!outfn.empty()) {
-		of.open(outfn.c_str());
+	if(!outFn.empty()) {
+		of.open(outFn.c_str());
 		if(!of.is_open()) {
-			cerr << "Unable to write to '" << outfn << "'" << endl;
+			cerr << "Unable to write to '" << outFn << "'" << endl;
 			return EXIT_FAILURE;
 		}
 	}
 	ostream& out = of.is_open() ? of : cout;
 
 	infoLog << "Loading Phylogenetic tree" << endl;
+	PTUnrooted ptu;
 	ptu.load(ptuIn);
 	if(ptuIn.bad()) {
-		cerr << "Failed to load PTU data from " << infn << endl;
+		cerr << "Failed to load PTU data from " << inFn << endl;
 		return EXIT_FAILURE;
 	}
 	else
