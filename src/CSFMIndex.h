@@ -19,6 +19,7 @@
 //#include "Array.h"
 
 namespace EGriceLab {
+using std::vector;
 
 /**
  * A Consensus-Sequence FM-index for ultra-fast indexing the consensus positions of a multiple-sequence alignment
@@ -103,6 +104,13 @@ public:
 	 * @return  the first CS position on SA order
 	 */
 	CSLoc locateFirst(const string& pattern) const;
+
+	/**
+	 * Locate the index of the original sequences (0 .. (concatLen / (csLen + 1)) in the concatSeq of given pattern
+	 * @param pattern  the un-coded pattern
+	 * @return  a vector of the 0-based indices in which sequences the pattern can be found
+	 */
+	vector<unsigned> locateIndex(const string& pattern) const;
 
 	static const unsigned SA_SAMPLE_RATE = 4;  /* sample rate for SA */
 	static const unsigned RRR_SAMPLE_RATE = 8; /* RRR sample rate for BWT */

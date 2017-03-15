@@ -103,6 +103,27 @@ CSLoc CSFMIndex::locateOne(const string& pattern) const {
     	return CSLoc();
 }
 
+vector<unsigned> CSFMIndex::locateIndex(const string& pattern) const {
+    vector<unsigned> idx;
+	if(pattern.empty())
+		return idx; /* empty pattern matches to nothing */
+    int32_t start = 1;
+    int32_t end = concatLen;
+	/* while there are possible occs and pattern not done */
+    for (string::const_reverse_iterator rit = pattern.rbegin(); rit != pattern.rend() && start <= end; ++rit) {
+    	int8_t c = abc->encode(*rit) + 1; /* map pattern to 1 .. size */
+    	start = C[c] + bwt->rank(c, start - 1); /* LF Mapping */
+    	end = C[c] + bwt->rank(c, end) - 1; /* LF Mapping */
+    }
+
+    for(int32_t i = start; i <= end; ++i) {
+    	uint32_t k = accessSA(i); /* concatStart */
+    	idx.push_back(k / (csLen + 1));
+    }
+
+    return idx;
+}
+
 ofstream& CSFMIndex::save(ofstream& out) const {
 	/* write alphabet name */
 	unsigned nAlphabet = abc->getName().length();
@@ -244,7 +265,7 @@ uint8_t* CSFMIndex::buildConcatSeq(const MSA& msa) {
 			}
 		}
 		C[sepCh]++; // count the separator
-		concatSeq[shift] = sepCh; // add a separator at the end
+		concatSeq[shift] = sepCh; // add a separator at the end of each seq
 		concat2CS[shift] = 0; // separator point to gap
 		shift++;
 	}

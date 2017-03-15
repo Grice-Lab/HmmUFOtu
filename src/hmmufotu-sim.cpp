@@ -243,9 +243,11 @@ int main(int argc, char* argv[]) {
 
 		/* simulate a read at [start, end] */
 		sprintf(rid, "r%d", n);
-		sprintf(desc, "ID=%ld->%ld;Name=\"%s->%s\";ChildDist=%f;Start=%d;End=%d;Len=%d;",
-				pNode->getId(), cNode->getId(), pNode->getAnnotation(maxDist).c_str(), cNode->getAnnotation(maxDist).c_str(),
-				v * rc, start, end, end - start + 1);
+		sprintf(desc, "ID=%ld->%ld;Name=\"%s->%s\";AnnoDist=%f;Start=%d;End=%d;Len=%d;",
+				pNode->getId(), cNode->getId(),
+				rc < 0.5 ? cNode->getAnnotation(maxDist).c_str() : pNode->getAnnotation(maxDist).c_str(),
+				rc < 0.5 ? v * rc : v * (1 - rc),
+				start, end, end - start + 1);
 
 //		PrimarySeq seq(abc, rid, "", desc);
 		string seq;
