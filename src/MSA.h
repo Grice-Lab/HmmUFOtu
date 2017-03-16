@@ -71,6 +71,10 @@ public:
 		return seqNames;
 	}
 
+	const string& getSeqName(unsigned i) const {
+		return seqNames[i];
+	}
+
 	bool pruned() const {
 		return isPruned;
 	}
