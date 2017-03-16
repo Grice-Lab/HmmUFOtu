@@ -103,8 +103,8 @@ CSLoc CSFMIndex::locateOne(const string& pattern) const {
     	return CSLoc();
 }
 
-vector<unsigned> CSFMIndex::locateIndex(const string& pattern) const {
-    vector<unsigned> idx;
+set<unsigned> CSFMIndex::locateIndex(const string& pattern) const {
+    set<unsigned> idx;
 	if(pattern.empty())
 		return idx; /* empty pattern matches to nothing */
     int32_t start = 1;
@@ -118,7 +118,7 @@ vector<unsigned> CSFMIndex::locateIndex(const string& pattern) const {
 
     for(int32_t i = start; i <= end; ++i) {
     	uint32_t k = accessSA(i); /* concatStart */
-    	idx.push_back(k / (csLen + 1));
+    	idx.insert(k / (csLen + 1));
     }
 
     return idx;

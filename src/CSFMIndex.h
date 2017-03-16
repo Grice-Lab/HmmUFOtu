@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <fstream>
+#include <set>
 #include <algorithm>
 #include "MSA.h"
 #include "BandedHMMCommons.h"
@@ -110,7 +111,7 @@ public:
 	 * @param pattern  the un-coded pattern
 	 * @return  a vector of the 0-based indices in which sequences the pattern can be found
 	 */
-	vector<unsigned> locateIndex(const string& pattern) const;
+	set<unsigned> locateIndex(const string& pattern) const;
 
 	static const unsigned SA_SAMPLE_RATE = 4;  /* sample rate for SA */
 	static const unsigned RRR_SAMPLE_RATE = 8; /* RRR sample rate for BWT */
