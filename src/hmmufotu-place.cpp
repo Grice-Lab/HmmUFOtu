@@ -18,6 +18,7 @@ using namespace EGriceLab;
 
 /** default values */
 static const string ALPHABET = "dna";
+
 static const double DEFAULT_MAX_PDIST = 0.03;
 static const int DEFAULT_MIN_Q = 0;
 static const string TBL_HEADER = "id\tdesc\tbranch_id\tbranch_name\tplace_region\tphylogenetic_annotation";
@@ -87,6 +88,10 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-q"))
 		minQ = ::atoi(cmdOpts.getOptStr("-q"));
+	if(minQ < 0) {
+		cerr << "-q must be non-negative" << endl;
+		return EXIT_FAILURE;
+	}
 
 	if(cmdOpts.hasOpt("-v"))
 		ENABLE_INFO();

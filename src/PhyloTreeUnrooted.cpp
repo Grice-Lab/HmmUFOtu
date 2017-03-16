@@ -822,6 +822,16 @@ vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHits(const DigitalSeq& seq, do
 	return hits;
 }
 
+vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHits(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
+		double maxPDist, int start, int end) const {
+	vector<PTUnrooted::PTUNodePtr> hits;
+	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = candidates.begin(); node != candidates.end(); ++node) {
+		if((*node)->isLeaf() && DNASubModel::pDist((*node)->getSeq(), seq, start, end + 1) <= maxPDist)
+			hits.push_back(*node);
+	}
+	return hits;
+}
+
 void PhyloTreeUnrooted::annotate() {
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
 		annotate(*node);

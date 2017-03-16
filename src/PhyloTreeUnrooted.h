@@ -729,6 +729,13 @@ public:
 		return getLeafHits(seq, maxPDist, 0, csLen - 1);
 	}
 
+	vector<PTUNodePtr> getLeafHits(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
+			double maxPDist, int start, int end) const;
+
+	vector<PTUNodePtr> getLeafHits(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq, double maxPDist) const {
+		return getLeafHits(candidates, seq, maxPDist, 0, csLen - 1);
+	}
+
 	/**
 	 * get estimated base frequency (pi) using this tree
 	 */
