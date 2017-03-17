@@ -13,6 +13,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 #include <limits>
 #include <iostream>
 #include <sstream>
@@ -38,6 +39,7 @@
 namespace EGriceLab {
 using std::string;
 using std::vector;
+using std::set;
 using std::istream;
 using std::ostream;
 using Eigen::Matrix4Xd;

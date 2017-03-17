@@ -211,7 +211,6 @@ int main(int argc, char* argv[]) {
 	Map<Vector4d> basePrMap(basePr, 4); /* use a map to access basePr indirectly */
 	BaseDistrib base_dist(basePr);
 
-
 	char rid[22]; // enough to hold all numbers up to 64-bits + a prefix char
 	char desc[4096]; // enough to hold must descriptions
 	const DegenAlphabet* abc = msa.getAbc();
@@ -229,7 +228,6 @@ int main(int argc, char* argv[]) {
 		PTUnrooted::PTUNodePtr pNode = cNode->getParent();
 		double v = ptu.getBranchLength(pNode, cNode);
 		double rc = branch_dist(rng);
-
 		/* simulate a read range */
 		int start = loc_dist(rng);
 		double len = size_dist(rng);
@@ -243,7 +241,7 @@ int main(int argc, char* argv[]) {
 
 		/* simulate a read at [start, end] */
 		sprintf(rid, "r%d", n);
-		sprintf(desc, "ID=%ld->%ld;Name=\"%s->%s\";AnnoDist=%f;Start=%d;End=%d;Len=%d;",
+		sprintf(desc, "ID=%ld->%ld;Name=\"%s\";AnnoDist=%f;Start=%d;End=%d;Len=%d;",
 				pNode->getId(), cNode->getId(),
 				rc < 0.5 ? cNode->getAnnotation(maxDist).c_str() : pNode->getAnnotation(maxDist).c_str(),
 				rc < 0.5 ? v * rc : v * (1 - rc),

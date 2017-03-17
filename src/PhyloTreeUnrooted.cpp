@@ -824,6 +824,9 @@ vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHits(const DigitalSeq& seq, do
 
 vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHits(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
 		double maxPDist, int start, int end) const {
+	if(candidates.empty()) /* no candidates provided */
+		return getLeafHits(seq, maxPDist, start, end);
+
 	vector<PTUnrooted::PTUNodePtr> hits;
 	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = candidates.begin(); node != candidates.end(); ++node) {
 		if((*node)->isLeaf() && DNASubModel::pDist((*node)->getSeq(), seq, start, end + 1) <= maxPDist)
