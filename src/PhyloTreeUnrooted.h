@@ -459,8 +459,11 @@ public:
 		node2branch[u][v].loglik = loglik;
 	}
 
-	/** Load sequences from MSA into this this */
-	size_t loadMSA(const MSA& msa);
+	/** Load sequences from MSA into this tree
+	 * @param msa  MSA data to load
+	 * @return  number of loaded nodes, or -1 if error happend
+	 */
+	unsigned loadMSA(const MSA& msa);
 
 	/** Load tab-delimited annotation file of tree nodes into this tree */
 	istream& loadAnnotation(istream& in);
@@ -484,7 +487,7 @@ public:
 	/**
 	 * annotate a node by its parent using DFS
 	 */
-	void annotate(const PTUNodePtr& u, const PTUNodePtr& v, boost::unordered_map<PTUNodePtr, double>& visited);
+	void annotate(const PTUNodePtr& u, const PTUNodePtr& v, unordered_map<PTUNodePtr, double>& visited);
 
 	/**
 	 * Set the underlying DNA Sub Model as a copy of given model
@@ -821,6 +824,12 @@ public:
 	}
 
 private:
+	/** save msaId2node index to a binary output */
+	ostream& saveMSAIndex(ostream& out) const;
+
+	/** load msaId2node index from a binary input */
+	istream& loadMSAIndex(istream& in);
+
 	/**
 	 * load an edge node1->node2 from a binary input
 	 */
@@ -932,6 +941,7 @@ private:
 
 	PTUNodePtr root; /* root node of this tree */
 	vector<PTUNodePtr> id2node; /* indexed tree nodes */
+	unordered_map<unsigned, PTUNodePtr> msaId2node; /* original id in MSA to node map */
 
 	BranchMap node2branch; /* branch length index storing edge length */
 	Matrix4Xd leafLoglik; /* cached 4 X 5 leaf loglik matrix,

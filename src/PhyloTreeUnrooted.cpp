@@ -94,7 +94,7 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 	boost::unordered_set<const NT*> visited;
 	stack<const NT*> S;
 	long id = 0; /* id start from 0 */
-	boost::unordered_map<const NT*, PTUNodePtr> nTree2PTree;
+	unordered_map<const NT*, PTUNodePtr> nTree2PTree;
 
 	S.push(&ntree);
 	while(!S.empty()) {
@@ -142,9 +142,9 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 	}
 }
 
-size_t PhyloTreeUnrooted::loadMSA(const MSA& msa) {
-	const DegenAlphabet* abc = msa.getAbc();
-	if(abc->getAlias() != "DNA") {
+unsigned PhyloTreeUnrooted::loadMSA(const MSA& msa) {
+	unsigned n0 = msaId2node.size(); /* original number of loaded nodes */
+	if(msa.getAbc()->getAlias() != "DNA") {
 		cerr << "PhyloTreeUnrooted can only read in MSA in DNA alphabet" << endl;
 		return -1;
 	}
@@ -152,34 +152,33 @@ size_t PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 	csLen = msa.getCSLen();
 
 	/* check uniqueness of seq names in msa */
-	map<string, unsigned> nameIdx;
-	for(unsigned i = 0; i != numSeq; ++i) {
+	unordered_map<string, unsigned> name2msaId;
+	for(unsigned i = 0; i < numSeq; ++i) {
 		string name = msa.seqNameAt(i);
-		if(nameIdx.find(name) != nameIdx.end()) {
+		if(name2msaId.find(name) != name2msaId.end()) {
 			cerr << "Non-unique seq name " << name << " found in your MSA data " << msa.getName() << endl;
 			return -1;
 		}
-		else {
-			nameIdx[name] = i;
-		}
+		else
+			name2msaId[name] = i;
 	}
-	size_t assigned = 0;
+
 	/* assign seq to each nodes of the tree, ignore nodes cannot be found (unnamed, etc) */
 	for(vector<PTUNodePtr>::iterator node = id2node.begin(); node != id2node.end(); ++node) {
 		assert(node - id2node.begin() == (*node)->id);
 
-		map<string, unsigned>::const_iterator result = nameIdx.find((*node)->name);
-		if(result == nameIdx.end()) /* this name cannot be found in the msa */
+		unordered_map<string, unsigned>::const_iterator result = name2msaId.find((*node)->name);
+		if(result == name2msaId.end()) /* this name cannot be found in the msa */
 			continue;
 		(*node)->seq = msa.dsAt(result->second);
-		assigned++;
+		msaId2node[result->second] = *node;
 	}
-	return assigned;
+	return msaId2node.size() - n0;
 }
 
 istream& PTUnrooted::loadAnnotation(istream& in) {
 	string line, name, anno;
-	boost::unordered_map<string, string> name2anno;
+	unordered_map<string, string> name2anno;
 	while(getline(in, line)) {
 		istringstream lineIn(line);
 		std::getline(lineIn, name, ANNO_FIELD_SEP);
@@ -188,14 +187,13 @@ istream& PTUnrooted::loadAnnotation(istream& in) {
 	}
 
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		boost::unordered_map<string, string>::const_iterator result = name2anno.find((*node)->name);
+		unordered_map<string, string>::const_iterator result = name2anno.find((*node)->name);
 		if(result != name2anno.end())
 			(*node)->name = result->second;
 	}
 
 	return in;
 }
-
 
 PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRoot) {
 	if(newRoot == NULL || newRoot == root) /* no need to set */
@@ -421,6 +419,9 @@ istream& PTUnrooted::load(istream& in) {
 	in.read((char*) &nNodes, sizeof(size_t));
 	in.read((char*) &csLen, sizeof(int));
 
+	/* read index */
+	loadMSAIndex(in);
+
 	/* read each node */
 	for(size_t i = 0; i < nNodes; ++i) {
 		PTUNodePtr node(new PTUNode); /* construct a new node */
@@ -460,6 +461,9 @@ ostream& PTUnrooted::save(ostream& out) const {
 	out.write((const char*) &nNodes, sizeof(size_t));
 	out.write((const char*) &csLen, sizeof(int));
 
+	/* write index */
+	saveMSAIndex(out);
+
 	/* write each node */
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
 		(*node)->save(out);
@@ -481,6 +485,31 @@ ostream& PTUnrooted::save(ostream& out) const {
 	saveDGModel(out);
 
 	return out;
+}
+
+ostream& PTUnrooted::saveMSAIndex(ostream& out) const {
+	unsigned N = msaId2node.size();
+	out.write((const char*) &N, sizeof(unsigned));
+	for(unordered_map<unsigned, PTUNodePtr>::const_iterator it = msaId2node.begin(); it != msaId2node.end(); ++it) {
+		out.write((const char*) &(it->first), sizeof(unsigned));
+		out.write((const char*) &(it->second->id), sizeof(long));
+	}
+
+	return out;
+}
+
+istream& PTUnrooted::loadMSAIndex(istream& in) {
+	unsigned N = 0;
+	unsigned msaId;
+	long id;
+	in.read((char*) &N, sizeof(unsigned));
+	for(unsigned i = 0; i < N; ++i) {
+		in.read((char*) &msaId, sizeof(unsigned));
+		in.read((char*) &id, sizeof(long));
+		msaId2node[msaId] = id2node.at(id); /* build index */
+	}
+
+	return in;
 }
 
 ostream& PTUnrooted::saveEdge(ostream& out, const PTUNodePtr& node1, const PTUNodePtr& node2) const {
@@ -846,11 +875,11 @@ void PhyloTreeUnrooted::annotate(const PTUNodePtr& node) {
 		node->annoDist = 0;
 	}
 	else {
-		boost::unordered_map<PTUNodePtr, double> visited;
+		unordered_map<PTUNodePtr, double> visited;
 		annotate(NULL, node, visited);
 		PTUNodePtr nearestNamed = NULL;
 		double nearestDist = infV;
-		for(boost::unordered_map<PTUNodePtr, double>::const_iterator pair = visited.begin(); pair != visited.end(); ++pair) {
+		for(unordered_map<PTUNodePtr, double>::const_iterator pair = visited.begin(); pair != visited.end(); ++pair) {
 			if(pair->second > nearestDist) {
 				nearestNamed = pair->first;
 				nearestDist = pair->second;
@@ -861,7 +890,7 @@ void PhyloTreeUnrooted::annotate(const PTUNodePtr& node) {
 	}
 }
 
-void PhyloTreeUnrooted::annotate(const PTUNodePtr& u, const PTUNodePtr& v, boost::unordered_map<PTUNodePtr, double>& visited) {
+void PhyloTreeUnrooted::annotate(const PTUNodePtr& u, const PTUNodePtr& v, unordered_map<PTUNodePtr, double>& visited) {
 	if(u == NULL)
 		visited[v] = 0;
 	else if(visited.find(v) == visited.end() || visited[u] + getBranchLength(u, v) < visited[v])
