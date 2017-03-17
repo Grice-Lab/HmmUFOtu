@@ -377,6 +377,7 @@ public:
 	/* calculate the CS if not provided by the MSA file */
 	void calculateCS();
 
+private:
 	string alphabet;
 	const DegenAlphabet* abc; /* stored abc const pointer that guarenteed to be a global variable */
 	string name;
