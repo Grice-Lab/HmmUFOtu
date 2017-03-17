@@ -19,7 +19,7 @@ using std::ostream;
 
 /* includes for some program-wide constants and definitions */
 const std::string progName = "HmmUFOtu";
-const std::string progVersion = "v1.01";
+const std::string progVersion = "v1.02";
 
 const double inf = std::numeric_limits<double>::infinity();
 const double infV = -inf;
