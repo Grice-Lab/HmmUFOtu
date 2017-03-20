@@ -80,7 +80,7 @@ public:
 	 * or undefined behavior if other invalid values
 	 */
 	char decode(int8_t i) const {
-		return i == GAP_SYM ? gapCh : symbol[i];
+		return i == GAP_BASE ? gapCh : symbol[i];
 	}
 
 	/*
@@ -88,7 +88,7 @@ public:
 	 * @return true if is a valid gap character
 	 */
 	bool isGap(char c) const {
-		return sym_map[c] == GAP_SYM;
+		return sym_map[c] == GAP_BASE;
 	}
 
 	int getSize() const {
@@ -127,7 +127,7 @@ public:
 
 	/* test whether a character is a valid symbol or gap */
 	bool isValid(char c) const {
-		return sym_map[c] != INVALID_SYM;
+		return sym_map[c] != INVALID_BASE;
 	}
 
 	/* pure virtual member method to be overridden by subclass */
@@ -146,8 +146,8 @@ private:
 	map<char, string> degen_map; // map for degenerative synonymous
 
 public:
-	static const int8_t INVALID_SYM = -1;
-	static const int8_t GAP_SYM = -2; /* encoded gap symbol */
+	static const int8_t INVALID_BASE = -1;
+	static const int8_t GAP_BASE = -2; /* encoded gap symbol */
 	static const char DEFAULT_GAP_CHAR = '-';
 
 	/* friend operators */

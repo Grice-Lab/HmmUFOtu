@@ -25,7 +25,7 @@ DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const st
 	!gap.empty() ? gapCh = gap[0] : DEFAULT_GAP_CHAR;
 
 	// init the sym_map
-	std::fill_n(sym_map, INT8_MAX + 1, INVALID_SYM);
+	std::fill_n(sym_map, INT8_MAX + 1, INVALID_BASE);
 	// set the symbol map
 	for(int8_t i = 0; i != symbol.length(); ++i)
 		sym_map[symbol[i]] = i;
@@ -36,7 +36,7 @@ DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const st
 
 	// set the gap_sym
 	for(string::const_iterator it = gap.begin(); it != gap.end(); ++it)
-		sym_map[*it] = GAP_SYM;
+		sym_map[*it] = GAP_BASE;
 }
 
 bool operator==(const DegenAlphabet& lhs, const DegenAlphabet& rhs) {
