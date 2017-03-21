@@ -99,22 +99,6 @@ public:
 
 		MatrixXd S;     /*  the Dynamic-Programming scoring matrix storing the whole ViterbiScores (log-odds)
 		of all combinations of i in 0..L and j in 0..K */
-
-		/* Forward algorithm cost matrices */
-		/*MatrixXd F_M;*/  /* forward cost of all alignments up to xi and ends in Mj */
-		/*MatrixXd F_I;*/  /* forward cost of all alignments up to xi and ends in Ij */
-		/*MatrixXd F_D;*/ /* forward cost of all alignments up to xi and ends in Dj */
-
-		/* Backward algorithm cost matrices*/
-		/*MatrixXd B_M;*/ /* backward cost of all alignments up to xi and ends in Mj */
-		/*MatrixXd B_I;*/ /* backward cost of all alignments up to xi and ends in Ij */
-		/*MatrixXd B_D;*/ /* backward cost of all alignments up to xi and ends in Dj */
-
-		/* Forward-backward scaling vectors to prevent numeric underflow */
-/*		VectorXd SV_M;
-		VectorXd SV_I;
-		VectorXd SV_D;*/
-
 	};
 
 	class ViterbiAlignPath {
@@ -184,6 +168,12 @@ public:
 	 */
 	void setProfileSize(int size);
 
+	/**
+	 * Set the current profile size to match the K
+	 */
+	void setProfileSize() {
+		return setProfileSize(K);
+	}
 
 	/**
 	 * Re-calculate the T_MM of B and E states by adding 'wing-retraction'
@@ -221,6 +211,11 @@ public:
 	 */
 	void setSpEmissionFreq() {
 		setSpEmissionFreq(hmmBg.getBgEmitPr());
+	}
+
+	/** get the CSLen used to build this profile by searching profile2CSIdx */
+	int getCSLen() const {
+		return L;
 	}
 
 	/**
@@ -288,6 +283,11 @@ public:
 	ViterbiScores& resetViterbiScores(ViterbiScores& vs, const PrimarySeq& seq) const;
 
 	/**
+	 * Prepare the ViterbiScore DP matrices so they are ready for Viterbi algorithm
+	 */
+	ViterbiScores& prepareViterbiScores(ViterbiScores& vs) const;
+
+	/**
 	 * Initialize a Viterbi Align Path for the HMM algorithm
 	 * set all members and matrix elements to default values
 	 */
@@ -346,7 +346,7 @@ public:
 	 * @param vpath  a ViterbiAlignPath of the DP values by one of the calcViterbiScores methods
 	 * @return  the global aligned sequence of the query seq, i.e. "AC--GTCGA---ACGNC---";
 	 */
-	string buildGlobalAlignSeq(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
+	PrimarySeq buildGlobalAlignSeq(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
 
 	/**
 	 * Build the global aligned DigitalSeq using calculated scores and backtrace path
@@ -383,9 +383,21 @@ public:
 	 */
 	void normalize();
 
+	/**
+	 * test whether given viterbi align path is valid
+	 * @param L  query length
+	 * @param start  1-based index on profile
+	 * @param end  1-based index on profile
+	 * @param from 1-based index on query
+	 * @param to 1-based index on query
+	 * @param path  path string
+	 */
+	bool isValidAlignPath(const ViterbiAlignPath& vpath) const;
+
 private:
 	/* core fields */
 	int K; // profile length
+	int L; // CSLen used to train this HMM
 	/* Transition cost matrices
 	 * Note that index 0 indicating B state,
 	 * and index K indicating E state
@@ -508,6 +520,9 @@ private:
 	 */
 	void reset_index();
 
+	/** extend index to maxLen */
+	void extend_index();
+
 	/**
 	 * set the profile alignment to local mode by setting entry and exit probabilities
 	 */
@@ -547,16 +562,6 @@ private:
 	 */
 //	void normalize();
 
-	/**
-	 * test whether given viterbi align path is valid
-	 * @param L  query length
-	 * @param start  1-based index on profile
-	 * @param end  1-based index on profile
-	 * @param from 1-based index on query
-	 * @param to 1-based index on query
-	 * @param path  path string
-	 */
-	bool isValidAlignPath(const ViterbiAlignPath& vpath) const;
 
 	/* Private utility functions */
 	/** Get the minimum of three values */
@@ -608,6 +613,20 @@ private:
 	static p7_state determineMatchingState(const int* cs2ProfileIdx, int loc, int8_t base) {
 		bool isPos = cs2ProfileIdx[loc] != cs2ProfileIdx[loc - 1];
 		return isPos && base >= 0 ? M : isPos && base < 0 ? D : !isPos && base >= 0 ? I : P;
+	}
+
+	/**
+	 * Determine the p7 matching state (M, I, D) using current and previous index
+	 */
+	char determineMatchingState(int i, int j, int i0, int j0) {
+		if(i == i0 + 1 && j == j0 + 1)
+			return 'M';
+		else if(i == i0 && j == j0 + 1)
+			return 'D';
+		else if(i == i0 + 1 && j == j0)
+			return 'I';
+		else
+			return '';
 	}
 
 /*	*
@@ -724,7 +743,7 @@ private:
 }; /* BandedHMMP7 */
 
 inline BandedHMMP7::BandedHMMP7() :
-		hmmVersion(progName + "-" + progVersion), name("unnamed"), K(0), abc(NULL),
+		hmmVersion(progName + "-" + progVersion), name("unnamed"), K(0), L(0), abc(NULL),
 		hmmBg(0), nSeq(0), effN(0), wingRetracted(false) {
 	/* Assert IEE559 at construction time */
 	assert(std::numeric_limits<double>::is_iec559);
@@ -798,6 +817,7 @@ inline BandedHMMP7::p7_state BandedHMMP7::encode(char c) {
 		throw std::invalid_argument("Invalid state encountered");;
 	}
 }
+
 
 inline double BandedHMMP7::hmmValueOf(const string& s) {
 	return s != "*" ? ::atof(s.c_str()) : inf;

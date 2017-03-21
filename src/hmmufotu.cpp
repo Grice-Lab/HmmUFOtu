@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <map>
 #include <cfloat>
 #include <cstdlib>
 #include <cstring>
@@ -54,7 +55,7 @@ void printUsage(const string& progName) {
 }
 
 vector<PTUnrooted::PTUNodePtr> getLeafHitsById(const set<unsigned>& idHits,
-		const boost::unordered_map<unsigned, PTUnrooted::PTUNodePtr>& id2leaf);
+		const map<unsigned, PTUnrooted::PTUNodePtr>& id2leaf);
 
 int main(int argc, char* argv[]) {
 	/* variable declarations */
@@ -246,22 +247,9 @@ int main(int argc, char* argv[]) {
 	hmm.setSequenceMode(mode);
 	hmm.wingRetract();
 
-	/* prepare MSA index to PTUNodePtr leaf */
-	boost::unordered_map<unsigned, PTUnrooted::PTUNodePtr> id2leaf;
-	boost::unordered_map<string, unsigned> name2id;
-	for(unsigned i = 0; i < msa.getNumSeq(); ++i)
-		name2id[msa.getSeqName(i)] = i;
-	for(vector<PTUnrooted::PTUNodePtr>::size_type i = 0; i < ptu.numNodes(); ++i) {
-		const PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
-		if(!node->isLeaf())
-			continue;
-		if(name2id.find(node->getName()) == name2id.end()) {
-			cerr << "No such id for node name: " << node->getName() << endl;
-			return EXIT_FAILURE;
-		}
-		id2leaf[name2id.at(node->getName())] = node;
-	}
-	infoLog << "id2leaf constructed" << endl;
+	/* get MSA index */
+	const map<unsigned, PTUnrooted::PTUNodePtr>& id2leaf = ptu.getMSAIndex();
+
 	/* process reads */
 	if(revFn.empty()) { /* single-ended */
 		SeqIO seqIn(fwdFn, ALPHABET, seqFmt);
@@ -282,6 +270,7 @@ int main(int argc, char* argv[]) {
 				PrimarySeq seed(abc, read.getId(), read.subseq(seedFrom, seedLen));
 				const CSLoc& loc = csfm.locateOne(seed.getSeq());
 				if(loc.start > 0 && loc.end > 0) /* a read seed located */ {
+//					fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedFrom + 1, seedFrom + seedLen, loc.CS.length(), loc.CS.c_str());
 					hmm.addKnownAlignPath(seqVpath, loc, seedFrom + 1, seedFrom + seedLen); /* seed_from and seed_to are 1-based */
 					const set<unsigned>& hits = csfm.locateIndex(seed.getSeq());
 					seqIdHits.insert(hits.begin(), hits.end());
@@ -294,33 +283,52 @@ int main(int argc, char* argv[]) {
 					PrimarySeq seed(abc, read.getId(), read.subseq(seedTo - seedLen + 1, seedLen));
 					const CSLoc& loc = csfm.locateOne(seed.getSeq());
 					if(loc.start > 0 && loc.end > 0) /* a read seed located */ {
-						hmm.addKnownAlignPath(seqVpath, loc, seedTo - seedLen, seedTo + 1); /* seed_from and seed_to are 1-based */
+//						fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedTo - seedLen + 2, seedTo + 1, loc.CS.length(), loc.CS.c_str());
+						hmm.addKnownAlignPath(seqVpath, loc, seedTo - seedLen + 2, seedTo + 1); /* seed_from and seed_to are 1-based */
 						const set<unsigned>& hits = csfm.locateIndex(seed.getSeq());
 						seqIdHits.insert(hits.begin(), hits.end());
 						break; /* only one 5'-seed necessary */
 					}
 				}
 			}
-			cerr << "nSeed: " << seqVpath.L << " idxHits: " << seqIdHits.size() << endl;
+			cerr << "nSeed: " << seqVpath.N << " idxHits: " << seqIdHits.size() << endl;
 
 			/* banded HMM align */
 			hmm.calcViterbiScores(seqVscore, seqVpath);
-			float maxScore = hmm.buildViterbiTrace(seqVscore, seqVpath);
-			if(maxScore == infV) {
+			float minCost = hmm.buildViterbiTrace(seqVscore, seqVpath);
+			if(minCost == inf) {
 				cerr << "Unable to align read " << read.getId() << "No Viterbi path found" << endl;
 				continue;
 			}
-			int seqStart = hmm.getCSLoc(seqVpath.alnStart) - 1;
-			int seqEnd = hmm.getCSLoc(seqVpath.alnEnd) - 1;
-			DigitalSeq seq = hmm.buildGlobalAlignDS(seqVscore, seqVpath);
-			assert(seq.length() == ptu.numAlignSites());
+			if(!hmm.isValidAlignPath(seqVpath)) {
+				cerr << "Invalid align path: length: " << seqVpath.alnPath.length() << " path: " << seqVpath.alnPath << endl
+					 << "alnStart: " << seqVpath.alnStart << " alnEnd: " << seqVpath.alnEnd << " alnLen: "
+					 << " alnLen: " << seqVpath.alnEnd - seqVpath.alnStart + 1
+					 << " alnFrom: " << seqVpath.alnFrom << " alnTo: " << seqVpath.alnTo << endl;
+				abort();
+			}
+			cerr << "maxScore: " << minCost << endl;
+			cerr << "alnStart: " << seqVpath.alnStart << endl;
+			cerr << "alnEnd: " << seqVpath.alnEnd << endl;
+
+			/* find seqStart and seqEnd */
+			int csStart = hmm.getCSLoc(seqVpath.alnStart) - 1;
+			int csEnd = hmm.getCSLoc(seqVpath.alnEnd) - 1;
+			cerr << "csStart: " << csStart << " csEnd: " << csEnd << " csLen: " << (csEnd - csStart + 1) << endl;
+
+			PrimarySeq aln = hmm.buildGlobalAlignSeq(seqVscore, seqVpath);
+			DigitalSeq seq(aln);
+			if(seq.length() != ptu.numAlignSites()) {
+				cerr << "aln.length: " << aln.length() << " seq.length: " << seq.length() << " numSite: " << ptu.numAlignSites() << endl;
+				continue;
+			}
 
 			/* phylogenetic placement */
 			double maxLoglik = EGriceLab::infV;
 			PTUnrooted::PTUNodePtr bestNode;
 			string bestAnnotation;
 			/* Use a SLA (leaf-ancestor) search algorithm */
-			const vector<PTUnrooted::PTUNodePtr>& leafHits = ptu.getLeafHits(getLeafHitsById(seqIdHits, id2leaf), seq, maxDist, seqStart, seqEnd);
+			const vector<PTUnrooted::PTUNodePtr>& leafHits = ptu.getLeafHits(getLeafHitsById(seqIdHits, id2leaf), seq, maxDist, csStart, csEnd);
 			infoLog << "Found " << leafHits.size() << " leaf nodes for " << read.getId() << endl;
 			if(leafHits.empty())
 				continue;
@@ -334,11 +342,11 @@ int main(int argc, char* argv[]) {
 					PTUnrooted subtree = ptu.copySubTree(node, node->getParent());
 					const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
 					const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
-					subtree.placeSeq(seq, u, v, seqStart, seqEnd);
+					subtree.placeSeq(seq, u, v, csStart, csEnd);
 					const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
 					const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
 					double wrn = subtree.getBranchLength(r, n);
-					double treeLik = subtree.treeLoglik(seqStart, seqEnd);
+					double treeLik = subtree.treeLoglik(csStart, csEnd);
 					nodeSeen.insert(node);
 
 					if(treeLik > maxLoglik) {
@@ -356,7 +364,7 @@ int main(int argc, char* argv[]) {
 			out << read.getId() << "\t" << read.getDesc() << "\t"
 				<< bestNode->getParent()->getId() << "->" << bestNode->getId() << "\t"
 				<< bestAnnotation << "\t"
-				<< seqStart << "-" << seqEnd << "\t" << endl;
+				<< csStart << "-" << csEnd << "\t" << endl;
 		}
 	} /* end single-ended */
 	else { /* paired-ended */
@@ -367,7 +375,7 @@ int main(int argc, char* argv[]) {
 }
 
 vector<PTUnrooted::PTUNodePtr> getLeafHitsById(const set<unsigned>& idHits,
-		const boost::unordered_map<unsigned, PTUnrooted::PTUNodePtr>& id2leaf) {
+		const map<unsigned, PTUnrooted::PTUNodePtr>& id2leaf) {
 	vector<PTUnrooted::PTUNodePtr> leafHits;
 	for(set<unsigned>::const_iterator id = idHits.begin(); id != idHits.end(); ++id)
 		leafHits.push_back(id2leaf.at(*id));

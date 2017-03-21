@@ -105,7 +105,7 @@ public:
 		: id(id), name(name), seq(AlphabetFactory::getAlphabetByName("DNA"), name),
 		  anno(anno), annoDist(annoDist)
 		{
-			seq.append(length, DegenAlphabet::GAP_SYM);
+			seq.append(length, DegenAlphabet::GAP_BASE);
 		}
 
 		/* Member methods */
@@ -365,17 +365,27 @@ public:
 		return csLen;
 	}
 
-	/** Get root node */
+	/** get root node */
 	const PTUNodePtr& getRoot() const {
 		return root;
 	}
 
-	/* get all nodes */
+	/** get MSA index */
+	const map<unsigned, PTUNodePtr>& getMSAIndex() const {
+		return msaId2node;
+	}
+
+	/** get node by MSA id */
+	PTUNodePtr getNodeByMSAId(unsigned id) const {
+		return msaId2node.at(id);
+	}
+
+	/** get all nodes */
 	std::vector<PTUNodePtr> getNodes() const {
 		return id2node;
 	}
 
-	/* get node i */
+	/** get node i */
 	PTUNodePtr getNode(std::vector<PTUNodePtr>::size_type i) const {
 		return id2node[i];
 	}
@@ -941,7 +951,7 @@ private:
 
 	PTUNodePtr root; /* root node of this tree */
 	vector<PTUNodePtr> id2node; /* indexed tree nodes */
-	unordered_map<unsigned, PTUNodePtr> msaId2node; /* original id in MSA to node map */
+	map<unsigned, PTUNodePtr> msaId2node; /* original id in MSA to node map */
 
 	BranchMap node2branch; /* branch length index storing edge length */
 	Matrix4Xd leafLoglik; /* cached 4 X 5 leaf loglik matrix,

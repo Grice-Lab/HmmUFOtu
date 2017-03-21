@@ -37,7 +37,7 @@ public:
 	 * @param name  name of this ds
 	 * @param str  string of this ds
 	 */
-	DigitalSeq(const DegenAlphabet* abc, const string& name = "", const string& str = "");
+	explicit DigitalSeq(const DegenAlphabet* abc, const string& name = "", const string& str = "");
 
 	/**
 	 Construct a DigitalSeq from a PrimrarySeq

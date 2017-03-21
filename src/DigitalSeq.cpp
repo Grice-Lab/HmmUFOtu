@@ -24,6 +24,11 @@ DigitalSeq::DigitalSeq(const DegenAlphabet* abc, const string& name, const strin
 	}
 }
 
+DigitalSeq::DigitalSeq(const PrimarySeq& seq) :
+	abc(seq.getDegenAlphabet()), name(seq.getId()) {
+	append(seq.getSeq());
+}
+
 string DigitalSeq::toString() const {
 	string str;
 	for(DigitalSeq::const_iterator it = begin(); it != end(); ++it)
@@ -31,7 +36,7 @@ string DigitalSeq::toString() const {
 	return str;
 }
 
-DigitalSeq EGriceLab::DigitalSeq::revcom() const {
+DigitalSeq DigitalSeq::revcom() const {
 	if(!abc->hasComplement())
 		throw std::invalid_argument("Sequence alphabet " + abc->getName() + " does not support reverse-complement");
 	DigitalSeq revcomSeq(abc, name); // make an empty copy with same DegebAlphabet and name
@@ -82,10 +87,6 @@ bool operator<(const DigitalSeq& lhs, const DigitalSeq& rhs) {
 	return lhs.toString() < rhs.toString();
 }
 
-DigitalSeq::DigitalSeq(const PrimarySeq& seq) :
-	abc(seq.getDegenAlphabet()), name(seq.getId()) {
-	append(seq.getSeq());
-}
 
 ostream& operator<<(ostream& os, const DigitalSeq& dSeq) {
 	for(DigitalSeq::const_iterator it = dSeq.begin(); it != dSeq.end(); ++it)

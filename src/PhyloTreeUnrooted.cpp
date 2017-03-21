@@ -419,9 +419,6 @@ istream& PTUnrooted::load(istream& in) {
 	in.read((char*) &nNodes, sizeof(size_t));
 	in.read((char*) &csLen, sizeof(int));
 
-	/* read index */
-	loadMSAIndex(in);
-
 	/* read each node */
 	for(size_t i = 0; i < nNodes; ++i) {
 		PTUNodePtr node(new PTUNode); /* construct a new node */
@@ -444,6 +441,9 @@ istream& PTUnrooted::load(istream& in) {
 	/* load root loglik */
 //	loadRootLoglik(in);
 
+	/* read index */
+	loadMSAIndex(in);
+
 	/* load models */
 	loadModel(in);
 	loadDGModel(in);
@@ -461,9 +461,6 @@ ostream& PTUnrooted::save(ostream& out) const {
 	out.write((const char*) &nNodes, sizeof(size_t));
 	out.write((const char*) &csLen, sizeof(int));
 
-	/* write index */
-	saveMSAIndex(out);
-
 	/* write each node */
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
 		(*node)->save(out);
@@ -480,6 +477,9 @@ ostream& PTUnrooted::save(ostream& out) const {
 	/* save root */
 	saveRoot(out);
 
+	/* write index */
+	saveMSAIndex(out);
+
 	/* save models */
 	saveModel(out);
 	saveDGModel(out);
@@ -490,7 +490,7 @@ ostream& PTUnrooted::save(ostream& out) const {
 ostream& PTUnrooted::saveMSAIndex(ostream& out) const {
 	unsigned N = msaId2node.size();
 	out.write((const char*) &N, sizeof(unsigned));
-	for(unordered_map<unsigned, PTUNodePtr>::const_iterator it = msaId2node.begin(); it != msaId2node.end(); ++it) {
+	for(map<unsigned, PTUNodePtr>::const_iterator it = msaId2node.begin(); it != msaId2node.end(); ++it) {
 		out.write((const char*) &(it->first), sizeof(unsigned));
 		out.write((const char*) &(it->second->id), sizeof(long));
 	}

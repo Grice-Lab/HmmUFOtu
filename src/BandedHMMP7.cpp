@@ -31,9 +31,13 @@ const double BandedHMMP7::kMinGapFrac = 0.2;
 const double BandedHMMP7::CONS_THRESHOLD = 0.9;
 const double BandedHMMP7::DEFAULT_ERE = 1;
 const IOFormat tabFmt(StreamPrecision, DontAlignCols, "\t", "\n", "", "", "", "");
+static const int8_t GAP_BASE = DegenAlphabet::GAP_BASE;
+static const int8_t PAD_BASE = DegenAlphabet::GAP_BASE;
+static const char GAP_SYM = '-';
+static const char PAD_SYM = '.';
 
 BandedHMMP7::BandedHMMP7(const string& name, int K, const DegenAlphabet* abc) :
-		hmmVersion(progName + "-" + progVersion), name(name), K(K), abc(abc),
+		hmmVersion(progName + "-" + progVersion), name(name), K(K), L(0), abc(abc),
 		hmmBg(K), nSeq(0), effN(0),
 		cs2ProfileIdx() /* zero initiation */, profile2CSIdx() /* zero initiation */,
 		wingRetracted(false) {
@@ -55,6 +59,7 @@ istream& operator>>(istream& in, BandedHMMP7& hmm) {
 	int k = 0; // pos on the profile
 	while (getline(in, line)) {
 		if (line == "//") {/* end of profile */
+			hmm.extend_index();
 			hmm.resetProbByCost(); // set the cost matrices
 			hmm.adjustProfileLocalMode();
 			hmm.wingRetract();
@@ -75,9 +80,8 @@ istream& operator>>(istream& in, BandedHMMP7& hmm) {
 			else if (tag == "NAME") {
 				iss >> hmm.name;
 			} else if (tag == "LENG") {
-				int size;
-				iss >> size;
-				hmm.setProfileSize(size);
+				iss >> hmm.K;
+				hmm.setProfileSize();
 				hmm.enableProfileLocalMode(); // always in profile local alignment mode
 				hmm.setSpEmissionFreq(); // set special emissions by default method
 			} else if (tag == "ALPH") {
@@ -89,6 +93,8 @@ istream& operator>>(istream& in, BandedHMMP7& hmm) {
 									+ "' in the HMM input file! Must be DNA");
 				// override the alphabet
 				hmm.abc = AlphabetFactory::getAlphabetByName("DNA");
+			} else if(tag == "MAXL") {
+				iss >> hmm.L;
 			} else if (tag == "STATS") {
 				string mode;
 				string distrib;
@@ -348,8 +354,8 @@ BandedHMMP7& BandedHMMP7::build(const MSA& msa, double symfrac,
 		this->name = msa.getName();
 	abc = msa.getAbc();
 	reset_index();
-	/* determine the bHMM size */
-	const unsigned L = msa.getCSLen();
+	/* set/determine the bHMM size */
+	L = msa.getCSLen();
 	const unsigned N = msa.getNumSeq();
 	unsigned k = 0;
 
@@ -360,6 +366,13 @@ BandedHMMP7& BandedHMMP7::build(const MSA& msa, double symfrac,
 	}
 	/* profile size calculated as current k */
 	setProfileSize(k);
+
+	/* set CONS values */
+	char csLoc[32];
+	for(int k = 1; k <= K; ++k) {
+		sprintf(csLoc, "%d", profile2CSIdx[k]);
+		setLocOptTag("CONS", csLoc, k);
+	}
 
 	/* reset/init transition and emisison matrices */
 	reset_transition_params();
@@ -439,7 +452,7 @@ BandedHMMP7& BandedHMMP7::build(const MSA& msa, double symfrac,
 
 	/* set optional tags */
 	char value[128];
-	sprintf(value, "%d", msa.getCSLen());
+	sprintf(value, "%d", L);
 	setOptTag("MAXL", value);
 
 	setOptTag("RF", "no");
@@ -492,21 +505,12 @@ string BandedHMMP7::trim(const string& str, const string& whitespace) {
 }
 
 
-/*void EGriceLab::BandedHMMP7::setSequenceMode(enum align_mode mode) {
- switch(mode) {
- case GLOBAL:
- }
- }*/
-
 void BandedHMMP7::setProfileSize(int size) {
-	if(size == K) /* profile size is correct */
-		return;
 	K = size; // set self size
 	hmmBg.setSize(size); // set bg size
 	init_transition_params();
 	init_emission_params();
 	init_special_params();
-	reset_index();
 	init_limits();
 }
 
@@ -644,10 +648,16 @@ void BandedHMMP7::init_limits() {
 
 void BandedHMMP7::reset_index() {
 	/* position 0 is dummy for all indices */
-	for(int i = 0; i <= kMaxProfile; ++i)
+	for(int i = 0; i < kMaxProfile; ++i)
 		cs2ProfileIdx[i] = 0;
-	for(int i = 1; i <= kMaxCS; ++i)
+	for(int i = 1; i < kMaxCS; ++i)
 		profile2CSIdx[i] = 0;
+}
+
+void BandedHMMP7::extend_index() {
+	/* extend index upto maxLen */
+	for(int i = profile2CSIdx[K] + 1; i <= L && i < kMaxProfile; ++i)
+		cs2ProfileIdx[i] = K;
 }
 
 void BandedHMMP7::enableProfileLocalMode() {
@@ -707,7 +717,21 @@ BandedHMMP7::ViterbiScores& EGriceLab::BandedHMMP7::resetViterbiScores(ViterbiSc
 	return vs;
 }
 
-BandedHMMP7::ViterbiAlignPath EGriceLab::BandedHMMP7::initViterbiAlignPath(
+BandedHMMP7::ViterbiScores& BandedHMMP7::prepareViterbiScores(ViterbiScores& vs) const {
+	const int L = vs.seq->length();
+	vs.DP_M(0, 0) = vs.DP_I(0, 0) = vs.DP_D(0, 0) = inf; /* B->B not possible */
+	/* Initialize the M(,0), the B state */
+	for (int i = 1; i <= L; i++)
+		vs.DP_M(i, 0) = i == 1 ? 0 /* no N->N loop */ : T_SP_cost(N, N) * (i - 1); /* N->N loops */
+	vs.DP_M.col(0).array() += T_SP_cost(N, B); /* N->B */
+
+	/* set the I(,0), the B state as M(,0) */
+	vs.DP_I.col(0) = vs.DP_M.col(0);
+
+	return vs;
+}
+
+BandedHMMP7::ViterbiAlignPath BandedHMMP7::initViterbiAlignPath(
 		int L) const {
 	ViterbiAlignPath vpath;
 	vpath.K = K; // K is fixed between different seq
@@ -715,7 +739,7 @@ BandedHMMP7::ViterbiAlignPath EGriceLab::BandedHMMP7::initViterbiAlignPath(
 	return resetViterbiAlignPath(vpath, L);
 }
 
-BandedHMMP7::ViterbiAlignPath& EGriceLab::BandedHMMP7::resetViterbiAlignPath(ViterbiAlignPath& vpath,
+BandedHMMP7::ViterbiAlignPath& BandedHMMP7::resetViterbiAlignPath(ViterbiAlignPath& vpath,
 		int L) const {
 	vpath.L = L;
 	vpath.N = 0;
@@ -741,16 +765,8 @@ void BandedHMMP7::calcViterbiScores(
 	assert(vs.seq != NULL);
 	assert(wingRetracted); // make sure wing is retracted
 	const int L = vs.seq->length();
-	/* Initialize the M(,0), the B state */
-	for (int i = 0; i <= L; ++i)
-		vs.DP_M(i, 0) = i <= 1 ? 0 /* no N-N loop */ : T_SP_cost(N, N) * (i - 1); /* N->N loops */
-	vs.DP_M.col(0).array() += T_SP_cost(N, B); /* N->B */
+	prepareViterbiScores(vs);
 
-	/* calculate I0, a special case */
-	for (int i = 1; i <= L; ++i)
-		vs.DP_I(i, 0) = E_I_cost(vs.seq->encodeAt(i - 1), 0) + std::min(
-					static_cast<double> (vs.DP_M(i - 1, 0) + Tmat_cost[0](M, I)), // B->I0
-					static_cast<double> (vs.DP_I(i - 1, 0) + Tmat_cost[0](I, I))); // I0->I0
 	/* Full Dynamic-Programming at row-first order */
 	for (int j = 1; j <= K; ++j) {
 		for (int i = 1; i <= L; ++i) {
@@ -760,8 +776,8 @@ void BandedHMMP7::calcViterbiScores(
 					static_cast<double> (vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), // from Ii-1,j-1
 					static_cast<double> (vs.DP_D(i - 1, j - 1) + Tmat_cost[j-1](D, M))); // from Di-1,j-1
 			vs.DP_I(i, j) = E_I_cost(vs.seq->encodeAt(i - 1), j) + std::min(
-							static_cast<double> (vs.DP_M(i - 1, j) + Tmat_cost[j](M, I)), // from Mi-1,j
-							static_cast<double> (vs.DP_I(i - 1, j) + Tmat_cost[j](I, I))); // from Ii-1,j
+							static_cast<double> (vs.DP_I(i - 1, j) + Tmat_cost[j](I, I)), // from Ii-1,j
+							static_cast<double> (vs.DP_M(i - 1, j) + Tmat_cost[j](M, I))); // from Mi-1,j
 			vs.DP_D(i, j) = std::min(
 					static_cast<double> (vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), // from Mi,j-1
 					static_cast<double> (vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
@@ -784,28 +800,17 @@ void BandedHMMP7::calcViterbiScores(
 	assert(vs.seq != NULL);
 	if(vpath.N == 0) // no known path provided, reduce to full Viterbi Dynamic-Programming
 		return calcViterbiScores(vs);
+
 	const int L = vs.seq->length();
 	assert(wingRetracted);
 	assert(K + 1 == vs.DP_M.cols() && K == vpath.K);
 	assert(L == vpath.L);
 	if (!isValidAlignPath(vpath)) {
-		std::cerr << "Incorrect known seed alignment paths provided!" << endl;
-		abort();
+		std::cerr << "Incorrect alignment path(s) provided!" << endl;
+		return;
 	}
-/*	cerr << "path valid" << endl;*/
+	prepareViterbiScores(vs);
 
-	/* vs.DP_M(0, 0) = 0; */
-/*	cerr << "DP matrices initialized" << endl;*/
-	/* Initialize the M(,0), the B state */
-	for (int i = 1; i < L; i++)
-		vs.DP_M(i, 0) = i == 1 ? 0 /* no N->N loop */ : T_SP_cost(N, N) * (i - 1); /* N->N loops */
-	vs.DP_M.col(0).array() += T_SP_cost(N, B); /* N->B */
-//	 cerr << "M(,0) initialized" << vs.DP_M.col(0).transpose() << endl;
-	/* calculate I0, a special case */
-	for (int i = 1; i <= L; ++i)
-		vs.DP_I(i, 0) = E_I_cost(vs.seq->encodeAt(i - 1), 0) + std::min(
-					static_cast<double> (vs.DP_M(i - 1, 0) + Tmat_cost[0](M, I)), // B->I0
-					static_cast<double> (vs.DP_I(i - 1, 0) + Tmat_cost[0](I, I))); // I0->I0
 	/* process each known path upstream and themselves */
 	for(vector<int>::size_type n = 0; n < vpath.N; ++n) {
 		/* Determine banded boundaries */
@@ -831,8 +836,8 @@ void BandedHMMP7::calcViterbiScores(
 								static_cast<double>(vs.DP_D(i - 1, j - 1) + Tmat_cost[j-1](D, M))); // from Di-1,j-1
 				vs.DP_I(i, j) = E_I_cost(vs.seq->encodeAt(i - 1), j)
 								+ std::min(
-										static_cast<double>(vs.DP_M(i - 1, j) + Tmat_cost[j](M, I)), // from Mi-1,j
-										static_cast<double>(vs.DP_I(i - 1, j) + Tmat_cost[j](I, I))); // from Ii-1,j
+										static_cast<double>(vs.DP_I(i - 1, j) + Tmat_cost[j](I, I)), // from Ii-1,j
+										static_cast<double>(vs.DP_M(i - 1, j) + Tmat_cost[j](M, I))); // from Mi-1,j
 				vs.DP_D(i, j) =	std::min(
 						static_cast<double>(vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), // from Mi,j-1
 						static_cast<double>(vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
@@ -852,8 +857,8 @@ void BandedHMMP7::calcViterbiScores(
 								static_cast<double>(vs.DP_D(i - 1, j - 1) + Tmat_cost[j-1](D, M))); // from Di-1,j-1
 				vs.DP_I(i, j) = E_I_cost(vs.seq->encodeAt(i - 1), j)
 						+ std::min(
-								static_cast<double>(vs.DP_M(i - 1, j) + Tmat_cost[j](M, I)), // from Mi-1,j
-								static_cast<double>(vs.DP_I(i - 1, j) + Tmat_cost[j](I, I))); // from Ii-1,j
+								static_cast<double>(vs.DP_I(i - 1, j) + Tmat_cost[j](I, I)), // from Ii-1,j
+								static_cast<double>(vs.DP_M(i - 1, j) + Tmat_cost[j](M, I))); // from Mi-1,j
 				vs.DP_D(i, j) = std::min(
 						static_cast<double>(vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), // from Mi,j-1
 						static_cast<double>(vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
@@ -883,8 +888,8 @@ void BandedHMMP7::calcViterbiScores(
 							static_cast<double>(vs.DP_D(i - 1, j - 1) + Tmat_cost[j-1](D, M))); // from Di-1,j-1
 			vs.DP_I(i, j) = E_I_cost(vs.seq->encodeAt(i - 1), j) +
 					std::min(
-							static_cast<double>(vs.DP_M(i - 1, j) + Tmat_cost[j](M, I)), // from Mi-1,j
-							static_cast<double>(vs.DP_I(i - 1, j) + Tmat_cost[j](I, I))); // from Ii-1,j
+							static_cast<double>(vs.DP_I(i - 1, j) + Tmat_cost[j](I, I)), // from Ii-1,j
+							static_cast<double>(vs.DP_M(i - 1, j) + Tmat_cost[j](M, I))); // from Mi-1,j
 			vs.DP_D(i, j) = std::min(
 							static_cast<double>(vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), // from Mi,j-1
 							static_cast<double>(vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
@@ -908,7 +913,7 @@ void BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
 		const CSLoc& csLoc, int csFrom, int csTo) const {
 	using std::string;
 //	cerr << "csStart:" << csLoc.start << " csEnd:" << csLoc.end << " csFrom:" << csFrom << " csTo:" << csTo <<
-//			" CS:" << csLoc.CS << endl;
+//			" CSLen:" << csLoc.CS.length() << " CS:" << csLoc.CS << endl;
 	assert(csLoc.start >= 1 && csLoc.start <= csLoc.end
 			&& csFrom >= 1 && csFrom <= csTo
 			&& csLoc.CS.length() > csLoc.end - csLoc.start && csLoc.CS.length() > csTo - csFrom);
@@ -979,16 +984,11 @@ double BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath&
 	//cerr << "id:" << vs.seq->getId() << " minRow:" << minRow << " minCol:" << minCol << " minScore:" << minScore << " minEnd:" << getCSLoc(minCol) << endl;
 
 	vpath.alnPath.push_back('E'); // ends with E
-	while(i >= 0 && j >= 0) {
-		//vpath.TRACE(i, j) = s;
+	while(i >= 1 || j >= 1) {
+		cerr << "i: " << i << " j: " << j << " s: " << s << endl;
 		vpath.alnPath.push_back(s);
-		if(j == 0) {
-		//	cerr << "i:" << i << " j:" << j << " s:" << decode(B) << ":" << static_cast<double> (vs.DP_M(i, j)) << endl;
-			break;
-		}
 		// update the status
 		if(s == 'M') {
-			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<double> (vs.DP_M(i, j));
 			vpath.alnStart--;
 			vpath.alnFrom--;
 			s = BandedHMMP7::whichMin(
@@ -996,7 +996,6 @@ double BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath&
 					static_cast<double> (vs.DP_M(i - 1, j - 1) + Tmat_cost[j-1](M, M)), /* from M(i-1,j-1) */
 					static_cast<double> (vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), /* from I(i-1,j-1) */
 					static_cast<double> (vs.DP_D(i - 1, j - 1) + Tmat_cost[j-1](D, M))); /* from D(i-1,j-1) */
-			//cerr << "->" << s << endl;
 			if(s == 'B')
 				j = 0; // jump to B state
 			else { // M, I or D state
@@ -1005,121 +1004,151 @@ double BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath&
 			}
 		}
 		else if(s == 'I') {
-			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<double> (vs.DP_I(i, j));
 			vpath.alnFrom--;
 			s = BandedHMMP7::whichMin(
-					static_cast<double> (vs.DP_M(i - 1, j) + Tmat_cost[j](M, I)), /* from M(i-1,j) */
 					static_cast<double> (vs.DP_I(i - 1, j) + Tmat_cost[j](I, I)), /* from I(i-1,j) */
-					"MI");
-			//cerr << "->" << s << endl;
+					static_cast<double> (vs.DP_M(i - 1, j) + Tmat_cost[j](M, I)), /* from M(i-1,j) */
+					"IM");
 			i--;
 		}
 		else if(s == 'D') {
 			vpath.alnStart--;
-			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<double> (vs.DP_D(i, j));
 			s = BandedHMMP7::whichMin(
 					static_cast<double> (vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), /* from M(i,j-1) */
 					static_cast<double> (vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D)), /* from D(i,j-1) */
 					"MD");
-			//cerr << "->" << s << endl;
 			j--;
 		}
-		else { // B state found
-			//cerr << "i:" << i << " j:" << j << " s:" << s << ":" << static_cast<double> (vs.DP_M(i, j)) << endl;
+		else // B state found
 			break;
-		}
-		//cerr << "vpath.alnStart:" << vpath.alnStart + 1 << " vpath.alnEnd:" << vpath.alnEnd << endl;
 	} /* end of while */
-	vpath.alnStart++; // 1-based
-	vpath.alnFrom++; // 1-based
-	if(vpath.alnPath[vpath.alnPath.length() - 1] != 'B')
+
+	vpath.alnStart++; /* 1-based */
+	vpath.alnFrom++;  /* 1-based */
+	if(vpath.alnPath.back() != 'B')
 		vpath.alnPath.push_back('B');
 	reverse(vpath.alnPath.begin(), vpath.alnPath.end()); // reverse the alnPath string
 	return minScore;
 }
 
-std::string BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
+PrimarySeq BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
 		const ViterbiAlignPath& vpath) const {
 	assert(vs.seq != NULL);
-	string aSeq;
-	int profileNLen = vpath.alnStart - 1;
-	int profileCLen = vpath.K - vpath.alnEnd;
-	int seqNLen = vpath.alnFrom - 1;
-	int seqCLen = vpath.L - vpath.alnTo;
+	string nSeq, aSeq, cSeq; /* N', aligned and C' of the alignment */
+	const int L = getCSLen();
+	cerr << "CSLen: " << L << endl;
 
-	/* place N state residues to the beginning and ending of the unmatched up-stream of the profile */
-	int NHalf = std::max(profileNLen / 2, seqNLen / 2);
-	int CHalf = std::max(profileCLen / 2, seqCLen / 2);
-	for(int i = 0; i < NHalf; ++i) /* put half the N residues at the beginning of the N' */
-		aSeq.push_back(vs.seq->charAt(i - 1));
-	if(profileNLen > 2 * NHalf)
-		aSeq.append(profileNLen - 2 * NHalf, '-'); /* add the middle gaps, if any */
-	for(int i = profileNLen - NHalf; i < profileNLen; ++i) /* put half the N residues at the beginning */
-		aSeq.push_back(vs.seq->charAt(i - 1)); /* put half the N residues at the end of the N' */
+	int seqNLen = vpath.alnFrom - 1; /* N' of unaligned seq */
+	int seqCLen = vpath.L - vpath.alnTo; /* C' of unaligned seq */
+	int csStart = profile2CSIdx[vpath.alnStart]; /* 1-based */
+	int csEnd = profile2CSIdx[vpath.alnEnd]; /* 1-based */
+	string::const_iterator state = vpath.alnPath.begin();
 
-	/* place aligned residues */
-	int i = vpath.alnFrom;
-	for(string::const_iterator it = vpath.alnPath.begin(); it != vpath.alnPath.end(); ++it) {
-		switch(*it) {
-		case 'M': case 'I': /* both case consumes residues on seq */
-			aSeq.push_back(vs.seq->charAt(i - 1));
-			i++;
+	/* construct alignments */
+	for(int i = 1, j = 0; i <= L; ++i) { /* i is loc on CS (1-based), j is loc on seq (1-based) */
+		int k = cs2ProfileIdx[i]; /* k is loc on profile (1-based) */
+
+		if(j == 0 && k == vpath.alnStart) { /* alignment started */
+			j = vpath.alnFrom;
+			state++;
+		}
+
+//		fprintf(stderr, "i:%d j:%d k:%d *state:%d state:%c\n", i, j, k, state - vpath.alnPath.begin(), *state);
+
+		switch(*state) {
+		case 'B':
+			nSeq.push_back(PAD_SYM);
 			break;
-		case 'D': /* gap relative to profile */
-			aSeq.push_back('-');
+		case 'E':
+			cSeq.push_back(PAD_SYM);
+			break;
+		case 'M':
+			aSeq.push_back(vs.seq->charAt(j - 1));
+			j++;
+			state++;
+			break;
+		case 'I':
+			aSeq.push_back(::tolower(vs.seq->charAt(j - 1))); /* use lower case */
+			j++;
+			state++;
+			break;
+		case 'D':
+			aSeq.push_back(GAP_SYM);
+			state++;
 			break;
 		default:
-			break; // do nothing
+			cerr << "Unexpected align path state '" << *state << "' found at csLoc: " << i << endl;
+			break;
 		}
 	}
-	for(int i = vpath.alnTo; i < vpath.alnTo + CHalf; ++i) /* put half the N residues at the beginning of the N' */
-		aSeq.push_back(vs.seq->charAt(i - 1));
-	aSeq.append(profileCLen - 2 * CHalf, '-'); /* add the middle gaps, if any */
-	for(int i = vpath.K - NHalf; i < vpath.K; ++i) /* put half the N residues at the beginning */
-		aSeq.push_back(vs.seq->charAt(i - 1)); /* put half the N residues at the end of the N' */
-	return aSeq;
+	assert(*state == 'E'); // always end at E state
+
+	cerr << "aSeq: " << aSeq << endl;
+//	cerr << "nSeq before padding: " << nSeq << endl;
+//	cerr << "cSeq before padding: " << cSeq << endl;
+	/* pad nSeq as right justified */
+	for(int i = 0; i != seqNLen; ++i)
+		aSeq[aSeq.length() - seqNLen + i] = ::tolower(vs.seq->charAt(i));
+	/* pad cSeq as left justified */
+	for(int i = 0; i != seqCLen; ++i)
+		cSeq[i] = ::tolower(vs.seq->charAt(vs.seq->length() - seqCLen + i));
+//	cerr << "nSeq after padding: " << nSeq << endl;
+//	cerr << "cSeq after padding: " << cSeq << endl;
+
+	return PrimarySeq(abc, vs.seq->getId(), nSeq + aSeq + cSeq);
 }
 
 DigitalSeq BandedHMMP7::buildGlobalAlignDS(const ViterbiScores& vs,
 		const ViterbiAlignPath& vpath) const {
 	assert(vs.seq != NULL);
-	DigitalSeq aSeq;
-	int profileNLen = vpath.alnStart - 1;
-	int profileCLen = vpath.K - vpath.alnEnd;
-	int seqNLen = vpath.alnFrom - 1;
-	int seqCLen = vpath.L - vpath.alnTo;
+	DigitalSeq nSeq(abc, vs.seq->getId()); /* N' alignment */
+	DigitalSeq aSeq(abc, vs.seq->getId()); /* middle alignment */
+	DigitalSeq cSeq(abc, vs.seq->getId()); /* C' alignment */
+	const int L = getCSLen();
 
-	/* place N state residues to the beginning and ending of the unmatched up-stream of the profile */
-	int NHalf = std::max(profileNLen / 2, seqNLen / 2);
-	int CHalf = std::max(profileCLen / 2, seqCLen / 2);
-	for(int i = 0; i < NHalf; ++i) /* put half the N residues at the beginning of the N' */
-		aSeq.push_back(vs.seq->encodeAt(i - 1));
-	if(profileNLen > 2 * NHalf)
-		aSeq.append(profileNLen - 2 * NHalf, DegenAlphabet::GAP_SYM); /* add the middle gaps, if any */
-	for(int i = profileNLen - NHalf; i < profileNLen; ++i) /* put half the N residues at the beginning */
-		aSeq.push_back(vs.seq->encodeAt(i - 1)); /* put half the N residues at the end of the N' */
+	int seqNLen = vpath.alnFrom - 1; /* N' of unaligned seq */
+	int seqCLen = vpath.L - vpath.alnTo; /* C' of unaligned seq */
+	/* construct alignments */
+	for(int i = 1, j = 0; i <= L; ++i) { /* i is loc on CS (1-based), j is loc on seq (1-based) */
+		int k = cs2ProfileIdx[i]; /* k is loc on profile (1-based) */
+		char state;
+		if(i < profile2CSIdx[vpath.alnStart])
+			state = vpath.alnPath.front(); /* B */
+		else if(i > profile2CSIdx[vpath.alnEnd])
+			state = vpath.alnPath.back();
+		else
+			state = vpath.alnPath[i - profile2CSIdx[vpath.alnStart] - 1];
 
-	/* place aligned residues */
-	int i = vpath.alnFrom;
-	for(string::const_iterator it = vpath.alnPath.begin(); it != vpath.alnPath.end(); ++it) {
-		switch(*it) {
-		case 'M': case 'I': /* both case consumes residues on seq */
-			aSeq.push_back(vs.seq->encodeAt(i - 1));
-			i++;
+		if(j == 0 && k == vpath.alnStart) /* aligned start loc */
+			j = vpath.alnFrom;
+
+		switch(state) {
+		case 'B':
+			nSeq.push_back(PAD_BASE);
 			break;
-		case 'D': /* gap relative to profile */
-			aSeq.push_back(DegenAlphabet::GAP_SYM);
+		case 'E':
+			cSeq.push_back(PAD_BASE);
+			break;
+		case 'M': case 'I':
+			aSeq.push_back(vs.seq->encodeAt(j - 1));
+			j++;
+			break;
+		case 'D':
+			aSeq.push_back(GAP_BASE);
 			break;
 		default:
-			break; // do nothing
+			cerr << "Unexpected align path state " << state << " found at csLoc: " << i << endl;
+			break;
 		}
 	}
-	for(int i = vpath.alnTo; i < vpath.alnTo + CHalf; ++i) /* put half the N residues at the beginning of the N' */
-		aSeq.push_back(vs.seq->encodeAt(i - 1));
-	aSeq.append(profileCLen - 2 * CHalf, DegenAlphabet::GAP_SYM); /* add the middle gaps, if any */
-	for(int i = vpath.K - NHalf; i < vpath.K; ++i) /* put half the N residues at the beginning */
-		aSeq.push_back(vs.seq->encodeAt(i - 1)); /* put half the N residues at the end of the N' */
-	return aSeq;
+	/* pad nSeq as right justified */
+	for(int i = 0; i != seqNLen; ++i)
+		aSeq[aSeq.length() - seqNLen + i] = vs.seq->encodeAt(i);
+	/* pad cSeq as left justified */
+	for(int i = 0; i != seqCLen; ++i)
+		cSeq[i] = vs.seq->encodeAt(vs.seq->length() - seqCLen + i);
+
+	return nSeq + aSeq + cSeq;
 }
 
 void BandedHMMP7::wingRetract() {
@@ -1162,13 +1191,18 @@ void BandedHMMP7::wingRetract() {
 }
 
 bool BandedHMMP7::isValidAlignPath(const ViterbiAlignPath& vpath) const {
-	bool flag = true;
+	/* check start, end and from to */
 	for(int n = 0; n < vpath.N; ++n)
 		if(!(vpath.start[n] >= 1 && vpath.start[n] <= vpath.end[n] && vpath.end[n] <= vpath.K
 			&& vpath.from[n] >= 1 && vpath.from[n] <= vpath.to[n] && vpath.to[n] <= vpath.L) && // this path is valid
 				(n == 0 || (vpath.start[n] > vpath.end[n - 1] && vpath.from[n] > vpath.to[n - 1]))) // path is properly ordered
 			return false;
-	return true;
+	/* check path */
+	int L = 0;
+	for(string::const_iterator state = vpath.alnPath.begin(); state != vpath.alnPath.end(); ++state)
+		if(*state == 'M' || *state == 'D')
+			L++;
+	return L == 0 || L == vpath.alnEnd - vpath.alnStart + 1;
 }
 
 double RelativeEntropyTargetFunc::operator()(double x) {
