@@ -11,16 +11,37 @@
 namespace EGriceLab {
 using namespace std;
 
-SeqIO::SeqIO(const string& filename, const string& alphabet, const string& format, Mode mode, bool verify) :
+SeqIO::SeqIO(const string& filename, const string& alphabet, const string& format, Mode mode) :
 	filename(filename), abc(AlphabetFactory::getAlphabetByName(alphabet)), format(format), mode(mode) {
 	/* check format support */
 	if(!(format == "fasta" || format == "fastq"))
 		throw invalid_argument("Unsupported file format '" + format + "'");
-	else { } /* not possible */
 	/* register exceptions */
-	in.exceptions(std::ifstream::badbit);
-	out.exceptions(std::ofstream::badbit);
+//	in.exceptions(std::ifstream::badbit);
+//	out.exceptions(std::ofstream::badbit);
 
+	/* open files */
+	if(mode == READ)
+		in.open(filename.c_str());
+	else
+		out.open(filename.c_str());
+}
+
+void SeqIO::open(const string& filename, const string& alphabet, const string& format, Mode mode = READ) {
+	/* close old resources */
+	close();
+	/* check format support */
+	if(!(format == "fasta" || format == "fastq"))
+		throw invalid_argument("Unsupported file format '" + format + "'");
+	/* replace values */
+	this->filename = filename;
+	abc = AlphabetFactory::getAlphabetByName(alphabet);
+	this->format = format;
+	this->mode = mode;
+
+	/* register exceptions */
+//	in.exceptions(std::ifstream::badbit);
+//	out.exceptions(std::ofstream::badbit);
 	/* open files */
 	if(mode == READ)
 		in.open(filename.c_str());

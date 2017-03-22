@@ -25,10 +25,13 @@ public:
 	enum Mode { READ, WRITE };
 
 	/* constructors */
+	/** default constructor */
+	SeqIO() : abc(NULL) {  }
+
 	/**
 	 * Construct a SeqIO object with given info
 	 */
-	SeqIO(const string& filename, const string& alphabet, const string& format, Mode mode = READ, bool verify = false );
+	SeqIO(const string& filename, const string& alphabet, const string& format, Mode mode = READ);
 
 	/* Getters and Setters */
 	const string& getFilename() const {
@@ -44,6 +47,9 @@ public:
 	}
 
 	/* member methods */
+	/** open a new SeqIO, close old one if necessary */
+	void open(const string& filename, const string& alphabet, const string& format, Mode mode = READ);
+
 	/**
 	 * close underlying iostreams explicitly
 	 */
@@ -52,6 +58,11 @@ public:
 			in.close();
 		if(out.is_open())
 			out.close();
+	}
+
+	/** test whether this SeqIO is open */
+	bool is_open() const {
+		return mode == READ ? in.is_open() : out.is_open();
 	}
 
 	/**
