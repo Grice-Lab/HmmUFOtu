@@ -615,27 +615,6 @@ private:
 		return isPos && base >= 0 ? M : isPos && base < 0 ? D : !isPos && base >= 0 ? I : P;
 	}
 
-	/**
-	 * Determine the p7 matching state (M, I, D) using current and previous index
-	 */
-	char determineMatchingState(int i, int j, int i0, int j0) {
-		if(i == i0 + 1 && j == j0 + 1)
-			return 'M';
-		else if(i == i0 && j == j0 + 1)
-			return 'D';
-		else if(i == i0 + 1 && j == j0)
-			return 'I';
-		else
-			return '';
-	}
-
-/*	*
-	 * Determine the p7 special state (M, I, D) on a consensus sequence
-
-	static p7_state determineSpecialState(int csStart, int csEnd, int loc) {
-		return loc < csStart ? B : loc > csEnd ? E : M;
-	}*/
-
 	/* trace back methods to tell which state the current min is coming from */
 	/**
 	 * four possibility version of whichMin
