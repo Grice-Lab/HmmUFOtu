@@ -52,6 +52,14 @@ public:
 	virtual Matrix4d Pr(double v) const = 0;
 
 	/**
+	 * Get the estimated distance given the observed fraction of differences (p-distance) using this model
+	 * @param D  observed nucleotide differences between two sequences
+	 * @param N  total informative nucleotide sites between two sequences
+	 * @return  estimate distance under this model
+	 */
+	virtual double dist(const Matrix4d& D, double N) const = 0;
+
+	/**
 	 * train model parameters using a given Phylogenetic tree and method
 	 */
 //	void trainParams(const PhyloTree& tree, string method = "Gojobori");
@@ -107,6 +115,9 @@ public:
 	/** calculate the observed transition frequencies using Gojobori (three-sequence) method */
 	static Matrix4d calcTransFreq3Seq(const DigitalSeq& outer,
 			const DigitalSeq& seq1, const DigitalSeq& seq2);
+
+	/** calculate the observed differences between two-sequences, non-changeds are ignored */
+	static Matrix4d calcObservedDiff(const DigitalSeq& seq1, const DigitalSeq& seq2);
 
 	/** calculate the observed base frequencies of a given seq */
 	static Vector4d calcBaseFreq(const DigitalSeq& seq);

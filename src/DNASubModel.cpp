@@ -31,6 +31,18 @@ Matrix4d DNASubModel::calcTransFreq2Seq(const DigitalSeq& seq1, const DigitalSeq
 	return freq;
 }
 
+Matrix4d DNASubModel::calcObservedDiff(const DigitalSeq& seq1, const DigitalSeq& seq2) {
+	assert(seq1.getAbc() == seq2.getAbc());
+	assert(seq1.length() == seq2.length());
+	Matrix4d freq = Matrix4d::Zero();
+
+	const DigitalSeq::size_type L = seq1.length();
+	for(DigitalSeq::size_type i = 0; i < L; ++i)
+		if(seq1.isSymbol(i) && seq2.isSymbol(i) && seq1[i] != seq2[i]) // both not a gap and different
+			freq(seq1[i], seq2[i])++;
+	return freq;
+}
+
 Matrix4d DNASubModel::calcTransFreq3Seq(const DigitalSeq& outer,
 		const DigitalSeq& seq1, const DigitalSeq& seq2) {
 	assert(outer.getAbc() == seq1.getAbc() && outer.getAbc() == seq2.getAbc());
