@@ -7,7 +7,9 @@
 
 #include <sstream>
 #include <stdexcept>
+#include <algorithm>
 #include <cstdlib>
+#include <cassert>
 #include "DigitalSeq.h"
 
 #include "AlphabetFactory.h"
@@ -153,6 +155,15 @@ istream& DigitalSeq::load(istream& in) {
 	delete[] buf;
 
 	return in;
+}
+
+DigitalSeq::size_type DigitalSeq::nonGapSites(const DigitalSeq& seq1, const DigitalSeq& seq2) {
+	assert(seq1.length() == seq2.length());
+	DigitalSeq::size_type N = 0;
+	for(DigitalSeq::size_type i = 0; i < seq1.length(); ++i)
+		if(!seq1.isGap(i) && !seq2.isGap(i))
+			N++;
+	return N;
 }
 
 } /* namespace EGriceLab */

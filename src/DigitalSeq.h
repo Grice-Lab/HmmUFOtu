@@ -11,6 +11,7 @@
 #include <string>
 #include <bits/basic_string.h>
 #include <iostream>
+#include <algorithm>
 #include <cstdlib>
 #include "DegenAlphabet.h"
 #include "PrimarySeq.h"
@@ -65,6 +66,12 @@ public:
 	}
 
 	/* utility member methods */
+
+	/** Return the non-gap length of this seq */
+	DigitalSeq::size_type nonGapLength() const {
+		return length() - std::count(begin(), end(), DegenAlphabet::GAP_BASE);
+	}
+
 	/**
 	 * Return the string representation of this DigitalSeq
 	 */
@@ -108,6 +115,15 @@ public:
 	}
 
 	/**
+	 * test whether the encoded value position i is a gap
+	 * param i  position within this object
+	 * @return  true if ith code is a gap
+	 */
+	bool isGap(DigitalSeq::size_type i) const {
+		return operator[](i) == DegenAlphabet::GAP_BASE;
+	}
+
+	/**
 	 * Append a new string to this DigitalSeq
 	 * return the modified *this
 	 */
@@ -127,6 +143,10 @@ public:
 	 * save this seq to output in binary format
 	 */
 	ostream& save(ostream& out) const;
+
+	/* static methods */
+
+	static DigitalSeq::size_type nonGapSites(const DigitalSeq& seq1, const DigitalSeq& seq2);
 
 private:
 	const DegenAlphabet* abc;
