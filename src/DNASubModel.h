@@ -58,7 +58,7 @@ public:
 	 * @param N  total informative nucleotide sites between two sequences
 	 * @return  estimate distance under this model
 	 */
-	virtual double dist(const Matrix4d& D, double N) const = 0;
+	virtual double subDist(const Matrix4d& D, double N) const = 0;
 
 	/**
 	 * train model parameters using a given Phylogenetic tree and method
@@ -117,14 +117,24 @@ public:
 	static Matrix4d calcTransFreq3Seq(const DigitalSeq& outer,
 			const DigitalSeq& seq1, const DigitalSeq& seq2);
 
-	/** calculate the observed differences between two-sequences, non-changeds are ignored */
-	static Matrix4d calcObservedDiff(const DigitalSeq& seq1, const DigitalSeq& seq2);
+	/** calculate the observed differences between two-sequences, this is an alias as calcTransFreq2Seq */
+	static Matrix4d calcObservedDiff(const DigitalSeq& seq1, const DigitalSeq& seq2, int start, int end);
+
+	/** calculate the observed differences between two-sequences, this is an alias as calcTransFreq2Seq */
+	static Matrix4d calcObservedDiff(const DigitalSeq& seq1, const DigitalSeq& seq2) {
+		return calcObservedDiff(seq1, seq2, 0, seq1.length() - 1);
+	}
 
 	/** calculate the observed base frequencies of a given seq */
 	static Vector4d calcBaseFreq(const DigitalSeq& seq);
 
 	/** calculate the number of shared non-gap sites between two sequences */
-	static DigitalSeq::size_type nonGapSites(const DigitalSeq& seq1, const DigitalSeq& seq2);
+	static DigitalSeq::size_type nonGapSites(const DigitalSeq& seq1, const DigitalSeq& seq2, int start, int end);
+
+	/** calculate the number of shared non-gap sites between two sequences */
+	static DigitalSeq::size_type nonGapSites(const DigitalSeq& seq1, const DigitalSeq& seq2) {
+		return nonGapSites(seq1, seq2, 0, seq1.length() - 1);
+	}
 
 	/** Scale a rate matrix Q so that a branch length of 1 yields mu expected change in a unit time */
 	static Matrix4d scale(Matrix4d Q, Vector4d pi = Vector4d::Ones(), double mu = 1.0);

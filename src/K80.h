@@ -41,6 +41,12 @@ public:
 	virtual Matrix4d Pr(double v) const;
 
 	/**
+	 * Get the substitution distance given the observed fraction of differences (p-distance) using this model
+	 * @override  the base class function
+	 */
+	virtual double subDist(const Matrix4d& D, double N) const;
+
+	/**
 	 * read in content from input stream
 	 * will set badbit if anything went wrong
 	 * @override  base class method
@@ -89,6 +95,12 @@ inline Matrix4d K80::Pr(double v) const {
 	P(A,C) = P(A,T) = P(C,A) = P(C,G) = P(G,C) = P(G,T) = P(T,A) = P(T,G) = (1.0 - e) / 4;
 
 	return P;
+}
+
+inline double K80::subDist(const Matrix4d& D, double N) const {
+	double p = (D(A,G) + D(G,A) + D(C,T) + D(T,C)) / N; /* observed Ti diff */
+	double q = (D(A,C) + D(A,T) + D(C,A) + D(C,G) + D(G,C) + D(G,T) + D(T,A) + D(T,G)) / N; /* observed Tv diff */
+	return - 1.0 / 2 * ::log(1 - 2 * p - q) - 1.0 / 4 * ::log(1 - 2 * q);
 }
 
 } /* namespace EGriceLab */

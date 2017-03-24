@@ -123,4 +123,26 @@ void GTR::setQfromParams() {
 	U_1 = U.inverse();
 }
 
+double GTR::subDist(const Matrix4d& D, double N) const {
+	/* get F from D */
+	Matrix4d F(D);
+	Vector4d Z = F.rowwise().sum(); /* normalization constant */
+	for(Matrix4d::Index i = 0; i < F.rows(); ++i)
+		F.row(i) /= Z(i);
+
+	Matrix4d P = pi.asDiagonal() * ((F + F.transpose()) / 2); /* get P using symmetric F */
+
+	/* do matrix log by diagonalizable matrix decomposition */
+	EigenSolver<Matrix4d> es(P);
+	if(es.info() != Eigen::Success) {
+		cerr << "Cannot perform EigenSolver on observed frequency data P:" << endl << P << endl;
+		abort();
+	}
+	Matrix4cd PSI = es.eigenvalues().asDiagonal();
+	Matrix4cd U = es.eigenvectors();
+	Matrix4cd U_1 = U.inverse();
+
+	return - (U * PSI.array().log().matrix() * U_1).real().trace();
+}
+
 } /* namespace EGriceLab */

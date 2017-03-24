@@ -42,6 +42,13 @@ public:
 	virtual Matrix4d Pr(double v) const;
 
 	/**
+	 * Get the substitution distance given the observed fraction of differences (p-distance) using this model
+	 * the actual formula is described in McGuire 1999
+	 * @override  the base class function
+	 */
+	virtual double subDist(const Matrix4d& D, double N) const;
+
+	/**
 	 * read in content from input stream
 	 * will set badbit if anything went wrong
 	 * @override  base class method
@@ -112,6 +119,19 @@ inline Matrix4d HKY85::Pr(double v) const {
 	P(T, T) = (t * (c + t + (a + g) * e) + c * eY) / (c + t); /* self */
 
 	return P;
+}
+
+inline double HKY85::subDist(const Matrix4d& D, double N) const {
+	double a = pi(A);
+	double c = pi(C);
+	double g = pi(G);
+	double t = pi(T);
+	double A = a * g / (a + g) + c * t / (c + t);
+	double B = a * g + c * t;
+	double C = (a + g) * (c + t);
+	double p = (D(A,G) + D(G,A) + D(C,T) + D(T,C)) / N; /* observed Ti diff */
+	double q = (D(A,C) + D(A,T) + D(C,A) + D(C,G) + D(G,C) + D(G,T) + D(T,A) + D(T,G)) / N; /* observed Tv diff */
+	return - 2 * A * ::log(1 - p / (2 * A) - (A - B) * q / (2 * A * C));
 }
 
 } /* namespace EGriceLab */

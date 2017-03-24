@@ -112,7 +112,6 @@ public:
 		return getDegenSize() + gap.length();
 	}
 
-
 	/* Get synonymous for a given symbol, or empty string if not exists */
 	string getSynonymous(char c) const {
 		if(isSynonymous(c))

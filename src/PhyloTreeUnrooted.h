@@ -707,7 +707,7 @@ public:
 	 * @return  the actual observed state if a leaf node,
 	 * or inferred state my maximazing the conditional liklihood
 	 */
-	int inferState(const PTUNodePtr& node, int j);
+	int8_t inferState(const PTUNodePtr& node, int j);
 
 	/**
 	 * write this PTUnrooted tree structure into output in given format
@@ -737,18 +737,31 @@ public:
 	 */
 	vector<Matrix4d> getModelTraningSetGoldman() const;
 
+	/** get leaf hits for a given seq within given pDist in given region */
 	vector<PTUNodePtr> getLeafHits(const DigitalSeq& seq, double maxPDist,
 			int start, int end) const;
 
+	/** get leaf hits for a given seq within given pDist in entire seq */
 	vector<PTUNodePtr> getLeafHits(const DigitalSeq& seq, double maxPDist) const {
 		return getLeafHits(seq, maxPDist, 0, csLen - 1);
 	}
 
+	/** get leaf hits for a given seq within given pDist in given region, with candidates provided */
 	vector<PTUNodePtr> getLeafHits(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
 			double maxPDist, int start, int end) const;
 
+	/** get leaf hits for a given seq within given pDist in entire seq, with candidates provided */
 	vector<PTUNodePtr> getLeafHits(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq, double maxPDist) const {
 		return getLeafHits(candidates, seq, maxPDist, 0, csLen - 1);
+	}
+
+	/** get node hits for a given seq within given subDist in given region */
+	vector<PTUNodePtr> getNodeHits(const DigitalSeq& seq, double maxSubDist,
+			int start, int end);
+
+	/** get node hits for a given seq within given subDist in entire seq */
+	vector<PTUNodePtr> getNodeHits(const DigitalSeq& seq, double maxSubDist) {
+		return getLeafHits(seq, maxSubDist, 0, csLen - 1);
 	}
 
 	/**
@@ -763,6 +776,24 @@ public:
 	 * @return  total estimated mutations at this site
 	 */
 	size_t estimateNumMutations(int j);
+
+	/**
+	 * get the substitution distance between a new seq and a given node at given region
+	 * using the underlying DNA Substitution model for estimation
+	 * @param seq  a new observed seq
+	 * @param node  a (observed or unobserved) node
+	 */
+	double subDist(const DigitalSeq& seq, const PTUNodePtr& node, int start, int end);
+
+	/**
+	 * get the substitution distance between a new seq and a given node
+	 * using the underlying DNA Substitution model for estimation
+	 * @param seq  a new observed seq
+	 * @param node  a (observed or unobserved) node
+	 */
+	double subDist(const DigitalSeq& seq, const PTUNodePtr& node) {
+		return subDist(seq, node, 0, seq.length());
+	}
 
 	/**
 	 * make a copy of subtree with only two nodes and a branch u and v

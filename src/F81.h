@@ -42,6 +42,13 @@ public:
 	virtual Matrix4d Pr(double v) const;
 
 	/**
+	 * Get the substitution distance given the observed fraction of differences (p-distance) using this model
+	 * the actual formula is described in McGuire 1999
+	 * @override  the base class function
+	 */
+	virtual double subDist(const Matrix4d& D, double N) const;
+
+	/**
 	 * read in content from input stream
 	 * will set badbit if anything went wrong
 	 * @override  base class method
@@ -88,6 +95,12 @@ inline Matrix4d F81::Pr(double v) const {
 			P(i, j) = i == j ? e + pi(j) * (1 - e) : pi(j) * (1 - e);
 
 	return P;
+}
+
+inline double F81::subDist(const Matrix4d& D, double N) const {
+	double p = (D.sum() - D.diagonal().sum()) / N;
+	double E = 1 - pi.squaredNorm();
+	return - E * ::log(1 - p / E);
 }
 
 } /* namespace EGriceLab */

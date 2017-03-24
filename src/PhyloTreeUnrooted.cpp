@@ -299,15 +299,14 @@ double PTUnrooted::treeLoglik(const PTUNodePtr& node, int start, int end) {
 	return loglik;
 }
 
-int PhyloTreeUnrooted::inferState(const PTUnrooted::PTUNodePtr& node, int j) {
+int8_t PhyloTreeUnrooted::inferState(const PTUnrooted::PTUNodePtr& node, int j) {
 	if(!node->seq.empty())
 		return node->seq[j];
 	Vector4d logV = loglik(node, j);
-	int state;
+	int8_t state;
 	logV.maxCoeff(&state);
 	return state;
 }
-
 
 void PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j) {
 	if(isEvaluated(node, node->parent, j)) /* already evaluated */
@@ -639,6 +638,29 @@ ostream& PTUnrooted::saveDGModel(ostream& out) const {
 	return out;
 }
 
+double PTUnrooted::subDist(const DigitalSeq& seq, const PTUNodePtr& node, int start, int end) {
+	assert(seq.length() == csLen);
+	if(!node->seq.empty()) /* this node has an assigned seq */
+		return model->subDist(
+				DNASubModel::calcObservedDiff(seq, node->seq, start, end),
+				DNASubModel::nonGapSites(seq, node->seq, start, end)
+		);
+	else { /* no observed seq, treat node as missing data */
+		Matrix4d D = Matrix4d::Zero();
+		double N = 0;
+		for(int j = start; j <= end; ++j) {
+			if(!seq.isSymbol(j)) /* ignore gaps in seq */
+				continue;
+			Vector4d logP = loglik(node, j); /* conditional loglik at this node */
+			/* scale logP to get P */
+			Vector4d P = (logP.array() - logP.maxCoeff()).exp(); /* posterior probability to observe each base at site j */
+			D.col(seq[j]) += P / P.sum(); /* use normalized P */
+			N++;
+		}
+		return model->subDist(D, N);
+	}
+}
+
 PTUnrooted PTUnrooted::copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const {
 	assert(isParent(v, u));
 
@@ -859,6 +881,16 @@ vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHits(const vector<PTUNodePtr>&
 	vector<PTUnrooted::PTUNodePtr> hits;
 	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = candidates.begin(); node != candidates.end(); ++node) {
 		if((*node)->isLeaf() && DNASubModel::pDist((*node)->getSeq(), seq, start, end + 1) <= maxPDist)
+			hits.push_back(*node);
+	}
+	return hits;
+}
+
+vector<PTUnrooted::PTUNodePtr> PTUnrooted::getNodeHits(const DigitalSeq& seq, double maxSubDist,
+		int start, int end) {
+	vector<PTUnrooted::PTUNodePtr> hits;
+	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
+		if(subDist(seq, *node, start, end) <= maxSubDist)
 			hits.push_back(*node);
 	}
 	return hits;

@@ -42,6 +42,13 @@ public:
 	virtual Matrix4d Pr(double v) const;
 
 	/**
+	 * Get the substitution distance given the observed fraction of differences (p-distance) using this model
+	 * The formular is discribed in the original TN93 article
+	 * @override  the base class function
+	 */
+	virtual double subDist(const Matrix4d& D, double N) const;
+
+	/**
 	 * read in content from input stream
 	 * will set badbit if anything went wrong
 	 * @override  base class method
@@ -114,6 +121,22 @@ inline Matrix4d TN93::Pr(double v) const {
 	P(T, T) = (t * (c + t + (a + g) * e) + c * eY) / (c + t); /* self */
 
 	return P;
+}
+
+inline double TN93::subDist(const Matrix4d& D, double N) const {
+	double a = pi(A);
+	double c = pi(C);
+	double g = pi(G);
+	double t = pi(T);
+	double r = a + g;
+	double y = c + t;
+	double pr = (D(A,G) + D(G,A)) / N; /* observed Tr diff */
+	double py = (D(C,T) + D(T,C)) / N; /* observed Ty diff */
+	double q = (D(A,C) + D(A,T) + D(C,A) + D(C,G) + D(G,C) + D(G,T) + D(T,A) + D(T,G)) / N; /* observed Tv diff */
+
+	return - 2 * a * g / r * ::log(1 - r / (2 * a * g) * pr - 1 / (2 * r) * q)
+		   - 2 * g * c / y * ::log(1 - y / (2 * t * c) * py - 1 / (2 * y) * q)
+	       - 2 * (r * y - a * g * y / r - t * c * r / y) * ::log(1 - 1 / (2 * r * y) * q);
 }
 
 } /* namespace EGriceLab */

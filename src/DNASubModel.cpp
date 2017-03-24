@@ -19,11 +19,11 @@ const double DNASubModel::MAX_PDIST = 0.15; /* maximum p-dist between training s
 const IOFormat DNASubModel::FULL_FORMAT(Eigen::FullPrecision);
 const IOFormat DNASubModel::STD_FORMAT(Eigen::StreamPrecision);
 
-DigitalSeq::size_type DNASubModel::nonGapSites(const DigitalSeq& seq1, const DigitalSeq& seq2) {
+DigitalSeq::size_type DNASubModel::nonGapSites(const DigitalSeq& seq1, const DigitalSeq& seq2, int start, int end) {
 	assert(seq1.length() == seq2.length());
 	DigitalSeq::size_type N = 0;
-	for(DigitalSeq::size_type i = 0; i < seq1.length(); ++i)
-		if(seq1.isSymbol(i) && !seq2.isSymbol(i))
+	for(DigitalSeq::size_type i = start; i <= end; ++i)
+		if(seq1.isSymbol(i) && seq2.isSymbol(i))
 			N++;
 	return N;
 }
@@ -40,14 +40,13 @@ Matrix4d DNASubModel::calcTransFreq2Seq(const DigitalSeq& seq1, const DigitalSeq
 	return freq;
 }
 
-Matrix4d DNASubModel::calcObservedDiff(const DigitalSeq& seq1, const DigitalSeq& seq2) {
+Matrix4d DNASubModel::calcObservedDiff(const DigitalSeq& seq1, const DigitalSeq& seq2, int start, int end) {
 	assert(seq1.getAbc() == seq2.getAbc());
 	assert(seq1.length() == seq2.length());
 	Matrix4d freq = Matrix4d::Zero();
 
-	const DigitalSeq::size_type L = seq1.length();
-	for(DigitalSeq::size_type i = 0; i < L; ++i)
-		if(seq1.isSymbol(i) && seq2.isSymbol(i) && seq1[i] != seq2[i]) // both not a gap and different
+	for(DigitalSeq::size_type i = start; i <= end; ++i)
+		if(seq1.isSymbol(i) && seq2.isSymbol(i)) // both not a gap
 			freq(seq1[i], seq2[i])++;
 	return freq;
 }
@@ -123,17 +122,15 @@ Matrix4d DNASubModel::logQfromP(Matrix4d P, bool reversible) {
 		P.row(i) /= P.row(i).sum();
 
 	/* do matrix log by diagonalizable matrix decomposition */
-	Vector4cd lambda; /* eigen values of P */
 	EigenSolver<Matrix4d> es(P);
 	if(es.info() != Eigen::Success) {
 		cerr << "Cannot perform EigenSolver on observed frequency data P:" << endl << P << endl;
 		abort();
 	}
-	lambda = es.eigenvalues();
+	Matrix4cd PSI = es.eigenvalues().asDiagonal(); /* eigen values of P */
 	Matrix4cd U = es.eigenvectors();
 	Matrix4cd U_1 = U.inverse();
-	Matrix4cd X = lambda.asDiagonal();
-	return (U * X.array().log().matrix() * U_1).real();
+	return (U * PSI.array().log().matrix() * U_1).real();
 }
 
 Matrix4d DNASubModel::constrainedQfromP(Matrix4d P, bool reversible) {
