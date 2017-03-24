@@ -1140,11 +1140,7 @@ inline bool PhyloTreeUnrooted::isCanonicalName(const string& taxa) {
 }
 
 inline string PTUnrooted::PTUNode::getAnnotation(double maxDist) const {
-	if(annoDist <= maxDist)
-		return anno;
-	char dist[32]; /* _ and numbers */
-	sprintf(dist, ";Other_%f", annoDist);
-	return anno + dist;
+	return annoDist <= maxDist ? anno : anno + ";Other";
 }
 
 } /* namespace EGriceLab */

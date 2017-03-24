@@ -985,7 +985,7 @@ double BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath&
 
 	vpath.alnPath.push_back('E'); // ends with E
 	while(i >= 1 || j >= 1) {
-		cerr << "i: " << i << " j: " << j << " s: " << s << endl;
+//		cerr << "i: " << i << " j: " << j << " s: " << s << endl;
 		vpath.alnPath.push_back(s);
 		// update the status
 		if(s == 'M') {
@@ -1083,17 +1083,12 @@ PrimarySeq BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
 	}
 	assert(*state == 'E'); // always end at E state
 
-	cerr << "aSeq: " << aSeq << endl;
-//	cerr << "nSeq before padding: " << nSeq << endl;
-//	cerr << "cSeq before padding: " << cSeq << endl;
 	/* pad nSeq as right justified */
 	for(int i = 0; i != seqNLen; ++i)
 		aSeq[aSeq.length() - seqNLen + i] = ::tolower(vs.seq->charAt(i));
 	/* pad cSeq as left justified */
 	for(int i = 0; i != seqCLen; ++i)
 		cSeq[i] = ::tolower(vs.seq->charAt(vs.seq->length() - seqCLen + i));
-//	cerr << "nSeq after padding: " << nSeq << endl;
-//	cerr << "cSeq after padding: " << cSeq << endl;
 
 	return PrimarySeq(abc, vs.seq->getId(), nSeq + aSeq + cSeq);
 }

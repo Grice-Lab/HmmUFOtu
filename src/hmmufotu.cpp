@@ -34,8 +34,8 @@ static const int DEFAULT_SEED_REGION = 50;
 static const string UNASSIGNED_TAXA = "Unknown";
 static const double UNASSIGNED_LOGLIK = EGriceLab::infV;
 static const double UNASSIGNED_POSTQ = 0;
-static const string PLACE_HEADER = "id\tdesc\tbranch_id\tbranch_ratio\tCS_start\tCS_end\ttaxa_annotation\tloglik\tpostQ";
-static const string SUMM_HEADER = "taxa_id\ttaxa_annotation\tcount";
+static const string PLACE_HEADER = "id\tdesc\tbranch_id\tbranch_ratio\tCS_start\tCS_end\ttaxa_anno\tanno_dist\tloglik\tpostQ";
+static const string TAXA_SUMM_HEADER = "taxa_id\ttaxa_annotation\tcount";
 
 /**
  * Print the usage information
@@ -49,7 +49,8 @@ void printUsage(const string& progName) {
 		 << "            -L|--seed-len  INT : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT            : size of 5'/3' seed region for finding seeds [" << DEFAULT_SEED_REGION << "]" << endl
 		 << "            -s  FLAG           : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
-		 << "            -T  FILE           : in addition to the placement output, write the taxa summary table to TAXA-FILE" << endl
+		 << "            -T  FILE           : in addition to the placement output, write the taxa summary table to FILE" << endl
+		 << "            -a  FILE           : in addition to the placement output, write the Multiple-Sequence Alignment to FILE" << endl
 		 << "            -d|--pdist  DBL    : maximum p-dist between placed read and observed leaves during the optimal search [" << DEFAULT_MAX_PDIST << "]" << endl
 		 << "            -q  DBL            : minimum Q-value (negative log10 of posterior placement probability) required for a read placement [" << DEFAULT_MIN_Q << "]" << endl
 		 << "            -S|--seed  INT     : random seed used for banded HMM seed searches, for debug purpose" << endl
@@ -63,10 +64,11 @@ vector<PTUnrooted::PTUNodePtr> getLeafHitsById(const set<unsigned>& idHits,
 int main(int argc, char* argv[]) {
 	/* variable declarations */
 	string dbName, fwdFn, revFn, msaFn, csfmFn, hmmFn, ptuFn;
-	string outFn, taxaFn;
+	string outFn, taxaFn, alnFn;
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
 	string seqFmt;
 	ofstream of, taxaOut;
+	SeqIO alnOut;
 	bool isAssembled = true; /* assume assembled seq if not paired-end */
 	BandedHMMP7::align_mode mode;
 
@@ -120,6 +122,9 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-T"))
 		taxaFn = cmdOpts.getOpt("-T");
+
+	if(cmdOpts.hasOpt("-a"))
+		alnFn = cmdOpts.getOpt("-a");
 
 	if(cmdOpts.hasOpt("-d"))
 		maxDist = ::atof(cmdOpts.getOptStr("-d"));
@@ -205,6 +210,14 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	if(!alnFn.empty()) {
+		alnOut.open(alnFn, "dna", "fasta", SeqIO::WRITE);
+		if(!alnOut.is_open()) {
+			cerr << "Unable to write to '" << alnFn << "': " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+	}
+
 	/* loading database files */
 	MSA msa;
 	msa.load(msaIn);
@@ -258,7 +271,7 @@ int main(int argc, char* argv[]) {
 
 	/* process reads and output */
 	out << PLACE_HEADER << endl;
-	boost::unordered_map<PTUnrooted::PTUNodePtr, long> taxaCount;
+	map<string, long> taxaCount;
 
 	if(revFn.empty()) { /* single-ended */
 		SeqIO seqIn(fwdFn, ALPHABET, seqFmt);
@@ -310,6 +323,7 @@ int main(int argc, char* argv[]) {
 				out << read.getId() << "\t" << read.getDesc() << "\t"
 					<< "NA\tNA\tNA\tNA\t"
 					<< UNASSIGNED_TAXA << "\t" << UNASSIGNED_LOGLIK << "\t" << UNASSIGNED_POSTQ << endl;
+				taxaCount[UNASSIGNED_TAXA]++;
 				continue;
 			}
 			if(!hmm.isValidAlignPath(seqVpath)) {
@@ -330,12 +344,15 @@ int main(int argc, char* argv[]) {
 				warningLog << "aln.length: " << aln.length() << " seq.length: " << seq.length() << " numSite: " << ptu.numAlignSites() << endl;
 				continue;
 			}
+			if(!alnFn.empty())
+				alnOut.writeSeq(aln);
 
 			/* phylogenetic placement */
 			double maxLoglik = EGriceLab::infV;
 			PTUnrooted::PTUNodePtr bestNode;
 			string bestAnnotation;
 			double bestRatio;
+			double bestDist;
 			/* Use a SLA (leaf-ancestor) search algorithm */
 			const vector<PTUnrooted::PTUNodePtr>& leafHits = ptu.getLeafHits(getLeafHitsById(seqIdHits, id2leaf), seq, maxDist, csStart, csEnd);
 			infoLog << "Found " << leafHits.size() << " leaf nodes for " << read.getId() << endl;
@@ -361,8 +378,9 @@ int main(int argc, char* argv[]) {
 					if(treeLik > maxLoglik) {
 						maxLoglik = treeLik;
 						bestNode = node;
-						bestAnnotation = n->getAnnotation();
+						bestAnnotation = n->getAnnotation(maxDist);
 						bestRatio = subtree.getBranchLength(u, r) / w0;
+						bestDist = n->getAnnoDist();
 					}
 					if(treeLik <= prevlik)
 						break;
@@ -381,6 +399,13 @@ int main(int argc, char* argv[]) {
 	else { /* paired-ended */
 
 	} /* end paired-ended */
+
+	/* generate taxa summary */
+	if(taxaOut.is_open()) {
+		taxaOut << TAXA_SUMM_HEADER << endl;
+		for(map<string, long>::const_iterator entry = taxaCount.begin(); entry != taxaCount.end(); ++entry)
+			taxaOut << entry->first << "\t" << entry->second << endl;
+	}
 
 	return 0;
 }

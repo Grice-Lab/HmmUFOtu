@@ -27,7 +27,7 @@ SeqIO::SeqIO(const string& filename, const string& alphabet, const string& forma
 		out.open(filename.c_str());
 }
 
-void SeqIO::open(const string& filename, const string& alphabet, const string& format, Mode mode = READ) {
+void SeqIO::open(const string& filename, const string& alphabet, const string& format, Mode mode) {
 	/* close old resources */
 	close();
 	/* check format support */

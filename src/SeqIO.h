@@ -131,10 +131,10 @@ private:
 	void writeFastqSeq(const PrimarySeq& seq);
 
 private:
-	const string filename;
-	const string format;
+	string filename;
+	string format;
 	const DegenAlphabet* abc;
-	const Mode mode;
+	Mode mode;
 
 	ifstream in;
 	ofstream out;
