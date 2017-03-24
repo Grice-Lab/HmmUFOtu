@@ -157,14 +157,5 @@ istream& DigitalSeq::load(istream& in) {
 	return in;
 }
 
-DigitalSeq::size_type DigitalSeq::nonGapSites(const DigitalSeq& seq1, const DigitalSeq& seq2) {
-	assert(seq1.length() == seq2.length());
-	DigitalSeq::size_type N = 0;
-	for(DigitalSeq::size_type i = 0; i < seq1.length(); ++i)
-		if(!seq1.isGap(i) && !seq2.isGap(i))
-			N++;
-	return N;
-}
-
 } /* namespace EGriceLab */
 

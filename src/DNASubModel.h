@@ -15,6 +15,7 @@
 #include <stdexcept>
 #include <eigen3/Eigen/Dense>
 #include "DegenAlphabet.h"
+#include "DigitalSeq.h"
 #include "MSA.h"
 #include "StringUtils.h"
 #include "HmmUFOtuConst.h"
@@ -121,6 +122,9 @@ public:
 
 	/** calculate the observed base frequencies of a given seq */
 	static Vector4d calcBaseFreq(const DigitalSeq& seq);
+
+	/** calculate the number of shared non-gap sites between two sequences */
+	static DigitalSeq::size_type nonGapSites(const DigitalSeq& seq1, const DigitalSeq& seq2);
 
 	/** Scale a rate matrix Q so that a branch length of 1 yields mu expected change in a unit time */
 	static Matrix4d scale(Matrix4d Q, Vector4d pi = Vector4d::Ones(), double mu = 1.0);

@@ -83,6 +83,7 @@ public:
 	 * or throw an exception if the Alphabet desn't not support complement
 	 */
 	DigitalSeq revcom() const;
+
 	/**
 	 * Get a joint digit representation of current DigitalSeq, such as 0,1,2,1,3
 	 * @param sep  the separator character or string, default is ","
@@ -145,8 +146,6 @@ public:
 	ostream& save(ostream& out) const;
 
 	/* static methods */
-
-	static DigitalSeq::size_type nonGapSites(const DigitalSeq& seq1, const DigitalSeq& seq2);
 
 private:
 	const DegenAlphabet* abc;

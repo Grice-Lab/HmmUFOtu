@@ -19,6 +19,15 @@ const double DNASubModel::MAX_PDIST = 0.15; /* maximum p-dist between training s
 const IOFormat DNASubModel::FULL_FORMAT(Eigen::FullPrecision);
 const IOFormat DNASubModel::STD_FORMAT(Eigen::StreamPrecision);
 
+DigitalSeq::size_type DNASubModel::nonGapSites(const DigitalSeq& seq1, const DigitalSeq& seq2) {
+	assert(seq1.length() == seq2.length());
+	DigitalSeq::size_type N = 0;
+	for(DigitalSeq::size_type i = 0; i < seq1.length(); ++i)
+		if(seq1.isSymbol(i) && !seq2.isSymbol(i))
+			N++;
+	return N;
+}
+
 Matrix4d DNASubModel::calcTransFreq2Seq(const DigitalSeq& seq1, const DigitalSeq& seq2) {
 	assert(seq1.getAbc() == seq2.getAbc());
 	assert(seq1.length() == seq2.length());
