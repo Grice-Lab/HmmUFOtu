@@ -13,6 +13,8 @@
 #include <cctype>
 #include <cmath>
 #include <algorithm>
+#include <cassert>
+#include <boost/algorithm/string.hpp> /* for boost string split */
 #include "HmmUFOtuConst.h"
 #include "ProgLog.h"
 #include "StringUtils.h"
@@ -37,6 +39,8 @@ const string PhyloTreeUnrooted::ORDER_PREFIX = "o__";
 const string PhyloTreeUnrooted::FAMILY_PREFIX = "f__";
 const string PhyloTreeUnrooted::GENUS_PREFIX = "g__";
 const string PhyloTreeUnrooted::SPECIES_PREFIX = "s__";
+
+static const char* TAXA_SEP = ";: "; /* valid taxa name separator */
 
 bool PTUnrooted::isTip(const PTUNodePtr& node) {
 	if(node->isLeaf())
@@ -124,7 +128,7 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 			visited.insert(v);
 			/* get corresponding PTUNode */
 			const PTUNodePtr& u = nTree2PTree[v];
-			if(root == NULL) // first node encountered
+			if(root == NULL) // root node of the Newick tree encountered
 				root = u;
 
 			/* add check each child of u */
@@ -140,6 +144,7 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 			}
 		}
 	}
+	assert(root != NULL);
 }
 
 unsigned PhyloTreeUnrooted::loadMSA(const MSA& msa) {
@@ -207,17 +212,17 @@ PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRo
 
 	S.push(newRoot);
 	while(!S.empty()) {
-		PTUNodePtr v = S.top();
+		PTUNodePtr u = S.top();
 		S.pop();
-		if(visited.find(v) == visited.end()) { /* not visited before */
-			visited.insert(v);
+		if(visited.find(u) == visited.end()) { /* not visited before */
+			visited.insert(u);
 
 			/* check each neighbor of v */
-			for(vector<PTUNodePtr>::iterator neighbor = v->neighbors.begin(); neighbor != v->neighbors.end(); ++neighbor) {
-				if(visited.find(*neighbor) == visited.end() /* not parent/ancestor of v */
-					&& !isChild(*neighbor, v)) /* update this child's parent */
-					(*neighbor)->parent = v;
-				S.push(*neighbor);
+			for(vector<PTUNodePtr>::iterator v = u->neighbors.begin(); v != u->neighbors.end(); ++v) {
+				if(visited.find(*v) == visited.end() /* not parent/ancestor of v */
+					&& !isChild(*v, u)) /* update this child's parent */
+					(*v)->parent = u;
+				S.push(*v);
 			}
 		}
 	}
@@ -838,29 +843,36 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 	return *this;
 }
 
-string& PhyloTreeUnrooted::formatTaxaName(string& taxa) {
+bool PhyloTreeUnrooted::isFullCanonicalName(const string& taxa) {
+	vector<string> fields;
+	boost::split(fields, taxa, boost::is_any_of(TAXA_SEP), boost::token_compress_on);
+	for(vector<string>::size_type level = 0; level < fields.size(); ++level)
+		if(!isCanonicalName(fields[level], static_cast<TaxaLevel> (level)))
+			return false;
+	return true;
+}
+
+bool PhyloTreeUnrooted::isPartialCanonicalName(const string& taxa) {
+	vector<string> fields;
+	boost::split(fields, taxa, boost::is_any_of(TAXA_SEP), boost::token_compress_on);
+	for(vector<string>::const_iterator name = fields.begin(); name != fields.end(); ++name)
+		if(!isCanonicalName(*name))
+			return false;
+	return true;
+}
+
+string PhyloTreeUnrooted::formatTaxaName(const string& taxa) {
 	if(taxa.empty())
 		return taxa;
-	/* remove white spaces */
-	taxa.erase(std::remove_if(taxa.begin(), taxa.end(), ::isspace), taxa.end());
 
-	/* append tailing ; if necessary */
-	if(taxa.back() != ';')
-		taxa.push_back(';');
+	vector<string> formatedTaxa;
+	vector<string> fields;
+	boost::split(fields, taxa, boost::is_any_of(TAXA_SEP), boost::token_compress_on);
+	for(vector<string>::const_iterator name = fields.begin(); name != fields.end(); ++name)
+		if(isCanonicalName(*name))
+			formatedTaxa.push_back(*name);
 
-	/* remove empty taxa */
-	StringUtils::removeAll(taxa, KINDOM_PREFIX + ';');
-	StringUtils::removeAll(taxa, PHYLUM_PREFIX + ';');
-	StringUtils::removeAll(taxa, CLASS_PREFIX + ';');
-	StringUtils::removeAll(taxa, ORDER_PREFIX + ';');
-	StringUtils::removeAll(taxa, FAMILY_PREFIX + ';');
-	StringUtils::removeAll(taxa, GENUS_PREFIX + ';');
-	StringUtils::removeAll(taxa, SPECIES_PREFIX + ';');
-
-	/* remove tailing ; */
-	taxa.erase(taxa.end() - 1);
-
-	return taxa;
+	return boost::join(formatedTaxa, ";");
 }
 
 vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHits(const DigitalSeq& seq, double maxPDist,
@@ -902,40 +914,18 @@ void PhyloTreeUnrooted::annotate() {
 }
 
 void PhyloTreeUnrooted::annotate(const PTUNodePtr& node) {
-	if(node->isNamed()) {
-		node->anno = node->name;
-		node->annoDist = 0;
+	vector<string> annoPath;
+	PTUNodePtr p(node); /* pointer to current node */
+	while(!isFullCanonicalName(p->name) && !p->isRoot()) { /* a non-full canonical named node */
+		node->annoDist += getBranchLength(p, p->parent);
+		if(isPartialCanonicalName(p->name))
+			annoPath.push_back(p->name);
+		p = p->parent;
 	}
-	else {
-		unordered_map<PTUNodePtr, double> visited;
-		annotate(NULL, node, visited);
-		PTUNodePtr nearestNamed = NULL;
-		double nearestDist = infV;
-		for(unordered_map<PTUNodePtr, double>::const_iterator pair = visited.begin(); pair != visited.end(); ++pair) {
-			if(pair->second > nearestDist) {
-				nearestNamed = pair->first;
-				nearestDist = pair->second;
-			}
-		}
-		node->anno = nearestNamed != NULL ? nearestNamed->name : "Other";
-		node->annoDist = nearestNamed != NULL ? nearestDist : 0;
-	}
-}
-
-void PhyloTreeUnrooted::annotate(const PTUNodePtr& u, const PTUNodePtr& v, unordered_map<PTUNodePtr, double>& visited) {
-	if(u == NULL)
-		visited[v] = 0;
-	else if(visited.find(v) == visited.end() || visited[u] + getBranchLength(u, v) < visited[v])
-			visited[v] = visited[u] + getBranchLength(u, v);
-	else { }
-
-	if(v->isNamed()) /* no need to further DFS search */
-		return;
-	/* recursive search */
-	for(vector<PTUNodePtr>::const_iterator w = v->neighbors.begin(); w != v->neighbors.end(); ++w) {
-		if(visited.find(*w) == visited.end()) /* not visited */
-			annotate(v, *w, visited);
-	}
+	if(isFullCanonicalName(p->name))
+		annoPath.push_back(p->name); /* push last name */
+	std::reverse(annoPath.begin(), annoPath.end()); /* reverse the annoPath */
+	node->anno = !annoPath.empty() ? boost::join(annoPath, ";") : "Other";
 }
 
 size_t PhyloTreeUnrooted::estimateNumMutations(int j) {
