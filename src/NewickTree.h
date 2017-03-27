@@ -57,11 +57,6 @@ public:
 		return children.size() > 2;
 	}
 
-	/** test whether this SubTree is a root node */
-	bool isRoot() const {
-		return children.size() > 0 && children.size() != 2;
-	}
-
 	/** test whether this node is a leaf node */
 	bool isLeaf() const {
 		return children.empty();
