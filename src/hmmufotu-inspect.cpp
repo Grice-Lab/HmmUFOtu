@@ -115,8 +115,8 @@ int main(int argc, char* argv[]) {
 		cerr << "Unable to read HMM profile '" << hmmFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
-	cout << "HMM profile read. Name: " << hmm.getName() << " Alphabet:"
-		 << hmm.getNuclAbc()->getAlias() << " profile size: " << hmm.getProfileSize() << endl;
+	cout << "HMM profile read. Name: " << hmm.getName() << " Alphabet: "
+		 << hmm.getNuclAbc()->getAlias() << " Profile size: " << hmm.getProfileSize() << endl;
 	if(hmm.getProfileSize() > csLen) {
 		cerr << "Error: HMM profile size is found greater than the MSA CS length" << endl;
 		return EXIT_FAILURE;
@@ -133,8 +133,8 @@ int main(int argc, char* argv[]) {
 		 << " Number of nodes: " << ptu.numNodes()
 		 << " Number of branches: " << ptu.numBranches()
 		 << " Number of sites: " << ptu.numAlignSites() << endl;
-	cout << "Root name: " << ptu.getRoot()->getAnno()
-		 << "Overal log-liklihood: " << ptu.treeLoglik() << endl;
+	cout << "Root name: " << ptu.getRoot()->getAnno() << endl
+		 << "Entire tree log-liklihood: " << ptu.treeLoglik() << endl;
 
 	if(showSm)
 		cout << (*ptu.getModel());

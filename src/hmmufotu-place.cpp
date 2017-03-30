@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
 				if(treeLik > maxLoglik) {
 					maxLoglik = treeLik;
 					bestNode = node;
-					bestAnnotation = n->getAnnotation();
+					bestAnnotation = n->getTaxa();
 				}
 				if(treeLik <= prevlik)
 					break;

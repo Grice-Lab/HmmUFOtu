@@ -96,7 +96,7 @@ double DNASubModel::pDist(const DigitalSeq& seq1, const DigitalSeq& seq2,
 	assert(seq1.length() == seq2.length());
 	int d = 0;
 	int N = 0;
-	for(DigitalSeq::size_type i = start; i != end; ++i) {
+	for(DigitalSeq::size_type i = start; i <= end; ++i) {
 		int b1 = seq1[i];
 		int b2 = seq2[i];
 		if(b1 >= 0 && b2 >= 0) {
@@ -106,6 +106,15 @@ double DNASubModel::pDist(const DigitalSeq& seq1, const DigitalSeq& seq2,
 		}
 	}
 	return static_cast<double>(d) / N;
+}
+
+double DNASubModel::subDist(const DigitalSeq& seq1, const DigitalSeq& seq2, int start, int end) const {
+	assert(seq1.getAbc() == seq2.getAbc());
+	assert(seq1.length() == seq2.length());
+	return subDist(
+			calcObservedDiff(seq1, seq2, start, end),
+			nonGapSites(seq1, seq2, start, end)
+	);
 }
 
 Matrix4d DNASubModel::scale(Matrix4d Q, Vector4d pi, double mu) {

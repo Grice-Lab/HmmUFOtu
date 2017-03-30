@@ -778,9 +778,10 @@ void BandedHMMP7::calcViterbiScores(
 			vs.DP_I(i, j) = E_I_cost(vs.seq->encodeAt(i - 1), j) + std::min(
 							static_cast<double> (vs.DP_I(i - 1, j) + Tmat_cost[j](I, I)), // from Ii-1,j
 							static_cast<double> (vs.DP_M(i - 1, j) + Tmat_cost[j](M, I))); // from Mi-1,j
-			vs.DP_D(i, j) = std::min(
-					static_cast<double> (vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), // from Mi,j-1
-					static_cast<double> (vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
+			if(j > 1 && j < K) /* D1 and Dk are retracted */
+				vs.DP_D(i, j) = std::min(
+						static_cast<double> (vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), // from Mi,j-1
+						static_cast<double> (vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
 		}
 	}
 	vs.S.resize(L + 1, K + 2); // column K+1 represent the exit from IK state
@@ -838,9 +839,10 @@ void BandedHMMP7::calcViterbiScores(
 								+ std::min(
 										static_cast<double>(vs.DP_I(i - 1, j) + Tmat_cost[j](I, I)), // from Ii-1,j
 										static_cast<double>(vs.DP_M(i - 1, j) + Tmat_cost[j](M, I))); // from Mi-1,j
-				vs.DP_D(i, j) =	std::min(
-						static_cast<double>(vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), // from Mi,j-1
-						static_cast<double>(vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
+				if(j > 1 && j < K) /* D1 and Dk are retracted */
+					vs.DP_D(i, j) =	std::min(
+							static_cast<double>(vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), // from Mi,j-1
+							static_cast<double>(vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
 			}
 		}
 		/* Fill the score of the known alignment path */
@@ -859,9 +861,10 @@ void BandedHMMP7::calcViterbiScores(
 						+ std::min(
 								static_cast<double>(vs.DP_I(i - 1, j) + Tmat_cost[j](I, I)), // from Ii-1,j
 								static_cast<double>(vs.DP_M(i - 1, j) + Tmat_cost[j](M, I))); // from Mi-1,j
-				vs.DP_D(i, j) = std::min(
-						static_cast<double>(vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), // from Mi,j-1
-						static_cast<double>(vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
+				if(j > 1 && j < K) /* D1 and Dk are retracted */
+					vs.DP_D(i, j) = std::min(
+							static_cast<double>(vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), // from Mi,j-1
+							static_cast<double>(vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
 			}
 		}
 		// assert(i == vpath.to + 1 && j == vpath.end + 1);
@@ -890,9 +893,10 @@ void BandedHMMP7::calcViterbiScores(
 					std::min(
 							static_cast<double>(vs.DP_I(i - 1, j) + Tmat_cost[j](I, I)), // from Ii-1,j
 							static_cast<double>(vs.DP_M(i - 1, j) + Tmat_cost[j](M, I))); // from Mi-1,j
-			vs.DP_D(i, j) = std::min(
-							static_cast<double>(vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), // from Mi,j-1
-							static_cast<double>(vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
+			if(j > 1 && j < K) /* D1 and Dk are retracted */
+				vs.DP_D(i, j) = std::min(
+						static_cast<double>(vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), // from Mi,j-1
+						static_cast<double>(vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
 		}
 	}
 //	cerr << "downstream done" << endl;
@@ -984,7 +988,7 @@ double BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath&
 	//cerr << "id:" << vs.seq->getId() << " minRow:" << minRow << " minCol:" << minCol << " minScore:" << minScore << " minEnd:" << getCSLoc(minCol) << endl;
 
 	vpath.alnPath.push_back('E'); // ends with E
-	while(i >= 1 || j >= 1) {
+	while(i >= 1 && j >= 0) {
 //		cerr << "i: " << i << " j: " << j << " s: " << s << endl;
 		vpath.alnPath.push_back(s);
 		// update the status
@@ -997,8 +1001,8 @@ double BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath&
 					static_cast<double> (vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), /* from I(i-1,j-1) */
 					static_cast<double> (vs.DP_D(i - 1, j - 1) + Tmat_cost[j-1](D, M))); /* from D(i-1,j-1) */
 			if(s == 'B')
-				j = 0; // jump to B state
-			else { // M, I or D state
+				j = 0;
+			else {
 				i--;
 				j--;
 			}
@@ -1019,8 +1023,9 @@ double BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath&
 					"MD");
 			j--;
 		}
-		else // B state found
+		else if(s == 'B')
 			break;
+		else { } /* do nothing */
 	} /* end of while */
 
 	vpath.alnStart++; /* 1-based */
@@ -1150,7 +1155,7 @@ void BandedHMMP7::wingRetract() {
 	if(wingRetracted) // already wing-retracted
 		return;
 	/* retract entering costs */
-	/* increase the B->Mj cost by adding the chain B->D1->D2->...->Dj-1->Mj */
+	/* increase the B->Mj entry cost by adding the chain B->D1->D2->...->Dj-1->Mj */
 	for(MatrixXd::Index j = 2; j <= K; ++j) {
 		double cost = 0; // additional retract cost in log-scale
 		cost += Tmat_cost[0](M, D); // B->D1 (M0->D1)

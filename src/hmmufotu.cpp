@@ -22,6 +22,7 @@
 
 using namespace std;
 using namespace EGriceLab;
+using namespace Eigen;
 
 /** default values */
 static const string ALPHABET = "dna";
@@ -32,10 +33,36 @@ static const int MAX_SEED_LEN = 25;
 static const int MIN_SEED_LEN = 15;
 static const int DEFAULT_SEED_REGION = 50;
 static const string UNASSIGNED_TAXA = "Unknown";
-static const double UNASSIGNED_LOGLIK = EGriceLab::infV;
-static const double UNASSIGNED_POSTQ = 0;
+static const double UNASSIGNED_LOGLIK = EGriceLab::nan;
+static const string UNASSIGNED_ID = "NULL";
+static const double UNASSIGNED_POSTQ = EGriceLab::nan;
+static const double UNASSIGNED_DIST = EGriceLab::nan;
+static const double UNASSIGNED_RATIO = EGriceLab::nan;
+
 static const string PLACE_HEADER = "id\tdesc\tbranch_id\tbranch_ratio\tCS_start\tCS_end\ttaxa_anno\tanno_dist\tloglik\tpostQ";
 static const string TAXA_SUMM_HEADER = "taxa_id\ttaxa_annotation\tcount";
+
+typedef boost::unordered_set<PTUnrooted::PTUNodePtr> NodeSet;
+
+/** struct to store placement information */
+struct PTPlacement {
+	/** construct a placement using given info */
+	PTPlacement(const string& id, const string& taxa,
+			double loglik, double ratio, double annoDist, double q = 0)
+	: id(id), taxa(taxa), loglik(loglik), ratio(ratio), annoDist(annoDist), q(q)
+	{ }
+
+	static void calcQValues(vector<PTPlacement>& places);
+
+	friend bool operator<(const PTPlacement& lhs, const PTPlacement& rhs);
+
+	string id;
+	string taxa;
+	double loglik;
+	double ratio;
+	double annoDist;
+	double q;
+};
 
 /**
  * Print the usage information
@@ -61,6 +88,20 @@ void printUsage(const string& progName) {
 vector<PTUnrooted::PTUNodePtr> getLeafHitsById(const set<unsigned>& idHits,
 		const map<unsigned, PTUnrooted::PTUNodePtr>& id2leaf);
 
+/** Align seq with hmm and csfm, returns the alignment or empty seq if failed */
+PrimarySeq alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
+		int seedLen, int seedRegion, BandedHMMP7::align_mode mode,
+		int& csStart, int& csEnd);
+
+/** Place a seq with known profile-HMM and Tree, modify the bestAnnotation accordingly */
+PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
+		double maxDist);
+
+/** Place a mate of sequences with known profile-HMM and Tree, modify the bestAnnotation accordingly */
+void placePE(const PTUnrooted& ptu, const DigitalSeq& fwdSeq, const DigitalSeq& revSeq,
+		int fwdStart, int fwdEnd, int revStart, int revEnd,
+		double maxDist, double minQ);
+
 int main(int argc, char* argv[]) {
 	/* variable declarations */
 	string dbName, fwdFn, revFn, msaFn, csfmFn, hmmFn, ptuFn;
@@ -79,7 +120,6 @@ int main(int argc, char* argv[]) {
 
 	unsigned seed = time(NULL); // using time as default seed
 
-	typedef boost::unordered_set<PTUnrooted::PTUNodePtr> NodeSet;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -277,123 +317,34 @@ int main(int argc, char* argv[]) {
 		SeqIO seqIn(fwdFn, ALPHABET, seqFmt);
 		while(seqIn.hasNext()) {
 			const PrimarySeq& read = seqIn.nextSeq();
-			if(mode == BandedHMMP7::GLOBAL && read.length() > csLen) {
-				warningLog << "Warning: read length cannot longer than consensus length for '-s' mode. id: "
-						   << read.getId() << " length " << read.length() << " CSLen: " << csLen << endl;
+			cerr << "Aligning read: " << read.getId() << endl;
+			int csStart = -1;
+			int csEnd = -1;
+			/* align the read */
+			const PrimarySeq& aln = alignSeq(hmm, csfm, read, seedLen, seedRegion, mode, csStart, csEnd);
+			if(aln.empty())
 				continue;
-			}
-			BandedHMMP7::ViterbiScores seqVscore = hmm.initViterbiScores(read); // construct an empty reusable score
-			BandedHMMP7::ViterbiAlignPath seqVpath = hmm.initViterbiAlignPath(read.length()); // construct an empty reusable path
-			set<unsigned> seqIdHits;
 
-			int regionLen = seedRegion < read.length() ? seedRegion : read.length(); /* search region */
-			/* find seed in 5' */
-			for(int seedFrom = 0; seedFrom < regionLen - seedLen + 1; ++seedFrom) {
-				PrimarySeq seed(abc, read.getId(), read.subseq(seedFrom, seedLen));
-				const CSLoc& loc = csfm.locateOne(seed.getSeq());
-				if(loc.start > 0 && loc.end > 0) /* a read seed located */ {
-//					fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedFrom + 1, seedFrom + seedLen, loc.CS.length(), loc.CS.c_str());
-					hmm.addKnownAlignPath(seqVpath, loc, seedFrom + 1, seedFrom + seedLen); /* seed_from and seed_to are 1-based */
-					const set<unsigned>& hits = csfm.locateIndex(seed.getSeq());
-					seqIdHits.insert(hits.begin(), hits.end());
-					break; /* only one 5'-seed necessary */
-				}
-			}
-			/* find seed in 3', if requested */
-			if(mode == BandedHMMP7::GLOBAL) {
-				for(int seedTo = read.length() - 1; seedTo - seedLen + 1 >= read.length() - regionLen; --seedTo) {
-					PrimarySeq seed(abc, read.getId(), read.subseq(seedTo - seedLen + 1, seedLen));
-					const CSLoc& loc = csfm.locateOne(seed.getSeq());
-					if(loc.start > 0 && loc.end > 0) /* a read seed located */ {
-//						fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedTo - seedLen + 2, seedTo + 1, loc.CS.length(), loc.CS.c_str());
-						hmm.addKnownAlignPath(seqVpath, loc, seedTo - seedLen + 2, seedTo + 1); /* seed_from and seed_to are 1-based */
-						const set<unsigned>& hits = csfm.locateIndex(seed.getSeq());
-						seqIdHits.insert(hits.begin(), hits.end());
-						break; /* only one 5'-seed necessary */
-					}
-				}
-			}
-			cerr << "nSeed: " << seqVpath.N << " idxHits: " << seqIdHits.size() << endl;
-
-			/* banded HMM align */
-			hmm.calcViterbiScores(seqVscore, seqVpath);
-			float minCost = hmm.buildViterbiTrace(seqVscore, seqVpath);
-			if(minCost == inf) {
-				warningLog << "Unable to align read " << read.getId() << " , no Viterbi path found" << endl;
-				out << read.getId() << "\t" << read.getDesc() << "\t"
-					<< "NA\tNA\tNA\tNA\t"
-					<< UNASSIGNED_TAXA << "\t" << UNASSIGNED_LOGLIK << "\t" << UNASSIGNED_POSTQ << endl;
-				taxaCount[UNASSIGNED_TAXA]++;
-				continue;
-			}
-			if(!hmm.isValidAlignPath(seqVpath)) {
-				cerr << "Invalid align path: length: " << seqVpath.alnPath.length() << " path: " << seqVpath.alnPath << endl
-					 << "alnStart: " << seqVpath.alnStart << " alnEnd: " << seqVpath.alnEnd << " alnLen: "
-					 << " alnLen: " << seqVpath.alnEnd - seqVpath.alnStart + 1
-					 << " alnFrom: " << seqVpath.alnFrom << " alnTo: " << seqVpath.alnTo << endl;
-				return EXIT_FAILURE;
-			}
-
-			/* find seqStart and seqEnd */
-			int csStart = hmm.getCSLoc(seqVpath.alnStart) - 1;
-			int csEnd = hmm.getCSLoc(seqVpath.alnEnd) - 1;
-
-			PrimarySeq aln = hmm.buildGlobalAlignSeq(seqVscore, seqVpath);
+			assert(aln.length() == csLen);
 			DigitalSeq seq(aln);
-			if(seq.length() != ptu.numAlignSites()) {
-				warningLog << "aln.length: " << aln.length() << " seq.length: " << seq.length() << " numSite: " << ptu.numAlignSites() << endl;
-				continue;
-			}
+
 			if(!alnFn.empty())
 				alnOut.writeSeq(aln);
 
-			/* phylogenetic placement */
-			double maxLoglik = EGriceLab::infV;
-			PTUnrooted::PTUNodePtr bestNode;
-			string bestAnnotation;
-			double bestRatio;
-			double bestDist;
-			/* Use a SLA (leaf-ancestor) search algorithm */
-			const vector<PTUnrooted::PTUNodePtr>& leafHits = ptu.getLeafHits(getLeafHitsById(seqIdHits, id2leaf), seq, maxDist, csStart, csEnd);
-			infoLog << "Found " << leafHits.size() << " leaf nodes for " << read.getId() << endl;
-			if(leafHits.empty())
-				continue;
+			/* place seq */
+			const PTPlacement& place = placeSE(ptu, seq, csStart, csEnd, maxDist);
 
-			NodeSet nodeSeen;
-			for(vector<PTUnrooted::PTUNodePtr>::const_iterator leaf = leafHits.begin(); leaf != leafHits.end(); ++leaf) {
-				PTUnrooted::PTUNodePtr node = *leaf;
-				double prevlik = EGriceLab::infV;
-				while(!node->isRoot() && nodeSeen.find(node) == nodeSeen.end()) {
-					/* place the read here */
-					PTUnrooted subtree = ptu.copySubTree(node, node->getParent());
-					const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
-					const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
-					double w0 = subtree.getBranchLength(u, v);
-					subtree.placeSeq(seq, u, v, csStart, csEnd);
-					const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
-					const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
-					double treeLik = subtree.treeLoglik(csStart, csEnd);
-					nodeSeen.insert(node);
+			if(::isnan(place.loglik))
+				warningLog << "Unable to place read " << read.getId() << endl;
 
-					if(treeLik > maxLoglik) {
-						maxLoglik = treeLik;
-						bestNode = node;
-						bestAnnotation = n->getAnnotation(maxDist);
-						bestRatio = subtree.getBranchLength(u, r) / w0;
-						bestDist = n->getAnnoDist();
-					}
-					if(treeLik <= prevlik)
-						break;
+			taxaCount[place.taxa]++;
 
-					node = node->getParent();
-					prevlik = treeLik;
-				} /* end of this cascade */
-			} /* end each leaf */
+			/* write main output */
 			out << read.getId() << "\t" << read.getDesc() << "\t"
-				<< bestNode->getParent()->getId() << "->" << bestNode->getId() << "\t"
-				<< bestRatio << "\t" << bestAnnotation << "\t"
+				<< place.id << "\t" << place.ratio << "\t"
 				<< csStart << "\t" << csEnd << "\t"
-				<< bestAnnotation << "\t\t" << endl;
+				<< place.taxa << "\t" << place.annoDist << "\t"
+				<< place.loglik << "\t" << place.q << endl;
 		}
 	} /* end single-ended */
 	else { /* paired-ended */
@@ -416,4 +367,144 @@ vector<PTUnrooted::PTUNodePtr> getLeafHitsById(const set<unsigned>& idHits,
 	for(set<unsigned>::const_iterator id = idHits.begin(); id != idHits.end(); ++id)
 		leafHits.push_back(id2leaf.at(*id));
 	return leafHits;
+}
+
+PrimarySeq alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
+		int seedLen, int seedRegion, BandedHMMP7::align_mode mode,
+		int& csStart, int& csEnd) {
+	const DegenAlphabet* abc = hmm.getNuclAbc();
+
+	BandedHMMP7::ViterbiScores seqVscore = hmm.initViterbiScores(read); // construct an empty reusable score
+	BandedHMMP7::ViterbiAlignPath seqVpath = hmm.initViterbiAlignPath(read.length()); // construct an empty reusable path
+
+	int regionLen = seedRegion < read.length() ? seedRegion : read.length(); /* search region */
+	/* find seed in 5' */
+	for(int seedFrom = 0; seedFrom < regionLen - seedLen + 1; ++seedFrom) {
+		PrimarySeq seed(abc, read.getId(), read.subseq(seedFrom, seedLen));
+		const CSLoc& loc = csfm.locateOne(seed.getSeq());
+		if(loc.start > 0 && loc.end > 0) /* a read seed located */ {
+//					fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedFrom + 1, seedFrom + seedLen, loc.CS.length(), loc.CS.c_str());
+			hmm.addKnownAlignPath(seqVpath, loc, seedFrom + 1, seedFrom + seedLen); /* seed_from and seed_to are 1-based */
+			const set<unsigned>& hits = csfm.locateIndex(seed.getSeq());
+			break; /* only one 5'-seed necessary */
+		}
+	}
+	/* find seed in 3', if requested */
+	if(mode == BandedHMMP7::GLOBAL) {
+		for(int seedTo = read.length() - 1; seedTo - seedLen + 1 >= read.length() - regionLen; --seedTo) {
+			PrimarySeq seed(abc, read.getId(), read.subseq(seedTo - seedLen + 1, seedLen));
+			const CSLoc& loc = csfm.locateOne(seed.getSeq());
+			if(loc.start > 0 && loc.end > 0) /* a read seed located */ {
+//						fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedTo - seedLen + 2, seedTo + 1, loc.CS.length(), loc.CS.c_str());
+				hmm.addKnownAlignPath(seqVpath, loc, seedTo - seedLen + 2, seedTo + 1); /* seed_from and seed_to are 1-based */
+				const set<unsigned>& hits = csfm.locateIndex(seed.getSeq());
+				break; /* only one 5'-seed necessary */
+			}
+		}
+	}
+	cerr << "nSeed: " << seqVpath.N << endl;
+
+	/* banded HMM align */
+	hmm.calcViterbiScores(seqVscore, seqVpath);
+	float minCost = hmm.buildViterbiTrace(seqVscore, seqVpath);
+	if(minCost == inf) {
+		warningLog << "Warning: Unable to align read " << read.getId() << " , no Viterbi path found" << endl;
+		return PrimarySeq(abc, read.getId(), "");
+	}
+
+	/* find seqStart and seqEnd */
+	csStart = hmm.getCSLoc(seqVpath.alnStart) - 1;
+	csEnd = hmm.getCSLoc(seqVpath.alnEnd) - 1;
+
+	return hmm.buildGlobalAlignSeq(seqVscore, seqVpath);
+}
+
+PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
+		double maxDist) {
+	PTUnrooted::PTUNodePtr bestNode;
+	/* Use a SLA (leaf-ancestor) search algorithm */
+	const vector<PTUnrooted::PTUNodePtr>& leafHits = ptu.getLeafHitsByPDist(seq, maxDist, start, end);
+	infoLog << "Found " << leafHits.size() << " leaf nodes for " << seq.getName() << endl;
+	if(leafHits.empty())
+		return PTPlacement(UNASSIGNED_ID, UNASSIGNED_TAXA, UNASSIGNED_LOGLIK, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_POSTQ);
+
+	vector<PTPlacement> places;
+	NodeSet nodeSeen;
+
+
+	for(vector<PTUnrooted::PTUNodePtr>::const_iterator leaf = leafHits.begin(); leaf != leafHits.end(); ++leaf) {
+		double bestLoglik = infV; /* best loglik of this linage */
+		PTUnrooted::PTUNodePtr bestNode, bestAnnoNode;
+		double bestRatio;
+
+		for(PTUnrooted::PTUNodePtr node = *leaf; !node->isRoot() && nodeSeen.find(node) == nodeSeen.end(); node = node->getParent()) {
+			nodeSeen.insert(node);
+			cerr << "Placing " << seq.getName() << " at " << node->getId() << "->" << node->getParent()->getId() << endl;
+			/* place the read here */
+			PTUnrooted subtree = ptu.copySubTree(node, node->getParent());
+
+			const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
+			const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
+			double w0 = subtree.getBranchLength(u, v);
+			double loglik = subtree.placeSeq(seq, u, v, start, end);
+			const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
+			const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
+
+			if(loglik < bestLoglik) /* no need to further trace back */
+				break;
+
+			/* calculate the node n annoDist */
+			double wnr = subtree.getBranchLength(n, r);
+			double wur = subtree.getBranchLength(u, r);
+			double wvr = subtree.getBranchLength(v, r);
+			double ratio = wur / w0;
+
+			if(wvr <= wur) { /* r->v is shorter */
+				n->anno = v->anno;
+				n->annoDist = v->annoDist + wvr + wnr;
+			}
+			else { /* u->r is shorter */
+				n->anno = u->anno;
+				if(u->annoDist == 0) /* self-annotated */
+					n->annoDist = wur + wnr;
+				else /* annotated from v or ancestor */
+					n->annoDist = u->annoDist + (wnr - wur);
+			}
+
+			bestLoglik = loglik;
+			bestNode = node;
+			bestRatio = ratio;
+			bestAnnoNode = n;
+
+			node = node->getParent();
+		} /* end of this linage */
+		char branchID[64];
+		sprintf(branchID, "%ld->%ld", bestNode->getId(), bestNode->getParent()->getId());
+		places.push_back(PTPlacement(branchID, bestAnnoNode->getTaxa(), bestLoglik, bestRatio, bestAnnoNode->annoDist));
+		cerr << "potential placement at: " << bestAnnoNode->getTaxa() << " with loglik: " << bestLoglik << endl;
+	} /* end each leaf */
+
+	/* sort placements descendingly */
+	std::sort(places.rbegin(), places.rend());
+	PTPlacement::calcQValues(places);
+	return places.front();
+}
+
+void PTPlacement::calcQValues(vector<PTPlacement>& places) {
+	VectorXd loglik(places.size());
+	VectorXd::Index i = 0;
+	for(vector<PTPlacement>::const_iterator placement = places.begin(); placement != places.end(); ++placement)
+		loglik(i++) = placement->loglik;
+
+	/* scale and normalize */
+	VectorXd p = (loglik.array() - loglik.maxCoeff()).exp();
+	p /= p.sum();
+
+	/* assign q-values */
+	for(vector<PTPlacement>::size_type i = 0; i < places.size(); ++i)
+		places[i].q = -::log10(1 - p(i));
+}
+
+inline bool operator<(const PTPlacement& lhs, const PTPlacement& rhs) {
+	return lhs.loglik < rhs.loglik;
 }

@@ -61,6 +61,28 @@ public:
 	virtual double subDist(const Matrix4d& D, double N) const = 0;
 
 	/**
+	 * Get the estimated distance between two sequences using this model
+	 * it will call the actual instaneace method subDist to calculate the subDist
+	 * @param seq1  sequence 1
+	 * @param seq2  sequence 2
+	 * @return  estimate distance under this model
+	 */
+	double subDist(const DigitalSeq& seq1, const DigitalSeq& seq2) const {
+		return subDist(seq1, seq2, 0, seq1.length() - 1);
+	}
+
+	/**
+	 * Get the estimated distance between two sequences using this model in given region
+	 * it will call the actual instaneace method subDist to calculate the subDist
+	 * @param seq1  sequence 1
+	 * @param seq2  sequence 2
+	 * @param start  start pos, 0-based inclusive
+	 * @param end  end pos, 0-based inclusive
+	 * @return  estimate distance under this model
+	 */
+	double subDist(const DigitalSeq& seq1, const DigitalSeq& seq2, int start, int end) const;
+
+	/**
 	 * train model parameters using a given Phylogenetic tree and method
 	 */
 //	void trainParams(const PhyloTree& tree, string method = "Gojobori");
@@ -107,7 +129,7 @@ public:
 
 	/** calculate the p-distance between two aligned DigitalSeq */
 	static double pDist(const DigitalSeq& seq1, const DigitalSeq& seq2) {
-		return pDist(seq1, seq2, 0, seq1.length());
+		return pDist(seq1, seq2, 0, seq1.length() - 1);
 	}
 
 	/** calculate the observed transition frequencies using Goldman (two-sequence) method */
