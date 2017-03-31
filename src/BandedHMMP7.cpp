@@ -24,7 +24,7 @@ using namespace std;
 using namespace Eigen;
 
 /*const int BandedHMMP7::kMinProfile = 10000; // up-to 10K 16S rRNA profile*/
-string HMM_TAG =
+const string BandedHMMP7::HMM_TAG =
 		"HMM\t\tA\tC\tG\tT\n\t\tm->m\tm->i\tm->d\ti->m\ti->i\td->m\td->d";
 
 const double BandedHMMP7::kMinGapFrac = 0.2;
@@ -290,7 +290,7 @@ ostream& operator<<(ostream& out, const BandedHMMP7& hmm) {
 		out << *it << "  " << hmm.getOptTag(*it) << endl;
 
 	/* write optional HMM tags */
-	out << HMM_TAG << endl;
+	out << BandedHMMP7::HMM_TAG << endl;
 	for(int k = 0; k <= hmm.K; ++k) {
 		/* write M or background emission line */
 		if(k == 0)

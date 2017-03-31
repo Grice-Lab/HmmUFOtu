@@ -736,30 +736,38 @@ public:
 	vector<Matrix4d> getModelTraningSetGoldman() const;
 
 	/** get leaf hits for a given seq within given pDist in given region */
-	vector<PTUNodePtr> getLeafHits(const DigitalSeq& seq, double maxPDist,
+	vector<PTUNodePtr> getLeafHitsByPDist(const DigitalSeq& seq, double maxDist,
 			int start, int end) const;
 
 	/** get leaf hits for a given seq within given pDist in entire seq */
-	vector<PTUNodePtr> getLeafHits(const DigitalSeq& seq, double maxPDist) const {
-		return getLeafHits(seq, maxPDist, 0, csLen - 1);
+	vector<PTUNodePtr> getLeafHitsByPDist(const DigitalSeq& seq, double maxDist) const {
+		return getLeafHitsByPDist(seq, maxDist, 0, csLen - 1);
 	}
 
 	/** get leaf hits for a given seq within given pDist in given region, with candidates provided */
-	vector<PTUNodePtr> getLeafHits(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
-			double maxPDist, int start, int end) const;
+	vector<PTUNodePtr> getLeafHitsByPDist(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
+			double maxDist, int start, int end) const;
 
 	/** get leaf hits for a given seq within given pDist in entire seq, with candidates provided */
-	vector<PTUNodePtr> getLeafHits(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq, double maxPDist) const {
-		return getLeafHits(candidates, seq, maxPDist, 0, csLen - 1);
+	vector<PTUNodePtr> getLeafHitsByPDist(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq, double maxDist) const {
+		return getLeafHitsByPDist(candidates, seq, maxDist, 0, csLen - 1);
 	}
 
 	/** get node hits for a given seq within given subDist in given region */
-	vector<PTUNodePtr> getNodeHits(const DigitalSeq& seq, double maxSubDist,
-			int start, int end);
+	vector<PTUNodePtr> getLeafHitsBySubDist(const DigitalSeq& seq, double maxDist, int start, int end) const;
 
 	/** get node hits for a given seq within given subDist in entire seq */
-	vector<PTUNodePtr> getNodeHits(const DigitalSeq& seq, double maxSubDist) {
-		return getLeafHits(seq, maxSubDist, 0, csLen - 1);
+	vector<PTUNodePtr> getLeafHitsBySubDist(const DigitalSeq& seq, double maxDist) const {
+		return getLeafHitsBySubDist(seq, maxDist, 0, csLen - 1);
+	}
+
+	/** get leaf hits for a given seq within given subDist in given region, with candidates provided */
+	vector<PTUNodePtr> getLeafHitsBySubDist(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
+			double maxDist, int start, int end) const;
+
+	/** get leaf hits for a given seq within given pDist in entire seq, with candidates provided */
+	vector<PTUNodePtr> getLeafHitsBySubDist(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq, double maxDist) const {
+		return getLeafHitsBySubDist(candidates, seq, maxDist, 0, csLen - 1);
 	}
 
 	/**
@@ -776,24 +784,6 @@ public:
 	size_t estimateNumMutations(int j);
 
 	/**
-	 * get the substitution distance between a new seq and a given node at given region
-	 * using the underlying DNA Substitution model for estimation
-	 * @param seq  a new observed seq
-	 * @param node  a (observed or unobserved) node
-	 */
-	double subDist(const DigitalSeq& seq, const PTUNodePtr& node, int start, int end);
-
-	/**
-	 * get the substitution distance between a new seq and a given node
-	 * using the underlying DNA Substitution model for estimation
-	 * @param seq  a new observed seq
-	 * @param node  a (observed or unobserved) node
-	 */
-	double subDist(const DigitalSeq& seq, const PTUNodePtr& node) {
-		return subDist(seq, node, 0, seq.length());
-	}
-
-	/**
 	 * make a copy of subtree with only two nodes and a branch u and v
 	 * edges u->v and v->u should has already been evaluated
 	 * @return  a new PhyloTreeUnrooted with only two nodes and a branch u->v,
@@ -806,20 +796,23 @@ public:
 	 * in given region [start-end]
 	 * return the estimated branch length
 	 */
-	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end);
+	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end) const;
 
 	/**
 	 * estimate branch length by comparing the two direction loglik
 	 * in the entire region
+	 * this method is not responsible for re-evluate the tree after branch-length is modified
+	 *
 	 * return the estimated branch length
 	 */
-	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) {
+	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) const {
 		return estimateBranchLength(u, v, 0, csLen - 1);
 	}
 
 	/**
 	 * iteratively optimize the length of branch u->v using Felsenstein's algorithm
 	 * in given CSRegion [start-end]
+	 * this method is not responsible for re-evluate the tree after branch-length is modified
 	 * return the updated branch length v
 	 */
 	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end);
@@ -833,32 +826,93 @@ public:
 	}
 
 	/**
-	 * place an additional seq (n) at given branch with given initial branch length
-	 * by introducing a new internal root r, initially placed at the mid-point between u->v
-	 * during placement, tree branch lengths are optimized in the order of
-	 * n->r, then u->r/r->v jointly
+	 * iteratively optimize the length of branch u->v using Felsenstein's algorithm
+	 * in given CSRegion [start-end], while the max length of the branch is constrained
+	 * this method is not responsible for re-evluate the tree after branch-length is modified
+	 * return the updated branch length v
+	 */
+	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, double maxL, int start, int end);
+
+	/**
+	 * iteratively optimize the length of branch u->v using Felsenstein's algorithm, while the max length is constrained
+	 * return the updated branch length v
+	 */
+	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, double maxL) {
+		return optimizeBranchLength(u, v, maxL, 0, csLen -1);
+	}
+
+	/**
+	 * iteratively optimize the length of branch u->r and r->v jointly
+	 * in given CSRegion [start-end], so the total length wur + wrv won't changed
+	 * this method might slighly decrease the treeLoglik
+	 * this method does not update all loglik after branch length is altered by default,
+	 * instead it only updates the necessary ones
+	 * return the optimized branch ratio (wur / wrv)
+	 */
+	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& r, const PTUNodePtr& v,
+			int start, int end, bool doUpdate = false);
+
+	/**
+	 * iteratively optimize the length of branch u->r and r->v jointly in the entire seq,
+	 * so the total length wur + wrv won't changed
+	 * return the optimized branch ratio (wur / wrv)
+	 */
+	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& r, const PTUNodePtr& v, bool doUpdate = false) {
+		return optimizeBranchLength(u, r, v, 0, csLen - 1, doUpdate);
+	}
+
+	/**
+	 * estimate the potential treeLoglik, if we place an additional seq (n) at given branch in given region [start,end]
+	 * at the mid-point of branch u->v, without modifying the original tree
+	 * this method always use fixed-rate DNA Substitution method
+	 * @param  new seq to be test
+	 * @param u  branch start (u->v)
+	 * @param v  branch end (u->v)
+	 * @param start  seq start position (non-gap start)
+	 * @param end  seq end position (non-gap end)
+	 * @return  the estimated treeLoglik if seq is placed here
+	 */
+	double estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
+			int start, int end) const;
+
+	/**
+	 * estimate the potential treeLoglik, if we place an additional seq (n) at given branch in the entire seq region
+	 * at the mid-point of branch u->v, without modifying the original tree
+	 * @param  new seq to be test
+	 * @param u  branch start (u->v)
+	 * @param v  branch end (u->v)
+	 * @return  the estimated treeLoglik if seq is placed here
+	 */
+	double estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v) const {
+		return estimateSeq(seq, u, v, 0, csLen - 1);
+	}
+
+	/**
+	 * place an additional seq (n) at given branch in given region [start,end]
+	 * by introducing a new internal root r, which will be placed at the mid-point between u->v
+	 * then the new branch n->r will be optimized, related loglik evaluated,
+	 * and the branches u->r and v->r are optimized jointly
+	 * the modified tree will have r as its new root
 	 * @param  new seq to be placed
 	 * @param u  branch start (u->v)
 	 * @param v  branch end (u->v)
 	 * @param start  seq start position (non-gap start)
 	 * @param end  seq end position (non-gap end)
-	 * @param d0  estimiated initial branch length n->r
-	 * @return  the modified tree, with r and n appended at the end of all nodes
+	 * @return  the final treeLoglik after placing this read
 	 */
-	PTUnrooted& placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
+	double placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
 			int start, int end);
 
 	/**
-	 * place an additional seq (n) at given branch with given initial branch length
-	 * after placement, tree will be re-rooted to the new internal root r,
-	 * and new branch length n->r will be optimized according the entire region [0, csLen-1]
+	 * place an additional seq (n) at given branch in the entire seq region
+	 * by introducing a new internal root r, which will be placed at the mid-point between u->v
+	 * the new branch n->r will be optimized, and direction loglik will be evaluated
 	 * @param  new seq to be placed
 	 * @param u  branch start (u->v)
 	 * @param v  branch end (u->v)
-	 * @param d0  estimiated initial branch length n->r
-	 * @return  the modified tree, with r and n appended at the end of all nodes
+	 * @return  the final treeLoglik after placing this read
 	 */
-	PTUnrooted& placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v) {
+	double placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v) {
 		return placeSeq(seq, u, v, 0, csLen -1);
 	}
 
@@ -1007,7 +1061,7 @@ public:
 	static const double MIN_LOGLIK_EXP;
 	static const double INVALID_LOGLIK;
 
-	static const double LOGLIK_REL_EPS;
+//	static const double LOGLIK_REL_EPS;
 	static const double BRANCH_EPS;
 	static const char ANNO_FIELD_SEP = '\t';
 	static const string KINDOM_PREFIX;
@@ -1207,13 +1261,7 @@ inline bool PTUnrooted::isCanonicalName(const string& taxa, TaxaLevel level) {
 }
 
 inline string PTUnrooted::PTUNode::getTaxa(double maxDist) const {
-	if(annoDist <= maxDist)
-		return anno;
-	else {
-		char id[64];
-		sprintf(id, ";Other_%ld", id);
-		return anno + id;
-	}
+	return annoDist <= maxDist ? anno : anno + ";Other";
 }
 
 } /* namespace EGriceLab */

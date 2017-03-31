@@ -29,8 +29,8 @@ using Eigen::Matrix4Xd;
 
 const double PhyloTreeUnrooted::MIN_LOGLIK_EXP = DBL_MIN_EXP / 2; /* use half of the DBL_MIN_EXP to avoid numeric-underflow */
 const double PhyloTreeUnrooted::INVALID_LOGLIK = 1;
-const double PhyloTreeUnrooted::LOGLIK_REL_EPS = 1e-6;
-const double PhyloTreeUnrooted::BRANCH_EPS = 1e-6;
+//const double PhyloTreeUnrooted::LOGLIK_REL_EPS = 1e-6;
+const double PhyloTreeUnrooted::BRANCH_EPS = 1e-5;
 
 const string PhyloTreeUnrooted::KINDOM_PREFIX = "k__";
 const string PhyloTreeUnrooted::PHYLUM_PREFIX = "p__";
@@ -643,29 +643,6 @@ ostream& PTUnrooted::saveDGModel(ostream& out) const {
 	return out;
 }
 
-double PTUnrooted::subDist(const DigitalSeq& seq, const PTUNodePtr& node, int start, int end) {
-	assert(seq.length() == csLen);
-	if(!node->seq.empty()) /* this node has an assigned seq */
-		return model->subDist(
-				DNASubModel::calcObservedDiff(seq, node->seq, start, end),
-				DNASubModel::nonGapSites(seq, node->seq, start, end)
-		);
-	else { /* no observed seq, treat node as missing data */
-		Matrix4d D = Matrix4d::Zero();
-		double N = 0;
-		for(int j = start; j <= end; ++j) {
-			if(!seq.isSymbol(j)) /* ignore gaps in seq */
-				continue;
-			Vector4d logP = loglik(node, j); /* conditional loglik at this node */
-			/* scale logP to get P */
-			Vector4d P = (logP.array() - logP.maxCoeff()).exp(); /* posterior probability to observe each base at site j */
-			D.col(seq[j]) += P / P.sum(); /* use normalized P */
-			N++;
-		}
-		return model->subDist(D, N);
-	}
-}
-
 PTUnrooted PTUnrooted::copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const {
 	assert(isParent(v, u));
 
@@ -695,7 +672,7 @@ PTUnrooted PTUnrooted::copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) con
 	return tree;
 }
 
-double PTUnrooted::estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end) {
+double PTUnrooted::estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end) const {
 	assert(isParent(v, u));
 	const Vector4d& pi = model->getPi();
 
@@ -720,6 +697,53 @@ double PTUnrooted::estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 }
 
 double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v,
+		int start, int end) {
+	assert(isParent(v, u));
+
+	double w0 = estimateBranchLength(u, v);
+
+	double q0 = ::exp(-w0);
+	double p0 = 1 - q0;
+
+	double p = p0;
+	double q = q0;
+
+	const Vector4d& pi = model->getPi();
+
+	const Matrix4Xd& loglikU = getBranchLoglik(u, v);
+	const Matrix4Xd& loglikV = getBranchLoglik(v, u);
+	/* Felsenstein's iterative optimizing algorithm */
+	while(p >= 0 && p <= 1) {
+		p = 0;
+		int N = 0;
+		for(int j = start; j <= end; ++j) {
+			double logA = dot_product_scaled(pi, loglikU.col(j) + loglikV.col(j));
+			double logB = dot_product_scaled(pi, loglikU.col(j)) + dot_product_scaled(pi, loglikV.col(j));
+			if(::isnan(logA) || ::isnan(logB))
+				continue;
+			double scale = std::max(logA, logB);
+			logA -= scale;
+			logB -= scale;
+			p += ::exp(logB) * p0 / (::exp(logA) * q0 + ::exp(logB) * p0);
+			N++;
+		}
+		p /= N;
+		q = 1 - p;
+
+		if(::fabs(::log(q) - ::log(q0)) < BRANCH_EPS)
+			break;
+		// update p0 and q0
+		p0 = p;
+		q0 = q;
+	}
+
+	double w = -::log(q); // final estimation
+	setBranchLength(u, v, w);
+
+	return w;
+}
+
+double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, double maxL,
 		int start, int end) {
 	assert(isParent(v, u));
 
@@ -761,11 +785,75 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 	}
 
 	double w = -::log(q); // final estimation
+	if(w > maxL) // restrain
+		w = maxL;
 	setBranchLength(u, v, w);
+
 	return w;
 }
 
-PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
+double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& r, const PTUNodePtr& v,
+		int start, int end, bool doUpdate) {
+	assert(isParent(r, u) && isParent(v, r));
+	PTUNodePtr oldRoot = root;
+
+	double wur0 = getBranchLength(u, r);
+	double wvr0 = getBranchLength(v, r);
+	double w0 = wur0 + wvr0;
+
+	double wur = wur0;
+	double wvr = wvr0;
+
+	/* wur depend on loglik(r,u) on wvr */
+	/* wvr depend on loglik(r,v) on wur */
+	while(0 <= wur && wur <= w0) {
+		setRoot(r);
+		/* wur -> loglik(r,v) */
+
+		wur = optimizeBranchLength(u, r, w0, start, end);
+
+		if(doUpdate) { /* keep all loglik updated */
+			resetLoglik(r, v);
+			setRoot(v);
+			evaluate();
+		}
+
+		/* wvr -> loglik(r,u) */
+		wvr = w0 - wur;
+		setBranchLength(v, r, wvr);
+
+		setRoot(r);
+		resetLoglik(r, u);
+		setRoot(u);
+		evaluate();
+
+		if(::fabs(wur - wur0) < BRANCH_EPS)
+			break;
+
+		wur0 = wur;
+	}
+	setRoot(oldRoot);
+
+	return wur / w0;
+}
+
+double PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
+		int start, int end) const {
+	assert(seq.length() == csLen);
+	assert(isParent(v, u));
+
+	double w = getBranchLength(u, v);
+	double treeLik = 0;
+	for(int j = start; j <= end; ++j) {
+		Vector4d loglik = dot_product_scaled(model->Pr(w / 2), getBranchLoglik(u, v, j))  /* u->v convoluting to w/2 */
+						+ dot_product_scaled(model->Pr(w / 2), getBranchLoglik(v, u, j)); /* v->u convoluting to w/2 */
+		loglik += seq[j] >= 0 ? leafLoglik.col(seq[j]) /* a base observed */ : leafLoglik.col(4) /* a gap observed */;
+		treeLik += dot_product_scaled(model->getPi(), loglik);
+	}
+	return treeLik;
+}
+
+double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
 		int start, int end) {
 	assert(seq.length() == csLen); /* make sure this is an aligned seq */
 	assert(isParent(v, u));
@@ -780,7 +868,6 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 	n->parent = r;
 	u->parent = r;
 	r->parent = v;
-	v->parent = NULL; /* new root */
 	/* add new nodes */
 	id2node.push_back(r);
 	id2node.push_back(n);
@@ -795,52 +882,26 @@ PTUnrooted& PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, con
 	setBranchLength(v, r, w0 * 0.5);
 	setBranchLoglik(r, u, Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK));
 	setBranchLoglik(r, v, Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK));
-	/* place r with initial branch length */
+	/* place r with un-initial branch length (0) */
 	addEdge(n, r);
 	setBranchLoglik(r, n, Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK));
 	setBranchLoglik(n, r, Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK));
 
-	/* evaluate subtree new branches*/
+	/* evaluate and optimize the new branches */
 	setRoot(n);
 	evaluate(); /* r->n evaluated */
 	setRoot(r);
 	evaluate(); /* n->r evaluated */
+	optimizeBranchLength(n, r, start, end); /* n->r length optimized */
 	setRoot(u);
 	evaluate(); /* r->u evaluated */
 	setRoot(v);
-	evaluate(); /* r->v evaluted */
+	evaluate(); /* r->v evaluated */
 
-	double w0nr = estimateBranchLength(n, r, start, end); /* estimate initial n->r branch length */
-	setBranchLength(n, r, w0nr);
-	double wnr = optimizeBranchLength(n, r, start, end);
+	optimizeBranchLength(u, r, v, start, end); /* r->u and r->v optimized jointly */
+	setRoot(r);
 
-	/* combined optimizaition of wur and wvr, so wur + wvr = w0 */
-	double wur0 = w0 * 0.5;
-	double wur = wur0;
-	while(0 <= wur && wur <= w0) {
-		wur = optimizeBranchLength(u, r, start, end);
-		if(wur > w0) // avoid overflow
-			wur = w0;
-		setBranchLength(v, r, w0 - wur);
-		resetLoglik(r, v); /* r->v changed because branch u->r changed */
-		evaluate(v); /* re-evaluate */
-
-		if(::fabs(wur - wur0) < BRANCH_EPS)
-			break;
-		wur0 = wur;
-	}
-
-	/* annotate the new node n */
-	if(wur < w0 / 2) { /* u->r is shorter */
-		n->anno = u->anno;
-		n->annoDist = u->annoDist + wur + wnr;
-	}
-	else {
-		n->anno = v->anno;
-		v->annoDist = v->annoDist + (w0 - wur) + wnr;
-	}
-
-	return *this;
+	return treeLoglik(start, end);
 }
 
 bool PhyloTreeUnrooted::isFullCanonicalName(const string& taxa) {
@@ -875,34 +936,47 @@ string PhyloTreeUnrooted::formatTaxaName(const string& taxa) {
 	return boost::join(formatedTaxa, ";");
 }
 
-vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHits(const DigitalSeq& seq, double maxPDist,
+vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHitsByPDist(const DigitalSeq& seq, double maxDist,
 		int start, int end) const {
 	vector<PTUnrooted::PTUNodePtr> hits;
 	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		if((*node)->isLeaf() && DNASubModel::pDist((*node)->getSeq(), seq, start, end + 1) <= maxPDist)
+		if((*node)->isLeaf() && DNASubModel::pDist((*node)->seq, seq, start, end) <= maxDist)
 			hits.push_back(*node);
 	}
 	return hits;
 }
 
-vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHits(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
-		double maxPDist, int start, int end) const {
+vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHitsByPDist(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
+		double maxDist, int start, int end) const {
 	if(candidates.empty()) /* no candidates provided */
-		return getLeafHits(seq, maxPDist, start, end);
+		return getLeafHitsByPDist(seq, maxDist, start, end);
 
 	vector<PTUnrooted::PTUNodePtr> hits;
 	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = candidates.begin(); node != candidates.end(); ++node) {
-		if((*node)->isLeaf() && DNASubModel::pDist((*node)->getSeq(), seq, start, end + 1) <= maxPDist)
+		if((*node)->isLeaf() && DNASubModel::pDist((*node)->seq, seq, start, end) <= maxDist)
 			hits.push_back(*node);
 	}
 	return hits;
 }
 
-vector<PTUnrooted::PTUNodePtr> PTUnrooted::getNodeHits(const DigitalSeq& seq, double maxSubDist,
-		int start, int end) {
+vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHitsBySubDist(const DigitalSeq& seq, double maxDist,
+		int start, int end) const {
 	vector<PTUnrooted::PTUNodePtr> hits;
 	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		if(subDist(seq, *node, start, end) <= maxSubDist)
+		if((*node)->isLeaf() && model->subDist((*node)->seq, seq, start, end) <= maxDist)
+			hits.push_back(*node);
+	}
+	return hits;
+}
+
+vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHitsBySubDist(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
+		double maxDist, int start, int end) const {
+	if(candidates.empty()) /* no candidates provided */
+		return getLeafHitsBySubDist(seq, maxDist, start, end);
+
+	vector<PTUnrooted::PTUNodePtr> hits;
+	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = candidates.begin(); node != candidates.end(); ++node) {
+		if((*node)->isLeaf() && model->subDist((*node)->seq, seq, start, end) <= maxDist)
 			hits.push_back(*node);
 	}
 	return hits;
