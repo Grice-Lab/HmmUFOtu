@@ -30,6 +30,7 @@ using namespace EGriceLab;
 static const string DEFAULT_FMT = "fasta";
 static const string ALPHABET = "dna";
 
+static const double DEFAULT_MAX_DIST = EGriceLab::inf;
 static const double DEFAULT_MEAN_LEN = 500;
 static const double DEFAULT_SD_LEN = 30;
 static const double DEFAULT_MIN_LEN = 0;
@@ -44,7 +45,8 @@ void printUsage(const string& progName) {
 		 << "Options:    -N  LONG           : number of reads to generate" << endl
 	     << "            -o  FILE           : sequence OUTPUT file" << endl
 		 << "            -f|--fmt  STRING   : output format [" << DEFAULT_FMT << "]" << endl
-		 << "            -r|--remove-gap    : remove gaps in generated reads, seq will be unaligned" << endl
+		 << "            -k|--keep-gap FLAG : keep simulated gaps in generated reads, so final seq will be aligned" << endl
+		 << "            -d|--max-dist      : maximum phylogenetic distance allowed for a read to ANY observed leaf (OTU) [" << DEFAULT_MAX_DIST << "]" << endl
 		 << "            -m|--mean-len  DBL : mean read length [" << DEFAULT_MEAN_LEN << "]" << endl
 		 << "            -s|--sd-len  DBL   : standard deviation of read length [" << DEFAULT_SD_LEN << "]" << endl
 		 << "            -l|--min-len  DBL  : minimum read length, 0 for no limit [" << DEFAULT_MIN_LEN << "]" << endl
@@ -58,12 +60,13 @@ int main(int argc, char* argv[]) {
 	/* variable declarations */
 	string infn, msafn, ptufn, outfn;
 	string fmt(DEFAULT_FMT);
-	bool removeGap = false;
+	bool keepGap = false;
 	long N = 0;
 	ifstream msaIn, ptuIn;
 	MSA msa;
 	PTUnrooted ptu;
 
+	double maxDist = DEFAULT_MAX_DIST;
 	double meanLen = DEFAULT_MEAN_LEN;
 	double sdLen = DEFAULT_SD_LEN;
 	double minLen = DEFAULT_MIN_LEN;
@@ -72,7 +75,7 @@ int main(int argc, char* argv[]) {
 	unsigned seed = time(NULL); // using time as default seed
 
 	typedef boost::random::mt11213b RNG; /* random number generator type */
-	typedef boost::random::uniform_int_distribution<size_t> NodeDistrib; /* node distribution in tree */
+	typedef boost::random::discrete_distribution<size_t> NodeDistrib; /* node distribution in tree */
 	typedef boost::random::uniform_01<> BranchDistrib; /* branching point distribution on any branch */
 	typedef boost::random::uniform_smallint<> LocDistrib; /* location distribution on csLen */
 	typedef boost::random::normal_distribution<> SizeDistrib; /* read size distribution */
@@ -121,13 +124,18 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	if(cmdOpts.hasOpt("-r") || cmdOpts.hasOpt("--remove-gap"))
-		removeGap = true;
+	if(cmdOpts.hasOpt("-k") || cmdOpts.hasOpt("--keep-gap"))
+		keepGap = true;
 
 	if(cmdOpts.hasOpt("-f"))
 		fmt = StringUtils::toLower(cmdOpts.getOpt("-f"));
 	if(cmdOpts.hasOpt("--fmt"))
 		fmt = StringUtils::toLower(cmdOpts.getOpt("--fmt"));
+
+	if(cmdOpts.hasOpt("-d"))
+		maxDist = ::atof(cmdOpts.getOptStr("-d"));
+	if(cmdOpts.hasOpt("--max-dist"))
+		maxDist = ::atof(cmdOpts.getOptStr("--max-dist"));
 
 	if(cmdOpts.hasOpt("-m"))
 		meanLen = ::atof(cmdOpts.getOptStr("-m"));
@@ -196,11 +204,19 @@ int main(int argc, char* argv[]) {
 
 	/* constructor random sample generator and required distributions */
 	RNG rng;
-	NodeDistrib node_dist(0, numNodes - 1);
+
+	double* nodePr = new double[numNodes];
+	Map<VectorXd> nodePrMap(nodePr, numNodes); /* use a map to access nodePr indirectly */
+	nodePrMap.setConstant(1);
+
 	BranchDistrib branch_dist;
+
 	LocDistrib loc_dist(0, csLen - 1);
+
 	SizeDistrib size_dist(meanLen, sdLen);
+
 	GapDistrib gap_dist;
+
 	double basePr[4] = {1, 1, 1, 1};
 	Map<Vector4d> basePrMap(basePr, 4); /* use a map to access basePr indirectly */
 	BaseDistrib base_dist(basePr);
@@ -212,6 +228,29 @@ int main(int argc, char* argv[]) {
 	const PTUnrooted::ModelPtr& model = ptu.getModel();
 	const Vector4d& pi = model->getPi();
 
+	boost::unordered_map<PTUnrooted::PTUNodePtr, double> nodeHeight; // node height is the shorted distance to any its offsprings
+	if(maxDist != EGriceLab::inf) { /* if -d specified */
+		infoLog << "Calculating branch weights based on their distance to leaves" << endl;
+		const vector<PTUnrooted::PTUNodePtr>& allNodes = ptu.getNodes();
+		for(vector<PTUnrooted::PTUNodePtr>::const_iterator leaf = allNodes.begin(); leaf != allNodes.end(); ++leaf) {
+			if(!(*leaf)->isLeaf())
+				continue;
+			/* trace back this linage */
+			double dist = 0;
+			for(PTUnrooted::PTUNodePtr node = *leaf; !node->isRoot(); node = node->getParent()) {
+				if(nodeHeight.find(node) == nodeHeight.end() || dist < nodeHeight[node]) /* first time or shorter */
+					nodeHeight[node] = dist;
+				dist += ptu.getBranchLength(node, node->getParent());
+			}
+		}
+		/* alter the node_dist weight */
+		for(size_t i = 0; i < numNodes; ++i)
+			if(nodeHeight[allNodes[i]] > maxDist)
+				nodePrMap(i) = 0;
+	}
+	/* construct node dist w/ potentially modified weights */
+	NodeDistrib node_dist(nodePr, nodePr + numNodes);
+
 	/* generating random reads */
 	for(long n = 1; n <= N;) {
 		/* simulate a branch */
@@ -222,6 +261,8 @@ int main(int argc, char* argv[]) {
 		PTUnrooted::PTUNodePtr pNode = cNode->getParent();
 		double v = ptu.getBranchLength(pNode, cNode);
 		double rc = branch_dist(rng);
+		if(!nodeHeight.empty() && nodeHeight[cNode] + v * rc > maxDist) /* this branching-point it too far from any leaf */
+			continue;
 		/* simulate a read range */
 		int start = loc_dist(rng);
 		double len = size_dist(rng);
@@ -243,12 +284,12 @@ int main(int argc, char* argv[]) {
 
 //		PrimarySeq seq(abc, rid, "", desc);
 		string seq;
-		if(!removeGap)
+		if(keepGap)
 			seq.append(start, gapSym);
 
 		for(int j = start; j <= end; ++j) {
 			bool isGap = gap_dist(rng) <= msa.gapWFrac(j);
-			if(isGap && !removeGap)
+			if(isGap && keepGap)
 				seq.push_back(gapSym);
 			else {
 				/* calculate the loglik of this branch point */
@@ -262,7 +303,7 @@ int main(int argc, char* argv[]) {
 			}
 		}
 
-		if(!removeGap)
+		if(keepGap)
 			seq.append(csLen - 1 - end, gapSym);
 
 		seqOut.writeSeq(PrimarySeq(abc, rid, seq, desc));
