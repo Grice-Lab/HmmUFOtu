@@ -402,69 +402,64 @@ PrimarySeq alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const Primary
 PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
 		double maxDist) {
 	PTUnrooted::PTUNodePtr bestNode;
-	/* Use a SLA (leaf-ancestor) search algorithm */
+	/* Use a LAEP (leaf-ancestor-estimate-place) algorithm */
 	const vector<PTUnrooted::PTUNodePtr>& leafHits = ptu.getLeafHitsByPDist(seq, maxDist, start, end);
 	infoLog << "Found " << leafHits.size() << " leaf nodes for " << seq.getName() << endl;
 	if(leafHits.empty())
 		return PTPlacement(UNASSIGNED_ID, UNASSIGNED_TAXA, UNASSIGNED_LOGLIK, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_POSTQ);
 
+	vector<PTUnrooted::PTUNodePtr> candidates;
 	vector<PTPlacement> places;
 	NodeSet nodeSeen;
 
-
 	for(vector<PTUnrooted::PTUNodePtr>::const_iterator leaf = leafHits.begin(); leaf != leafHits.end(); ++leaf) {
-		double bestLoglik = infV; /* best loglik of this linage */
-		PTUnrooted::PTUNodePtr bestNode, bestAnnoNode;
-		double bestRatio;
-
+		double prevLoglik = infV;
 		for(PTUnrooted::PTUNodePtr node = *leaf; !node->isRoot() && nodeSeen.find(node) == nodeSeen.end(); node = node->getParent()) {
 			nodeSeen.insert(node);
-			cerr << "Placing " << seq.getName() << " at " << node->getId() << "->" << node->getParent()->getId() << endl;
+			/* estimate the placement */
+			double loglik = ptu.estimateSeq(seq, node, node->getParent(), start, end);
+			if(prevLoglik != infV && loglik - prevLoglik < prevLoglik * EST_PLACE_ERROR)
+				break; /* stop search this lineage */
+			candidates.push_back(node);
+			prevLoglik = loglik;
+		}
+	}
+	cerr << "Find " << candidates.size() << " branch candidates" << endl;
 
-			/* place the read here */
-			PTUnrooted subtree = ptu.copySubTree(node, node->getParent());
+	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = candidates.begin(); node != candidates.end(); ++node) {
+		/* place the read here */
+		PTUnrooted subtree = ptu.copySubTree(*node, (*node)->getParent());
 
-			const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
-			const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
-			double w0 = subtree.getBranchLength(u, v);
+		const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
+		const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
+		double w0 = subtree.getBranchLength(u, v);
 
-			double loglik = subtree.placeSeq(seq, u, v, start, end);
-			const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
-			const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
+		double loglik = subtree.placeSeq(seq, u, v, start, end);
+		const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
+		const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
 
-			if(loglik < bestLoglik) /* no need to further trace back */
-				break;
-
-			/* calculate the node n annoDist */
-			double wnr = subtree.getBranchLength(n, r);
-			double wur = subtree.getBranchLength(u, r);
-			double wvr = subtree.getBranchLength(v, r);
-			double ratio = wur / w0;
-			if(wvr <= wur) { /* r->v is shorter */
-				n->anno = v->anno;
-				n->annoDist = v->annoDist + wvr + wnr;
-			}
-			else { /* u->r is shorter */
-				n->anno = u->anno;
-				if(u->annoDist == 0) /* self-annotated */
-					n->annoDist = wur + wnr;
-				else /* annotated from v or ancestor */
-					n->annoDist = u->annoDist + (wnr - wur);
-			}
-
-			if(loglik > bestLoglik) {
-				bestLoglik = loglik;
-				bestNode = node;
-				bestRatio = ratio;
-				bestAnnoNode = n;
-			}
-		} /* end of this linage */
+		/* calculate the node n annoDist */
+		double wnr = subtree.getBranchLength(n, r);
+		double wur = subtree.getBranchLength(u, r);
+		double wvr = subtree.getBranchLength(v, r);
+		double ratio = wur / w0;
+		if(wvr <= wur) { /* r->v is shorter */
+			n->setAnno(v->getAnno());
+			n->setAnnoDist(v->getAnnoDist() + wvr + wnr);
+		}
+		else { /* u->r is shorter */
+			n->setAnno(u->getAnno());
+			if(u->getAnnoDist() == 0) /* self-annotated */
+				n->setAnnoDist(wur + wnr);
+			else /* annotated from v or ancestor */
+				n->setAnnoDist(u->getAnnoDist() + (wnr - wur));
+		}
 		char branchID[64];
-		sprintf(branchID, "%ld->%ld", bestNode->getId(), bestNode->getParent()->getId());
-		places.push_back(PTPlacement(branchID, bestAnnoNode->getTaxa(), bestLoglik, bestRatio, bestAnnoNode->annoDist));
-		cerr << "potential placement at: " << branchID << " with loglik: " << bestLoglik << endl;
-	} /* end each leaf */
+		sprintf(branchID, "%ld->%ld", (*node)->getId(), (*node)->getParent()->getId());
+		places.push_back(PTPlacement(branchID, n->getTaxa(), loglik, ratio, n->getAnnoDist()));
+	} /* end each candidate */
 
+	cerr << "Tried " << places.size() << " places" << endl;
 	/* sort placements descendingly */
 	std::sort(places.rbegin(), places.rend());
 	PTPlacement::calcQValues(places);

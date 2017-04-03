@@ -286,7 +286,7 @@ Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
 }
 
 Matrix4Xd PTUnrooted::loglik(const PTUNodePtr& node) {
-	if(isEvaluated(node, node->parent)) /* not a root and evaluated */
+	if(isEvaluated(node, node->parent)) /* already evaluated */
 		return getBranchLoglik(node, node->parent);
 
 	Matrix4Xd loglikMat(4, csLen);
@@ -304,10 +304,10 @@ double PTUnrooted::treeLoglik(const PTUNodePtr& node, int start, int end) {
 	return loglik;
 }
 
-int8_t PhyloTreeUnrooted::inferState(const PTUnrooted::PTUNodePtr& node, int j) {
+int8_t PhyloTreeUnrooted::inferState(const PTUnrooted::PTUNodePtr& node, int j) const {
 	if(!node->seq.empty())
 		return node->seq[j];
-	Vector4d logV = loglik(node, j);
+	const Vector4d& logV = loglik(node, j);
 	int8_t state;
 	logV.maxCoeff(&state);
 	return state;
@@ -563,10 +563,16 @@ ostream& PTUnrooted::saveLeafLoglik(ostream& out) const {
 }
 
 istream& PTUnrooted::loadRoot(istream& in) {
-	/* set current root */
 	long rootId;
+	double* buf = new double[4 * csLen];
+	Map<Matrix4Xd> inLoglikMap(buf, 4, csLen);
+	/* set current root */
 	in.read((char*) &rootId, sizeof(long));
 	root = id2node[rootId];
+	/* load current root loglik */
+	in.read((char*) buf, 4 * csLen * sizeof(double));
+	setBranchLoglik(root, NULL, inLoglikMap);
+	delete[] buf;
 
 	return in;
 }
@@ -574,35 +580,10 @@ istream& PTUnrooted::loadRoot(istream& in) {
 ostream& PTUnrooted::saveRoot(ostream& out) const {
 	/* save current root id */
 	out.write((const char*) &(root->id), sizeof(long));
-	return out;
-}
-
-istream& PTUnrooted::loadRootLoglik(istream& in) {
-	long id;
 	double* buf = new double[4 * csLen];
 	Map<Matrix4Xd> inLoglikMap(buf, 4, csLen);
-
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		in.read((char*) &id, sizeof(long));
-		assert(id == (*node)->id);
-		in.read((char*) buf, 4 * csLen * sizeof(double));
-		/* assign this loglik */
-		setBranchLoglik(*node, NULL, inLoglikMap);
-	}
-	delete[] buf;
-
-	return in;
-}
-
-ostream& PTUnrooted::saveRootLoglik(ostream& out) const {
-	double* buf = new double[4 * csLen];
-	Map<Matrix4Xd> inLoglikMap(buf, 4, csLen);
-
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		out.write((const char*) &((*node)->id), sizeof(long));
-		inLoglikMap = getBranchLoglik(*node, NULL); /* copy node->NULL loglik */
-		out.write((const char*) buf, inLoglikMap.size() * sizeof(double));
-	}
+	inLoglikMap = getBranchLoglik(root, NULL);
+	out.write((const char*) buf, inLoglikMap.size() * sizeof(double));
 	delete[] buf;
 
 	return out;
@@ -747,8 +728,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 		int start, int end) {
 	assert(isParent(v, u));
 
-	double w0 = getBranchLength(u, v);
-
+	double w0 = estimateBranchLength(u, v);
 	double q0 = ::exp(-w0);
 	double p0 = 1 - q0;
 
@@ -788,6 +768,8 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 	if(w > maxL) // restrain
 		w = maxL;
 	setBranchLength(u, v, w);
+
+	cerr << "w0: " << w0 << " w: " << w << endl;
 
 	return w;
 }
@@ -1002,14 +984,25 @@ void PhyloTreeUnrooted::annotate(const PTUNodePtr& node) {
 	node->anno = !annoPath.empty() ? boost::join(annoPath, ";") : "Other";
 }
 
-size_t PhyloTreeUnrooted::estimateNumMutations(int j) {
+size_t PhyloTreeUnrooted::estimateNumMutations(int j) const {
 	size_t N = 0;
-	for(vector<PTUNodePtr>::const_iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt) {
-		if(!(*nodeIt)->isRoot() && inferState((*nodeIt), j) != inferState((*nodeIt)->parent, j)) {
+	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
+		if(!(*node)->isRoot() && inferState((*node), j) != inferState((*node)->parent, j)) {
 			N++;
 		}
 	}
 	return N;
+}
+
+double PhyloTreeUnrooted::subDist(const PTUNodePtr& node1, const PTUNodePtr& node2, int start, int end) const {
+	assert(0 <= start && start <= end && end < csLen);
+	Matrix4d changes = Matrix4d::Zero();
+	for(int j = start; j <= end; ++j) {
+		int8_t b1 = node1->isLeaf() ? node1->seq[j] : inferState(node1, j);
+		int8_t b2 = node2->isLeaf() ? node2->seq[j] : inferState(node2, j);
+		changes(b1, b2)++;
+	}
+	return model->subDist(changes, end - start + 1);
 }
 
 ostream& PTUnrooted::PTUBranch::save(ostream& out) const {

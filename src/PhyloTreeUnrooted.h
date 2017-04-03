@@ -134,14 +134,20 @@ public:
 			return name;
 		}
 
-		string getLabel() const;
-
 		const PTUNodePtr& getParent() const {
 			return parent;
 		}
 
 		const DigitalSeq& getSeq() const {
 			return seq;
+		}
+
+		void setAnno(const string& anno) {
+			this->anno = anno;
+		}
+
+		void setAnnoDist(double annoDist) {
+			this->annoDist = annoDist;
 		}
 
 		/** test whether this node is named */
@@ -300,6 +306,7 @@ public:
 		 */
 		ostream& save(ostream& out) const;
 
+	private:
 		/* member fields */
 		long id; /* a unique id for each node */
 		string name; /* node name, need to be unique for database loading */
@@ -613,6 +620,7 @@ public:
 	 * evaluate the conditional loglik of the jth site of a subtree, rooted at given node
 	 * this method will use either fixed rate (r===1) or a DiscreteGammaModel to evaluate the loglik
 	 * according to Yang 1994 (b)
+	 * it cache the calculated loglik if necessary
 	 * @param node  subtree root
 	 * @param j  the jth aligned site
 	 * @return  conditional loglik at the jth site
@@ -641,6 +649,22 @@ public:
 	 * @return  conditional loglik matrix of the subtree
 	 */
 	Matrix4Xd loglik(const PTUNodePtr& node);
+
+	/**
+	 * get the evaluated node loglik
+	 * this is a alias as getBranchLoglik
+	 */
+	Vector4d loglik(const PTUNodePtr& node, int j) const {
+		return getBranchLoglik(node, node->parent, j);
+	}
+
+	/**
+	 * get the evaluated node loglik
+	 * this is a alias as getBranchLoglik
+	 */
+	Matrix4d loglik(const PTUNodePtr& node) const {
+		return getBranchLoglik(node, node->parent);
+	}
 
 	/**
 	 * evaluate the entire tree
@@ -705,7 +729,7 @@ public:
 	 * @return  the actual observed state if a leaf node,
 	 * or inferred state my maximazing the conditional liklihood
 	 */
-	int8_t inferState(const PTUNodePtr& node, int j);
+	int8_t inferState(const PTUNodePtr& node, int j) const;
 
 	/**
 	 * write this PTUnrooted tree structure into output in given format
@@ -781,7 +805,21 @@ public:
 	 * @param j  site to estimate
 	 * @return  total estimated mutations at this site
 	 */
-	size_t estimateNumMutations(int j);
+	size_t estimateNumMutations(int j) const;
+
+	/** estimate the substitution distance between two nodes in given region [start,end]
+	 * using the underlying DNA substitutin model
+	 * @return  the estimated substitution distance
+	 */
+	double subDist(const PTUNodePtr& node1, const PTUNodePtr& node2, int start, int end) const;
+
+	/** estimate the substitution distance between two nodes in the entire seq
+	 * using the underlying DNA substitutin model
+	 * @return  the estimated substitution distance
+	 */
+	double subDist(const PTUNodePtr& u, const PTUNodePtr& v) const {
+		return subDist(u, v, 0, csLen - 1);
+	}
 
 	/**
 	 * make a copy of subtree with only two nodes and a branch u and v
@@ -955,16 +993,6 @@ private:
 	ostream& saveRoot(ostream& out) const;
 
 	/**
-	 * load root loglik for every node
-	 */
-	istream& loadRootLoglik(istream& in);
-
-	/**
-	 * save root loglik for every node
-	 */
-	ostream& saveRootLoglik(ostream& out) const;
-
-	/**
 	 * load DNA model from a text input
 	 */
 	istream& loadModel(istream& in);
@@ -1086,13 +1114,6 @@ inline size_t PTUnrooted::numLeaves() const {
 		if((*nodeIt)->isLeaf())
 			N++;
 	return N;
-}
-
-inline std::string PTUnrooted::PTUNode::getLabel() const {
-	string label;
-	std::ostringstream os(label);
-	os << anno << annoDist << ';';
-	return label;
 }
 
 inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {

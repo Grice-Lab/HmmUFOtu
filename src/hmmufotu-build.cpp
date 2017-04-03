@@ -305,8 +305,10 @@ int main(int argc, char* argv[]) {
 	tree.initLeafLoglik();
 
 	/* make initial evaluation at the original root */
-	infoLog << "Evaluating Phylogenetic Tree at initial root ..." << endl;
+	const PTUnrooted::PTUNodePtr& root = tree.getRoot();
+	infoLog << "Evaluating Phylogenetic Tree at root id: " << root->getId() << endl;
 	tree.evaluate();
+	tree.setBranchLoglik(root, NULL, tree.loglik(root)); /* set root loglik manually */
 //	infoLog << "tree log-liklihood: " << tree.treeLoglik() << endl;
 
 	/* estimate the shape parameter, if using DG model */
