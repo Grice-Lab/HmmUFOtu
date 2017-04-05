@@ -11,8 +11,9 @@
 #include <cstdlib>
 #include <cassert>
 #include "DigitalSeq.h"
-
+#include "StringUtils.h"
 #include "AlphabetFactory.h"
+
 using namespace std;
 
 namespace EGriceLab {
@@ -103,20 +104,22 @@ ostream& DigitalSeq::save(ostream& out) const {
 	if(!initiated)
 		return out;
 
+	/* save sizes */
 	string alphabet = abc->getName();
 	string::size_type nAlphabet = alphabet.length();
 	string::size_type nName = name.length();
 	DigitalSeq::size_type len = length();
 
-	/* save basic info */
 	out.write((const char*) &nAlphabet, sizeof(string::size_type));
-	out.write(alphabet.c_str(), nAlphabet + 1); /* write null terminal */
 	out.write((const char*) &nName, sizeof(string::size_type));
-	out.write(name.c_str(), nName + 1); /* write null terminal */
 	out.write((const char*) &len, sizeof(DigitalSeq::size_type));
 
-	/* save encoded seq */
-	out.write((const char*) c_str(), (len + 1) * sizeof(int8_t)); /* write terminal null */
+	/* save basic info */
+	StringUtils::saveString(alphabet, out);
+	StringUtils::saveString(name, out);
+
+	/* save seq */
+	StringUtils::saveString(*this, out);
 	return out;
 }
 
@@ -128,31 +131,21 @@ istream& DigitalSeq::load(istream& in) {
 		return in;
 
 	string::size_type nAlphabet, nName;
-	string alphabet;
 	DigitalSeq::size_type len;
-	char* buf = NULL;
+	string alphabet;
 
-	/* load basic info */
+	/* load sizes */
 	in.read((char*) &nAlphabet, sizeof(string::size_type));
-	buf = new char[nAlphabet + 1];
-	in.read(buf, nAlphabet + 1);
-	alphabet.assign(buf, nAlphabet);
-	delete[] buf;
-	abc = AlphabetFactory::getAlphabetByName(alphabet); // set alphabet by name
-
 	in.read((char*) &nName, sizeof(string::size_type));
-	buf = new char[nName + 1];
-	in.read(buf, nName + 1);
-	name.assign(buf, nName);
-	delete[] buf;
-
 	in.read((char*) &len, sizeof(DigitalSeq::size_type));
 
-	/* load encoded seq */
-	buf = new char[(len + 1) * sizeof(int8_t)];
-	in.read(buf, len + 1);
-	assign((int8_t*) buf, len); /* override old data */
-	delete[] buf;
+	/* load basic info */
+	StringUtils::loadString(alphabet, in, nAlphabet);
+	abc = AlphabetFactory::getAlphabetByName(alphabet); /* set alphabet by name */
+	StringUtils::loadString(name, in, nName);
+
+	/* load seq */
+	StringUtils::loadString(*this, in, len);
 
 	return in;
 }
