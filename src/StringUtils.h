@@ -13,6 +13,7 @@
 
 namespace EGriceLab {
 using std::string;
+using std::basic_string;
 using std::istream;
 using std::ostream;
 
@@ -124,21 +125,38 @@ public:
 	static string& removeEnd(string& str, const string& pattern);
 
 	/**
-	 * load data from a binary input to given string, override any old data
-	 * @param str  destination string
+	 * load data from a binary input to given basic_string, override any old data
+	 * @param dest  destination
 	 * @param in  input
-	 * @param nByte  number of bytes/charaters to load
+	 * @param number basic_string to load
 	 * @return  whether loading was successful
 	 */
-	static bool loadString(string& str, istream& in, string::size_type nByte);
+	template<typename T>
+	static bool loadString(basic_string<T>& dest, istream& in, basic_string<T>::size_type length) {
+		T* buf = new T[length]; /* construct a temporary buffer */
+		in.read((char*) buf, length * sizeof(T));
+		dest.assign(buf, length);
+		delete[] buf;
 
-	static bool saveString(const string& str, ostream& out, string::size_type nByte) {
-		out.write(str.c_str(), nByte);
+		return in.good();
+	}
+
+	/**
+	 * save a basic_string to a binary output, upto length of source will be saved
+	 * @param src  source
+	 * @param out  output
+	 * @param length  number of source to save
+	 * @return  whether saving was successful
+	 */
+	template<typename T>
+	static bool saveString(const basic_string<T>& src, ostream& out, basic_string<T>::size_type length) {
+		out.write((const char*) src.c_str(), length * sizeof(T));
 		return out.good();
 	}
 
-	static bool saveString(const string& str, ostream& out) {
-		return saveString(str, out, str.length());
+	template<typename T>
+	static bool saveString(const basic_string<T>& src, ostream& out) {
+		return saveString(src, out, src.length());
 	}
 
 }; /* end class StringUtils */

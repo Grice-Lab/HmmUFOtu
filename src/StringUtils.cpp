@@ -126,13 +126,4 @@ string& StringUtils::removeEnd(string& str, const string& suffix) {
 	return str;
 }
 
-bool StringUtils::loadString(string& str, istream& in, size_t nByte) {
-	char* buf = new char[nByte];
-	in.read(buf, nByte);
-	str.assign(buf, nByte);
-	delete[] buf;
-
-	return !in.bad();
-}
-
 } /* namespace EGriceLab */
