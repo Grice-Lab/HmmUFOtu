@@ -100,17 +100,6 @@ public:
 		: id(id), name(name), seq(seq), anno(anno), annoDist(annoDist)
 		{ }
 
-		/**
-		 * Construct a PTUNode with a given id, name, unobserved seq with given length, and optionally annotation and annotation-dist
-		 */
-		PhyloTreeUnrootedNode(long id, const string& name, size_t length,
-				const string& anno = "", double annoDist = 0)
-		: id(id), name(name), seq(AlphabetFactory::getAlphabetByName("DNA"), name),
-		  anno(anno), annoDist(annoDist)
-		{
-			seq.append(length, DegenAlphabet::GAP_BASE);
-		}
-
 		/* Member methods */
 		/* Getters and Setters */
 		const string& getAnno() const {
@@ -579,12 +568,14 @@ public:
 	/**
 	 * initiate the cached incoming loglik of between every node u and every neighbor v
 	 */
-	void initInLoglik();
+	void initBranchLoglik();
 
 	/**
-	 * initiate the leaf loglik
+	 * initiate the cached root loglik
 	 */
-	void initLeafLoglik();
+	void initRootLoglik() {
+		node2branch[root][NULL].loglik = Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK);
+	}
 
 	/**
 	 * reset the cached loglik of edge u->v
@@ -596,13 +587,13 @@ public:
 	/**
 	 * reset the cached loglik of every node
 	 */
-	void resetLoglik();
+	void resetBranchLoglik();
 
 	/**
-	 * reset the cached leaf loglik
+	 * reset the cached root loglik
 	 */
-	void resetLeafLoglik() {
-		leafLoglik.setConstant(INVALID_LOGLIK);
+	void resetRootLoglik() {
+		node2branch[root][NULL].loglik.setConstant(INVALID_LOGLIK);
 	}
 
 	/**
@@ -674,11 +665,25 @@ public:
 	}
 
 	/**
+	 * evaluate the given node in region [start, end]
+	 */
+	void evaluate(const PTUNodePtr& node, int start, int end) {
+		for(int j = start; j <= end; ++j)
+			evaluate(node, j);
+	}
+
+	/**
 	 * evaluate the subtree at given node
 	 */
 	void evaluate(const PTUNodePtr& node) {
-		for(int j = 0; j < csLen; ++j)
-			evaluate(node, j);
+		evaluate(node, 0, csLen - 1);
+	}
+
+	/**
+	 * evaluate the current root in region [start, end]
+	 */
+	void evaluate(int start, int end) {
+		return evaluate(root, start, end);
 	}
 
 	/**
@@ -689,38 +694,26 @@ public:
 	 */
 	void evaluate(const PTUNodePtr& node, int j);
 
-	/**
-	 * calculate the subtree loglik at j-th site
-	 * evaluate the tree if necessary
-	 * this is the basis for all other treeLoglik methods
-	 */
-	double treeLoglik(const PTUNodePtr& node, int j);
 
 	/**
 	 * calculate the loglik of the subtree in a given range [start, end]
 	 */
-	double treeLoglik(const PTUNodePtr& node, int start, int end);
+	double treeLoglik(const PTUNodePtr& node, int start, int end) const;
 
 	/**
 	 * calculate the loglik of the subtree in a whole length
 	 */
-	double treeLoglik(const PTUNodePtr& node);
-
-	/**
-	 * calculate the entire tree loglik at j-th site
-	 * evaluate the tree if necessary
-	 */
-	double treeLoglik(int j);
+	double treeLoglik(const PTUNodePtr& node) const;
 
 	/**
 	 * calculate the entire tree loglik in a given range [start, end]
 	 */
-	double treeLoglik(int start, int end);
+	double treeLoglik(int start, int end) const;
 
 	/**
 	 * calculate the entire tree loglik in the whole length
 	 */
-	double treeLoglik();
+	double treeLoglik() const;
 
 	/**
 	 * infer the ancestor (or real if a leaf) state (base) of given node and site
@@ -729,7 +722,19 @@ public:
 	 * @return  the actual observed state if a leaf node,
 	 * or inferred state my maximazing the conditional liklihood
 	 */
-	int8_t inferState(const PTUNodePtr& node, int j) const;
+	int8_t inferState(const PTUNodePtr& node, int j) const {
+		return inferState(node, node->parent, j);
+	}
+
+	/**
+	 * infer the ancestor (or real if a leaf) state (base) of given branch and site
+	 * @param u  node to infer
+	 * @param v  direction to infer
+	 * @param j  alignment site
+	 * @return  the actual observed state if a leaf node,
+	 * or inferred state my maximazing the conditional liklihood
+	 */
+	int8_t inferState(const PTUNodePtr& u, const PTUNodePtr& v, int j) const;
 
 	/**
 	 * write this PTUnrooted tree structure into output in given format
@@ -807,19 +812,12 @@ public:
 	 */
 	size_t estimateNumMutations(int j) const;
 
-	/** estimate the substitution distance between two nodes in given region [start,end]
-	 * using the underlying DNA substitutin model
-	 * @return  the estimated substitution distance
-	 */
-	double subDist(const PTUNodePtr& node1, const PTUNodePtr& node2, int start, int end) const;
-
-	/** estimate the substitution distance between two nodes in the entire seq
-	 * using the underlying DNA substitutin model
-	 * @return  the estimated substitution distance
-	 */
-	double subDist(const PTUNodePtr& u, const PTUNodePtr& v) const {
-		return subDist(u, v, 0, csLen - 1);
+	/** get leaf loglik at site j assuming its seq is the given seq */
+	Vector4d getLeafLoglik(const DigitalSeq& seq, int j) const {
+		return seq[j] >= 0 ? leafMat.col(seq[j]) : model->getPi().array().log();
 	}
+
+	Matrix4Xd getLeafLoglik(const DigitalSeq& seq) const;
 
 	/**
 	 * make a copy of subtree with only two nodes and a branch u and v
@@ -830,11 +828,13 @@ public:
 	PTUnrooted copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const;
 
 	/**
-	 * estimate branch length by comparing the two direction loglik
+	 * estimate branch length using the estimated pDist between two the (potentially) inferred seq
 	 * in given region [start-end]
 	 * return the estimated branch length
 	 */
-	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end) const;
+	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end) const {
+		return estimateBranchLength(getBranchLoglik(u, v), getBranchLoglik(v, u), start, end);
+	}
 
 	/**
 	 * estimate branch length by comparing the two direction loglik
@@ -847,71 +847,61 @@ public:
 		return estimateBranchLength(u, v, 0, csLen - 1);
 	}
 
-	/**
-	 * iteratively optimize the length of branch u->v using Felsenstein's algorithm
-	 * in given CSRegion [start-end]
-	 * this method is not responsible for re-evluate the tree after branch-length is modified
-	 * return the updated branch length v
-	 */
-	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end);
+	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, const DigitalSeq& seq, int start, int end) const;
 
-	/**
-	 * iteratively optimize the length of branch u->v using Felsenstein's algorithm
-	 * return the updated branch length v
-	 */
-	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) {
-		return optimizeBranchLength(u, v, 0, csLen - 1);
+	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, const DigitalSeq& seq) const {
+		return estimateBranchLength(u, v, seq, 0, csLen - 1);
 	}
 
 	/**
 	 * iteratively optimize the length of branch u->v using Felsenstein's algorithm
-	 * in given CSRegion [start-end], while the max length of the branch is constrained
-	 * this method is not responsible for re-evluate the tree after branch-length is modified
+	 * in given CSRegion [start-end], while the max length is optionally constrained
+	 * this method will use the original branch length as its initial guess
 	 * return the updated branch length v
 	 */
-	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, double maxL, int start, int end);
+	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end, double maxL = inf);
 
 	/**
-	 * iteratively optimize the length of branch u->v using Felsenstein's algorithm, while the max length is constrained
+	 * iteratively optimize the length of branch u->v using Felsenstein's algorithm
 	 * return the updated branch length v
 	 */
-	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, double maxL) {
-		return optimizeBranchLength(u, v, maxL, 0, csLen -1);
+	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, double maxL = inf) {
+		return optimizeBranchLength(u, v, 0, csLen - 1, inf);
 	}
 
 	/**
-	 * iteratively optimize the length of branch u->r and r->v jointly
-	 * in given CSRegion [start-end], so the total length wur + wrv won't changed
-	 * this method might slighly decrease the treeLoglik
-	 * this method does not update all loglik after branch length is altered by default,
-	 * instead it only updates the necessary ones
+	 * iteratively optimize the branch n->r, u->r and v->r jointly
+	 * in given CSRegion [start-end], so the total length wur + wrv won't changed, and wnr update accordingly
+	 * before calling this method, all incoming loglik n->r, u->r and v->r should be evaluated
 	 * return the optimized branch ratio (wur / wrv)
 	 */
-	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& r, const PTUNodePtr& v,
-			int start, int end, bool doUpdate = false);
+	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, const PTUNodePtr& r, const PTUNodePtr& n,
+			int start, int end);
 
 	/**
-	 * iteratively optimize the length of branch u->r and r->v jointly in the entire seq,
-	 * so the total length wur + wrv won't changed
+	 * iteratively optimize the branch n->r, u->r and v->r jointly
+	 * in the entire seq
 	 * return the optimized branch ratio (wur / wrv)
 	 */
-	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& r, const PTUNodePtr& v, bool doUpdate = false) {
-		return optimizeBranchLength(u, r, v, 0, csLen - 1, doUpdate);
+	double optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, const PTUNodePtr& r, const PTUNodePtr& n) {
+		return optimizeBranchLength(u, v, r, n, 0, csLen - 1);
 	}
 
 	/**
 	 * estimate the potential treeLoglik, if we place an additional seq (n) at given branch in given region [start,end]
-	 * at the mid-point of branch u->v, without modifying the original tree
-	 * this method always use fixed-rate DNA Substitution method
+	 * the tree breaches will be only evaluated in one path in the order of wnr -> wur -> wvr
+	 * and the ratio and wnr will be modified accordingly
 	 * @param  new seq to be test
 	 * @param u  branch start (u->v)
 	 * @param v  branch end (u->v)
 	 * @param start  seq start position (non-gap start)
 	 * @param end  seq end position (non-gap end)
+	 * @param ratio  esimated insert point
+	 * @param wnr  estimated new branch length
 	 * @return  the estimated treeLoglik if seq is placed here
 	 */
 	double estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-			int start, int end) const;
+			int start, int end, double& ratio, double& wnr) const;
 
 	/**
 	 * estimate the potential treeLoglik, if we place an additional seq (n) at given branch in the entire seq region
@@ -921,25 +911,28 @@ public:
 	 * @param v  branch end (u->v)
 	 * @return  the estimated treeLoglik if seq is placed here
 	 */
-	double estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v) const {
-		return estimateSeq(seq, u, v, 0, csLen - 1);
+	double estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
+			double& ratio, double& wnr) const {
+		return estimateSeq(seq, u, v, 0, csLen - 1, ratio, wnr);
 	}
 
 	/**
 	 * place an additional seq (n) at given branch in given region [start,end]
-	 * by introducing a new internal root r, which will be placed at the mid-point between u->v
-	 * then the new branch n->r will be optimized, related loglik evaluated,
-	 * and the branches u->r and v->r are optimized jointly
+	 * by introducing a new internal root r, which will be placed at the initial ratio0 = wur / (wuv)
+	 * and the new branch n->r set to initial length wnr0
+	 * then all three new branches will be optimized jointly
 	 * the modified tree will have r as its new root
 	 * @param  new seq to be placed
 	 * @param u  branch start (u->v)
 	 * @param v  branch end (u->v)
 	 * @param start  seq start position (non-gap start)
 	 * @param end  seq end position (non-gap end)
+	 * @param ratio0  insert point
+	 * @param wnr0  new branch initial length
 	 * @return  the final treeLoglik after placing this read
 	 */
 	double placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-			int start, int end);
+			int start, int end, double ratio0, double wnr0);
 
 	/**
 	 * place an additional seq (n) at given branch in the entire seq region
@@ -950,8 +943,9 @@ public:
 	 * @param v  branch end (u->v)
 	 * @return  the final treeLoglik after placing this read
 	 */
-	double placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v) {
-		return placeSeq(seq, u, v, 0, csLen -1);
+	double placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
+			double ratio0, double wnr0) {
+		return placeSeq(seq, u, v, 0, csLen -1, ratio0, wnr0);
 	}
 
 private:
@@ -971,16 +965,6 @@ private:
 	 * only the relationship between node IDs are stored
 	 */
 	ostream& saveEdge(ostream& out, const PTUNodePtr& node1, const PTUNodePtr& node2) const;
-
-	/**
-	 * load leaf loglik from a binary input
-	 */
-	istream& loadLeafLoglik(istream& in);
-
-	/**
-	 * save leaf loglik to a binary outout
-	 */
-	ostream& saveLeafLoglik(ostream& out) const;
 
 	/**
 	 * load root information from a binary input
@@ -1035,6 +1019,9 @@ public:
 	static PTUNodePtr lastLeaf(PTUNodePtr node);
 	static PTUNodePtr randomLeaf(PTUNodePtr node);
 
+	/* return dot product between two matrix, scale the second matrix if necessary */
+	static Matrix4Xd dot_product_scaled(const Matrix4d& X, const Matrix4Xd& V);
+
 	/* return dot product between a Matrix and a vector, scale the vector if necessary */
 	static Vector4d dot_product_scaled(const Matrix4d& X, const Vector4d& V);
 
@@ -1069,6 +1056,26 @@ public:
 	 */
 	static string formatTaxaName(const string& taxa);
 
+	/**
+	 * Infer the base based on a given loglik vector
+	 */
+	static int8_t inferState(const Vector4d& loglik);
+
+	/** Infer the relative weight of each state */
+	static Vector4d inferWeight(const Vector4d& loglik);
+
+	/** Estimate branch length using two incoming loglik Matrix in given region [start, end] */
+	static double estimateBranchLength(const Matrix4Xd& U, const Matrix4Xd& V, int start, int end);
+
+	static double treeLoglik(const Vector4d& pi, const Matrix4Xd& X, int start, int end);
+
+	static double treeLoglik(const Vector4d& pi, const Matrix4Xd& X) {
+		return treeLoglik(pi, X, 0, X.cols() - 1);
+	}
+
+	/** initiate the leaf loglik matrix */
+	static Matrix4d initLeafMat();
+
 	/* member fields */
 private:
 	int csLen; /* number of aligned sites */
@@ -1078,8 +1085,6 @@ private:
 	map<unsigned, PTUNodePtr> msaId2node; /* original id in MSA to node map */
 
 	BranchMap node2branch; /* branch length index storing edge length */
-	Matrix4Xd leafLoglik; /* cached 4 X 5 leaf loglik matrix,
-						with each column the pre-computed loglik of observing A, C, G, T or - at any given site */
 
 	ModelPtr model; /* DNA Model used to evaluate this tree, needed to be stored with this tree */
 	DGammaPtr dG; /* DiscreteGammaModel used to conpensate rate-heterogeinity between alignment sites */
@@ -1099,6 +1104,9 @@ public:
 	static const string FAMILY_PREFIX;
 	static const string GENUS_PREFIX;
 	static const string SPECIES_PREFIX;
+
+	static const Matrix4d leafMat; /* cached 4 X  leaf loglik matrix,
+						with each column the pre-computed loglik of observing A, C, G, T at any given site */
 };
 
 inline size_t PTUnrooted::numEdges() const {
@@ -1149,24 +1157,33 @@ inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, in
 	return false;
 }
 
-inline double PTUnrooted::treeLoglik(int j) {
-	return treeLoglik(root, j);
+inline double PTUnrooted::treeLoglik(const PTUNodePtr& node, int start, int end) const {
+	return treeLoglik(model->getPi(), getBranchLoglik(node, node->parent), start, end);
 }
 
-inline double PTUnrooted::treeLoglik(int start, int end) {
+inline double PTUnrooted::treeLoglik(int start, int end) const {
 	return treeLoglik(root, start, end);
 }
 
-inline double PTUnrooted::treeLoglik() {
+inline double PTUnrooted::treeLoglik() const {
 	return treeLoglik(root);
 }
 
-inline double PTUnrooted::treeLoglik(const PTUNodePtr& node, int j) {
-	return dot_product_scaled(model->getPi(), loglik(node, j));
+inline double PTUnrooted::treeLoglik(const PTUNodePtr& node) const {
+	return treeLoglik(node, 0, csLen - 1);
 }
 
-inline double PTUnrooted::treeLoglik(const PTUNodePtr& node) {
-	return treeLoglik(node, 0, csLen - 1);
+inline Matrix4Xd PTUnrooted::getLeafLoglik(const DigitalSeq& seq) const {
+	assert(seq.length() == csLen);
+	Matrix4Xd loglik(4, csLen);
+	for(int j = 0; j < csLen; ++j)
+		loglik.col(j) = getLeafLoglik(seq, j);
+	return loglik;
+}
+
+inline int8_t PhyloTreeUnrooted::inferState(const PTUNodePtr& u, const PTUNodePtr& v, int j) const {
+	assert(isParent(v, u) || isParent(u, v));
+	return PTUnrooted::inferState(getBranchLoglik(u, v, j));
 }
 
 inline vector<Matrix4d> PTUnrooted::getModelTransitionSet(string method) const {
@@ -1199,6 +1216,13 @@ inline PTUnrooted::PTUNodePtr PhyloTreeUnrooted::randomLeaf(PTUNodePtr node) {
 	return node;
 }
 
+inline Matrix4Xd PTUnrooted::dot_product_scaled(const Matrix4d& X, const Matrix4Xd& Y) {
+	Matrix4Xd Z(4, Y.cols());
+	for(Matrix4Xd::Index j = 0; j < Y.cols(); ++j)
+		Z.col(j) = dot_product_scaled(X, static_cast<const Vector4d&> (Y.col(j)));
+	return Z;
+}
+
 inline Vector4d PTUnrooted::dot_product_scaled(const Matrix4d& X, const Vector4d& V) {
 	Vector4d Y;
 	double maxV = V.maxCoeff();
@@ -1211,7 +1235,7 @@ inline Vector4d PTUnrooted::dot_product_scaled(const Matrix4d& X, const Vector4d
 
 inline double PTUnrooted::dot_product_scaled(const Vector4d& P, const Vector4d& V) {
 	double maxV = V.maxCoeff();
-	double scale = maxV != inf && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
+	double scale = maxV != infV && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
 
 	return ::log(P.dot((V.array() + scale).exp().matrix())) - scale;
 }
@@ -1283,6 +1307,30 @@ inline bool PTUnrooted::isCanonicalName(const string& taxa, TaxaLevel level) {
 
 inline string PTUnrooted::PTUNode::getTaxa(double maxDist) const {
 	return annoDist <= maxDist ? anno : anno + ";Other";
+}
+
+inline int8_t PTUnrooted::inferState(const Vector4d& loglik) {
+	int8_t state;
+	loglik.maxCoeff(&state);
+	return state;
+}
+
+inline Vector4d PTUnrooted::inferWeight(const Vector4d& loglik) {
+	Vector4d p = (loglik.array() - loglik.maxCoeff()).exp(); /* scale before exponent */
+	return p / p.sum();
+}
+
+inline double PTUnrooted::treeLoglik(const Vector4d& pi, const Matrix4Xd& X, int start, int end) {
+	double loglik = 0;
+	for(int j = start; j <= end; ++j)
+		loglik += dot_product_scaled(pi, X.col(j));
+	return loglik;
+}
+
+inline Matrix4d PTUnrooted::initLeafMat() {
+	Matrix4d leafMat = Matrix4d::Constant(infV);
+	leafMat.diagonal().setConstant(0);
+	return leafMat;
 }
 
 } /* namespace EGriceLab */

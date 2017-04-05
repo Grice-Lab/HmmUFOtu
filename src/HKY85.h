@@ -122,6 +122,8 @@ inline Matrix4d HKY85::Pr(double v) const {
 }
 
 inline double HKY85::subDist(const Matrix4d& D, double N) const {
+	if(N == 0)
+		return 0;
 	double a = pi(A);
 	double c = pi(C);
 	double g = pi(G);

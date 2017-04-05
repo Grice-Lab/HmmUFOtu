@@ -98,6 +98,8 @@ inline Matrix4d K80::Pr(double v) const {
 }
 
 inline double K80::subDist(const Matrix4d& D, double N) const {
+	if(N == 0)
+		return 0;
 	double p = (D(A,G) + D(G,A) + D(C,T) + D(T,C)) / N; /* observed Ti diff */
 	double q = (D(A,C) + D(A,T) + D(C,A) + D(C,G) + D(G,C) + D(G,T) + D(T,A) + D(T,G)) / N; /* observed Tv diff */
 	return - 1.0 / 2 * ::log(1 - 2 * p - q) - 1.0 / 4 * ::log(1 - 2 * q);

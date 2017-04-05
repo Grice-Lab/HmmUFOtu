@@ -98,6 +98,8 @@ inline Matrix4d F81::Pr(double v) const {
 }
 
 inline double F81::subDist(const Matrix4d& D, double N) const {
+	if(N == 0)
+		return 0;
 	double p = (D.sum() - D.diagonal().sum()) / N;
 	double E = 1 - pi.squaredNorm();
 	return - E * ::log(1 - p / E);

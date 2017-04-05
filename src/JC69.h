@@ -81,6 +81,8 @@ inline Matrix4d JC69::Pr(double v) const {
 }
 
 inline double JC69::subDist(const Matrix4d& D, double N) const {
+	if(N == 0)
+		return 0;
 	double p = (D.sum() - D.diagonal().sum()) / N; /* p-distance */
 	return - 3.0 / 4.0 * ::log(1.0 - 4.0 / 3.0 * p);
 }

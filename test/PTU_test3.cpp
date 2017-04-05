@@ -103,8 +103,8 @@ int main(int argc, const char* argv[]) {
 	infoLog << "DNA model set" << endl;
 
 	clock_t t1 = clock();
-	tree.initInLoglik();
-	tree.initLeafLoglik();
+	tree.initBranchLoglik();
+	tree.initLeafMat();
 	clock_t t2 = clock();
 	infoLog << "Tree loglik initiated, total eclipsed time: " << (t2 - t1) / static_cast<float>(CLOCKS_PER_SEC) << endl;
 

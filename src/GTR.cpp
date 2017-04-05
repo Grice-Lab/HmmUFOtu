@@ -124,13 +124,14 @@ void GTR::setQfromParams() {
 }
 
 double GTR::subDist(const Matrix4d& D, double N) const {
+	if(N == 0)
+		return 0;
 	/* get F from D */
-	Matrix4d F(D);
-	Vector4d Z = F.rowwise().sum(); /* normalization constant */
-	for(Matrix4d::Index i = 0; i < F.rows(); ++i)
-		F.row(i) /= Z(i);
-
-	Matrix4d P = pi.asDiagonal() * ((F + F.transpose()) / 2); /* get P using symmetric F */
+	Matrix4d F = D / N;
+	Matrix4d Fnorm = (F + F.transpose()) / 2;
+	Matrix4d P = pi.asDiagonal() * Fnorm; /* get P using symmetric F */
+	/* normalize P by rows */
+	P.array().colwise() /= P.rowwise().sum().array();
 
 	/* do matrix log by diagonalizable matrix decomposition */
 	EigenSolver<Matrix4d> es(P);
@@ -138,11 +139,11 @@ double GTR::subDist(const Matrix4d& D, double N) const {
 		cerr << "Cannot perform EigenSolver on observed frequency data P:" << endl << P << endl;
 		abort();
 	}
-	Matrix4cd PSI = es.eigenvalues().asDiagonal();
-	Matrix4cd U = es.eigenvectors();
-	Matrix4cd U_1 = U.inverse();
+	Vector4d PSI = es.eigenvalues().real();
+	Matrix4d U = es.eigenvectors().real();
+	Matrix4d U_1 = U.inverse();
 
-	return - (U * PSI.array().log().matrix() * U_1).real().trace();
+	return - (U * PSI.array().log().matrix().asDiagonal() * U_1).trace();
 }
 
 } /* namespace EGriceLab */

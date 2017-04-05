@@ -301,14 +301,14 @@ int main(int argc, char* argv[]) {
 	tree.setModel(model);
 
 	/* initiation the tree costs */
-	tree.initInLoglik();
-	tree.initLeafLoglik();
+	tree.initRootLoglik();
+	tree.initBranchLoglik();
+	tree.initLeafMat();
 
 	/* make initial evaluation at the original root */
 	const PTUnrooted::PTUNodePtr& root = tree.getRoot();
 	infoLog << "Evaluating Phylogenetic Tree at root id: " << root->getId() << endl;
-	tree.evaluate();
-	tree.setBranchLoglik(root, NULL, tree.loglik(root)); /* set root loglik manually */
+	tree.loglik(); /* use loglik() instead of evaluate() to cache root loglik */
 //	infoLog << "tree log-liklihood: " << tree.treeLoglik() << endl;
 
 	/* estimate the shape parameter, if using DG model */

@@ -169,7 +169,6 @@ int main(int argc, char* argv[]) {
 		seed = ::atoi(cmdOpts.getOptStr("-S"));
 	if(cmdOpts.hasOpt("--seed"))
 		seed = ::atoi(cmdOpts.getOptStr("--seed"));
-	srand(seed);
 
 	if(cmdOpts.hasOpt("-v"))
 		ENABLE_INFO();
@@ -203,7 +202,7 @@ int main(int argc, char* argv[]) {
 	const size_t numNodes = ptu.numNodes();
 
 	/* constructor random sample generator and required distributions */
-	RNG rng;
+	RNG rng(seed);
 
 	double* nodePr = new double[numNodes];
 	Map<VectorXd> nodePrMap(nodePr, numNodes); /* use a map to access nodePr indirectly */

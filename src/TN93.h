@@ -124,6 +124,8 @@ inline Matrix4d TN93::Pr(double v) const {
 }
 
 inline double TN93::subDist(const Matrix4d& D, double N) const {
+	if(N == 0)
+		return 0;
 	double a = pi(A);
 	double c = pi(C);
 	double g = pi(G);
