@@ -583,9 +583,9 @@ PTUnrooted PTUnrooted::copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) con
 	tree.dG = dG; /* copy DiscreteGammaModel */
 	tree.leafMat = leafMat; /* copy leaf loglik */
 
-	/* construct new  of nodes */
-	PTUNodePtr v2(new PTUNode(id++, v->name, v->seq, v->anno, v->annoDist));
-	PTUNodePtr u2(new PTUNode(id++, u->name, u->seq, u->anno, u->annoDist));
+	/* construct new copy of nodes, but the old sequences are ignored */
+	PTUNodePtr v2(new PTUNode(id++, v->name, v->anno, v->annoDist));
+	PTUNodePtr u2(new PTUNode(id++, u->name, u->anno, u->annoDist));
 	u2->parent = v2;
 
 	/* add nodes */
@@ -706,7 +706,7 @@ double PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const
 	double w0 = getBranchLength(u, v);
 	const Matrix4Xd& U = getBranchLoglik(u, v);
 	const Matrix4Xd& V = getBranchLoglik(v, u);
-	const Matrix4Xd& N = getLeafLoglik(seq);
+	const Matrix4Xd& N = getLeafLoglik(seq, start, end);
 
 	/* set ratio as 0.5 then estimate wnr */
 	ratio = 0.5;

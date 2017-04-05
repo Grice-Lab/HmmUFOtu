@@ -93,6 +93,14 @@ public:
 		: id(id), name(name), annoDist(0) {  }
 
 		/**
+		 * Construct a PTUNode with a given id, name, and optionally annotation and annotation-dist
+		 */
+		PhyloTreeUnrootedNode(long id, const string& name,
+				const string& anno = "", double annoDist = 0)
+		: id(id), name(name), anno(anno), annoDist(annoDist)
+		{ }
+
+		/**
 		 * Construct a PTUNode with a given id, name, sequence, and optionally annotation and annotation-dist
 		 */
 		PhyloTreeUnrootedNode(long id, const string& name, const DigitalSeq& seq,
@@ -817,12 +825,21 @@ public:
 		return seq[j] >= 0 ? leafMat.col(seq[j]) : model->getPi().array().log();
 	}
 
-	Matrix4Xd getLeafLoglik(const DigitalSeq& seq) const;
+	/**
+	 * get leaf loglik matrix but only evaluate the value in given region [start, end]
+	 * while values outside the region is set to -inf
+	 */
+	Matrix4Xd getLeafLoglik(const DigitalSeq& seq, int start, int end) const;
+
+	Matrix4Xd getLeafLoglik(const DigitalSeq& seq) const {
+		return getLeafLoglik(seq, 0, csLen - 1);
+	}
 
 	/**
-	 * make a copy of subtree with only two nodes and a branch u and v
+	 * make a copy of subtree with only two nodes and a branch u and v,
+	 * but ignore any assigned sequence
 	 * edges u->v and v->u should has already been evaluated
-	 * @return  a new PhyloTreeUnrooted with only two nodes and a branch u->v,
+	 * @return  a new PhyloTreeUnrooted with only two nodes and a branch u->v, and their branch loglik
 	 * with root set as v
 	 */
 	PTUnrooted copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const;
@@ -1173,10 +1190,10 @@ inline double PTUnrooted::treeLoglik(const PTUNodePtr& node) const {
 	return treeLoglik(node, 0, csLen - 1);
 }
 
-inline Matrix4Xd PTUnrooted::getLeafLoglik(const DigitalSeq& seq) const {
+inline Matrix4Xd PTUnrooted::getLeafLoglik(const DigitalSeq& seq, int start, int end) const {
 	assert(seq.length() == csLen);
-	Matrix4Xd loglik(4, csLen);
-	for(int j = 0; j < csLen; ++j)
+	Matrix4Xd loglik = Matrix4Xd::Constant(4, csLen, infV);
+	for(int j = start; j <= end; ++j)
 		loglik.col(j) = getLeafLoglik(seq, j);
 	return loglik;
 }
