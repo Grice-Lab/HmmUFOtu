@@ -514,13 +514,13 @@ istream& PTUnrooted::loadEdge(istream& in) {
 istream& PTUnrooted::loadRoot(istream& in) {
 	long rootId;
 	double* buf = new double[4 * csLen];
-	Map<Matrix4Xd> inLoglikMap(buf, 4, csLen);
+	Map<Matrix4Xd> rootMap(buf, 4, csLen);
 	/* set current root */
 	in.read((char*) &rootId, sizeof(long));
 	root = id2node[rootId];
 	/* load current root loglik */
 	in.read((char*) buf, 4 * csLen * sizeof(double));
-	setBranchLoglik(root, NULL, inLoglikMap);
+	setBranchLoglik(root, NULL, rootMap);
 	delete[] buf;
 
 	return in;
@@ -581,7 +581,6 @@ PTUnrooted PTUnrooted::copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) con
 	tree.csLen = csLen; /* copy csLen */
 	tree.model = model; /* copy the DNA model */
 	tree.dG = dG; /* copy DiscreteGammaModel */
-	tree.leafMat = leafMat; /* copy leaf loglik */
 
 	/* construct new copy of nodes, but the old sequences are ignored */
 	PTUNodePtr v2(new PTUNode(id++, v->name, v->anno, v->annoDist));
@@ -809,52 +808,6 @@ string PhyloTreeUnrooted::formatTaxaName(const string& taxa) {
 	return boost::join(formatedTaxa, ";");
 }
 
-vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHitsByPDist(const DigitalSeq& seq, double maxDist,
-		int start, int end) const {
-	vector<PTUnrooted::PTUNodePtr> hits;
-	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		if((*node)->isLeaf() && DNASubModel::pDist((*node)->seq, seq, start, end) <= maxDist)
-			hits.push_back(*node);
-	}
-	return hits;
-}
-
-vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHitsByPDist(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
-		double maxDist, int start, int end) const {
-	if(candidates.empty()) /* no candidates provided */
-		return getLeafHitsByPDist(seq, maxDist, start, end);
-
-	vector<PTUnrooted::PTUNodePtr> hits;
-	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = candidates.begin(); node != candidates.end(); ++node) {
-		if((*node)->isLeaf() && DNASubModel::pDist((*node)->seq, seq, start, end) <= maxDist)
-			hits.push_back(*node);
-	}
-	return hits;
-}
-
-vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHitsBySubDist(const DigitalSeq& seq, double maxDist,
-		int start, int end) const {
-	vector<PTUnrooted::PTUNodePtr> hits;
-	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		if((*node)->isLeaf() && model->subDist((*node)->seq, seq, start, end) <= maxDist)
-			hits.push_back(*node);
-	}
-	return hits;
-}
-
-vector<PTUnrooted::PTUNodePtr> PTUnrooted::getLeafHitsBySubDist(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
-		double maxDist, int start, int end) const {
-	if(candidates.empty()) /* no candidates provided */
-		return getLeafHitsBySubDist(seq, maxDist, start, end);
-
-	vector<PTUnrooted::PTUNodePtr> hits;
-	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = candidates.begin(); node != candidates.end(); ++node) {
-		if((*node)->isLeaf() && model->subDist((*node)->seq, seq, start, end) <= maxDist)
-			hits.push_back(*node);
-	}
-	return hits;
-}
-
 void PhyloTreeUnrooted::annotate() {
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
 		annotate(*node);
@@ -911,19 +864,19 @@ double PTUnrooted::estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 
 	double w = getBranchLength(u, v);
 	double d = 0;
+	const Matrix4Xd& U = getBranchLoglik(u, v);
+	const Matrix4Xd& V = getBranchLoglik(v, u);
+	const Matrix4Xd& N = getLeafLoglik(seq, start, end);
+	const Matrix4Xd& R = dot_product_scaled(model->Pr(w / 2), U, start, end) /* u->v convoluting to w/2 */
+			           + dot_product_scaled(model->Pr(w / 2), V, start, end);
+
 	for(int j = start; j <= end; ++j) {
-		Vector4d logR = dot_product_scaled(model->Pr(w / 2), getBranchLoglik(u, v, j))  /* u->v convoluting to w/2 */
-					  + dot_product_scaled(model->Pr(w / 2), getBranchLoglik(v, u, j)); /* v->u convoluting to w/2 */
-		const Vector4d& logN = seq[j] >= 0 ? leafMat.col(seq[j]) /* a base observed */ : leafMat.col(4) /* a gap observed */;
+		const Vector4d& logR = R.col(j);
+		const Vector4d& logN = N.col(j);
 		int8_t b1 = inferState(logR);
 		int8_t b2 = inferState(logN);
-		if(b1 != b2) {
-			Vector4d pR = (logR.array() - logR.maxCoeff()).exp();
-			Vector4d pN = (logN.array() - logN.maxCoeff()).exp();
-			pR /= pR.sum();
-			pN /= pN.sum();
-			d += pR(b1) * pN(b2); /* weighted count */
-		}
+		if(b1 != b2)
+			d += inferWeight(logR)(b1) * inferWeight(logN)(b2); /* weighted count */
 	}
 	return d / (end - start + 1);
 }
@@ -957,6 +910,16 @@ istream& PTUnrooted::PTUBranch::load(istream& in) {
 	delete[] buf;
 
 	return in;
+}
+
+void PTUnrooted::inferSeq(const PTUNodePtr& node) {
+	if(node->seq.length() == csLen) /* already inferred */
+		return;
+	node->seq.setAbc(AlphabetFactory::nuclAbc); /* always use DNA alphabet */
+	node->seq.resize(csLen);
+	const Matrix4Xd& logMat = loglik(node);
+	for(int j = 0; j < csLen; ++j)
+		node->seq[j] = inferState(logMat.col(j));
 }
 
 } /* namespace EGriceLab */

@@ -89,22 +89,29 @@ public:
 		/**
 		 * Construct a PTUNode with a given name and id
 		 */
-		explicit PhyloTreeUnrootedNode(long id, const string& name = "")
+		explicit PhyloTreeUnrootedNode(long id, const string& name)
 		: id(id), name(name), annoDist(0) {  }
 
 		/**
-		 * Construct a PTUNode with a given id, name, and optionally annotation and annotation-dist
+		 * Construct a PTUNode with a given id, name, annotation and annotation-dist
 		 */
 		PhyloTreeUnrootedNode(long id, const string& name,
-				const string& anno = "", double annoDist = 0)
+				const string& anno, double annoDist)
 		: id(id), name(name), anno(anno), annoDist(annoDist)
 		{ }
 
 		/**
-		 * Construct a PTUNode with a given id, name, sequence, and optionally annotation and annotation-dist
+		 * Construct a PTUNode with a given id, name and sequence
+		 */
+		PhyloTreeUnrootedNode(long id, const string& name, const DigitalSeq& seq)
+		: id(id), name(name), seq(seq), annoDist(0)
+		{ }
+
+		/**
+		 * Construct a PTUNode with a given id, name, sequence, annotation and annotation-dist
 		 */
 		PhyloTreeUnrootedNode(long id, const string& name, const DigitalSeq& seq,
-				const string& anno = "", double annoDist = 0)
+				const string& anno, double annoDist)
 		: id(id), name(name), seq(seq), anno(anno), annoDist(annoDist)
 		{ }
 
@@ -745,6 +752,18 @@ public:
 	int8_t inferState(const PTUNodePtr& u, const PTUNodePtr& v, int j) const;
 
 	/**
+	 * Infer the ancestor sequence of this node
+	 * the underlying seq will be resized and modified during inferring
+	 * before inferring, the conditional liklihood of this sequence should have been evaluated
+	 * it will not modify the seq if it is already inferred or assigned
+	 * return true if this node is actually inferred
+	 */
+	void inferSeq(const PTUNodePtr& node);
+
+	/** Infer all non-leaf node in a tree */
+	void inferSeq();
+
+	/**
 	 * write this PTUnrooted tree structure into output in given format
 	 */
 	ostream& writeTree(ostream& out, string format = "newick") const;
@@ -772,41 +791,6 @@ public:
 	 */
 	vector<Matrix4d> getModelTraningSetGoldman() const;
 
-	/** get leaf hits for a given seq within given pDist in given region */
-	vector<PTUNodePtr> getLeafHitsByPDist(const DigitalSeq& seq, double maxDist,
-			int start, int end) const;
-
-	/** get leaf hits for a given seq within given pDist in entire seq */
-	vector<PTUNodePtr> getLeafHitsByPDist(const DigitalSeq& seq, double maxDist) const {
-		return getLeafHitsByPDist(seq, maxDist, 0, csLen - 1);
-	}
-
-	/** get leaf hits for a given seq within given pDist in given region, with candidates provided */
-	vector<PTUNodePtr> getLeafHitsByPDist(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
-			double maxDist, int start, int end) const;
-
-	/** get leaf hits for a given seq within given pDist in entire seq, with candidates provided */
-	vector<PTUNodePtr> getLeafHitsByPDist(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq, double maxDist) const {
-		return getLeafHitsByPDist(candidates, seq, maxDist, 0, csLen - 1);
-	}
-
-	/** get node hits for a given seq within given subDist in given region */
-	vector<PTUNodePtr> getLeafHitsBySubDist(const DigitalSeq& seq, double maxDist, int start, int end) const;
-
-	/** get node hits for a given seq within given subDist in entire seq */
-	vector<PTUNodePtr> getLeafHitsBySubDist(const DigitalSeq& seq, double maxDist) const {
-		return getLeafHitsBySubDist(seq, maxDist, 0, csLen - 1);
-	}
-
-	/** get leaf hits for a given seq within given subDist in given region, with candidates provided */
-	vector<PTUNodePtr> getLeafHitsBySubDist(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq,
-			double maxDist, int start, int end) const;
-
-	/** get leaf hits for a given seq within given pDist in entire seq, with candidates provided */
-	vector<PTUNodePtr> getLeafHitsBySubDist(const vector<PTUNodePtr>& candidates, const DigitalSeq& seq, double maxDist) const {
-		return getLeafHitsBySubDist(candidates, seq, maxDist, 0, csLen - 1);
-	}
-
 	/**
 	 * get estimated base frequency (pi) using this tree
 	 */
@@ -821,9 +805,7 @@ public:
 	size_t estimateNumMutations(int j) const;
 
 	/** get leaf loglik at site j assuming its seq is the given seq */
-	Vector4d getLeafLoglik(const DigitalSeq& seq, int j) const {
-		return seq[j] >= 0 ? leafMat.col(seq[j]) : model->getPi().array().log();
-	}
+	Vector4d getLeafLoglik(const DigitalSeq& seq, int j) const;
 
 	/**
 	 * get leaf loglik matrix but only evaluate the value in given region [start, end]
@@ -1036,8 +1018,17 @@ public:
 	static PTUNodePtr lastLeaf(PTUNodePtr node);
 	static PTUNodePtr randomLeaf(PTUNodePtr node);
 
+	/*
+	 * return dot product between two matrix in given region [start, end],
+	 * and leave all other region values unspecified,
+	 * scale the second matrix if necessary
+	 */
+	static Matrix4Xd dot_product_scaled(const Matrix4d& X, const Matrix4Xd& V, int start, int end);
+
 	/* return dot product between two matrix, scale the second matrix if necessary */
-	static Matrix4Xd dot_product_scaled(const Matrix4d& X, const Matrix4Xd& V);
+	static Matrix4Xd dot_product_scaled(const Matrix4d& X, const Matrix4Xd& V) {
+		return dot_product_scaled(X, V, 0, V.cols() - 1);
+	}
 
 	/* return dot product between a Matrix and a vector, scale the vector if necessary */
 	static Vector4d dot_product_scaled(const Matrix4d& X, const Vector4d& V);
@@ -1190,6 +1181,14 @@ inline double PTUnrooted::treeLoglik(const PTUNodePtr& node) const {
 	return treeLoglik(node, 0, csLen - 1);
 }
 
+inline Vector4d PTUnrooted::getLeafLoglik(const DigitalSeq& seq, int j) const {
+	int8_t base = seq[j];
+	if(base >= 0)
+		return leafMat.col(base);
+	else
+		return model->getPi().array().log();
+}
+
 inline Matrix4Xd PTUnrooted::getLeafLoglik(const DigitalSeq& seq, int start, int end) const {
 	assert(seq.length() == csLen);
 	Matrix4Xd loglik = Matrix4Xd::Constant(4, csLen, infV);
@@ -1201,6 +1200,12 @@ inline Matrix4Xd PTUnrooted::getLeafLoglik(const DigitalSeq& seq, int start, int
 inline int8_t PhyloTreeUnrooted::inferState(const PTUNodePtr& u, const PTUNodePtr& v, int j) const {
 	assert(isParent(v, u) || isParent(u, v));
 	return PTUnrooted::inferState(getBranchLoglik(u, v, j));
+}
+
+inline void PhyloTreeUnrooted::inferSeq() {
+	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
+		if(!(*node)->isLeaf()) /* not a leaf node */
+			inferSeq(*node);
 }
 
 inline vector<Matrix4d> PTUnrooted::getModelTransitionSet(string method) const {
@@ -1233,9 +1238,9 @@ inline PTUnrooted::PTUNodePtr PhyloTreeUnrooted::randomLeaf(PTUNodePtr node) {
 	return node;
 }
 
-inline Matrix4Xd PTUnrooted::dot_product_scaled(const Matrix4d& X, const Matrix4Xd& Y) {
+inline Matrix4Xd PTUnrooted::dot_product_scaled(const Matrix4d& X, const Matrix4Xd& Y, int start, int end) {
 	Matrix4Xd Z(4, Y.cols());
-	for(Matrix4Xd::Index j = 0; j < Y.cols(); ++j)
+	for(Matrix4Xd::Index j = start; j <= end; ++j)
 		Z.col(j) = dot_product_scaled(X, static_cast<const Vector4d&> (Y.col(j)));
 	return Z;
 }
@@ -1327,7 +1332,7 @@ inline string PTUnrooted::PTUNode::getTaxa(double maxDist) const {
 }
 
 inline int8_t PTUnrooted::inferState(const Vector4d& loglik) {
-	int8_t state;
+	int8_t state = 0;
 	loglik.maxCoeff(&state);
 	return state;
 }
