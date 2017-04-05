@@ -22,7 +22,6 @@ public:
 	/* static methods */
 	static const DegenAlphabet* getAlphabetByName(const string& alphabet);
 
-private:
 	static const DegenAlphabet* nuclAbc;
 	static const DegenAlphabet* aminoAbc;
 };
