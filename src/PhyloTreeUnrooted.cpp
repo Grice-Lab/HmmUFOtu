@@ -698,7 +698,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 }
 
 double PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-		int start, int end, double& ratio, double& wnr) const {
+		int start, int end, double ratio, double& wnr) const {
 	assert(seq.length() == csLen);
 	assert(isParent(v, u));
 
@@ -707,26 +707,13 @@ double PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const
 	const Matrix4Xd& V = getBranchLoglik(v, u);
 	const Matrix4Xd& N = getLeafLoglik(seq, start, end);
 
-	/* set ratio as 0.5 then estimate wnr */
-	ratio = 0.5;
 	double wur = w0 * ratio;
 	double wvr = w0 * (1 - ratio);
-	const Matrix4Xd& RN = dot_product_scaled(model->Pr(wur), U) + dot_product_scaled(model->Pr(wvr), V); /* U*P(wur) + V*P(wvr) */;
-	wnr = estimateBranchLength(RN, N, start, end);
+	const Matrix4Xd& UPr = dot_product_scaled(model->Pr(wur), U); /* U*P(wur) */
+	const Matrix4Xd& VPr = dot_product_scaled(model->Pr(wvr), V); /* V*P(wvr) */
+	wnr = estimateBranchLength(UPr + VPr /* R */, N, start, end);
 
-	/* update wur using U, V and N */
-	const Matrix4Xd& RU = dot_product_scaled(model->Pr(wvr), V) + dot_product_scaled(model->Pr(wnr), N); /* V*P(wvr) + N*P(wnr) */
-	wur = estimateBranchLength(RU, U, start, end);
-	if(wur > w0)
-		wur = w0;
-	wvr = 1 - wur;
-	ratio = wur / w0;
-
-	/* one pass estimated, get estimated tree loglik */
-	return treeLoglik(model->getPi(),
-				dot_product_scaled(model->Pr(wur), U) + /* U*P(wur) */
-				dot_product_scaled(model->Pr(wvr), V) + /* V*P(wvr) */
-				dot_product_scaled(model->Pr(wnr), N),  /* N*P(wnr) */
+	return treeLoglik(model->getPi(), UPr + VPr + dot_product_scaled(model->Pr(wnr), N), /* N*P(wnr) */
 				start, end);
 }
 

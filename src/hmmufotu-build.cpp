@@ -307,11 +307,14 @@ int main(int argc, char* argv[]) {
 
 	/* make initial evaluation at the original root */
 	const PTUnrooted::PTUNodePtr& root = tree.getRoot();
-	infoLog << "Evaluating Phylogenetic Tree at root id: " << root->getId() << endl;
-	tree.loglik(); /* use loglik() instead of evaluate() to cache root loglik */
+	if(!isVar)
+		infoLog << "Evaluating Phylogenetic Tree at root id: " << root->getId() << endl;
+	else
+		infoLog << "Evaluating Phylogenetic Tree at root id: " << root->getId() << " with fixed rate model first" << endl;
+	tree.evaluate(); /* only evaluate, do not cache the root loglik */
 //	infoLog << "tree log-liklihood: " << tree.treeLoglik() << endl;
 
-	/* estimate the shape parameter, if using DG model */
+	/* construct DG model, if isVar is set */
 	if(isVar) {
 		infoLog << "Estimating the shape parameter of the Discrete Gamma Distributin based among-site variation ..." << endl;
 		VectorXi numMut(tree.numAlignSites());
@@ -325,23 +328,31 @@ int main(int argc, char* argv[]) {
 		else {
 			infoLog << "Estimated alpha = " << alpha << endl;
 			tree.setDGModel(DiscreteGammaModel(K, alpha));
+			tree.resetBranchLoglik(); /* reset all cached values */
 		}
 	}
 
-	infoLog << (!isVar ? "Evaluating Phylogenetic Tree on all other nodes ..."
-			: "Re-evaluating Phylogenetic Tree rooting at all possible nodes ...") << endl;
-	EGriceLab::PTUnrooted::PTUNodePtr oldRoot = tree.getRoot();
-	size_t numNodes = tree.numNodes();
+	if(!isVar)
+		infoLog << "Evaluating Phylogenetic Tree at all other " << (tree.numNodes() - 1) << " nodes" << endl;
+	else
+		infoLog << "Re-evaluating Phylogenetic Tree at all " << tree.numNodes() << " nodes" << endl;
+
+	const size_t numNodes = tree.numNodes();
 	for(size_t i = 0; i < numNodes; ++i) {
 		tree.setRoot(i);
 		tree.evaluate();
-//		infoLog << (i + 1) << "/" << numNodes << " nodes evaluated\r";
 	}
-	/* reset root to original */
-	tree.setRoot(oldRoot);
-//	infoLog << endl << "Tree log-liklihood: " << tree.treeLoglik() << endl;
-	infoLog << "Saving database files ..." << endl;
+	/* reset to original root, and evaluate its root Loglik */
+	tree.setRoot(root);
+	tree.initRootLoglik();
+	tree.loglik();
+	infoLog << "Final Tree log-liklihood: " << tree.treeLoglik() << endl;
 
+	/* infer the ancestor seq of all intermediate nodes */
+	tree.inferSeq();
+	infoLog << "Ancestor sequence of all intermediate nodes inferred" << endl;
+
+	infoLog << "Saving database files ..." << endl;
 	/* write database files */
 	if(!msa.save(msaOut)) {
 		cerr << "Unable to save MSA: " << ::strerror(errno) << endl;

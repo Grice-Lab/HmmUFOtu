@@ -132,7 +132,7 @@ public:
 	 * @return  whether loading was successful
 	 */
 	template<typename T>
-	static bool loadString(basic_string<T>& dest, istream& in, basic_string<T>::size_type length) {
+	static bool loadString(basic_string<T>& dest, istream& in, size_t length) {
 		T* buf = new T[length]; /* construct a temporary buffer */
 		in.read((char*) buf, length * sizeof(T));
 		dest.assign(buf, length);
@@ -149,7 +149,7 @@ public:
 	 * @return  whether saving was successful
 	 */
 	template<typename T>
-	static bool saveString(const basic_string<T>& src, ostream& out, basic_string<T>::size_type length) {
+	static bool saveString(const basic_string<T>& src, ostream& out, size_t length) {
 		out.write((const char*) src.c_str(), length * sizeof(T));
 		return out.good();
 	}

@@ -889,18 +889,18 @@ public:
 	/**
 	 * estimate the potential treeLoglik, if we place an additional seq (n) at given branch in given region [start,end]
 	 * the tree breaches will be only evaluated in one path in the order of wnr -> wur -> wvr
-	 * and the ratio and wnr will be modified accordingly
+	 * and wnr will be modified accordingly
 	 * @param  new seq to be test
 	 * @param u  branch start (u->v)
 	 * @param v  branch end (u->v)
 	 * @param start  seq start position (non-gap start)
 	 * @param end  seq end position (non-gap end)
-	 * @param ratio  esimated insert point
+	 * @param ratio  esimated insert ratio = wur / (wuv)
 	 * @param wnr  estimated new branch length
 	 * @return  the estimated treeLoglik if seq is placed here
 	 */
 	double estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-			int start, int end, double& ratio, double& wnr) const;
+			int start, int end, double ratio, double& wnr) const;
 
 	/**
 	 * estimate the potential treeLoglik, if we place an additional seq (n) at given branch in the entire seq region
