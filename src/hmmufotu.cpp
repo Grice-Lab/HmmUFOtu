@@ -109,9 +109,6 @@ void printUsage(const string& progName) {
 		 << "            -h|--help          : print this message and exit" << endl;
 }
 
-vector<PTUnrooted::PTUNodePtr> getLeafHitsById(const set<unsigned>& idHits,
-		const map<unsigned, PTUnrooted::PTUNodePtr>& id2leaf);
-
 /** Align seq with hmm and csfm, returns the alignment or empty seq if failed */
 PrimarySeq alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
 		int seedLen, int seedRegion, BandedHMMP7::align_mode mode,
@@ -414,7 +411,17 @@ PrimarySeq alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const Primary
 	cerr << "nSeed: " << seqVpath.N << endl;
 
 	/* banded HMM align */
-	hmm.calcViterbiScores(seqVscore, seqVpath);
+	if(seqVpath.N > 0) { /* use banded Viterbi algorithm */
+		hmm.calcViterbiScores(seqVscore, seqVpath);
+		if(seqVscore.S.minCoeff() == inf) { /* banded version failed */
+			warningLog << "Banded HMM algorithm didn't find a potential Viterbi path, returning to regular HMM" << endl;
+			hmm.resetViterbiScores(seqVscore, read);
+//			hmm.resetViterbiAlignPath(seqVpath, L);
+			hmm.calcViterbiScores(seqVscore);
+		}
+	}
+	else
+		hmm.calcViterbiScores(seqVscore); /* use original Viterbi algorithm */
 	float minCost = hmm.buildViterbiTrace(seqVscore, seqVpath);
 	if(minCost == inf) {
 		warningLog << "Warning: Unable to align read " << read.getId() << " , no Viterbi path found" << endl;
@@ -422,8 +429,12 @@ PrimarySeq alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const Primary
 	}
 
 	/* find seqStart and seqEnd */
-	csStart = hmm.getCSLoc(seqVpath.alnStart) - 1;
-	csEnd = hmm.getCSLoc(seqVpath.alnEnd) - 1;
+	csStart = hmm.getCSLoc(seqVpath.alnStart);
+	csEnd = hmm.getCSLoc(seqVpath.alnEnd);
+//	cerr << "alnStart: " << seqVpath.alnStart << " alnEnd: " << seqVpath.alnEnd << endl;
+//	cerr << "alnFrom: " << seqVpath.alnFrom << " alnTo: " << seqVpath.alnTo << endl;
+//	cerr << "csStart: " << csStart << " csEnd: " << csEnd << endl;
+//	cerr << "alnPath: " << seqVpath.alnPath << endl;
 
 	return hmm.buildGlobalAlignSeq(seqVscore, seqVpath);
 }
@@ -524,7 +535,9 @@ PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int
 	std::sort(places.rbegin(), places.rend());
 	PTPlacement::calcQValues(places);
 
-	return places.front();
+	return places.front().q >= minQ ? places.front()
+			: PTPlacement(NULL, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_LOGLIK,
+					UNASSIGNED_TAXA, UNASSIGNED_POSTQ);
 }
 
 void PTPlacement::calcQValues(vector<PTPlacement>& places) {
@@ -541,8 +554,12 @@ void PTPlacement::calcQValues(vector<PTPlacement>& places) {
 	p /= p.sum();
 
 	/* assign q-values */
-	for(vector<PTPlacement>::size_type i = 0; i < places.size(); ++i)
-		places[i].q = -::log10(1 - p(i));
+	for(vector<PTPlacement>::size_type i = 0; i < places.size(); ++i) {
+		double q = -::log10(1 - p(i));
+		if(q > MAX_Q)
+			q = MAX_Q;
+		places[i].q = q;
+	}
 }
 
 inline bool operator<(const SELocation& lhs, const SELocation& rhs) {
