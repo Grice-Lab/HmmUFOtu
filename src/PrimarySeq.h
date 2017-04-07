@@ -71,7 +71,7 @@ public:
 	virtual ~PrimarySeq() {  }
 
 	/* Getters and Setters */
-	const DegenAlphabet* getDegenAlphabet() const {
+	const DegenAlphabet* getAbc() const {
 		return abc;
 	}
 

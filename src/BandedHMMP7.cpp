@@ -690,7 +690,7 @@ void BandedHMMP7::adjustProfileLocalMode() {
 
 BandedHMMP7::ViterbiScores EGriceLab::BandedHMMP7::initViterbiScores(
 		const PrimarySeq& seq) const {
-	assert(abc == seq.getDegenAlphabet());
+	assert(abc == seq.getAbc());
 	ViterbiScores vs(seq);
 
 	return resetViterbiScores(vs, seq);
@@ -1114,54 +1114,76 @@ PrimarySeq BandedHMMP7::buildGlobalAlignSeq(const ViterbiScores& vs,
 DigitalSeq BandedHMMP7::buildGlobalAlignDS(const ViterbiScores& vs,
 		const ViterbiAlignPath& vpath) const {
 	assert(vs.seq != NULL);
-	DigitalSeq nSeq(abc, vs.seq->getId()); /* N' alignment */
-	DigitalSeq aSeq(abc, vs.seq->getId()); /* middle alignment */
-	DigitalSeq cSeq(abc, vs.seq->getId()); /* C' alignment */
+	DigitalSeq aln; /* N', aligned and C' of the alignment */
 	const int L = getCSLen();
 
 	int seqNLen = vpath.alnFrom - 1; /* N' of unaligned seq */
 	int seqCLen = vpath.L - vpath.alnTo; /* C' of unaligned seq */
-	/* construct alignments */
-	for(int i = 1, j = 0; i <= L; ++i) { /* i is loc on CS (1-based), j is loc on seq (1-based) */
-		int k = cs2ProfileIdx[i]; /* k is loc on profile (1-based) */
-		char state;
-		if(i < profile2CSIdx[vpath.alnStart])
-			state = vpath.alnPath.front(); /* B */
-		else if(i > profile2CSIdx[vpath.alnEnd])
-			state = vpath.alnPath.back();
-		else
-			state = vpath.alnPath[i - profile2CSIdx[vpath.alnStart] - 1];
+	int csStart = profile2CSIdx[vpath.alnStart]; /* 1-based */
+	int csEnd = profile2CSIdx[vpath.alnEnd]; /* 1-based */
 
-		if(j == 0 && k == vpath.alnStart) /* aligned start loc */
-			j = vpath.alnFrom;
+	int i = 0; /* 1-based position on CS */
+	int j = 0; /* 1-based position on seq */
+	int k = 0; /* 1-based position on HMM */
 
-		switch(state) {
+	DigitalSeq insert(vs.seq->getAbc());
+	int nCSGap = 0;
+	for(string::const_iterator state = vpath.alnPath.begin(); state != vpath.alnPath.end(); ++state) {
+//		fprintf(stderr, "i:%d j:%d k:%d cs:%d state:%c aln:%s\n", state - vpath.alnPath.begin(), j, k, profile2CSIdx[k], *state, aln.c_str());
+		switch(*state) {
 		case 'B':
-			nSeq.push_back(PAD_BASE);
+			aln.append(csStart - 1, PAD_BASE); /* N' padding */
+			i = csStart;
+			j = vpath.alnFrom;
+			k = vpath.alnStart;
 			break;
-		case 'E':
-			cSeq.push_back(PAD_BASE);
-			break;
-		case 'M': case 'I':
-			aSeq.push_back(vs.seq->encodeAt(j - 1));
+		case 'M':
+			if(k > 1 && state - vpath.alnPath.begin() > 1 && profile2CSIdx[k] - profile2CSIdx[k - 1] > 1) { /* there are non-CS pos before 'M' */
+				/* fill in the gap with either insert or GAP */
+				nCSGap = profile2CSIdx[k] - profile2CSIdx[k - 1] - 1;
+				if(insert.length() >= nCSGap)
+					aln.append(insert.substr(0, nCSGap));
+				else
+					aln.append(insert + DigitalSeq(nCSGap - insert.length(), GAP_BASE));
+			}
+			insert.clear();
+			aln.push_back(vs.seq->encodeAt(j - 1));
 			j++;
+			k++;
+			break;
+		case 'I':
+			insert.clear();
+			while(*state == 'I') { /* process all insertions in once */
+				insert.push_back(::tolower(vs.seq->encodeAt(j - 1)));
+				j++;
+				state++;
+			}
+			state--; // rewind
 			break;
 		case 'D':
-			aSeq.push_back(GAP_BASE);
+			assert(insert.empty()); /* no I possible before D */
+			if(k > 1 && profile2CSIdx[k] - profile2CSIdx[k - 1] > 1) { /* there are non-CS pos before 'D' */
+				/* fill in the gap with either insert or GAP */
+				aln.append(profile2CSIdx[k] - profile2CSIdx[k - 1] - 1, GAP_BASE);
+			}
+			aln.push_back(GAP_BASE);
+			k++;
+			break;
+		case 'E':
+			assert(j == vpath.alnTo + 1);
+			aln.append(L - csEnd, PAD_BASE); /* C' padding */
 			break;
 		default:
-			cerr << "Unexpected align path state " << state << " found at csLoc: " << i << endl;
+			cerr << "Unexpected align path state '" << *state << "' found" << endl;
 			break;
 		}
 	}
-	/* pad nSeq as right justified */
-	for(int i = 0; i != seqNLen; ++i)
-		aSeq[aSeq.length() - seqNLen + i] = vs.seq->encodeAt(i);
-	/* pad cSeq as left justified */
-	for(int i = 0; i != seqCLen; ++i)
-		cSeq[i] = vs.seq->encodeAt(vs.seq->length() - seqCLen + i);
 
-	return nSeq + aSeq + cSeq;
+	/* replace N' gaps with N' seqs right justified */
+	/* replace C' gaps with C' seqs left justified */
+	assert(aln.length() == L);
+
+	return aln;
 }
 
 void BandedHMMP7::wingRetract() {
