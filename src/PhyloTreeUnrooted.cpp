@@ -709,8 +709,8 @@ double PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const
 
 	double wur = w0 * ratio;
 	double wvr = w0 * (1 - ratio);
-	const Matrix4Xd& UPr = dot_product_scaled(model->Pr(wur), U); /* U*P(wur) */
-	const Matrix4Xd& VPr = dot_product_scaled(model->Pr(wvr), V); /* V*P(wvr) */
+	const Matrix4Xd& UPr = dot_product_scaled(model->Pr(wur), U, start, end); /* U*P(wur) */
+	const Matrix4Xd& VPr = dot_product_scaled(model->Pr(wvr), V, start, end); /* V*P(wvr) */
 	wnr = estimateBranchLength(UPr + VPr /* R */, N, start, end);
 
 	return treeLoglik(model->getPi(), UPr + VPr + dot_product_scaled(model->Pr(wnr), N), /* N*P(wnr) */

@@ -58,7 +58,7 @@ public:
 	 */
 	BandedHMMP7(const string& name, int K, const DegenAlphabet* abc);
 
-	/* nested members */
+	/* nested enums and types */
 	/* enum members of all P7 states
 	 * M: match
 	 * I: insertion
@@ -70,11 +70,20 @@ public:
 	 */
 	enum p7_state { M, I, D, N, C, B, E, P /* non-exist phantom state */ };
 
+	/** align mode relative to the read */
 	enum align_mode {
 		GLOBAL,
 		LOCAL,
 		NGCL /* N' global C' local */,
 		CGNL /* C' global N' local */
+	};
+
+	/** padding mode for filling non profile CS positions */
+	enum padding_mode {
+		LEFT,
+		RIGHT,
+		MIDDLE,
+		JUSTIFIED
 	};
 
 	/**
@@ -346,15 +355,7 @@ public:
 	 * @param vpath  a ViterbiAlignPath of the DP values by one of the calcViterbiScores methods
 	 * @return  the global aligned sequence of the query seq, i.e. "AC--GTCGA---ACGNC---";
 	 */
-	PrimarySeq buildGlobalAlignSeq(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
-
-	/**
-	 * Build the global aligned DigitalSeq using calculated scores and backtrace path
-	 * @param vs  a ViterbiScores with Viterbi Scores initiated
-	 * @param vpath  a ViterbiAlignPath of the DP values by one of the calcViterbiScores methods
-	 * @return  the global aligned sequence of the query seq
-	 */
-	DigitalSeq buildGlobalAlignDS(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
+	string buildGlobalAlign(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
 
 	/**
 	 * build hmm from a MSA, override any old data
@@ -700,6 +701,25 @@ private:
 	static string bool2YesOrNo(bool flag) {
 		return flag ? "yes" : "no";
 	}
+
+	/**
+	 * generate padding sequence given the required length and insert (unagiend) sequence
+	 * @param L  required length of padding
+	 * @param insert  unaligned sequence to pad
+	 * @param mode  aligning mode for the insert
+	 * @return  a padding sequence trying to use as much of the insert as possible
+	 */
+	static string getPaddingSeq(int L, const string& insert, char padCh, padding_mode mode);
+
+	/**
+	 * generate padding sequence given the required length
+	 */
+	static string getPaddingSeq(int L, char padCh) {
+		return string(L, padCh);
+	}
+
+	/** Merge two multiple aligments */
+	static string mergeAlign(const string& fwdAln, const string& revAln);
 
 //public:
 	/* non-member operators */

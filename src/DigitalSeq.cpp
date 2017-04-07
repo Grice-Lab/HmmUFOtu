@@ -28,7 +28,7 @@ DigitalSeq::DigitalSeq(const DegenAlphabet* abc, const string& name, const strin
 }
 
 DigitalSeq::DigitalSeq(const PrimarySeq& seq) :
-	abc(seq.getDegenAlphabet()), name(seq.getId()) {
+	abc(seq.getAbc()), name(seq.getId()) {
 	append(seq.getSeq());
 }
 

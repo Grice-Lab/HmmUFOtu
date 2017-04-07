@@ -94,10 +94,11 @@ struct PTPlacement {
  */
 void printUsage(const string& progName) {
 	cerr << "Ultra-fast 16S read OTU assignment using profile-HMM and phylogenetic placement" << endl
-		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <READ-FILE1> [READ-FILE2] [-o OUTPUT] [options]" << endl
+		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <READ-FILE1> [READ-FILE2] <-o PLACE-FILE> <-a ALIGN-FILE> [options]" << endl
 		 << "READ-FILE1  FILE               : sequence read file for the assembled/forward read" << endl
 		 << "READ-FILE2  FILE               : sequence read file for the reverse read" << endl
-		 << "Options:    -o  STR            : prefix for output files" << endl
+		 << "Options:    -o  FILE           : PLACEMENT output" << endl
+		 << "            -a  FILE           : ALIGNMENT output" << endl
 		 << "            -L|--seed-len  INT : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT            : size of 5'/3' seed region for finding seeds [" << DEFAULT_SEED_REGION << "]" << endl
 		 << "            -s  FLAG           : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
@@ -123,10 +124,11 @@ PTPlacement placePE(const PTUnrooted& ptu, const DigitalSeq& fwdSeq, const Digit
 		int fwdStart, int fwdEnd, int revStart, int revEnd,
 		double maxDist, int minQ);
 
+
 int main(int argc, char* argv[]) {
 	/* variable declarations */
 	string dbName, fwdFn, revFn, msaFn, csfmFn, hmmFn, ptuFn;
-	string outName, outFn, alnFn;
+	string outFn, alnFn;
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
 	string seqFmt;
 	ofstream out;
@@ -160,9 +162,16 @@ int main(int argc, char* argv[]) {
 		revFn = cmdOpts.getMainOpt(2);
 
 	if(cmdOpts.hasOpt("-o"))
-		outName = cmdOpts.getOpt("-o");
+		outFn = cmdOpts.getOpt("-o");
 	else {
 		cerr << "Error: -o must be specified" << endl;
+		return EXIT_FAILURE;
+	}
+
+	if(cmdOpts.hasOpt("-a"))
+		alnFn = cmdOpts.getOpt("-a");
+	else {
+		cerr << "Error: -a must be specified" << endl;
 		return EXIT_FAILURE;
 	}
 
@@ -234,9 +243,6 @@ int main(int argc, char* argv[]) {
 	csfmFn = dbName + CSFM_FILE_SUFFIX;
 	hmmFn = dbName + HMM_FILE_SUFFIX;
 	ptuFn = dbName + PHYLOTREE_FILE_SUFFIX;
-
-	outFn = outName + "_placement.txt";
-	alnFn = outName + "_aliged.fasta";
 
 	/* set HMM align mode */
 	mode = !revFn.empty() /* paired-end */ || isAssembled ? BandedHMMP7::GLOBAL : BandedHMMP7::NGCL;
@@ -436,7 +442,7 @@ PrimarySeq alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const Primary
 //	cerr << "csStart: " << csStart << " csEnd: " << csEnd << endl;
 //	cerr << "alnPath: " << seqVpath.alnPath << endl;
 
-	return hmm.buildGlobalAlignSeq(seqVscore, seqVpath);
+	return PrimarySeq(abc, read.getId(), hmm.buildGlobalAlign(seqVscore, seqVpath));
 }
 
 PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
@@ -569,3 +575,4 @@ inline bool operator<(const SELocation& lhs, const SELocation& rhs) {
 inline bool operator<(const PTPlacement& lhs, const PTPlacement& rhs) {
 	return lhs.loglik < rhs.loglik;
 }
+
