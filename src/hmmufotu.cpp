@@ -4,13 +4,12 @@
  Author      : Qi Zheng
  Version     : v1.1
  Copyright   : Your copyright notice
- Description : Hello World in C++,
+ Description : Main program of the HmmUFOtu project
  ============================================================================
  */
 
 #include <iostream>
 #include <fstream>
-#include <map>
 #include <cfloat>
 #include <cstdlib>
 #include <cstring>
@@ -25,7 +24,7 @@ using namespace std;
 using namespace EGriceLab;
 using namespace Eigen;
 
-/** default values */
+/* default values */
 static const string ALPHABET = "dna";
 static const double DEFAULT_MAX_PDIST = 0.1;
 static const size_t DEFAULT_MAX_LOCATION = 500;
@@ -36,17 +35,15 @@ static const int MAX_SEED_LEN = 25;
 static const int MIN_SEED_LEN = 15;
 static const int DEFAULT_SEED_REGION = 50;
 static const double EST_PLACE_ERROR = 1e-4;
-static const string UNASSIGNED_TAXA = "Unknown";
+static const string UNASSIGNED_TAXAID = -1;
+static const string UNASSIGNED_TAXANAME = "Unknown";
 static const double UNASSIGNED_LOGLIK = EGriceLab::nan;
 static const string UNASSIGNED_ID = "NULL";
 static const double UNASSIGNED_POSTQ = EGriceLab::nan;
 static const double UNASSIGNED_DIST = EGriceLab::nan;
 static const double UNASSIGNED_RATIO = EGriceLab::nan;
 
-static const string PLACE_HEADER = "id\tdesc\tbranch_id\tbranch_ratio\tCS_start\tCS_end\ttaxa_anno\tanno_dist\tloglik\tQ_value";
-//static const string TAXA_SUMM_HEADER = "taxa_id\ttaxa_annotation\tcount";
-
-typedef boost::unordered_set<PTUnrooted::PTUNodePtr> NodeSet;
+static const string PLACE_HEADER = "id\tdesc\tbranch_id\tbranch_ratio\tCS_start\tCS_end\ttaxa_id\ttaxa_anno\tanno_dist\tloglik\tQ_value\talignment";
 
 /** struct to store potential placement location information for SE reads */
 struct SELocation {
@@ -65,8 +62,8 @@ struct SELocation {
 struct PTPlacement {
 	/** construct a placement with basic info and optionally auxilary info */
 	PTPlacement(const PTUnrooted::PTUNodePtr& node, double ratio, double wnr, double loglik,
-			const string& taxa = "", double annoDist = 0)
-	: node(node), ratio(ratio), wnr(wnr), loglik(loglik), taxa(taxa), annoDist(annoDist), q(0)
+			long taxaId = 0, const string& taxaAnno = "", double annoDist = 0)
+	: node(node), ratio(ratio), wnr(wnr), loglik(loglik), taxaId(taxaId), taxaAnno(taxaAnno), annoDist(annoDist), q(0)
 	{ }
 
 	string getId() const {
@@ -84,7 +81,8 @@ struct PTPlacement {
 	double wnr;   /* new branch length */
 	double loglik;
 
-	string taxa;
+	long taxaId;
+	string taxaAnno;
 	double annoDist;
 	double q;
 };
@@ -94,11 +92,11 @@ struct PTPlacement {
  */
 void printUsage(const string& progName) {
 	cerr << "Ultra-fast 16S read OTU assignment using profile-HMM and phylogenetic placement" << endl
-		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <READ-FILE1> [READ-FILE2] <-o PLACE-FILE> <-a ALIGN-FILE> [options]" << endl
+		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <READ-FILE1> [READ-FILE2] [options]" << endl
 		 << "READ-FILE1  FILE               : sequence read file for the assembled/forward read" << endl
 		 << "READ-FILE2  FILE               : sequence read file for the reverse read" << endl
-		 << "Options:    -o  FILE           : PLACEMENT output" << endl
-		 << "            -a  FILE           : ALIGNMENT output" << endl
+		 << "Options:    -o  FILE           : write the PLACEMENT output to FILE instead of stdout" << endl
+		 << "            -a  FILE           : in addition to the placement output, write the read alignment to FILE" << endl
 		 << "            -L|--seed-len  INT : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT            : size of 5'/3' seed region for finding seeds [" << DEFAULT_SEED_REGION << "]" << endl
 		 << "            -s  FLAG           : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
@@ -111,7 +109,7 @@ void printUsage(const string& progName) {
 }
 
 /** Align seq with hmm and csfm, returns the alignment or empty seq if failed */
-PrimarySeq alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
+string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
 		int seedLen, int seedRegion, BandedHMMP7::align_mode mode,
 		int& csStart, int& csEnd);
 
@@ -131,7 +129,7 @@ int main(int argc, char* argv[]) {
 	string outFn, alnFn;
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
 	string seqFmt;
-	ofstream out;
+	ofstream of;
 	SeqIO alnOut;
 	bool isAssembled = true; /* assume assembled seq if not paired-end */
 	BandedHMMP7::align_mode mode;
@@ -163,17 +161,9 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-o"))
 		outFn = cmdOpts.getOpt("-o");
-	else {
-		cerr << "Error: -o must be specified" << endl;
-		return EXIT_FAILURE;
-	}
 
 	if(cmdOpts.hasOpt("-a"))
 		alnFn = cmdOpts.getOpt("-a");
-	else {
-		cerr << "Error: -a must be specified" << endl;
-		return EXIT_FAILURE;
-	}
 
 	if(cmdOpts.hasOpt("-L"))
 		seedLen = ::atoi(cmdOpts.getOptStr("-L"));
@@ -273,16 +263,21 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* open outputs */
-	out.open(outFn.c_str());
-	if(!out.is_open()) {
-		cerr << "Unable to write to '" << outFn << "': " << ::strerror(errno) << endl;
-		return EXIT_FAILURE;
+	if(!outFn.empty()) {
+		of.open(outFn.c_str());
+		if(!of.is_open()) {
+			cerr << "Unable to write to '" << outFn << "': " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
 	}
+	ostream& out = of.is_open() ? of : cout;
 
-	alnOut.open(alnFn, "dna", "fasta", SeqIO::WRITE);
-	if(!alnOut.is_open()) {
-		cerr << "Unable to write to '" << alnFn << "': " << ::strerror(errno) << endl;
-		return EXIT_FAILURE;
+	if(!alnFn.empty()) {
+		alnOut.open(alnFn, "dna", "fasta", SeqIO::WRITE);
+		if(!alnOut.is_open()) {
+			cerr << "Unable to write to '" << alnFn << "': " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
 	}
 
 	/* loading database files */
@@ -333,13 +328,8 @@ int main(int argc, char* argv[]) {
 	hmm.setSequenceMode(mode);
 	hmm.wingRetract();
 
-	/* get MSA index */
-	const map<unsigned, PTUnrooted::PTUNodePtr>& id2leaf = ptu.getMSAIndex();
-
 	/* process reads and output */
 	out << PLACE_HEADER << endl;
-	map<string, long> taxaCount;
-
 	if(revFn.empty()) { /* single-ended */
 		SeqIO seqIn(fwdFn, ALPHABET, seqFmt);
 		while(seqIn.hasNext()) {
@@ -348,15 +338,13 @@ int main(int argc, char* argv[]) {
 			int csStart = -1;
 			int csEnd = -1;
 			/* align the read */
-			const PrimarySeq& aln = alignSeq(hmm, csfm, read, seedLen, seedRegion, mode, csStart, csEnd);
-			if(aln.empty())
-				continue;
+			const string& alnStr = alignSeq(hmm, csfm, read, seedLen, seedRegion, mode, csStart, csEnd);
+			assert(alnStr.length() == csLen);
 
-			assert(aln.length() == csLen);
-			DigitalSeq seq(aln);
+			if(alnOut.is_open()) /* write the alignment seq to output */
+				alnOut.writeSeq(PrimarySeq(abc, read.getId(), alnStr));
 
-			if(!alnFn.empty())
-				alnOut.writeSeq(aln);
+			DigitalSeq seq(abc, read.getId(), alnStr);
 
 			/* place seq */
 			const PTPlacement& place = placeSE(ptu, seq, csStart, csEnd, maxDist, maxLocs, minQ);
@@ -364,14 +352,12 @@ int main(int argc, char* argv[]) {
 			if(::isnan(place.loglik))
 				warningLog << "Unable to place read " << read.getId() << endl;
 
-			taxaCount[place.taxa]++;
-
 			/* write main output */
 			out << read.getId() << "\t" << read.getDesc() << "\t"
 				<< place.getId() << "\t" << place.ratio << "\t"
 				<< csStart << "\t" << csEnd << "\t"
-				<< place.taxa << "\t" << place.annoDist << "\t"
-				<< place.loglik << "\t" << place.q << endl;
+				<< place.node->getId() << "\t" << place.taxaAnno << "\t" << place.annoDist << "\t"
+				<< place.loglik << "\t" << place.q << alnStr << endl;
 		}
 	} /* end single-ended */
 	else { /* paired-ended */
@@ -381,7 +367,7 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-PrimarySeq alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
+string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
 		int seedLen, int seedRegion, BandedHMMP7::align_mode mode,
 		int& csStart, int& csEnd) {
 	const DegenAlphabet* abc = hmm.getNuclAbc();
@@ -414,7 +400,7 @@ PrimarySeq alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const Primary
 			}
 		}
 	}
-	cerr << "nSeed: " << seqVpath.N << endl;
+//	cerr << "nSeed: " << seqVpath.N << endl;
 
 	/* banded HMM align */
 	if(seqVpath.N > 0) { /* use banded Viterbi algorithm */
@@ -429,20 +415,21 @@ PrimarySeq alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const Primary
 	else
 		hmm.calcViterbiScores(seqVscore); /* use original Viterbi algorithm */
 	float minCost = hmm.buildViterbiTrace(seqVscore, seqVpath);
+
 	if(minCost == inf) {
 		warningLog << "Warning: Unable to align read " << read.getId() << " , no Viterbi path found" << endl;
-		return PrimarySeq(abc, read.getId(), "");
+		return "";
 	}
 
 	/* find seqStart and seqEnd */
-	csStart = hmm.getCSLoc(seqVpath.alnStart);
-	csEnd = hmm.getCSLoc(seqVpath.alnEnd);
+//	csStart = hmm.getCSLoc(seqVpath.alnStart);
+//	csEnd = hmm.getCSLoc(seqVpath.alnEnd);
 //	cerr << "alnStart: " << seqVpath.alnStart << " alnEnd: " << seqVpath.alnEnd << endl;
 //	cerr << "alnFrom: " << seqVpath.alnFrom << " alnTo: " << seqVpath.alnTo << endl;
 //	cerr << "csStart: " << csStart << " csEnd: " << csEnd << endl;
 //	cerr << "alnPath: " << seqVpath.alnPath << endl;
 
-	return PrimarySeq(abc, read.getId(), hmm.buildGlobalAlign(seqVscore, seqVpath));
+	return hmm.buildGlobalAlign(seqVscore, seqVpath);
 }
 
 PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
@@ -466,7 +453,7 @@ PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int
 	/* Use a estimate-placement algorithm */
 	if(locs.empty())
 		return PTPlacement(NULL, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_LOGLIK,
-				UNASSIGNED_TAXA, UNASSIGNED_POSTQ);
+				UNASSIGNED_TAXANAME, UNASSIGNED_POSTQ);
 
 	/* estimate placement */
 	vector<PTPlacement> places;
@@ -535,7 +522,7 @@ PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int
 		place->ratio = ratio;
 		place->wnr = wnr;
 		place->loglik = loglik;
-		place->taxa = n->getTaxa();
+		place->taxaAnno = n->getTaxa();
 		place->annoDist = n->getAnnoDist();
 	} /* end each candidate placement */
 	std::sort(places.rbegin(), places.rend());
@@ -543,7 +530,7 @@ PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int
 
 	return places.front().q >= minQ ? places.front()
 			: PTPlacement(NULL, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_LOGLIK,
-					UNASSIGNED_TAXA, UNASSIGNED_POSTQ);
+					UNASSIGNED_TAXANAME, UNASSIGNED_POSTQ);
 }
 
 void PTPlacement::calcQValues(vector<PTPlacement>& places) {

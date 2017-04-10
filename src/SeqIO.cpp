@@ -27,6 +27,23 @@ SeqIO::SeqIO(const string& filename, const string& alphabet, const string& forma
 		out.open(filename.c_str());
 }
 
+SeqIO::SeqIO(const string& filename, const DegenAlphabet* abc, const string& format, Mode mode = READ) :
+	filename(filename), abc(abc), format(format), mode(mode) {
+	/* check format support */
+	if(!(format == "fasta" || format == "fastq"))
+		throw invalid_argument("Unsupported file format '" + format + "'");
+	/* register exceptions */
+//	in.exceptions(std::ifstream::badbit);
+//	out.exceptions(std::ofstream::badbit);
+
+	/* open files */
+	if(mode == READ)
+		in.open(filename.c_str());
+	else
+		out.open(filename.c_str());
+}
+
+
 void SeqIO::open(const string& filename, const string& alphabet, const string& format, Mode mode) {
 	/* close old resources */
 	close();

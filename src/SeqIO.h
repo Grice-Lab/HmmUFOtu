@@ -33,6 +33,11 @@ public:
 	 */
 	SeqIO(const string& filename, const string& alphabet, const string& format, Mode mode = READ);
 
+	/**
+	 * Construct a SeqIO object with given info
+	 */
+	SeqIO(const string& filename, const DegenAlphabet* abc, const string& format, Mode mode = READ);
+
 	/* Getters and Setters */
 	const string& getFilename() const {
 		return filename;
