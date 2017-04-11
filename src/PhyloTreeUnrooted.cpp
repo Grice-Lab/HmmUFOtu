@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <cassert>
 #include <boost/algorithm/string.hpp> /* for boost string split */
+#include <boost/lexical_cast.hpp>
 #include "HmmUFOtuConst.h"
 #include "ProgLog.h"
 #include "StringUtils.h"
@@ -907,6 +908,22 @@ void PTUnrooted::inferSeq(const PTUNodePtr& node) {
 	const Matrix4Xd& logMat = loglik(node);
 	for(int j = 0; j < csLen; ++j)
 		node->seq[j] = inferState(logMat.col(j));
+}
+
+DigitalSeq PTUnrooted::inferPostCS(const PTUNodePtr& node, const Matrix4Xd& count, double alpha) const {
+	assert(count.cols() == csLen);
+	/* construct the Dirichlet Prior */
+	const Matrix4Xd& loglikMat = loglik(node);
+	Matrix4Xd pri(4, csLen);
+	for(int j = 0; j < csLen; ++j)
+		pri.col(j) = inferWeight(loglikMat.col(j));
+	Matrix4Xd postP = alpha * pri + count;
+	postP.array().rowwise() /= postP.colwise().sum().array(); /* normalize postP by cols */
+	/* infer consensus */
+	DigitalSeq seq(AlphabetFactory::nuclAbc, boost::lexical_cast<string> (node->getId()));
+	for(int j = 0; j < csLen; ++j)
+		seq.push_back(inferState(postP.col(j)));
+	return seq;
 }
 
 } /* namespace EGriceLab */

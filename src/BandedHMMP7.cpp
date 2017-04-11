@@ -1227,7 +1227,7 @@ string BandedHMMP7::mergeAlign(const string& fwdAln, const string& revAln) {
 	assert(fwdAln.length() == revAln.length());
 	string mergedAln(fwdAln);
 	for(string::size_type i = 0; i < mergedAln.length(); ++i)
-		if(revAln[i] != BandedHMMP7 && revAln[i] != PAD_SYM)
+		if(revAln[i] != PAD_SYM)
 			mergedAln[i] = revAln[i];
 	return mergedAln;
 }

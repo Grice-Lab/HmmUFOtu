@@ -35,7 +35,7 @@ static const int MAX_SEED_LEN = 25;
 static const int MIN_SEED_LEN = 15;
 static const int DEFAULT_SEED_REGION = 50;
 static const double EST_PLACE_ERROR = 1e-4;
-static const string UNASSIGNED_TAXAID = -1;
+static const long UNASSIGNED_TAXAID = -1;
 static const string UNASSIGNED_TAXANAME = "Unknown";
 static const double UNASSIGNED_LOGLIK = EGriceLab::nan;
 static const string UNASSIGNED_ID = "NULL";
@@ -62,8 +62,8 @@ struct SELocation {
 struct PTPlacement {
 	/** construct a placement with basic info and optionally auxilary info */
 	PTPlacement(const PTUnrooted::PTUNodePtr& node, double ratio, double wnr, double loglik,
-			long taxaId = 0, const string& taxaAnno = "", double annoDist = 0)
-	: node(node), ratio(ratio), wnr(wnr), loglik(loglik), taxaId(taxaId), taxaAnno(taxaAnno), annoDist(annoDist), q(0)
+			long taxaId = 0, const string& taxaAnno = "", double annoDist = 0, double q = UNASSIGNED_POSTQ)
+	: node(node), ratio(ratio), wnr(wnr), loglik(loglik), taxaId(taxaId), taxaAnno(taxaAnno), annoDist(annoDist), q(q)
 	{ }
 
 	string getId() const {
@@ -357,7 +357,7 @@ int main(int argc, char* argv[]) {
 				<< place.getId() << "\t" << place.ratio << "\t"
 				<< csStart << "\t" << csEnd << "\t"
 				<< place.node->getId() << "\t" << place.taxaAnno << "\t" << place.annoDist << "\t"
-				<< place.loglik << "\t" << place.q << alnStr << endl;
+				<< place.loglik << "\t" << place.q << "\t" << alnStr << endl;
 		}
 	} /* end single-ended */
 	else { /* paired-ended */
@@ -422,8 +422,8 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 	}
 
 	/* find seqStart and seqEnd */
-//	csStart = hmm.getCSLoc(seqVpath.alnStart);
-//	csEnd = hmm.getCSLoc(seqVpath.alnEnd);
+	csStart = hmm.getCSLoc(seqVpath.alnStart);
+	csEnd = hmm.getCSLoc(seqVpath.alnEnd);
 //	cerr << "alnStart: " << seqVpath.alnStart << " alnEnd: " << seqVpath.alnEnd << endl;
 //	cerr << "alnFrom: " << seqVpath.alnFrom << " alnTo: " << seqVpath.alnTo << endl;
 //	cerr << "csStart: " << csStart << " csEnd: " << csEnd << endl;
@@ -453,7 +453,7 @@ PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int
 	/* Use a estimate-placement algorithm */
 	if(locs.empty())
 		return PTPlacement(NULL, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_LOGLIK,
-				UNASSIGNED_TAXANAME, UNASSIGNED_POSTQ);
+				UNASSIGNED_TAXAID, UNASSIGNED_TAXANAME, UNASSIGNED_POSTQ);
 
 	/* estimate placement */
 	vector<PTPlacement> places;
@@ -530,7 +530,7 @@ PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int
 
 	return places.front().q >= minQ ? places.front()
 			: PTPlacement(NULL, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_LOGLIK,
-					UNASSIGNED_TAXANAME, UNASSIGNED_POSTQ);
+					UNASSIGNED_TAXAID, UNASSIGNED_TAXANAME, UNASSIGNED_DIST, UNASSIGNED_POSTQ);
 }
 
 void PTPlacement::calcQValues(vector<PTPlacement>& places) {

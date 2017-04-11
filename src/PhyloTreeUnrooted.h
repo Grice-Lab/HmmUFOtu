@@ -668,7 +668,7 @@ public:
 	 * get the evaluated node loglik
 	 * this is a alias as getBranchLoglik
 	 */
-	Matrix4d loglik(const PTUNodePtr& node) const {
+	Matrix4Xd loglik(const PTUNodePtr& node) const {
 		return getBranchLoglik(node, node->parent);
 	}
 
@@ -947,6 +947,15 @@ public:
 		return placeSeq(seq, u, v, 0, csLen -1, ratio0, wnr0);
 	}
 
+	/**
+	 * get posterial consensus sequence (CS) of a node using observed count data,
+	 * based on Dirichlet Density model and a given prior
+	 * @param node  node to infer CS
+	 * @param count  observed base frequency matrix for this node
+	 * @param alpha  consenstraction prameter of the Dirichlet Distribution as alpha = Sigma(alpha1..K)
+	 */
+	DigitalSeq inferPostCS(const PTUNodePtr& node, const Matrix4Xd& count, double alpha) const;
+
 private:
 	/** save msaId2node index to a binary output */
 	ostream& saveMSAIndex(ostream& out) const;
@@ -994,6 +1003,7 @@ private:
 	 * save DiscreteGamma model to a binary output, if not NULL
 	 */
 	ostream& saveDGModel(ostream& out) const;
+
 
 public:
 	/* static methods */

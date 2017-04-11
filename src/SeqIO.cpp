@@ -27,7 +27,7 @@ SeqIO::SeqIO(const string& filename, const string& alphabet, const string& forma
 		out.open(filename.c_str());
 }
 
-SeqIO::SeqIO(const string& filename, const DegenAlphabet* abc, const string& format, Mode mode = READ) :
+SeqIO::SeqIO(const string& filename, const DegenAlphabet* abc, const string& format, Mode mode) :
 	filename(filename), abc(abc), format(format), mode(mode) {
 	/* check format support */
 	if(!(format == "fasta" || format == "fastq"))
