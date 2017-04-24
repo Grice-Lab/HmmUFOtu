@@ -53,7 +53,8 @@ hmmufotu-sim \
 hmmufotu-place \
 hmmufotu-build \
 hmmufotu-inspect \
-hmmufotu
+hmmufotu \
+hmmufotu-sum
 
 hmmufotu_train_dm_SOURCES=hmmufotu-train-dm.cpp
 hmmufotu_train_dm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a
@@ -91,3 +92,7 @@ hmmufotu_SOURCES = hmmufotu.cpp
 hmmufotu_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_LDFLAGS = -static
+
+hmmufotu_sum_SOURCES = hmmufotu-sum.cpp
+hmmufotu_sum_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
+hmmufotu_sum_LDFLAGS = -static

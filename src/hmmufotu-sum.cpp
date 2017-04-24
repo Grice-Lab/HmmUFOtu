@@ -26,9 +26,10 @@ using namespace Eigen;
 
 /* default values */
 static const size_t maxIgnore = numeric_limits<streamsize>::max();
+static const string ALPHABET = "dna";
 static const string ALIGN_FORMAT = "fasta";
-static const double DEFAULT_EFFN = 10;
-static const Eigen::IOFormat otuFmt(StreamPrecision, 0, "\t");
+static const double DEFAULT_EFFN = 2;
+//static const Eigen::IOFormat otuFmt(StreamPrecision, 0, "\t");
 
 /** struct to store observed count information for a node */
 struct NodeObsData {
@@ -58,7 +59,7 @@ void printUsage(const string& progName) {
 		 << "PLACE-FILE      FILE           : placement file(s) from hmmufotu" << endl
 		 << "Options:    -o  FILE           : OTU summary output" << endl
 		 << "            -c  FILE           : OTU Consensus Sequence (CS) output" << endl
-		 << "            -e|--effN  double  : effective number of sequences underlying the pre-built Phylogenetic Tree used for Bayesian inference of the OTU CS with Dirichelet Density models [" << DEFAULT_EFFN << "]" << endl
+		 << "            -e|--effN  double  : effective number of sequences (pseudo-count) underlying the pre-built Phylogenetic Tree used for Bayesian inferencing OTUs' CS with Dirichelet Density models [" << DEFAULT_EFFN << "]" << endl
 		 << "            -v  FLAG           : enable verbose information" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
@@ -144,7 +145,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	csOut.open(csFn, "dna", "fasta", SeqIO::WRITE);
+	csOut.open(csFn, ALPHABET, ALIGN_FORMAT, SeqIO::WRITE);
 	if(!csOut.is_open()) {
 		cerr << "Unable to write to '" << csFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
@@ -158,7 +159,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 	int csLen = msa.getCSLen();
-	infoLog << "MSA loaded." << endl;
+	infoLog << "MSA loaded" << endl;
 
 	PTUnrooted ptu;
 	ptu.load(ptuIn);
@@ -166,7 +167,7 @@ int main(int argc, char* argv[]) {
 		cerr << "Unable to load Phylogenetic tree data '" << ptuFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
-	infoLog << "Phylogenetic tree loaded." << endl;
+	infoLog << "Phylogenetic tree loaded" << endl;
 
 	const DegenAlphabet* abc = msa.getAbc();
 	const int S = inFiles.size();
