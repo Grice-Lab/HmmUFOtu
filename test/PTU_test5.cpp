@@ -25,7 +25,7 @@ int main(int argc, const char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	ENABLE_INFO();
+	INCREASE_LEVEL();
 
 	ifstream in(argv[1], ios_base::in | ios_base::binary);
 	ofstream out(argv[2], ios_base::out | ios_base::binary);

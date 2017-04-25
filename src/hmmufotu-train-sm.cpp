@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
 		method = cmdOpts.getOpt("--method");
 
 	if(cmdOpts.hasOpt("-v"))
-		ENABLE_INFO();
+		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* open input files */
 	treeIn.open(treeFn.c_str());

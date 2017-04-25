@@ -270,6 +270,10 @@ inline bool operator!=(const PrimarySeq& lhs, const PrimarySeq& rhs) {
 	return !(lhs == rhs);
 }
 
+inline PrimarySeq PrimarySeq::trunc(string::size_type pos, string::size_type len) const {
+	return PrimarySeq(abc, id, seq.substr(pos, len), desc, qual);
+}
+
 } /* namespace EGriceLab */
 
 #endif /* PRIMARYSEQ_H_ */

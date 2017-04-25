@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
 		K = atoi(cmdOpts.getOptStr("-k"));
 
 	if(cmdOpts.hasOpt("-v"))
-		ENABLE_INFO();
+		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* check options */
 	if(StringUtils::endsWith(seqFn, ".fasta") || StringUtils::endsWith(seqFn, ".fas")

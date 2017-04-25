@@ -19,7 +19,7 @@ CommandOptions::CommandOptions(int argc, char** argv) {
 				i++;
 			}
 			else /* a flag tag */
-				opts[argv[i]] = ""; /* use empty value */
+				opts[argv[i]].push_back('\0'); /* append null values */
 		}
 		else /* a main opt */
 			mainOpts.push_back(argv[i]);

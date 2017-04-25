@@ -24,7 +24,7 @@ int main(int argc, const char* argv[]) {
 		return -1;
 	}
 
-	ENABLE_INFO();
+	INCREASE_LEVEL();
 
 	ifstream in(argv[1]);
 	ifstream annoIn(argv[2]);

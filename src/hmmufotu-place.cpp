@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	if(cmdOpts.hasOpt("-v"))
-		ENABLE_INFO();
+		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* open files */
 	ptuIn.open(inFn.c_str(), ios_base::in | ios_base::binary);

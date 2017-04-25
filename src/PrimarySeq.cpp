@@ -38,23 +38,10 @@ PrimarySeq PrimarySeq::revcom() const {
 		throw logic_error("This seq's alphabet " + abc->getName() + " doesn't support reverse-complement action");
 	string revcomSeq;
 	for(string::const_reverse_iterator it = seq.rbegin(); it != seq.rend(); ++it) {
-		char rCh;
-		if(::isupper(*it))
-			rCh = abc->getComplementSymbol(*it); // keep in upper-case
-		else
-			rCh = ::tolower(abc->getComplementSymbol(::toupper(*it))); // keep in lower-case
-		revcomSeq.push_back(rCh);
+		char rCh = abc->getComplementSymbol(::toupper(*it));
+		revcomSeq.push_back(::isupper(*it) ? rCh : ::tolower(rCh));
 	}
-	return PrimarySeq(abc->getName(), id, seq, desc);
-}
-
-PrimarySeq PrimarySeq::trunc(string::size_type pos,
-		string::size_type len) const {
-	PrimarySeq newSeq(*this); // make a copy
-	newSeq.setSeq(seq.substr(pos, len));
-	if(!qual.empty())
-		newSeq.setQual(qual.substr(pos, len));
-	return newSeq;
+	return PrimarySeq(abc, id, revcomSeq, desc);
 }
 
 string::size_type PrimarySeq::numGap() const {

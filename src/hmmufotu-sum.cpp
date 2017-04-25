@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
 		effN = ::atof(cmdOpts.getOptStr("--effN"));
 
 	if(cmdOpts.hasOpt("-v"))
-		ENABLE_INFO();
+		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* validate options */
 	if(!(effN > 0)) {

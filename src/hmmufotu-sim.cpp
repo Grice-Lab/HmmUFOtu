@@ -28,38 +28,39 @@ using namespace EGriceLab;
  * default options
  */
 static const string DEFAULT_FMT = "fasta";
-static const string ALPHABET = "dna";
 
 static const double DEFAULT_MAX_DIST = EGriceLab::inf;
-static const double DEFAULT_MEAN_LEN = 500;
-static const double DEFAULT_SD_LEN = 30;
-static const double DEFAULT_MIN_LEN = 0;
-static const double DEFAULT_MAX_LEN = 0;
+static const double DEFAULT_MEAN_SIZE = 500;
+static const double DEFAULT_SD_SIZE = 30;
+static const double DEFAULT_MIN_SIZE = 0;
+static const double DEFAULT_MAX_SIZE = 0;
+static const int DEFAULT_READ_LEN = -1;
 
 /**
  * Print the usage information
  */
 void printUsage(const string& progName) {
 	cerr << "Generate simulated multiple-aligned sequences (MSA) using a pre-built HmmUFOtu database" << endl
-		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <-o OUTPUT> <-N NUM-READS> [options]" << endl
-		 << "Options:    -N  LONG           : number of reads to generate" << endl
-	     << "            -o  FILE           : sequence OUTPUT file" << endl
-		 << "            -f|--fmt  STRING   : output format [" << DEFAULT_FMT << "]" << endl
-		 << "            -k|--keep-gap FLAG : keep simulated gaps in generated reads, so final seq will be aligned" << endl
-		 << "            -d|--max-dist      : maximum phylogenetic distance allowed for a read to ANY observed leaf (OTU) [" << DEFAULT_MAX_DIST << "]" << endl
-		 << "            -m|--mean-len  DBL : mean read length [" << DEFAULT_MEAN_LEN << "]" << endl
-		 << "            -s|--sd-len  DBL   : standard deviation of read length [" << DEFAULT_SD_LEN << "]" << endl
-		 << "            -l|--min-len  DBL  : minimum read length, 0 for no limit [" << DEFAULT_MIN_LEN << "]" << endl
-		 << "            -u|--max-len  DBL  : maximum read length, 0 for no limit [" << DEFAULT_MAX_LEN << "]" << endl
-		 << "            -S|--seed  INT     : random seed used for simulation, for debug purpose" << endl
-		 << "            -v  FLAG           : enable verbose information" << endl
-		 << "            -h|--help          : print this message and exit" << endl;
+		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <SEQ-OUT> [MATE-OUT] <-N NUM-READS> [options]" << endl
+		 << "Options:    SEQ-OUT  FILE       : OUTPUT file" << endl
+		 << "            MATE-OUT  FILE      : optional OUTPUT file for paired-end mode, this will suppress -k|--keep-gap option" << endl
+		 << "            -N  LONG            : number of reads/pairs to generate" << endl
+		 << "            -f|--fmt  STRING    : output format [" << DEFAULT_FMT << "]" << endl
+		 << "            -k|--keep-gap FLAG  : keep simulated gaps in generated reads, so final seq will be aligned" << endl
+		 << "            -d|--max-dist       : maximum phylogenetic distance allowed for a read to ANY observed leaf (OTU) [" << DEFAULT_MAX_DIST << "]" << endl
+		 << "            -m|--mean-size  DBL : mean 16S amplicon size [" << DEFAULT_MEAN_SIZE << "]" << endl
+		 << "            -s|--sd-size  DBL   : standard deviation of 16S amplicon size [" << DEFAULT_SD_SIZE << "]" << endl
+		 << "            -l|--min-size  DBL  : minimum 16S amplicon size, 0 for no limit [" << DEFAULT_MIN_SIZE << "]" << endl
+		 << "            -u|--max-size  DBL  : maximum 16S amplicon size, 0 for no limit [" << DEFAULT_MAX_SIZE << "]" << endl
+		 << "            -r|--read-len  INT  : read length for generating single/paired-end reads, set to -1 to use the actual amplicon size [" << DEFAULT_READ_LEN << "]" << endl
+		 << "            -S|--seed  INT      : random seed used for simulation, for debug purpose" << endl
+		 << "            -v  FLAG            : enable verbose information" << endl
+		 << "            -h|--help           : print this message and exit" << endl;
 }
 
 int main(int argc, char* argv[]) {
 	/* variable declarations */
-	string infn, msafn, ptufn, outfn;
-	string fmt(DEFAULT_FMT);
+	string inFn, msaFn, ptuFn, outFn, mateFn;
 	bool keepGap = false;
 	long N = 0;
 	ifstream msaIn, ptuIn;
@@ -67,10 +68,11 @@ int main(int argc, char* argv[]) {
 	PTUnrooted ptu;
 
 	double maxDist = DEFAULT_MAX_DIST;
-	double meanLen = DEFAULT_MEAN_LEN;
-	double sdLen = DEFAULT_SD_LEN;
-	double minLen = DEFAULT_MIN_LEN;
-	double maxLen = DEFAULT_MAX_LEN;
+	double meanSize = DEFAULT_MEAN_SIZE;
+	double sdSize = DEFAULT_SD_SIZE;
+	double minSize = DEFAULT_MIN_SIZE;
+	double maxSize = DEFAULT_MAX_SIZE;
+	int readLen = DEFAULT_READ_LEN;
 
 	unsigned seed = time(NULL); // using time as default seed
 
@@ -90,47 +92,22 @@ int main(int argc, char* argv[]) {
 		return EXIT_SUCCESS;
 	}
 
-	if(!(cmdOpts.numMainOpts() == 1 && cmdOpts.hasOpt("-o") && cmdOpts.hasOpt("-N"))) {
+	if(!((cmdOpts.numMainOpts() == 2 || cmdOpts.numMainOpts() == 3) && cmdOpts.hasOpt("-N"))) {
 		cerr << "Error:" << endl;
 		printUsage(argv[0]);
 		return EXIT_FAILURE;
 	}
-	infn = cmdOpts.getMainOpt(0);
-	msafn = infn + ".msa";
-	ptufn = infn + ".ptu";
-	msaIn.open(msafn.c_str(), ios_base::in | ios_base::binary);
-	if(!msaIn.is_open()) {
-		cerr << "Unable to open " << msafn << " : " << ::strerror(errno) << endl;
-		return EXIT_FAILURE;
-	}
-	ptuIn.open(ptufn.c_str(), ios_base::in | ios_base::binary);
-	if(!ptuIn.is_open()) {
-		cerr << "Unable to open " << ptufn << " : " << ::strerror(errno) << endl;
-		return EXIT_FAILURE;
-	}
+	inFn = cmdOpts.getMainOpt(0);
+
+	outFn = cmdOpts.getMainOpt(1);
+	if(cmdOpts.numMainOpts() == 3)
+		mateFn = cmdOpts.getMainOpt(2);
 
 	if(cmdOpts.hasOpt("-N"))
 		N = ::atol(cmdOpts.getOptStr("-N"));
-	if(!(N > 0)) {
-		cerr << "-N must be positive" << endl;
-		return EXIT_FAILURE;
-	}
-
-	if(cmdOpts.hasOpt("-o"))
-		outfn = cmdOpts.getOpt("-o");
-	else {
-		cerr << "Error:" << endl;
-		printUsage(argv[0]);
-		return EXIT_FAILURE;
-	}
 
 	if(cmdOpts.hasOpt("-k") || cmdOpts.hasOpt("--keep-gap"))
 		keepGap = true;
-
-	if(cmdOpts.hasOpt("-f"))
-		fmt = StringUtils::toLower(cmdOpts.getOpt("-f"));
-	if(cmdOpts.hasOpt("--fmt"))
-		fmt = StringUtils::toLower(cmdOpts.getOpt("--fmt"));
 
 	if(cmdOpts.hasOpt("-d"))
 		maxDist = ::atof(cmdOpts.getOptStr("-d"));
@@ -138,32 +115,29 @@ int main(int argc, char* argv[]) {
 		maxDist = ::atof(cmdOpts.getOptStr("--max-dist"));
 
 	if(cmdOpts.hasOpt("-m"))
-		meanLen = ::atof(cmdOpts.getOptStr("-m"));
-	if(cmdOpts.hasOpt("--mean-len"))
-		meanLen = ::atof(cmdOpts.getOptStr("--mean-len"));
+		meanSize = ::atof(cmdOpts.getOptStr("-m"));
+	if(cmdOpts.hasOpt("--mean-size"))
+		meanSize = ::atof(cmdOpts.getOptStr("--mean-size"));
 
 	if(cmdOpts.hasOpt("-s"))
-		sdLen = ::atof(cmdOpts.getOptStr("-s"));
+		sdSize = ::atof(cmdOpts.getOptStr("-s"));
 	if(cmdOpts.hasOpt("--sd-len"))
-		sdLen = ::atof(cmdOpts.getOptStr("--sd-len"));
+		sdSize = ::atof(cmdOpts.getOptStr("--sd-size"));
 
 	if(cmdOpts.hasOpt("-l"))
-		minLen = ::atof(cmdOpts.getOptStr("-l"));
-	if(cmdOpts.hasOpt("--min-len"))
-		minLen = ::atof(cmdOpts.getOptStr("--min-len"));
-	if(!(minLen >= 0)) {
-		cerr << "-m must be non-negative" << endl;
-		return EXIT_FAILURE;
-	}
+		minSize = ::atof(cmdOpts.getOptStr("-l"));
+	if(cmdOpts.hasOpt("--min-size"))
+		minSize = ::atof(cmdOpts.getOptStr("--min-size"));
 
 	if(cmdOpts.hasOpt("-u"))
-		maxLen = ::atof(cmdOpts.getOptStr("-u"));
-	if(cmdOpts.hasOpt("--max-len"))
-		maxLen = ::atof(cmdOpts.getOptStr("--max-len"));
-	if(!(maxLen >= 0 && maxLen >= minLen)) {
-		cerr << "-n must be non-negative and non-less than -m" << endl;
-		return EXIT_FAILURE;
-	}
+		maxSize = ::atof(cmdOpts.getOptStr("-u"));
+	if(cmdOpts.hasOpt("--max-size"))
+		maxSize = ::atof(cmdOpts.getOptStr("--max-size"));
+
+	if(cmdOpts.hasOpt("-r"))
+		readLen = ::atoi(cmdOpts.getOptStr("-r"));
+	if(cmdOpts.hasOpt("--read-len"))
+		readLen = ::atoi(cmdOpts.getOptStr("--read-len"));
 
 	if(cmdOpts.hasOpt("-S"))
 		seed = ::atoi(cmdOpts.getOptStr("-S"));
@@ -171,15 +145,64 @@ int main(int argc, char* argv[]) {
 		seed = ::atoi(cmdOpts.getOptStr("--seed"));
 
 	if(cmdOpts.hasOpt("-v"))
-		ENABLE_INFO();
+		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
-	/* open SeqIO output */
-	SeqIO seqOut(outfn, ALPHABET, fmt, SeqIO::WRITE);
+	/* validate options */
+	if(!(N > 0)) {
+		cerr << "-N must be positive" << endl;
+		return EXIT_FAILURE;
+	}
+	if(!(meanSize > 0)) {
+		cerr << "-m|--min-size must be positive" << endl;
+		return EXIT_FAILURE;
+	}
+	if(!(sdSize > 0)) {
+		cerr << "-s|--sd-size must be positive" << endl;
+		return EXIT_FAILURE;
+	}
+	if(!(minSize >= 0)) {
+		cerr << "-l|--min-size must be non-negative" << endl;
+		return EXIT_FAILURE;
+	}
+	if(!(maxSize >= 0 && maxSize >= minSize)) {
+		cerr << "-u|--max-size must be non-negative and non-less than -l|--min-size" << endl;
+		return EXIT_FAILURE;
+	}
+
+	/* open inputs */
+	msaFn = inFn + ".msa";
+	ptuFn = inFn + ".ptu";
+	msaIn.open(msaFn.c_str(), ios_base::in | ios_base::binary);
+	if(!msaIn.is_open()) {
+		cerr << "Unable to open " << msaFn << " : " << ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
+	ptuIn.open(ptuFn.c_str(), ios_base::in | ios_base::binary);
+	if(!ptuIn.is_open()) {
+		cerr << "Unable to open " << ptuFn << " : " << ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
+
+	/* open outputs */
+	SeqIO seqOut(outFn, AlphabetFactory::nuclAbc, DEFAULT_FMT, SeqIO::WRITE, -1);
+	if(!seqOut.is_open()) {
+		cerr << "Unable to write seq to '" << outFn << "' : " << ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
+	SeqIO mateOut;
+	if(!mateFn.empty()) {
+		keepGap = false; /* suppress -k if paired end */
+		mateOut.open(mateFn, AlphabetFactory::nuclAbc, DEFAULT_FMT, SeqIO::WRITE, -1);
+		if(!mateOut.is_open()) {
+			cerr << "Unable to write mate to '" << mateFn << "' : " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+	}
 
 	/* load input database */
 	msa.load(msaIn);
 	if(msaIn.bad()) {
-		cerr << "Failed to load MSA data from " << msafn << endl;
+		cerr << "Failed to load MSA data from " << msaFn << endl;
 		return EXIT_FAILURE;
 	}
 	else
@@ -187,14 +210,14 @@ int main(int argc, char* argv[]) {
 
 	ptu.load(ptuIn);
 	if(ptuIn.bad()) {
-		cerr << "Failed to load PTU data from " << ptufn << endl;
+		cerr << "Failed to load PTU data from " << ptuFn << endl;
 		return EXIT_FAILURE;
 	}
 	else
 		infoLog << "Phylogenetic tree data loaded, numNode: " << ptu.numNodes() << " numSites:" << ptu.numAlignSites() << endl;
 
 	if(msa.getCSLen() != ptu.numAlignSites()) {
-		cerr << "Unmatched HmmUFOtu data files, please rebuid your database" << endl;
+		cerr << "Unmatched HmmUFOtu data files, please rebuild your database" << endl;
 		return EXIT_FAILURE;
 	}
 
@@ -212,7 +235,7 @@ int main(int argc, char* argv[]) {
 
 	LocDistrib loc_dist(0, csLen - 1);
 
-	SizeDistrib size_dist(meanLen, sdLen);
+	SizeDistrib size_dist(meanSize, sdSize);
 
 	GapDistrib gap_dist;
 
@@ -251,6 +274,10 @@ int main(int argc, char* argv[]) {
 	NodeDistrib node_dist(nodePr, nodePr + numNodes);
 
 	/* generating random reads */
+	if(mateFn.empty())
+		infoLog << "Simulating single-end reads" << endl;
+	else
+		infoLog << "Simulating paired-end reads" << endl;
 	for(long n = 1; n <= N;) {
 		/* simulate a branch */
 		size_t id = node_dist(rng);
@@ -265,10 +292,10 @@ int main(int argc, char* argv[]) {
 		/* simulate a read range */
 		int start = loc_dist(rng);
 		double len = size_dist(rng);
-		if(len < minLen)
-			len = minLen;
-		if(maxLen > 0 && len > maxLen)
-			len = maxLen;
+		if(len < minSize)
+			len = minSize;
+		if(maxSize > 0 && len > maxSize)
+			len = maxSize;
 		int end = start + static_cast<int> (len);
 		if(!(end < csLen)) /* outside consensus range */
 			continue;
@@ -305,8 +332,11 @@ int main(int argc, char* argv[]) {
 		if(keepGap)
 			seq.append(csLen - 1 - end, gapSym);
 
-		seqOut.writeSeq(PrimarySeq(abc, rid, seq, desc));
-
+		/* output */
+		PrimarySeq insert(abc, rid, seq, desc);
+		seqOut.writeSeq(insert.trunc(0, readLen));
+		if(mateOut.is_open())
+			mateOut.writeSeq(insert.revcom().trunc(0, readLen));
 		n++;
 	}
 }

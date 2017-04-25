@@ -20,18 +20,18 @@ using std::endl;
 
 void UPDATE_LOGS();
 
-void DISABLE_ALL() {
+inline void DISABLE_ALL() {
 	VERBOSE_LEVEL = LOG_NOTHING;
 	UPDATE_LOGS();
 }
 
-void INCREASE_LEVEL() {
-	VERBOSE_LEVEL++;
+inline void INCREASE_LEVEL(int increment = 1) {
+	VERBOSE_LEVEL += increment;
 	UPDATE_LOGS();
 }
 
-void DECREASE_LEVEL() {
-	VERBOSE_LEVEL++;
+inline void DECREASE_LEVEL(int decrement = 1) {
+	VERBOSE_LEVEL -= decrement;
 	UPDATE_LOGS();
 }
 

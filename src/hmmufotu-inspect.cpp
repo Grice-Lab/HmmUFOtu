@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
 
 	dbName = cmdOpts.getMainOpt(0);
 	if(cmdOpts.hasOpt("-v"))
-		ENABLE_INFO();
+		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	if(cmdOpts.hasOpt("-sm"))
 		showSm = true;

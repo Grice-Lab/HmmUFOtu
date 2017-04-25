@@ -11,8 +11,8 @@
 namespace EGriceLab {
 using namespace std;
 
-SeqIO::SeqIO(const string& filename, const string& alphabet, const string& format, Mode mode) :
-	filename(filename), abc(AlphabetFactory::getAlphabetByName(alphabet)), format(format), mode(mode) {
+SeqIO::SeqIO(const string& filename, const string& alphabet, const string& format, Mode mode, int maxLine) :
+	filename(filename), abc(AlphabetFactory::getAlphabetByName(alphabet)), format(format), mode(mode), maxLine(maxLine) {
 	/* check format support */
 	if(!(format == "fasta" || format == "fastq"))
 		throw invalid_argument("Unsupported file format '" + format + "'");
@@ -27,8 +27,8 @@ SeqIO::SeqIO(const string& filename, const string& alphabet, const string& forma
 		out.open(filename.c_str());
 }
 
-SeqIO::SeqIO(const string& filename, const DegenAlphabet* abc, const string& format, Mode mode) :
-	filename(filename), abc(abc), format(format), mode(mode) {
+SeqIO::SeqIO(const string& filename, const DegenAlphabet* abc, const string& format, Mode mode, int maxLine) :
+	filename(filename), abc(abc), format(format), mode(mode), maxLine(maxLine) {
 	/* check format support */
 	if(!(format == "fasta" || format == "fastq"))
 		throw invalid_argument("Unsupported file format '" + format + "'");
@@ -43,8 +43,7 @@ SeqIO::SeqIO(const string& filename, const DegenAlphabet* abc, const string& for
 		out.open(filename.c_str());
 }
 
-
-void SeqIO::open(const string& filename, const string& alphabet, const string& format, Mode mode) {
+void SeqIO::open(const string& filename, const DegenAlphabet* abc, const string& format, Mode mode, int maxLine) {
 	/* close old resources */
 	close();
 	/* check format support */
@@ -52,13 +51,11 @@ void SeqIO::open(const string& filename, const string& alphabet, const string& f
 		throw invalid_argument("Unsupported file format '" + format + "'");
 	/* replace values */
 	this->filename = filename;
-	abc = AlphabetFactory::getAlphabetByName(alphabet);
+	this->abc = abc;
 	this->format = format;
 	this->mode = mode;
+	this->maxLine = maxLine;
 
-	/* register exceptions */
-//	in.exceptions(std::ifstream::badbit);
-//	out.exceptions(std::ofstream::badbit);
 	/* open files */
 	if(mode == READ)
 		in.open(filename.c_str());
@@ -114,11 +111,15 @@ PrimarySeq SeqIO::nextFastqSeq() {
 
 void SeqIO::writeFastaSeq(const PrimarySeq& seq) {
 	out << fastaHead << seq.getId() << (!seq.getDesc().empty() ? " " + seq.getDesc() : "") << endl;
-	const char* seqPtr = seq.getSeq().c_str();
-	for(size_t i = 0, r = seq.length(); i < seq.length(); i += kMaxFastaLine, r -= kMaxFastaLine) {
-		out.write(seqPtr + i, r >= kMaxFastaLine ? kMaxFastaLine : r); /* use unformated write for performance */
-		out.put('\n'); // do not flush for faster performance
+	if(maxLine > 0) {
+		const char* seqPtr = seq.getSeq().c_str();
+		for(size_t i = 0, r = seq.length(); i < seq.length(); i += maxLine, r -= maxLine) {
+			out.write(seqPtr + i, r >= maxLine ? maxLine : r); /* use unformated write for performance */
+			out.put('\n'); // do not flush for faster performance
+		}
 	}
+	else
+		out << seq.getSeq() << endl;
 }
 
 void SeqIO::writeFastqSeq(const PrimarySeq& seq) {

@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if(cmdOpts.hasOpt("-v"))
-		ENABLE_INFO();
+		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* guess input format */
 	if(StringUtils::endsWith(infn, ".fasta") || StringUtils::endsWith(infn, ".fas")

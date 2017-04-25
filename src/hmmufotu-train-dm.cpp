@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
 		nSeed = ::atoi(cmdOpts.getOpt("-n").c_str());
 
 	if(cmdOpts.hasOpt("-v"))
-		ENABLE_INFO();
+		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* guess input format */
 	if(StringUtils::endsWith(inFn, ".fasta") || StringUtils::endsWith(inFn, ".fas")

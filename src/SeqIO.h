@@ -31,12 +31,12 @@ public:
 	/**
 	 * Construct a SeqIO object with given info
 	 */
-	SeqIO(const string& filename, const string& alphabet, const string& format, Mode mode = READ);
+	SeqIO(const string& filename, const string& alphabet, const string& format, Mode mode = READ, int maxLine = DEFAULT_MAX_LINE);
 
 	/**
 	 * Construct a SeqIO object with given info
 	 */
-	SeqIO(const string& filename, const DegenAlphabet* abc, const string& format, Mode mode = READ);
+	SeqIO(const string& filename, const DegenAlphabet* abc, const string& format, Mode mode = READ, int maxLine = DEFAULT_MAX_LINE);
 
 	/* Getters and Setters */
 	const string& getFilename() const {
@@ -51,9 +51,22 @@ public:
 		return mode;
 	}
 
+	int getMaxLine() const {
+		return maxLine;
+	}
+
+	void setMaxLine(int maxLine) {
+		this->maxLine = maxLine;
+	}
+
 	/* member methods */
 	/** open a new SeqIO, close old one if necessary */
-	void open(const string& filename, const string& alphabet, const string& format, Mode mode = READ);
+	void open(const string& filename, const DegenAlphabet* abc, const string& format, Mode mode = READ, int maxLine = DEFAULT_MAX_LINE);
+
+	/** open a new SeqIO, close old one if necessary */
+	void open(const string& filename, const string& alphabet, const string& format, Mode mode = READ, int maxLine = DEFAULT_MAX_LINE) {
+		open(filename, AlphabetFactory::getAlphabetByName(alphabet), format, mode, maxLine);
+	}
 
 	/**
 	 * close underlying iostreams explicitly
@@ -129,8 +142,10 @@ private:
 	void writeFastaSeq(const PrimarySeq& seq);
 
 	/**
-	 * Write a seq to the output in fastq format
+	 * Write a seq to the output in fastq format,
+	 * with maxLine restricted
 	 * @param seq  a PrimarySeq
+	 * @param maxLine  max characters in a line, set to -1 for limits
 	 * @throw std::ios_base::failure if any IO exception
 	 */
 	void writeFastqSeq(const PrimarySeq& seq);
@@ -140,13 +155,14 @@ private:
 	string format;
 	const DegenAlphabet* abc;
 	Mode mode;
+	int maxLine;
 
 	ifstream in;
 	ofstream out;
 	/* static members */
 	static const char fastaHead = '>';
 	static const char fastqHead = '@';
-	static const string::size_type kMaxFastaLine = 60;
+	static const int DEFAULT_MAX_LINE = 60;
 	static const char fastqSep = '+';
 };
 

@@ -36,14 +36,14 @@ static const int MIN_SEED_LEN = 15;
 static const int DEFAULT_SEED_REGION = 50;
 static const double DEFAULT_MAX_PLACE_ERROR = 20;
 static const long UNASSIGNED_TAXAID = -1;
-static const string UNASSIGNED_TAXANAME = "Unknown";
+static const string UNASSIGNED_TAXANAME = "UNASSIGNED";
 static const double UNASSIGNED_LOGLIK = EGriceLab::nan;
 static const string UNASSIGNED_ID = "NULL";
 static const double UNASSIGNED_POSTQ = EGriceLab::nan;
 static const double UNASSIGNED_DIST = EGriceLab::nan;
 static const double UNASSIGNED_RATIO = EGriceLab::nan;
 
-static const string PLACE_HEADER = "id\tdesc\tbranch_id\tbranch_ratio\tCS_start\tCS_end\ttaxa_id\ttaxa_anno\tanno_dist\tloglik\tQ_value\talignment";
+static const string PLACE_HEADER = "id\tdesc\talignment\tbranch_id\tbranch_ratio\tCS_start\tCS_end\ttaxa_id\ttaxa_anno\tanno_dist\tloglik\tQ_value";
 
 /** struct to store potential placement location information for SE reads */
 struct SELoc {
@@ -60,22 +60,27 @@ struct SELoc {
 
 /** struct to store placement information */
 struct PTPlacement {
-	/** default constructor */
-	PTPlacement() { }
+//	/** default constructor */
+//	PTPlacement() { }
 
 	/** construct a placement with basic info and optionally auxilary info */
-	PTPlacement(const PTUnrooted::PTUNodePtr& node, double ratio, double wnr, double loglik,
-			long taxaId = 0, const string& taxaAnno = "", double annoDist = 0, double q = 0)
-	: node(node), ratio(ratio), wnr(wnr), loglik(loglik), taxaId(taxaId), taxaAnno(taxaAnno), annoDist(annoDist), q(q)
+	PTPlacement(const PTUnrooted::PTUNodePtr& cNode, const PTUnrooted::PTUNodePtr& pNode,
+			double ratio, double wnr, double loglik,
+			double annoDist = 0, double q = 0)
+	: cNode(cNode), pNode(pNode), ratio(ratio), wnr(wnr), loglik(loglik), annoDist(annoDist), q(q)
 	{ }
 
-	long getAssignedId() const {
-		return node != NULL ? node->getId() : UNASSIGNED_TAXAID;
+	long getTaxaId() const {
+		return cNode == NULL || pNode == NULL ? UNASSIGNED_TAXAID : ratio <= 0.5 ? cNode->getId() : pNode->getId();
 	}
 
-	string getBranchId() const {
-		return node != NULL ?
-				boost::lexical_cast<string> (node->getId()) + "->" + boost::lexical_cast<string> (node->getParent()->getId())
+	string getTaxaName() const {
+		return cNode == NULL || pNode == NULL ? UNASSIGNED_TAXANAME : ratio <= 0.5 ? cNode->getAnno() : pNode->getAnno();
+	}
+
+	string getId() const {
+		return cNode != NULL && pNode != NULL ?
+				boost::lexical_cast<string> (cNode->getId()) + "->" + boost::lexical_cast<string> (cNode->getParent()->getId())
 				: UNASSIGNED_ID;
 	}
 
@@ -83,13 +88,11 @@ struct PTPlacement {
 
 	friend bool operator<(const PTPlacement& lhs, const PTPlacement& rhs);
 
-	PTUnrooted::PTUNodePtr node;
+	PTUnrooted::PTUNodePtr cNode;
+	PTUnrooted::PTUNodePtr pNode;
 	double ratio; /* placement ratio */
 	double wnr;   /* new branch length */
 	double loglik;
-
-	long taxaId;
-	string taxaAnno;
 	double annoDist;
 	double q;
 };
@@ -112,7 +115,7 @@ void printUsage(const string& progName) {
 		 << "            -e  DBL            : max placement error between fast estimation and accurate placement [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
 		 << "            -q  INT            : minimum Q-value (negative log10 of posterior placement probability) required for a read placement [" << DEFAULT_MIN_Q << "]" << endl
 		 << "            -S|--seed  INT     : random seed used for banded HMM seed searches, for debug purpose" << endl
-		 << "            -v  FLAG           : enable verbose information" << endl
+		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
 
@@ -205,7 +208,7 @@ int main(int argc, char* argv[]) {
 	srand(seed);
 
 	if(cmdOpts.hasOpt("-v"))
-		ENABLE_INFO();
+		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* guess seq format */
 	if(StringUtils::endsWith(fwdFn, ".fasta") || StringUtils::endsWith(fwdFn, ".fas")
@@ -366,14 +369,14 @@ int main(int argc, char* argv[]) {
 			const PTPlacement& place = placeSE(ptu, seq, csStart, csEnd, maxDist, maxLocs, maxError, minQ);
 
 			if(::isnan(place.loglik))
-				warningLog << "Unable to place read " << read.getId() << endl;
+				debugLog << "Unable to place read " << read.getId() << endl;
 
 			/* write main output */
-			out << read.getId() << "\t" << read.getDesc() << "\t"
-				<< place.getBranchId() << "\t" << place.ratio << "\t"
+			out << read.getId() << "\t" << read.getDesc() << "\t" << alnStr << "\t"
+				<< place.getId() << "\t" << place.ratio << "\t"
 				<< csStart << "\t" << csEnd << "\t"
-				<< place.taxaId << "\t" << place.taxaAnno << "\t" << place.annoDist << "\t"
-				<< place.loglik << "\t" << place.q << "\t" << alnStr << endl;
+				<< place.getTaxaId() << "\t" << place.getTaxaName() << "\t"
+				<< place.annoDist << "\t" << place.loglik << "\t" << place.q << endl;
 		}
 	} /* end single-ended */
 	else { /* paired-ended */
@@ -422,7 +425,7 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 	if(seqVpath.N > 0) { /* use banded Viterbi algorithm */
 		hmm.calcViterbiScores(seqVscore, seqVpath);
 		if(seqVscore.S.minCoeff() == inf) { /* banded version failed */
-			warningLog << "Banded HMM algorithm didn't find a potential Viterbi path, returning to regular HMM" << endl;
+			debugLog << "Banded HMM algorithm didn't find a potential Viterbi path, returning to regular HMM" << endl;
 			hmm.resetViterbiScores(seqVscore, read);
 //			hmm.resetViterbiAlignPath(seqVpath, L);
 			hmm.calcViterbiScores(seqVscore);
@@ -464,23 +467,24 @@ PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int
 
 	/* Use an estimate-placement algorithm */
 	if(locs.empty())
-		return PTPlacement(NULL, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_LOGLIK,
-				UNASSIGNED_TAXAID, UNASSIGNED_TAXANAME, UNASSIGNED_DIST, UNASSIGNED_POSTQ);
+		return PTPlacement(NULL, NULL, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_LOGLIK,
+				UNASSIGNED_DIST, UNASSIGNED_POSTQ);
 
 	/* estimate placement */
 	vector<PTPlacement> places;
 	for(vector<SELoc>::const_iterator loc = locs.begin(); loc != locs.end(); ++loc) {
-		const PTUnrooted::PTUNodePtr& node = loc->node;
+		const PTUnrooted::PTUNodePtr& cNode = loc->node;
+		const PTUnrooted::PTUNodePtr& pNode = cNode->getParent();
 		double cDist = loc->dist;
-		double pDist = DNASubModel::pDist(node->getParent()->getSeq(), seq); /* parent dist */
+		double pDist = DNASubModel::pDist(pNode->getSeq(), seq);
 		double ratio = cDist / (cDist + pDist);
 		if(::isnan(ratio)) // unable to estimate the ratio
 			ratio = 0.5;
 //		cerr << "Estimating at " << node->getId() << " cDist: " << cDist << " pDist: " << pDist << " ratio: " << ratio << endl;
 		/* estimate the placement */
 		double wnr;
-		double loglik = ptu.estimateSeq(seq, node, node->getParent(), start, end, ratio, wnr);
-		places.push_back(PTPlacement(node, ratio, wnr, loglik));
+		double loglik = ptu.estimateSeq(seq, cNode, pNode, start, end, ratio, wnr);
+		places.push_back(PTPlacement(cNode, pNode, ratio, wnr, loglik));
 	}
 //	cerr << "Estimated placement at " << places.size() << " branches" << endl;
 
@@ -498,13 +502,12 @@ PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int
 
 	/* accurate placement using estimated values */
 	for(vector<PTPlacement>::iterator place = places.begin(); place != places.end(); ++place) {
-		const PTUnrooted::PTUNodePtr& node = place->node;
 		double ratio0 = place->ratio;
 		double wnr0 = place->wnr;
 		double loglik0 = place->loglik;
 
 //		cerr << "Estimated placement ratio0: " << ratio0 << " wnr: " << wnr0 << " loglik: " << loglik0 << endl;
-		PTUnrooted subtree = ptu.copySubTree(node, node->getParent());
+		PTUnrooted subtree = ptu.copySubTree(place->cNode, place->pNode);
 		const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
 		const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
 		double w0 = subtree.getBranchLength(u, v);
@@ -513,39 +516,32 @@ PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int
 		const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
 		const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
 
-		/* calculate the node n annoDist */
+		/* update placement info */
 		double wnr = subtree.getBranchLength(n, r);
 		double wur = subtree.getBranchLength(u, r);
 		double wvr = w0 - wur;
-		double ratio = wur / w0;
+		place->ratio = wur / w0;
 //		cerr << "Real placement ratio: " << ratio << " wnr: " << wnr << " loglik: " << loglik << endl;
 //		cerr << "delta loglik: " << (loglik - loglik0) << endl;
 		if(wvr <= wur) { /* r->v is shorter */
-			place->taxaId = v->getId();
-			n->setAnno(v->getAnno());
-			n->setAnnoDist(v->getAnnoDist() + wvr + wnr);
+			place->annoDist = v->getAnnoDist() + wvr + wnr;
 		}
 		else { /* u->r is shorter */
-			place->taxaId = u->getId();
-			n->setAnno(u->getAnno());
 			if(u->getAnnoDist() == 0) /* self-annotated */
-				n->setAnnoDist(wur + wnr);
+				place->annoDist = wur + wnr;
 			else /* annotated from v or ancestor */
-				n->setAnnoDist(u->getAnnoDist() + (wnr - wur));
+				place->annoDist = u->getAnnoDist() + wnr - wur;
 		}
-		/* update placement info */
-		place->ratio = ratio;
+		/* update other placement info */
 		place->wnr = wnr;
 		place->loglik = loglik;
-		place->taxaAnno = n->getTaxa();
-		place->annoDist = n->getAnnoDist();
 	} /* end each candidate placement */
 	std::sort(places.rbegin(), places.rend());
 	PTPlacement::calcQValues(places);
 
 	return places.front().q >= minQ ? places.front()
-			: PTPlacement(NULL, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_LOGLIK,
-					UNASSIGNED_TAXAID, UNASSIGNED_TAXANAME, UNASSIGNED_DIST, UNASSIGNED_POSTQ);
+			: PTPlacement(NULL, NULL, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_LOGLIK,
+					UNASSIGNED_DIST, UNASSIGNED_POSTQ);
 }
 
 void PTPlacement::calcQValues(vector<PTPlacement>& places) {
