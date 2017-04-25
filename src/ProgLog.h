@@ -18,15 +18,22 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
-void DISABLE_VERBOSE_MESSAGES();
+void UPDATE_LOGS();
 
-void ENABLE_ERROR();
+void DISABLE_ALL() {
+	VERBOSE_LEVEL = LOG_NOTHING;
+	UPDATE_LOGS();
+}
 
-void ENABLE_WARNING();
+void INCREASE_LEVEL() {
+	VERBOSE_LEVEL++;
+	UPDATE_LOGS();
+}
 
-void ENABLE_INFO();
-
-void ENABLE_DEBUG();
+void DECREASE_LEVEL() {
+	VERBOSE_LEVEL++;
+	UPDATE_LOGS();
+}
 
 /* namespace static variables */
 extern ostream errorLog;
