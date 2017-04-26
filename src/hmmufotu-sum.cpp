@@ -30,6 +30,8 @@ static const size_t maxIgnore = numeric_limits<streamsize>::max();
 static const string ALPHABET = "dna";
 static const string ALIGN_FORMAT = "fasta";
 static const double DEFAULT_EFFN = 2;
+static const int DEFAULT_MIN_NREAD = 1;
+static const int DEFAULT_MIN_NSAMPLE = 1;
 //static const Eigen::IOFormat otuFmt(StreamPrecision, 0, "\t");
 
 /** struct to store observed count information for a node */
@@ -63,6 +65,8 @@ void printUsage(const string& progName) {
 		 << "Options:    -o  FILE           : OTU summary output" << endl
 		 << "            -c  FILE           : OTU Consensus Sequence (CS) output" << endl
 		 << "            -e|--effN  double  : effective number of sequences (pseudo-count) underlying the pre-built Phylogenetic Tree used for Bayesian inferencing OTUs' CS with Dirichelet Density models [" << DEFAULT_EFFN << "]" << endl
+		 << "            -n  INT      : minimum number of observed reads required to define an OTU across all samples [" << DEFAULT_MIN_NREAD << "]" << endl
+		 << "            -s  INT   : minimum number of observed samples required to define an OTU" << DEFAULT_MIN_NSAMPLE << "]" << endl
 		 << "            -v  FLAG           : enable verbose information" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
@@ -78,6 +82,8 @@ int main(int argc, char* argv[]) {
 	SeqIO csOut;
 
 	double effN = DEFAULT_EFFN;
+	int minRead = DEFAULT_MIN_NREAD;
+	int minSample = DEFAULT_MIN_NSAMPLE;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -115,12 +121,25 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("--effN"))
 		effN = ::atof(cmdOpts.getOptStr("--effN"));
 
+	if(cmdOpts.hasOpt("-n"))
+		minRead = ::atoi(cmdOpts.getOptStr("-n"));
+	if(cmdOpts.hasOpt("-s"))
+		minSample = ::atoi(cmdOpts.getOptStr("-s"));
+
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* validate options */
 	if(!(effN > 0)) {
 		cerr << "-e|--effN must be positive" << endl;
+		return EXIT_FAILURE;
+	}
+	if(!(minRead > 0)) {
+		cerr << "-n must be positive integer" << endl;
+		return EXIT_FAILURE;
+	}
+	if(!(minSample > 0)) {
+		cerr << "-s must be positive integer" << endl;
 		return EXIT_FAILURE;
 	}
 
@@ -225,6 +244,11 @@ int main(int argc, char* argv[]) {
 		if(otuData.find(node) == otuData.end())
 			continue;
 		NodeObsData& data = otuData.find(node)->second;
+		int nRead = data.count.sum();
+		int nSample = (data.count.array() > 0).count();
+		if(!(nRead >= minRead && nSample >= minSample)) /* filter OTUs */
+			continue;
+
 		otuOut << node->getId() << "\t";
 		for(int s = 0; s < S; ++s)
 			otuOut << data.count(s) << "\t";
@@ -233,8 +257,8 @@ int main(int argc, char* argv[]) {
 		string desc = "DBName="
 				+ dbName + ";Taxonomy=\"" + node->getTaxa()
 				+ "\";AnnoDist=" + boost::lexical_cast<string>(node->getAnnoDist())
-				+ ";ReadCount=" + boost::lexical_cast<string>(data.count.sum())
-				+ ";SampleHits=" + boost::lexical_cast<string>((data.count.array() > 0).count());
+				+ ";ReadCount=" + boost::lexical_cast<string>(nRead)
+				+ ";SampleHits=" + boost::lexical_cast<string>(nSample);
 		csOut.writeSeq(PrimarySeq(seq.getAbc(), seq.getName(), seq.toString(), desc));
 	}
 }
