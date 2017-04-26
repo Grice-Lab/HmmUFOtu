@@ -10,6 +10,7 @@
 #include <iostream>
 #include <fstream>
 #include <strstream>
+#include <cctype>
 #include <cfloat>
 #include <cstdlib>
 #include <cstring>
@@ -34,14 +35,16 @@ static const double DEFAULT_EFFN = 2;
 /** struct to store observed count information for a node */
 struct NodeObsData {
 	NodeObsData(int L, int S) :
-		freq(4, L), count(S)
+		freq(4, L), gap(L), count(S)
 	{
 		freq.setZero();
+		gap.setZero();
 		count.setZero();
 	}
 
-	Matrix4Xd freq; /* observed aggregate base frequency over all samples */
-	VectorXi count; /* observed sequence count for each sample separately */
+	Matrix4Xd freq;  /* observed aggregate base frequency over all samples */
+	RowVectorXd gap; /* observed aggregate gap over all samples */
+	VectorXi count;  /* observed sequence count for each sample separately */
 };
 
 /**
@@ -192,10 +195,11 @@ int main(int argc, char* argv[]) {
 			if(StringUtils::startsWith(line, "id"))
 				continue;
 			istringstream iss(line);
-			iss.ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t');
-			iss >> taxa_id;
-			iss.ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t');
+			iss.ignore(maxIgnore, '\t').ignore(maxIgnore, '\t');
 			iss >> aln;
+			iss.ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t');
+			iss >> taxa_id;
+
 			if(taxa_id < 0)
 				continue; /* invalid placement */
 			const PTUnrooted::PTUNodePtr& node = ptu.getNode(taxa_id);
@@ -204,9 +208,11 @@ int main(int argc, char* argv[]) {
 			NodeObsData& data = otuData.find(node)->second;
 			data.count(s)++;
 			for(int j = 0; j < L; ++j) {
-				int8_t b = abc->encode(aln[j]);
+				int8_t b = abc->encode(::toupper(aln[j]));
 				if(b >= 0)
-					data.freq(b, s)++;
+					data.freq(b, j)++;
+				else
+					data.gap(j)++;
 			}
 		}
 	}
@@ -223,7 +229,7 @@ int main(int argc, char* argv[]) {
 		for(int s = 0; s < S; ++s)
 			otuOut << data.count(s) << "\t";
 		otuOut << node->getTaxa() << endl;
-		DigitalSeq seq = ptu.inferPostCS(node, data.freq, effN);
+		DigitalSeq seq = ptu.inferPostCS(node, data.freq, data.gap, effN);
 		string desc = "DBName="
 				+ dbName + ";Taxonomy=\"" + node->getTaxa()
 				+ "\";AnnoDist=" + boost::lexical_cast<string>(node->getAnnoDist())

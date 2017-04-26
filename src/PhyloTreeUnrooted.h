@@ -956,6 +956,16 @@ public:
 	 */
 	DigitalSeq inferPostCS(const PTUNodePtr& node, const Matrix4Xd& count, double alpha) const;
 
+	/**
+	 * get posterial consensus sequence (CS) of a node using observed count and gap count
+	 * based on Dirichlet Density model and a given prior
+	 * @param node  node to infer CS
+	 * @param count  observed base frequency matrix for this node
+	 * @param gap  observed gap frequency for this node
+	 * @param alpha  consenstraction prameter of the Dirichlet Distribution as alpha = Sigma(alpha1..K)
+	 */
+	DigitalSeq inferPostCS(const PTUNodePtr& node, const Matrix4Xd& count, const RowVectorXd& gap, double alpha) const;
+
 private:
 	/** save msaId2node index to a binary output */
 	ostream& saveMSAIndex(ostream& out) const;

@@ -926,6 +926,22 @@ DigitalSeq PTUnrooted::inferPostCS(const PTUNodePtr& node, const Matrix4Xd& coun
 	return seq;
 }
 
+DigitalSeq PTUnrooted::inferPostCS(const PTUNodePtr& node, const Matrix4Xd& count, const RowVectorXd& gap, double alpha) const {
+	assert(count.cols() == csLen || gap.cols() == csLen);
+	/* construct the Dirichlet Prior */
+	const Matrix4Xd& loglikMat = loglik(node);
+	Matrix4Xd pri(4, csLen);
+	for(int j = 0; j < csLen; ++j)
+		pri.col(j) = inferWeight(loglikMat.col(j));
+	Matrix4Xd postP = alpha * pri + count;
+	postP.array().rowwise() /= postP.colwise().sum().array(); /* normalize postP by cols */
+	/* infer consensus */
+	DigitalSeq seq(AlphabetFactory::nuclAbc, boost::lexical_cast<string> (node->getId()));
+	for(int j = 0; j < csLen; ++j)
+		seq.push_back(count.col(j).sum() >= gap(j) ? inferState(postP.col(j)) : DegenAlphabet::GAP_BASE);
+	return seq;
+}
+
 } /* namespace EGriceLab */
 
 
