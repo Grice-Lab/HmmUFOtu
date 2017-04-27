@@ -25,7 +25,6 @@ using namespace EGriceLab;
 using namespace Eigen;
 
 /* default values */
-static const string ALPHABET = "dna";
 static const double DEFAULT_MAX_PDIST = 0.1;
 static const size_t DEFAULT_MAX_LOCATION = 50;
 static const int DEFAULT_MIN_Q = 0;
@@ -45,14 +44,14 @@ static const double UNASSIGNED_RATIO = EGriceLab::nan;
 
 static const string PLACE_HEADER = "id\tdesc\talignment\tbranch_id\tbranch_ratio\tCS_start\tCS_end\ttaxa_id\ttaxa_anno\tanno_dist\tloglik\tQ_value";
 
-/** struct to store potential placement location information for SE reads */
-struct SELoc {
+/** struct to store potential placement location information reads */
+struct PTLoc {
 	/** construct a location using given info */
-	SELoc(const PTUnrooted::PTUNodePtr& node, double dist)
+	PTLoc(const PTUnrooted::PTUNodePtr& node, double dist)
 	: node(node), dist(dist)
 	{ }
 
-	friend bool operator<(const SELoc& lhs, const SELoc& rhs);
+	friend bool operator<(const PTLoc& lhs, const PTLoc& rhs);
 
 	PTUnrooted::PTUNodePtr node;
 	double dist;
@@ -125,12 +124,7 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 		int& csStart, int& csEnd);
 
 /** Place a seq with known profile-HMM and Tree, modify the bestAnnotation accordingly */
-PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
-		double maxDist, int maxLocs, double maxError, int minQ);
-
-/** Place a mate of sequences with known profile-HMM and Tree, modify the bestAnnotation accordingly */
-PTPlacement placePE(const PTUnrooted& ptu, const DigitalSeq& fwdSeq, const DigitalSeq& revSeq,
-		int fwdStart, int fwdEnd, int revStart, int revEnd,
+PTPlacement placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
 		double maxDist, int maxLocs, double maxError, int minQ);
 
 int main(int argc, char* argv[]) {
@@ -140,7 +134,7 @@ int main(int argc, char* argv[]) {
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
 	string seqFmt;
 	ofstream of;
-	SeqIO alnOut;
+	SeqIO fwdIn, revIn, alnOut;
 	bool isAssembled = true; /* assume assembled seq if not paired-end */
 	BandedHMMP7::align_mode mode;
 
@@ -281,6 +275,19 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
+	fwdIn.open(fwdFn, AlphabetFactory::nuclAbc, seqFmt);
+	if(!fwdIn.is_open()) {
+		cerr << "Unable to open seq file '" << fwdFn << "': " << ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
+	if(!revFn.empty()) {
+		revIn.open(revFn, AlphabetFactory::nuclAbc, seqFmt);
+		if(!revIn.is_open()) {
+			cerr << "Unable to open mate file '" << revFn << "': " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+	}
+
 	/* open outputs */
 	if(!outFn.empty()) {
 		of.open(outFn.c_str());
@@ -349,39 +356,64 @@ int main(int argc, char* argv[]) {
 
 	/* process reads and output */
 	out << PLACE_HEADER << endl;
-	if(revFn.empty()) { /* single-ended */
-		SeqIO seqIn(fwdFn, ALPHABET, seqFmt);
-		while(seqIn.hasNext()) {
-			const PrimarySeq& read = seqIn.nextSeq();
-//			cerr << "Aligning read: " << read.getId() << endl;
-			int csStart = -1;
-			int csEnd = -1;
-			/* align the read */
-			const string& alnStr = alignSeq(hmm, csfm, read, seedLen, seedRegion, mode, csStart, csEnd);
-			assert(alnStr.length() == csLen);
+	while(fwdIn.hasNext() && (!revIn.is_open() || revIn.hasNext())) {
+		string aln;
+		string id;
+		string desc;
+		int csStart = -1;
+		int csEnd = -1;
+		if(!revIn.is_open()) { /* single ended */
+			const PrimarySeq& read = fwdIn.nextSeq();
+			// cerr << "Aligning read: " << read.getId() << endl;
+			aln = alignSeq(hmm, csfm, read, seedLen, seedRegion, mode, csStart, csEnd);
+			id = read.getId();
+			desc = read.getDesc();
+			assert(aln.length() == csLen);
+		}
+		else { /* paired end */
+			const PrimarySeq& fwdRead = fwdIn.nextSeq();
+			const PrimarySeq& revRead = revIn.nextSeq().revcom();
+			if(fwdRead.getId() != revRead.getId()) {
+				warningLog << "Paired-end read ID doesn't match at " << fwdRead.getId() << " vs. " << revRead.getId() << " , ignored" << endl;
+				continue;
+			}
+			id = fwdRead.getId();
+			desc = fwdRead.getDesc();
+			int fwdStart = -1;
+			int fwdEnd = -1;
+			int revStart = -1;
+			int revEnd = -1;
+			// cerr << "Aligning mate: " << fwdRead.getId() << endl;
+			const string& fwdAln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode, fwdStart, fwdEnd);
+			const string& revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode, revStart, revEnd);
+			assert(fwdAln.length() == csLen && revAln.length() == csLen);
+			if(!(fwdStart <= revStart && fwdEnd <= revEnd)) {
+				warningLog << "Potential incorrectly orientated read found at " << id << " , ignored" << endl;
+				continue;
+			}
+			csStart = fwdStart;
+			csEnd = revEnd;
+			aln = BandedHMMP7::mergeAlign(fwdAln, revAln);
+		}
 
-			if(alnOut.is_open()) /* write the alignment seq to output */
-				alnOut.writeSeq(PrimarySeq(abc, read.getId(), alnStr));
+		if(alnOut.is_open()) /* write the alignment seq to output */
+			alnOut.writeSeq(PrimarySeq(abc, id, aln));
 
-			DigitalSeq seq(abc, read.getId(), alnStr);
+		DigitalSeq seq(abc, id, aln);
 
-			/* place seq */
-			const PTPlacement& place = placeSE(ptu, seq, csStart, csEnd, maxDist, maxLocs, maxError, minQ);
+		/* place seq */
+		const PTPlacement& place = placeSeq(ptu, seq, csStart, csEnd, maxDist, maxLocs, maxError, minQ);
 
-			if(::isnan(place.loglik))
-				debugLog << "Unable to place read " << read.getId() << endl;
+		if(::isnan(place.loglik))
+			debugLog << "Unable to place read " << id << endl;
 
-			/* write main output */
-			out << read.getId() << "\t" << read.getDesc() << "\t" << alnStr << "\t"
+		/* write main output */
+		out << id << "\t" << desc << "\t" << aln << "\t"
 				<< place.getId() << "\t" << place.ratio << "\t"
 				<< csStart << "\t" << csEnd << "\t"
 				<< place.getTaxaId() << "\t" << place.getTaxaName() << "\t"
 				<< place.annoDist << "\t" << place.loglik << "\t" << place.q << endl;
-		}
-	} /* end single-ended */
-	else { /* paired-ended */
-
-	} /* end paired-ended */
+	} /* end each read/pair */
 
 	return 0;
 }
@@ -448,17 +480,17 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 	return hmm.buildGlobalAlign(seqVscore, seqVpath);
 }
 
-PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
+PTPlacement placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
 		double maxDist, int maxLocs, double maxError, int minQ) {
-	vector<SELoc> locs; /* candidate locations */
+	vector<PTLoc> locs; /* candidate locations */
 	/* get potential placement locations based on pDist to observed or inferred sequences */
 	const vector<PTUnrooted::PTUNodePtr>& id2node = ptu.getNodes();
 	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
 		if((*node)->isRoot())
 			continue;
-		double pDist = DNASubModel::pDist((*node)->getSeq(), seq);
+		double pDist = DNASubModel::pDist((*node)->getSeq(), seq, start, end);
 		if(pDist <= maxDist)
-			locs.push_back(SELoc(*node, pDist));
+			locs.push_back(PTLoc(*node, pDist));
 	}
 	std::sort(locs.begin(), locs.end()); /* sort by dist */
 	if(locs.size() > maxLocs)
@@ -472,11 +504,11 @@ PTPlacement placeSE(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int
 
 	/* estimate placement */
 	vector<PTPlacement> places;
-	for(vector<SELoc>::const_iterator loc = locs.begin(); loc != locs.end(); ++loc) {
+	for(vector<PTLoc>::const_iterator loc = locs.begin(); loc != locs.end(); ++loc) {
 		const PTUnrooted::PTUNodePtr& cNode = loc->node;
 		const PTUnrooted::PTUNodePtr& pNode = cNode->getParent();
 		double cDist = loc->dist;
-		double pDist = DNASubModel::pDist(pNode->getSeq(), seq);
+		double pDist = DNASubModel::pDist(pNode->getSeq(), seq, start, end);
 		double ratio = cDist / (cDist + pDist);
 		if(::isnan(ratio)) // unable to estimate the ratio
 			ratio = 0.5;
@@ -566,7 +598,7 @@ void PTPlacement::calcQValues(vector<PTPlacement>& places) {
 	}
 }
 
-inline bool operator<(const SELoc& lhs, const SELoc& rhs) {
+inline bool operator<(const PTLoc& lhs, const PTLoc& rhs) {
 	return lhs.dist < rhs.dist;
 }
 

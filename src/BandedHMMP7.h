@@ -718,6 +718,7 @@ private:
 		return string(L, padCh);
 	}
 
+public:
 	/** Merge two multiple aligments */
 	static string mergeAlign(const string& fwdAln, const string& revAln);
 
