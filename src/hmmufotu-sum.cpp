@@ -214,9 +214,9 @@ int main(int argc, char* argv[]) {
 			if(StringUtils::startsWith(line, "id"))
 				continue;
 			istringstream iss(line);
-			iss.ignore(maxIgnore, '\t').ignore(maxIgnore, '\t');
+			iss.ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t');
 			iss >> aln;
-			iss.ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t');
+			iss.ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t');
 			iss >> taxa_id;
 
 			if(taxa_id < 0)

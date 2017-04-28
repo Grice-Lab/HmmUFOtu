@@ -42,7 +42,7 @@ static const double UNASSIGNED_POSTQ = EGriceLab::nan;
 static const double UNASSIGNED_DIST = EGriceLab::nan;
 static const double UNASSIGNED_RATIO = EGriceLab::nan;
 
-static const string PLACE_HEADER = "id\tdesc\talignment\tbranch_id\tbranch_ratio\tCS_start\tCS_end\ttaxa_id\ttaxa_anno\tanno_dist\tloglik\tQ_value";
+static const string PLACE_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\tbranch_id\tbranch_ratio\ttaxa_id\ttaxa_anno\tanno_dist\tloglik\tQ_value";
 
 /** struct to store potential placement location information reads */
 struct PTLoc {
@@ -70,17 +70,15 @@ struct PTPlacement {
 	{ }
 
 	long getTaxaId() const {
-		return cNode == NULL || pNode == NULL ? UNASSIGNED_TAXAID : ratio <= 0.5 ? cNode->getId() : pNode->getId();
+		return ratio <= 0.5 ? cNode->getId() : pNode->getId();
 	}
 
 	string getTaxaName() const {
-		return cNode == NULL || pNode == NULL ? UNASSIGNED_TAXANAME : ratio <= 0.5 ? cNode->getAnno() : pNode->getAnno();
+		return ratio <= 0.5 ? cNode->getAnno() : pNode->getAnno();
 	}
 
 	string getId() const {
-		return cNode != NULL && pNode != NULL ?
-				boost::lexical_cast<string> (cNode->getId()) + "->" + boost::lexical_cast<string> (cNode->getParent()->getId())
-				: UNASSIGNED_ID;
+		return boost::lexical_cast<string> (cNode->getId()) + "->" + boost::lexical_cast<string> (cNode->getParent()->getId());
 	}
 
 	static void calcQValues(vector<PTPlacement>& places);
@@ -123,9 +121,17 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 		int seedLen, int seedRegion, BandedHMMP7::align_mode mode,
 		int& csStart, int& csEnd);
 
-/** Place a seq with known profile-HMM and Tree, modify the bestAnnotation accordingly */
-PTPlacement placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
-		double maxDist, int maxLocs, double maxError, int minQ);
+/** Get seed placement locations by checking p-dist between a given seq and observed/inferred seq of nodes */
+vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
+		int start, int end, double maxDist);
+
+/** Get estimated placement for a seq at given locations */
+vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
+		int start, int end, const vector<PTLoc>& locs);
+
+/** Get accurate placement for a seq given the estimated placements */
+vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
+		vector<PTPlacement>& places);
 
 int main(int argc, char* argv[]) {
 	/* variable declarations */
@@ -401,18 +407,47 @@ int main(int argc, char* argv[]) {
 
 		DigitalSeq seq(abc, id, aln);
 
-		/* place seq */
-		const PTPlacement& place = placeSeq(ptu, seq, csStart, csEnd, maxDist, maxLocs, maxError, minQ);
+		/* place seq with seed-estimate-place (SEP) algorithm */
+		/* get potential locs */
+		vector<PTLoc> locs = getSeed(ptu, seq, csStart, csEnd, maxDist);
+		if(locs.empty()) {
+			debugLog << "No seed loci found for placement at read " << id << " , ignored" << endl;
+			out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t" << aln << "\t"
+					<< UNASSIGNED_ID << "\t" << UNASSIGNED_RATIO << "\t"
+					<< UNASSIGNED_TAXAID << "\t" << UNASSIGNED_TAXANAME << "\t"
+					<< UNASSIGNED_DIST << "\t" << UNASSIGNED_LOGLIK << "\t" << UNASSIGNED_POSTQ << endl;
+			continue;
+		}
+		std::sort(locs.begin(), locs.end()); /* sort by dist */
+		if(locs.size() > maxLocs)
+			locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
+	//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
 
-		if(::isnan(place.loglik))
+		/* estimate placement */
+		vector<PTPlacement> places = estimateSeq(ptu, seq, csStart, csEnd, locs);
+		std::sort(places.rbegin(), places.rend()); /* sort places decently by estimated loglik */
+		double bestEstLoglik = places.front().loglik;
+		vector<PTPlacement>::const_iterator it;
+		for(it = places.begin(); it != places.end(); ++it) {
+			if(::abs(it->loglik - bestEstLoglik) > maxError)
+				break;
+		}
+		places.erase(it, places.end()); /* remove too bad placements */
+	//	cerr << "Retaining " << places.size() << " branches for accurate placement" << endl;
+
+		/* accurate placement */
+		placeSeq(ptu, seq, csStart, csEnd, places);
+		std::sort(places.rbegin(), places.rend());
+		const PTPlacement& bestPlace = places.front();
+
+		if(::isnan(bestPlace.loglik))
 			debugLog << "Unable to place read " << id << endl;
 
 		/* write main output */
-		out << id << "\t" << desc << "\t" << aln << "\t"
-				<< place.getId() << "\t" << place.ratio << "\t"
-				<< csStart << "\t" << csEnd << "\t"
-				<< place.getTaxaId() << "\t" << place.getTaxaName() << "\t"
-				<< place.annoDist << "\t" << place.loglik << "\t" << place.q << endl;
+		out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t" << aln << "\t"
+				<< bestPlace.getId() << "\t" << bestPlace.ratio << "\t"
+				<< bestPlace.getTaxaId() << "\t" << bestPlace.getTaxaName() << "\t"
+				<< bestPlace.annoDist << "\t" << bestPlace.loglik << "\t" << bestPlace.q << endl;
 	} /* end each read/pair */
 
 	return 0;
@@ -480,29 +515,23 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 	return hmm.buildGlobalAlign(seqVscore, seqVpath);
 }
 
-PTPlacement placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
-		double maxDist, int maxLocs, double maxError, int minQ) {
+vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
+		int start, int end, double maxDist) {
 	vector<PTLoc> locs; /* candidate locations */
 	/* get potential placement locations based on pDist to observed or inferred sequences */
-	const vector<PTUnrooted::PTUNodePtr>& id2node = ptu.getNodes();
-	for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		if((*node)->isRoot())
+	for(vector<PTUnrooted::PTUNodePtr>::size_type i = 0; i != ptu.numNodes(); ++i) {
+		const PTUnrooted::PTUNodePtr node = ptu.getNode(i);
+		if(node->isRoot())
 			continue;
-		double pDist = DNASubModel::pDist((*node)->getSeq(), seq, start, end);
+		double pDist = DNASubModel::pDist(node->getSeq(), seq, start, end);
 		if(pDist <= maxDist)
-			locs.push_back(PTLoc(*node, pDist));
+			locs.push_back(PTLoc(node, pDist));
 	}
-	std::sort(locs.begin(), locs.end()); /* sort by dist */
-	if(locs.size() > maxLocs)
-		locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
-//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
+	return locs;
+}
 
-	/* Use an estimate-placement algorithm */
-	if(locs.empty())
-		return PTPlacement(NULL, NULL, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_LOGLIK,
-				UNASSIGNED_DIST, UNASSIGNED_POSTQ);
-
-	/* estimate placement */
+vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
+		int start, int end, const vector<PTLoc>& locs) {
 	vector<PTPlacement> places;
 	for(vector<PTLoc>::const_iterator loc = locs.begin(); loc != locs.end(); ++loc) {
 		const PTUnrooted::PTUNodePtr& cNode = loc->node;
@@ -518,20 +547,12 @@ PTPlacement placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, in
 		double loglik = ptu.estimateSeq(seq, cNode, pNode, start, end, ratio, wnr);
 		places.push_back(PTPlacement(cNode, pNode, ratio, wnr, loglik));
 	}
-//	cerr << "Estimated placement at " << places.size() << " branches" << endl;
+	return places;
+}
 
-	/* filter potential places */
-	std::sort(places.rbegin(), places.rend()); /* sort places decently by esto,ated loglik */
-
-	double bestEstLoglik = places.front().loglik;
-	vector<PTPlacement>::const_iterator it;
-	for(it = places.begin(); it != places.end(); ++it) {
-		if(::abs(it->loglik - bestEstLoglik) > maxError)
-			break;
-	}
-	places.erase(it, places.end()); /* remove too bad placements */
-//	cerr << "Retaining " << places.size() << " branches for accurate placement" << endl;
-
+/** Get accurate placement for a seq given the estimated placements */
+vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
+		vector<PTPlacement>& places) {
 	/* accurate placement using estimated values */
 	for(vector<PTPlacement>::iterator place = places.begin(); place != places.end(); ++place) {
 		double ratio0 = place->ratio;
@@ -568,12 +589,9 @@ PTPlacement placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, in
 		place->wnr = wnr;
 		place->loglik = loglik;
 	} /* end each candidate placement */
-	std::sort(places.rbegin(), places.rend());
+	/* calculate placement q-values */
 	PTPlacement::calcQValues(places);
-
-	return places.front().q >= minQ ? places.front()
-			: PTPlacement(NULL, NULL, UNASSIGNED_RATIO, UNASSIGNED_DIST, UNASSIGNED_LOGLIK,
-					UNASSIGNED_DIST, UNASSIGNED_POSTQ);
+	return places;
 }
 
 void PTPlacement::calcQValues(vector<PTPlacement>& places) {
