@@ -25,6 +25,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
+#include <boost/iterator.hpp>
 
 #include "AlphabetFactory.h"
 #include "HmmUFOtuConst.h"
@@ -47,6 +49,7 @@ using Eigen::Matrix4d;
 using Eigen::RowVectorXd;
 using boost::shared_ptr;
 using boost::unordered_map;
+using boost::unordered_set;
 
 class PhyloTreeUnrooted; /* forward declaration */
 
@@ -766,13 +769,45 @@ public:
 	/**
 	 * write this PTUnrooted tree structure into output in given format
 	 */
-	ostream& writeTree(ostream& out, string format = "newick") const;
+	ostream& exportTree(ostream& out, string format = "newick") const {
+		return exportTree(out, root, format);
+	}
 
+	/**
+	 * write this PTUnrooted subtree structure into output in given format
+	 */
+	ostream& exportTree(ostream& out, const PTUNodePtr& node, string format = "newick") const;
+
+	/**
+	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
+	 */
+	template<typename V>
+	ostream& exportTree(ostream& out, const PTUNodePtr& node,
+			const boost::unordered_map<PTUNodePtr, V>& submap,
+			string format = "newick") const;
+
+	/**
+	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
+	 */
+	template<typename V>
+	ostream& exportTree(ostream& out,
+			const boost::unordered_map<PTUNodePtr, V>& submap,
+			string format = "newick") const {
+		return exportTree(out, root, submap, format);
+	}
+
+private:
 	/**
 	 * write this PTUnrooted tree structure with given root recursively into output in newick format
 	 */
-	ostream& writeTreeNewick(ostream& out, const PTUNodePtr& node) const;
+	ostream& exportTreeNewick(ostream& out, const PTUNodePtr& node) const;
 
+	/**
+	 * write this PTUnrooted tree structure with given root recursively into output in newick format, only write a subset of nodes
+	 */
+	ostream& exportTreeNewick(ostream& out, const PTUNodePtr& node, const boost::unordered_set<PTUNodePtr>& subset) const;
+
+public:
 	/**
 	 * get a transition dataset for parameter traning of a DNA Substitution model
 	 * using one of two well studied method, "Gojobori" or "Goldman"
@@ -1152,10 +1187,30 @@ inline size_t PTUnrooted::numLeaves() const {
 	return N;
 }
 
-inline ostream& PTUnrooted::writeTree(ostream& out, string format) const {
+inline ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& subtree, string format) const {
 	StringUtils::toLower(format);
 	if(format == "newick")
-		return writeTreeNewick(out, root) << ";";
+		return exportTreeNewick(out, subtree) << ";";
+	else {
+		errorLog << "Cannot write PTUnrooted tree, unknown tree format " << format << std::endl;
+		out.setstate(std::ios_base::failbit);
+		return out;
+	}
+}
+
+template<typename V>
+inline ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& node,
+		const boost::unordered_map<PTUNodePtr, V>& submap,
+		string format) const {
+	StringUtils::toLower(format);
+	/* expand subset to all their ancestors */
+	boost::unordered_set<PTUNodePtr> subset;
+	for(typename boost::unordered_map<PTUNodePtr, V>::const_iterator it = submap.begin(); it != submap.end(); ++it)
+		for(PTUNodePtr node = it->first; node != NULL; node = node->parent)
+			subset.insert(node);
+
+	if(format == "newick")
+		return exportTreeNewick(out, node, subset) << ";";
 	else {
 		errorLog << "Cannot write PTUnrooted tree, unknown tree format " << format << std::endl;
 		out.setstate(std::ios_base::failbit);

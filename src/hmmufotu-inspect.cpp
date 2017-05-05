@@ -129,7 +129,8 @@ int main(int argc, char* argv[]) {
 		cerr << "Unable to load Phylogenetic tree data '" << ptuFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
-	cout << "Phylogenetic tree loaded. Number of leaves: " << ptu.numLeaves()
+	cout << "Phylogenetic tree loaded. Root ID: " << ptu.getRoot()->getId()
+		 << " Number of leaves: " << ptu.numLeaves()
 		 << " Number of nodes: " << ptu.numNodes()
 		 << " Number of branches: " << ptu.numBranches()
 		 << " Number of sites: " << ptu.numAlignSites() << endl;

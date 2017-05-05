@@ -295,7 +295,8 @@ void PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j) {
 	}
 }
 
-ostream& PTUnrooted::writeTreeNewick(ostream& out, const PTUNodePtr& node) const {
+ostream& PTUnrooted::exportTreeNewick(ostream& out, const PTUNodePtr& node) const {
+	/* recursive write children */
 	bool first = true;
 	if(node->isRoot() || node->isInternal()) {
 		out << '(';
@@ -303,21 +304,52 @@ ostream& PTUnrooted::writeTreeNewick(ostream& out, const PTUNodePtr& node) const
 			if(!isChild(*child, node)) /* not a child */
 				continue;
 			out << (first ? "" : ",");
-			writeTreeNewick(out, *child);
+			exportTreeNewick(out, *child);
 			first = false;
 		}
 		out << ')';
 	}
-	if(StringUtils::containsWhiteSpace(node->name) || StringUtils::containsAny(node->name, NewickTree::INVALID_CHARS)) // name contains INVALID CHARS
-		out << "'" << node->name << "'";
-	else
-		out << node->name;
+	/* write self */
+	out << node->id;
 	double length = getBranchLength(node, node->parent);
 	if(length > 0)
 		out << ':' << length;
 
 	return out;
 }
+
+ostream& PTUnrooted::exportTreeNewick(ostream& out, const PTUNodePtr& node, const unordered_set<PTUNodePtr>& subset) const {
+	/* test whether any child is flagged */
+	bool flag = false;
+	for(std::vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
+		if(isChild(*child, node) && subset.find(*child) != subset.end()) {
+			flag = true;
+			break;
+		}
+	}
+	if(flag) {
+		bool first = true;
+		if(node->isRoot() || node->isInternal()) {
+			out << '(';
+		}
+		for(std::vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
+			if(!isChild(*child, node)) /* not a child */
+				continue;
+			out << (first ? "" : ",");
+			exportTreeNewick(out, *child, subset);
+			first = false;
+		}
+		out << ')';
+	}
+	/* write self */
+	out << node->id;
+	double length = getBranchLength(node, node->parent);
+	if(length > 0)
+		out << ':' << length;
+
+	return out;
+}
+
 
 vector<Matrix4d> PTUnrooted::getModelTraningSetGoldman() const {
 	debugLog << "Training data using Gojobori method" << endl;

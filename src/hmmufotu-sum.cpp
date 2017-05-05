@@ -60,10 +60,11 @@ void printIntro(void) {
  * Print the usage information
  */
 void printUsage(const string& progName) {
-	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <PLACE-FILE> [PLACE-FILE2 ...]> <-o OTU-OUT> <-c CS-OUT> [options]" << endl
+	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <PLACE-FILE> [PLACE-FILE2 ...]> <-o OTU-OUT> [options]" << endl
 		 << "PLACE-FILE      FILE           : placement file(s) from hmmufotu" << endl
 		 << "Options:    -o  FILE           : OTU summary output" << endl
-		 << "            -c  FILE           : OTU Consensus Sequence (CS) output" << endl
+		 << "            -c  FILE           : OTU Consensus Sequence (CS) alignment output" << endl
+		 << "            -t  FILE           : OTU tree output" << endl
 		 << "            -e|--effN  double  : effective number of sequences (pseudo-count) underlying the pre-built Phylogenetic Tree used for Bayesian inferencing OTUs' CS with Dirichelet Density models [" << DEFAULT_EFFN << "]" << endl
 		 << "            -n  INT      : minimum number of observed reads required to define an OTU across all samples [" << DEFAULT_MIN_NREAD << "]" << endl
 		 << "            -s  INT   : minimum number of observed samples required to define an OTU" << DEFAULT_MIN_NSAMPLE << "]" << endl
@@ -76,9 +77,9 @@ int main(int argc, char* argv[]) {
 	string dbName, msaFn, ptuFn;
 	vector<string> inFiles;
 	vector<string> sampleNames;
-	string otuFn, csFn;
+	string otuFn, csFn, treeFn;
 	ifstream msaIn, ptuIn;
-	ofstream otuOut;
+	ofstream otuOut, treeOut;
 	SeqIO csOut;
 
 	double effN = DEFAULT_EFFN;
@@ -111,10 +112,8 @@ int main(int argc, char* argv[]) {
 	}
 	if(cmdOpts.hasOpt("-c"))
 		csFn = cmdOpts.getOpt("-c");
-	else {
-		cerr << "-c must be specified" << endl;
-		return EXIT_FAILURE;
-	}
+	if(cmdOpts.hasOpt("-t"))
+		treeFn = cmdOpts.getOpt("-t");
 
 	if(cmdOpts.hasOpt("-e"))
 		effN = ::atof(cmdOpts.getOptStr("-e"));
@@ -167,10 +166,20 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	csOut.open(csFn, ALPHABET, ALIGN_FORMAT, SeqIO::WRITE);
-	if(!csOut.is_open()) {
-		cerr << "Unable to write to '" << csFn << "': " << ::strerror(errno) << endl;
-		return EXIT_FAILURE;
+	if(!csFn.empty()) {
+		csOut.open(csFn, ALPHABET, ALIGN_FORMAT, SeqIO::WRITE);
+		if(!csOut.is_open()) {
+			cerr << "Unable to write to '" << csFn << "': " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+	}
+
+	if(!treeFn.empty()) {
+		treeOut.open(treeFn.c_str());
+		if(!treeOut.is_open()) {
+			cerr << "Unable to write to '" << treeFn << "': " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
 	}
 
 	/* loading database files */
@@ -190,6 +199,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 	infoLog << "Phylogenetic tree loaded" << endl;
+	ptu.setRoot(0);
 
 	const DegenAlphabet* abc = msa.getAbc();
 	const int S = inFiles.size();
@@ -243,6 +253,7 @@ int main(int argc, char* argv[]) {
 		const PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
 		if(otuData.find(node) == otuData.end())
 			continue;
+		otuData.begin();
 		NodeObsData& data = otuData.find(node)->second;
 		int nRead = data.count.sum();
 		int nSample = (data.count.array() > 0).count();
@@ -253,12 +264,19 @@ int main(int argc, char* argv[]) {
 		for(int s = 0; s < S; ++s)
 			otuOut << data.count(s) << "\t";
 		otuOut << node->getTaxa() << endl;
-		DigitalSeq seq = ptu.inferPostCS(node, data.freq, data.gap, effN);
-		string desc = "DBName="
-				+ dbName + ";Taxonomy=\"" + node->getTaxa()
-				+ "\";AnnoDist=" + boost::lexical_cast<string>(node->getAnnoDist())
-				+ ";ReadCount=" + boost::lexical_cast<string>(nRead)
-				+ ";SampleHits=" + boost::lexical_cast<string>(nSample);
-		csOut.writeSeq(PrimarySeq(seq.getAbc(), seq.getName(), seq.toString(), desc));
+
+		if(csOut.is_open()) {
+			DigitalSeq seq = ptu.inferPostCS(node, data.freq, data.gap, effN);
+			string desc = "DBName="
+					+ dbName + ";Taxonomy=\"" + node->getTaxa()
+					+ "\";AnnoDist=" + boost::lexical_cast<string>(node->getAnnoDist())
+					+ ";ReadCount=" + boost::lexical_cast<string>(nRead)
+					+ ";SampleHits=" + boost::lexical_cast<string>(nSample);
+			csOut.writeSeq(PrimarySeq(seq.getAbc(), seq.getName(), seq.toString(), desc));
+		}
 	}
+
+	/* write the tree */
+	if(treeOut.is_open())
+		ptu.exportTree(treeOut, otuData, "newick");
 }

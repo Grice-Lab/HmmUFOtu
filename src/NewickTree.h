@@ -38,8 +38,12 @@ typedef NewickTree NT;
 struct NewickTree {
 public:
 	/* constructors */
-	/* Default constructor */
+	/** Default constructor */
 	NewickTree() : length(0) { }
+
+	/** Construct a Newick tree node with given name and an optional parent distance */
+	explicit NewickTree(const string& name, double length = 0) : name(name), length(length)
+	{ }
 
 	/* Member methods */
 	/** test whether this node is named */
@@ -65,6 +69,11 @@ public:
 	/** remove all offspring nodes of this subtree */
 	void clear() {
 		children.clear();
+	}
+
+	/** add a child to this NT node */
+	void addChild(const NT& node) {
+		children.push_back(node);
 	}
 
 	/**

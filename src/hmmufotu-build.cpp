@@ -306,7 +306,7 @@ int main(int argc, char* argv[]) {
 	tree.initLeafMat();
 
 	/* make initial evaluation at the original root */
-	const PTUnrooted::PTUNodePtr& root = tree.getRoot();
+	const PTUnrooted::PTUNodePtr root = tree.getRoot();
 	if(!isVar)
 		infoLog << "Evaluating Phylogenetic Tree at root id: " << root->getId() << endl;
 	else
