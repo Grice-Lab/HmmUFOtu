@@ -18,6 +18,10 @@
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/lexical_cast.hpp>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "HmmUFOtu.h"
 
 using namespace std;
@@ -34,6 +38,7 @@ static const int MAX_SEED_LEN = 25;
 static const int MIN_SEED_LEN = 15;
 static const int DEFAULT_SEED_REGION = 50;
 static const double DEFAULT_MAX_PLACE_ERROR = 20;
+static const int DEFAULT_NUM_THREADS = 1;
 static const long UNASSIGNED_TAXAID = -1;
 static const string UNASSIGNED_TAXANAME = "UNASSIGNED";
 static const double UNASSIGNED_LOGLIK = EGriceLab::nan;
@@ -60,7 +65,7 @@ struct PTLoc {
 /** struct to store placement information */
 struct PTPlacement {
 //	/** default constructor */
-//	PTPlacement() { }
+	PTPlacement() { }
 
 	/** construct a placement with basic info and optionally auxilary info */
 	PTPlacement(const PTUnrooted::PTUNodePtr& cNode, const PTUnrooted::PTUNodePtr& pNode,
@@ -112,6 +117,9 @@ void printUsage(const string& progName) {
 		 << "            -e  DBL            : max placement error between fast estimation and accurate placement [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
 		 << "            -q  INT            : minimum Q-value (negative log10 of posterior placement probability) required for a read placement [" << DEFAULT_MIN_Q << "]" << endl
 		 << "            -S|--seed  INT     : random seed used for banded HMM seed searches, for debug purpose" << endl
+#ifdef _OPENMP
+		 << "            -p|--process INT   : number of threads/cpus used for parallel processing" << endl
+#endif
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
@@ -150,6 +158,7 @@ int main(int argc, char* argv[]) {
 	int maxLocs = DEFAULT_MAX_LOCATION;
 	double maxError = DEFAULT_MAX_PLACE_ERROR;
 	int minQ = DEFAULT_MIN_Q;
+	int nThreads = DEFAULT_NUM_THREADS;
 
 	unsigned seed = time(NULL); // using time as default seed
 
@@ -207,6 +216,13 @@ int main(int argc, char* argv[]) {
 		seed = ::atoi(cmdOpts.getOptStr("--seed"));
 	srand(seed);
 
+#ifdef _OPENMP
+	if(cmdOpts.hasOpt("-p"))
+		nThreads = ::atoi(cmdOpts.getOptStr("-p"));
+	if(cmdOpts.hasOpt("--process"))
+		nThreads = ::atoi(cmdOpts.getOptStr("--process"));
+#endif
+
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
@@ -246,6 +262,12 @@ int main(int argc, char* argv[]) {
 		cerr << "-e must be positive" << endl;
 		return EXIT_FAILURE;
 	}
+#ifdef _OPENMP
+	if(!(nThreads > 0)) {
+		cerr << "-p|--process must be positive" << endl;
+		return EXIT_FAILURE;
+	}
+#endif
 
 	/* set filenames */
 	msaFn = dbName + MSA_FILE_SUFFIX;

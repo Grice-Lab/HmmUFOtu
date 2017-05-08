@@ -67,7 +67,7 @@ hmmufotu_train_sm_LDFLAGS = -static
 hmmufotu_train_hmm_SOURCES = hmmufotu-train-hmm.cpp
 hmmufotu_train_hmm_LDADD = libHmmUFOtu_hmm.a math/libEGMath.a libHmmUFOtu_common.a
 hmmufotu_train_hmm_LDFLAGS = -static
-hmmufotu_train_hmm_CPPFLAGS = -DDM_DATADIR=\"$(pkgdatadir)\"
+hmmufotu_train_hmm_CPPFLAGS = $(AM_CPPFLAGS) -DDM_DATADIR=\"$(pkgdatadir)\"
 
 hmmufotu_sim_SOURCES = hmmufotu-sim.cpp
 hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
@@ -81,7 +81,7 @@ hmmufotu_build_SOURCES = hmmufotu-build.cpp
 hmmufotu_build_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_build_LDFLAGS = -static
-hmmufotu_build_CPPFLAGS = -DDM_DATADIR=\"$(pkgdatadir)\" -DSM_DATADIR=\"$(pkgdatadir)\"
+hmmufotu_build_CPPFLAGS = $(AM_CPPFLAGS) -DDM_DATADIR=\"$(pkgdatadir)\" -DSM_DATADIR=\"$(pkgdatadir)\"
 
 hmmufotu_inspect_SOURCES = hmmufotu-inspect.cpp
 hmmufotu_inspect_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
@@ -89,9 +89,14 @@ libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_inspect_LDFLAGS = -static
 
 hmmufotu_SOURCES = hmmufotu.cpp
-hmmufotu_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
+hmmufotu_CPPFLAGS = $(AM_CFLAGS)
+hmmufotu_CPPFLAGS += $(OPENMP_CFLAGS)
+hmmufotu_CXXFLAGS = $(AM_CXXFLAGS)
+hmmufotu_CXXFLAGS += $(OPENMP_CXXFLAGS)
+hmmufotu_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a math/libEGMath.a libHmmUFOtu_common.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_LDFLAGS = -static
+hmmufotu_LDFLAGS += $(OPENMP_CXXFLAGS)
 
 hmmufotu_sum_SOURCES = hmmufotu-sum.cpp
 hmmufotu_sum_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
