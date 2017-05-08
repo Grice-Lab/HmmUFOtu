@@ -267,6 +267,7 @@ int main(int argc, char* argv[]) {
 		cerr << "-p|--process must be positive" << endl;
 		return EXIT_FAILURE;
 	}
+	omp_set_num_threads(nThreads);
 #endif
 
 	/* set filenames */
@@ -541,8 +542,8 @@ vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 		int start, int end, double maxDist) {
 	vector<PTLoc> locs; /* candidate locations */
 	/* get potential placement locations based on pDist to observed or inferred sequences */
-	for(vector<PTUnrooted::PTUNodePtr>::size_type i = 0; i != ptu.numNodes(); ++i) {
-		const PTUnrooted::PTUNodePtr node = ptu.getNode(i);
+	for(vector<PTUnrooted::PTUNodePtr>::size_type i = 0; i < ptu.numNodes(); ++i) {
+		PTUnrooted::PTUNodePtr node = ptu.getNode(i);
 		if(node->isRoot())
 			continue;
 		double pDist = DNASubModel::pDist(node->getSeq(), seq, start, end);
@@ -555,7 +556,7 @@ vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
 		int start, int end, const vector<PTLoc>& locs) {
 	vector<PTPlacement> places;
-	for(vector<PTLoc>::const_iterator loc = locs.begin(); loc != locs.end(); ++loc) {
+	for(vector<PTLoc>::const_iterator loc = locs.begin(); loc < locs.end(); ++loc) {
 		const PTUnrooted::PTUNodePtr& cNode = loc->node;
 		const PTUnrooted::PTUNodePtr& pNode = cNode->getParent();
 		double cDist = loc->dist;
