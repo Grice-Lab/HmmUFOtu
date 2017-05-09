@@ -43,6 +43,11 @@ JC69.cpp \
 DiscreteGammaModel.cpp \
 DNASubModelFactory.cpp
 
+#libHmmUFOtu_phylo_CPPFLAGS = $(AM_CFLAGS)
+#libHmmUFOtu_phylo_CPPFLAGS += $(OPENMP_CFLAGS)
+#libHmmUFOtu_phylo_CXXFLAGS = $(AM_CXXFLAGS)
+#libHmmUFOtu_phylo_CXXFLAGS += $(OPENMP_CXXFLAGS)
+
 # Build the executables
 bin_PROGRAMS = \
 hmmufotu \
@@ -91,12 +96,12 @@ hmmufotu_inspect_LDFLAGS = -static
 hmmufotu_SOURCES = hmmufotu.cpp
 hmmufotu_CPPFLAGS = $(AM_CFLAGS)
 hmmufotu_CPPFLAGS += $(OPENMP_CFLAGS)
-hmmufotu_CXXFLAGS = $(AM_CXXFLAGS)
-hmmufotu_CXXFLAGS += $(OPENMP_CXXFLAGS)
+hmmufotu_CFLAGS = $(AM_CFLAGS)
+hmmufotu_CFLAGS += $(OPENMP_CFLAGS)
 hmmufotu_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a math/libEGMath.a libHmmUFOtu_common.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_LDFLAGS = -static
-hmmufotu_LDFLAGS += $(OPENMP_CXXFLAGS)
+hmmufotu_LDFLAGS += $(OPENMP_CFLAGS)
 
 hmmufotu_sum_SOURCES = hmmufotu-sum.cpp
 hmmufotu_sum_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a

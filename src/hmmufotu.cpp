@@ -405,7 +405,7 @@ int main(int argc, char* argv[]) {
 				}
 			}
 
-#pragma omp task shared(hmm, csfm) /* task begin */
+#pragma omp task shared(hmm, csfm, ptu) /* task begin */
 			{
 				int csStart = -1;
 				int csEnd = -1;
