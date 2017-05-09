@@ -260,18 +260,21 @@ Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
 	if(isEvaluated(node, node->parent, j))
 		return getBranchLoglik(node, node->parent, j);
 
-	Vector4d loglikVec;
-	if(dG == NULL)
-		loglikVec = loglik(node, j, 1); // using fixed rate
-	else {
+	if(dG == NULL) {
+		const Vector4d& loglikVec = loglik(node, j, 1); // using fixed rate
+		/* cache this conditional loglik */
+		setBranchLoglik(node, node->parent, j, loglikVec);
+		return loglikVec;
+	}
+	else { /* use Gamma model */
 		Matrix4Xd loglikMat(4, dG->getK());
 		for(int k = 0; k < dG->getK(); ++k)
 			loglikMat.col(k) = loglik(node, j, dG->rate(k));
-		loglikVec = row_mean_exp_scaled(loglikMat); // use average of DiscreteGammaModel rate
+		const Vector4d& loglikVec = row_mean_exp_scaled(loglikMat); // use average of DiscreteGammaModel rate
+		/* cache this conditional loglik */
+		setBranchLoglik(node, node->parent, j, loglikVec);
+		return loglikVec;
 	}
-	/* cache this conditional loglik */
-	setBranchLoglik(node, node->parent, j, loglikVec);
-	return loglikVec;
 }
 
 Matrix4Xd PTUnrooted::loglik(const PTUNodePtr& node) {

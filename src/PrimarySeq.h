@@ -29,6 +29,8 @@ class PrimarySeq {
 
 public:
 	/* constructors */
+	/** default constructor */
+	PrimarySeq() : abc(NULL) { }
 	/**
 	 * Construct a PrimarySeq with given alphabet, id, seq and optionally description
 	 * @param alphabet  name of the alphabet
@@ -232,7 +234,7 @@ public:
 
 
 private:
-	const DegenAlphabet* abc; /* alphabet is not changeable after initialization */
+	const DegenAlphabet* abc;
 	string id;
 	string seq;
 	string desc;
