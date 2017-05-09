@@ -719,8 +719,12 @@ private:
 	}
 
 public:
-	/** Merge two multiple aligments */
+	/** Merge two multiple alignments */
 	static string mergeAlign(const string& fwdAln, const string& revAln);
+
+	/** Merge two multiple alignments */
+	static string& mergeWith(string& fwdAln, const string& revAln);
+
 
 //public:
 	/* non-member operators */

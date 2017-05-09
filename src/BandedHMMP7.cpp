@@ -1232,4 +1232,12 @@ string BandedHMMP7::mergeAlign(const string& fwdAln, const string& revAln) {
 	return mergedAln;
 }
 
+string& BandedHMMP7::mergeWith(string& fwdAln, const string& revAln) {
+	assert(fwdAln.length() == revAln.length());
+	for(string::size_type i = 0; i < fwdAln.length(); ++i)
+		if(fwdAln[i] == PAD_SYM && revAln[i] != PAD_SYM) /* use fwd symbol as primary source */
+			fwdAln[i] = revAln[i];
+	return fwdAln;
+}
+
 } /* namespace EGriceLab */

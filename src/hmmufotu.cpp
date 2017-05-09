@@ -89,6 +89,7 @@ struct PTPlacement {
 	static void calcQValues(vector<PTPlacement>& places);
 
 	friend bool operator<(const PTPlacement& lhs, const PTPlacement& rhs);
+	friend ostream& operator<<(ostream& out, const PTPlacement& place);
 
 	PTUnrooted::PTUNodePtr cNode;
 	PTUnrooted::PTUNodePtr pNode;
@@ -386,75 +387,56 @@ int main(int argc, char* argv[]) {
 	/* process reads and output */
 	out << PLACE_HEADER << endl;
 #pragma omp parallel
-#pragma omp master /* use master thread to IO and align reads */
+#pragma omp master /* use master thread to do un-threaded-IO */
 	{
 		while(fwdIn.hasNext() && (!revIn.is_open() || revIn.hasNext())) {
-			string aln;
 			string id;
 			string desc;
-			int csStart = -1;
-			int csEnd = -1;
 			PrimarySeq fwdRead, revRead;
-			if(!revIn.is_open()) { /* single ended */
-				//#pragma omp critical(readSeq)
-				fwdRead = fwdIn.nextSeq();
-				// cerr << "Aligning read: " << read.getId() << endl;
-				aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode, csStart, csEnd);
-				id = fwdRead.getId();
-				desc = fwdRead.getDesc();
-				assert(aln.length() == csLen);
-			}
-			else { /* paired end */
-				//#pragma omp critical(readSeq)
-				//			{
-				fwdRead = fwdIn.nextSeq();
+
+			fwdRead = fwdIn.nextSeq();
+			id = fwdRead.getId();
+			desc = fwdRead.getDesc();
+			if(revIn.is_open()) { /* paired-ended */
 				revRead = revIn.nextSeq().revcom();
-				//			}
 				if(fwdRead.getId() != revRead.getId()) {
-					//#pragma omp critical(warning)
-					warningLog << "Paired-end read ID doesn't match at " << fwdRead.getId() << " vs. " << revRead.getId() << endl;
-					//				continue;
+					warningLog << "Warning: Paired-end read doesn't match at " << fwdRead.getId() << " vs. " << revRead.getId() << endl;
+					continue;
 				}
-				id = fwdRead.getId();
-				desc = fwdRead.getDesc();
-				int fwdStart = -1;
-				int fwdEnd = -1;
-				int revStart = -1;
-				int revEnd = -1;
-				// cerr << "Aligning mate: " << fwdRead.getId() << endl;
-				const string& fwdAln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode, fwdStart, fwdEnd);
-				const string& revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode, revStart, revEnd);
-				assert(fwdAln.length() == csLen && revAln.length() == csLen);
-				if(!(fwdStart <= revStart && fwdEnd <= revEnd)) {
-#pragma omp critical(warning)
-					warningLog << "Potential incorrectly oriented read found at " << id << endl;
-					//				continue;
-				}
-				csStart = ::min(fwdStart, revStart);
-				csEnd = ::min(fwdEnd, revEnd);
-				aln = BandedHMMP7::mergeAlign(fwdAln, revAln);
 			}
 
-			//#pragma omp critical(writeSeq)
-			//		{
-			if(alnOut.is_open()) /* write the alignment seq to output */
-				alnOut.writeSeq(PrimarySeq(abc, id, aln));
-			//		}
-
-			DigitalSeq seq(abc, id, aln);
-#pragma omp task shared(ptu, out)
+#pragma omp task shared(hmm, csfm) /* task begin */
 			{
+				int csStart = -1;
+				int csEnd = -1;
+				string alnMsg, placeMsg; /* error messages */
+				string aln;
+				PTPlacement bestPlace;
+
+				/* align fwdRead */
+				aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode, csStart, csEnd);
+				assert(aln.length() == csLen);
+				if(revIn.is_open()) { /* align revRead */
+					// cerr << "Aligning mate: " << fwdRead.getId() << endl;
+					int revStart = -1;
+					int revEnd = -1;
+					const string& revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode, revStart, revEnd);
+					assert(revAln.length() == csLen);
+					if(!(csStart <= revStart && csEnd <= revEnd))
+						alnMsg = "Potential incorrectly oriented read found";
+
+					/* update alignment */
+					csStart = ::min(csStart, revStart);
+					csEnd = ::min(csEnd, revEnd);
+					BandedHMMP7::mergeWith(aln, revAln);
+				}
+
+				DigitalSeq seq(abc, id, aln);
 				/* place seq with seed-estimate-place (SEP) algorithm */
 				/* get potential locs */
 				vector<PTLoc> locs = getSeed(ptu, seq, csStart, csEnd, maxDist);
 				if(locs.empty()) {
-#pragma omp critical(debug)
-					debugLog << "No seed loci found for placement at read " << id << endl;
-#pragma omp critical(writeAln)
-					out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t" << aln << "\t"
-							<< UNASSIGNED_ID << "\t" << UNASSIGNED_RATIO << "\t"
-							<< UNASSIGNED_TAXAID << "\t" << UNASSIGNED_TAXANAME << "\t"
-							<< UNASSIGNED_DIST << "\t" << UNASSIGNED_LOGLIK << "\t" << UNASSIGNED_POSTQ << endl;
+					placeMsg = "No seed loci found for placement";
 				}
 				else {
 					std::sort(locs.begin(), locs.end()); /* sort by dist */
@@ -477,19 +459,25 @@ int main(int argc, char* argv[]) {
 					/* accurate placement */
 					placeSeq(ptu, seq, csStart, csEnd, places);
 					std::sort(places.rbegin(), places.rend());
-					const PTPlacement& bestPlace = places.front();
-
-					if(::isnan(bestPlace.loglik))
-#pragma omp critical(debug)
-						debugLog << "Unable to place read " << id << endl;
-
-					/* write main output */
-#pragma omp critical(writeAln)
-					out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t" << aln << "\t"
-							<< bestPlace.getId() << "\t" << bestPlace.ratio << "\t"
-							<< bestPlace.getTaxaId() << "\t" << bestPlace.getTaxaName() << "\t"
-							<< bestPlace.annoDist << "\t" << bestPlace.loglik << "\t" << bestPlace.q << endl;
+					bestPlace = places.front();
 				}
+
+				if(!alnMsg.empty())
+#pragma omp critical(warning)
+					warningLog << "Warning: " << alnMsg << " at " << id << endl;
+
+				if(alnOut.is_open()) /* write the alignment seq to output */
+#pragma omp critical(writeAln)
+					alnOut.writeSeq(PrimarySeq(abc, id, aln));
+
+				if(!placeMsg.empty())
+#pragma omp critical(warning)
+					warningLog << "Warning: " << placeMsg << " at " << id << endl;
+
+				/* write main output */
+#pragma omp critical(writePlace)
+				out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t" << aln << "\t"
+						<< bestPlace << endl;
 			} /* end task */
 		} /* end each read/pair */
 #pragma omp taskwait
@@ -666,5 +654,17 @@ inline bool operator<(const PTLoc& lhs, const PTLoc& rhs) {
 
 inline bool operator<(const PTPlacement& lhs, const PTPlacement& rhs) {
 	return lhs.loglik < rhs.loglik;
+}
+
+inline ostream& operator<<(ostream& out, const PTPlacement& place) {
+	if(place.cNode != NULL && place.pNode != NULL)
+		out << place.getId() << "\t" << place.ratio << "\t"
+		<< place.getTaxaId() << "\t" << place.getTaxaName() << "\t"
+		<< place.annoDist << "\t" << place.loglik << "\t" << place.q;
+	else
+		out << UNASSIGNED_ID << "\t" << UNASSIGNED_RATIO << "\t"
+		<< UNASSIGNED_TAXAID << "\t" << UNASSIGNED_TAXANAME << "\t"
+		<< UNASSIGNED_DIST << "\t" << UNASSIGNED_LOGLIK << "\t" << UNASSIGNED_POSTQ;
+	return out;
 }
 
