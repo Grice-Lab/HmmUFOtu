@@ -385,94 +385,115 @@ int main(int argc, char* argv[]) {
 
 	/* process reads and output */
 	out << PLACE_HEADER << endl;
-	while(fwdIn.hasNext() && (!revIn.is_open() || revIn.hasNext())) {
-		string aln;
-		string id;
-		string desc;
-		int csStart = -1;
-		int csEnd = -1;
-		if(!revIn.is_open()) { /* single ended */
-			const PrimarySeq& read = fwdIn.nextSeq();
-			// cerr << "Aligning read: " << read.getId() << endl;
-			aln = alignSeq(hmm, csfm, read, seedLen, seedRegion, mode, csStart, csEnd);
-			id = read.getId();
-			desc = read.getDesc();
-			assert(aln.length() == csLen);
-		}
-		else { /* paired end */
-			const PrimarySeq& fwdRead = fwdIn.nextSeq();
-			const PrimarySeq& revRead = revIn.nextSeq().revcom();
-			if(fwdRead.getId() != revRead.getId()) {
-				warningLog << "Paired-end read ID doesn't match at " << fwdRead.getId() << " vs. " << revRead.getId() << " , ignored" << endl;
-				continue;
+#pragma omp parallel
+#pragma omp master /* use master thread to IO and align reads */
+	{
+		while(fwdIn.hasNext() && (!revIn.is_open() || revIn.hasNext())) {
+			string aln;
+			string id;
+			string desc;
+			int csStart = -1;
+			int csEnd = -1;
+			PrimarySeq fwdRead, revRead;
+			if(!revIn.is_open()) { /* single ended */
+				//#pragma omp critical(readSeq)
+				fwdRead = fwdIn.nextSeq();
+				// cerr << "Aligning read: " << read.getId() << endl;
+				aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode, csStart, csEnd);
+				id = fwdRead.getId();
+				desc = fwdRead.getDesc();
+				assert(aln.length() == csLen);
 			}
-			id = fwdRead.getId();
-			desc = fwdRead.getDesc();
-			int fwdStart = -1;
-			int fwdEnd = -1;
-			int revStart = -1;
-			int revEnd = -1;
-			// cerr << "Aligning mate: " << fwdRead.getId() << endl;
-			const string& fwdAln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode, fwdStart, fwdEnd);
-			const string& revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode, revStart, revEnd);
-			assert(fwdAln.length() == csLen && revAln.length() == csLen);
-			if(!(fwdStart <= revStart && fwdEnd <= revEnd)) {
-				warningLog << "Potential incorrectly orientated read found at " << id << " , ignored" << endl;
-				continue;
+			else { /* paired end */
+				//#pragma omp critical(readSeq)
+				//			{
+				fwdRead = fwdIn.nextSeq();
+				revRead = revIn.nextSeq().revcom();
+				//			}
+				if(fwdRead.getId() != revRead.getId()) {
+					//#pragma omp critical(warning)
+					warningLog << "Paired-end read ID doesn't match at " << fwdRead.getId() << " vs. " << revRead.getId() << endl;
+					//				continue;
+				}
+				id = fwdRead.getId();
+				desc = fwdRead.getDesc();
+				int fwdStart = -1;
+				int fwdEnd = -1;
+				int revStart = -1;
+				int revEnd = -1;
+				// cerr << "Aligning mate: " << fwdRead.getId() << endl;
+				const string& fwdAln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode, fwdStart, fwdEnd);
+				const string& revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode, revStart, revEnd);
+				assert(fwdAln.length() == csLen && revAln.length() == csLen);
+				if(!(fwdStart <= revStart && fwdEnd <= revEnd)) {
+#pragma omp critical(warning)
+					warningLog << "Potential incorrectly oriented read found at " << id << endl;
+					//				continue;
+				}
+				csStart = ::min(fwdStart, revStart);
+				csEnd = ::min(fwdEnd, revEnd);
+				aln = BandedHMMP7::mergeAlign(fwdAln, revAln);
 			}
-			csStart = fwdStart;
-			csEnd = revEnd;
-			aln = BandedHMMP7::mergeAlign(fwdAln, revAln);
-		}
 
-		if(alnOut.is_open()) /* write the alignment seq to output */
-			alnOut.writeSeq(PrimarySeq(abc, id, aln));
+			//#pragma omp critical(writeSeq)
+			//		{
+			if(alnOut.is_open()) /* write the alignment seq to output */
+				alnOut.writeSeq(PrimarySeq(abc, id, aln));
+			//		}
 
-		DigitalSeq seq(abc, id, aln);
+			DigitalSeq seq(abc, id, aln);
+#pragma omp task shared(ptu, out)
+			{
+				/* place seq with seed-estimate-place (SEP) algorithm */
+				/* get potential locs */
+				vector<PTLoc> locs = getSeed(ptu, seq, csStart, csEnd, maxDist);
+				if(locs.empty()) {
+#pragma omp critical(debug)
+					debugLog << "No seed loci found for placement at read " << id << endl;
+#pragma omp critical(writeAln)
+					out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t" << aln << "\t"
+							<< UNASSIGNED_ID << "\t" << UNASSIGNED_RATIO << "\t"
+							<< UNASSIGNED_TAXAID << "\t" << UNASSIGNED_TAXANAME << "\t"
+							<< UNASSIGNED_DIST << "\t" << UNASSIGNED_LOGLIK << "\t" << UNASSIGNED_POSTQ << endl;
+				}
+				else {
+					std::sort(locs.begin(), locs.end()); /* sort by dist */
+					if(locs.size() > maxLocs)
+						locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
+					//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
 
-		/* place seq with seed-estimate-place (SEP) algorithm */
-		/* get potential locs */
-		vector<PTLoc> locs = getSeed(ptu, seq, csStart, csEnd, maxDist);
-		if(locs.empty()) {
-			debugLog << "No seed loci found for placement at read " << id << " , ignored" << endl;
-			out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t" << aln << "\t"
-					<< UNASSIGNED_ID << "\t" << UNASSIGNED_RATIO << "\t"
-					<< UNASSIGNED_TAXAID << "\t" << UNASSIGNED_TAXANAME << "\t"
-					<< UNASSIGNED_DIST << "\t" << UNASSIGNED_LOGLIK << "\t" << UNASSIGNED_POSTQ << endl;
-			continue;
-		}
-		std::sort(locs.begin(), locs.end()); /* sort by dist */
-		if(locs.size() > maxLocs)
-			locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
-	//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
+					/* estimate placement */
+					vector<PTPlacement> places = estimateSeq(ptu, seq, csStart, csEnd, locs);
+					std::sort(places.rbegin(), places.rend()); /* sort places decently by estimated loglik */
+					double bestEstLoglik = places.front().loglik;
+					vector<PTPlacement>::const_iterator it;
+					for(it = places.begin(); it != places.end(); ++it) {
+						if(::abs(it->loglik - bestEstLoglik) > maxError)
+							break;
+					}
+					places.erase(it, places.end()); /* remove too bad placements */
+					//	cerr << "Retaining " << places.size() << " branches for accurate placement" << endl;
 
-		/* estimate placement */
-		vector<PTPlacement> places = estimateSeq(ptu, seq, csStart, csEnd, locs);
-		std::sort(places.rbegin(), places.rend()); /* sort places decently by estimated loglik */
-		double bestEstLoglik = places.front().loglik;
-		vector<PTPlacement>::const_iterator it;
-		for(it = places.begin(); it != places.end(); ++it) {
-			if(::abs(it->loglik - bestEstLoglik) > maxError)
-				break;
-		}
-		places.erase(it, places.end()); /* remove too bad placements */
-	//	cerr << "Retaining " << places.size() << " branches for accurate placement" << endl;
+					/* accurate placement */
+					placeSeq(ptu, seq, csStart, csEnd, places);
+					std::sort(places.rbegin(), places.rend());
+					const PTPlacement& bestPlace = places.front();
 
-		/* accurate placement */
-		placeSeq(ptu, seq, csStart, csEnd, places);
-		std::sort(places.rbegin(), places.rend());
-		const PTPlacement& bestPlace = places.front();
+					if(::isnan(bestPlace.loglik))
+#pragma omp critical(debug)
+						debugLog << "Unable to place read " << id << endl;
 
-		if(::isnan(bestPlace.loglik))
-			debugLog << "Unable to place read " << id << endl;
-
-		/* write main output */
-		out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t" << aln << "\t"
-				<< bestPlace.getId() << "\t" << bestPlace.ratio << "\t"
-				<< bestPlace.getTaxaId() << "\t" << bestPlace.getTaxaName() << "\t"
-				<< bestPlace.annoDist << "\t" << bestPlace.loglik << "\t" << bestPlace.q << endl;
-	} /* end each read/pair */
-
+					/* write main output */
+#pragma omp critical(writeAln)
+					out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t" << aln << "\t"
+							<< bestPlace.getId() << "\t" << bestPlace.ratio << "\t"
+							<< bestPlace.getTaxaId() << "\t" << bestPlace.getTaxaName() << "\t"
+							<< bestPlace.annoDist << "\t" << bestPlace.loglik << "\t" << bestPlace.q << endl;
+				}
+			} /* end task */
+		} /* end each read/pair */
+#pragma omp taskwait
+	} /* end parallel */
 	return 0;
 }
 
