@@ -14,7 +14,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
-#include <ctime>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/lexical_cast.hpp>

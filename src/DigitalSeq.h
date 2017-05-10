@@ -145,7 +145,10 @@ public:
 	 */
 	ostream& save(ostream& out) const;
 
-	/* static methods */
+	/**
+	 * test whether this DigitalSeq represent the same sequence as a given character string
+	 */
+	bool seqEquals(const string& seq, bool allowDegen = false) const;
 
 private:
 	const DegenAlphabet* abc;

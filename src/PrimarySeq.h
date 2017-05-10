@@ -233,6 +233,7 @@ public:
 	friend bool operator==(const PrimarySeq& lhs, const PrimarySeq& rhs);
 
 
+
 private:
 	const DegenAlphabet* abc;
 	string id;

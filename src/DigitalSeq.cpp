@@ -150,5 +150,11 @@ istream& DigitalSeq::load(istream& in) {
 	return in;
 }
 
+bool DigitalSeq::seqEquals(const string& seq, bool allowDegen) const {
+	if(seq.length() != length())
+		return false;
+	return allowDegen ? seq == toString() : DigitalSeq(abc, name, seq) == *this;
+}
+
 } /* namespace EGriceLab */
 

@@ -309,7 +309,7 @@ public:
 		istream& load(istream& in);
 
 		/**
-		 * save this node to a binrary output, ignore its edges
+		 * save this node to a binary output, ignore its edges
 		 */
 		ostream& save(ostream& out) const;
 
