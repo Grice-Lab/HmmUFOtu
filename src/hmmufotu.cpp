@@ -409,7 +409,6 @@ int main(int argc, char* argv[]) {
 			{
 				int csStart = -1;
 				int csEnd = -1;
-				string alnMsg, placeMsg; /* error messages */
 				string aln;
 				PTPlacement bestPlace;
 
@@ -420,10 +419,11 @@ int main(int argc, char* argv[]) {
 					// cerr << "Aligning mate: " << fwdRead.getId() << endl;
 					int revStart = -1;
 					int revEnd = -1;
-					const string& revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode, revStart, revEnd);
+					string revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode, revStart, revEnd);
 					assert(revAln.length() == csLen);
 					if(!(csStart <= revStart && csEnd <= revEnd))
-						alnMsg = "Potential incorrectly oriented read found";
+#pragma omp critical(warning)
+					warningLog << "Warning: Potential incorrectly oriented read found at " << id << endl;
 
 					/* update alignment */
 					csStart = ::min(csStart, revStart);
@@ -431,12 +431,17 @@ int main(int argc, char* argv[]) {
 					BandedHMMP7::mergeWith(aln, revAln);
 				}
 
+				if(alnOut.is_open()) /* write the alignment seq to output */
+#pragma omp critical(writeAln)
+					alnOut.writeSeq(PrimarySeq(abc, id, aln));
+
 				DigitalSeq seq(abc, id, aln);
 				/* place seq with seed-estimate-place (SEP) algorithm */
 				/* get potential locs */
 				vector<PTLoc> locs = getSeed(ptu, seq, csStart, csEnd, maxDist);
 				if(locs.empty()) {
-					placeMsg = "No seed loci found for placement";
+#pragma omp critical(warning)
+					warningLog << "Warning: No seed loci found at " << id << endl;
 				}
 				else {
 					std::sort(locs.begin(), locs.end()); /* sort by dist */
@@ -462,17 +467,7 @@ int main(int argc, char* argv[]) {
 					bestPlace = places.front();
 				}
 
-				if(!alnMsg.empty())
-#pragma omp critical(warning)
-					warningLog << "Warning: " << alnMsg << " at " << id << endl;
 
-				if(alnOut.is_open()) /* write the alignment seq to output */
-#pragma omp critical(writeAln)
-					alnOut.writeSeq(PrimarySeq(abc, id, aln));
-
-				if(!placeMsg.empty())
-#pragma omp critical(warning)
-					warningLog << "Warning: " << placeMsg << " at " << id << endl;
 
 				/* write main output */
 #pragma omp critical(writePlace)

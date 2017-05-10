@@ -19,10 +19,11 @@ AC_PROG_LIBTOOL
 AC_PROG_LN_S
 AM_INIT_AUTOMAKE()
 
+#AC_LANG(C++)
 AC_PROG_CXX
 AC_CONFIG_MACRO_DIR([m4])
 
-AC_CHECK_FUNCS([sqrt isnan])
+AC_CHECK_FUNCS([sqrt isnan floor])
 AC_CHECK_FUNCS([strerror])
 
 AC_CONFIG_FILES([Makefile
@@ -33,5 +34,6 @@ AC_CONFIG_FILES([Makefile
 
 AC_CONFIG_SUBDIRS([src/libcds
                    src/libdivsufsort])
+AC_OPENMP
 
 AC_OUTPUT
