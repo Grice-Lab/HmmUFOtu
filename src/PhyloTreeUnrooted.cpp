@@ -19,6 +19,7 @@
 #include "HmmUFOtuConst.h"
 #include "ProgLog.h"
 #include "StringUtils.h"
+#include "SeqUtils.h"
 #include "PhyloTreeUnrooted.h"
 #include "DNASubModelFactory.h"
 
@@ -365,7 +366,7 @@ vector<Matrix4d> PTUnrooted::getModelTraningSetGoldman() const {
 //			cerr << "Last child: " << (*node)->lastChild()->name << endl;
 			const DigitalSeq& seq1 = (*node)->firstChild()->seq;
 			const DigitalSeq& seq2 = (*node)->lastChild()->seq;
-			if(DNASubModel::pDist(seq1, seq1) <= DNASubModel::MAX_PDIST)
+			if(SeqUtils::pDist(seq1, seq1) <= DNASubModel::MAX_PDIST)
 				data.push_back(DNASubModel::calcTransFreq2Seq(seq1, seq2));
 		}
 	}
@@ -390,8 +391,8 @@ vector<Matrix4d> PTUnrooted::getModelTraningSetGojobori() const {
 			const DigitalSeq& seq0 = PTUnrooted::randomLeaf(outerChild)->seq;
 			const DigitalSeq& seq1 = tipChild->firstChild()->seq;
 			const DigitalSeq& seq2 = tipChild->lastChild()->seq;
-			if(DNASubModel::pDist(seq0, seq1) <= DNASubModel::MAX_PDIST &&
-					DNASubModel::pDist(seq0, seq2) <= DNASubModel::MAX_PDIST)
+			if(SeqUtils::pDist(seq0, seq1) <= DNASubModel::MAX_PDIST &&
+					SeqUtils::pDist(seq0, seq2) <= DNASubModel::MAX_PDIST)
 								data.push_back(DNASubModel::calcTransFreq3Seq(seq0, seq1, seq2));
 		}
 	}

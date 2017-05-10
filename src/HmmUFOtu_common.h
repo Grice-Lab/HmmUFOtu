@@ -19,6 +19,7 @@
 #include "IUPACAmino.h"
 #include "DigitalSeq.h"
 #include "PrimarySeq.h"
+#include "SeqUtils.h"
 #include "SeqIO.h"
 #include "MSA.h"
 #include "StringUtils.h"

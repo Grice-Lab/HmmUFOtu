@@ -83,23 +83,6 @@ public:
 	double subDist(const DigitalSeq& seq1, const DigitalSeq& seq2, int start, int end) const;
 
 	/**
-	 * train model parameters using a given Phylogenetic tree and method
-	 */
-//	void trainParams(const PhyloTree& tree, string method = "Gojobori");
-
-//protected:
-	/* public non-virtual methods that call private virtual methods */
-	/**
-	 * train model parameters using a given Phylogenetic tree and the "Goldman" method
-	 */
-//	void trainParamsGoldman(const PhyloTree& tree);
-
-	/**
-	 * train model parameters using a given Phylogenetic tree and method
-	 */
-//	void trainParamsGojobori(const PhyloTree& tree);
-
-	/**
 	 * train model parameters using given sets of observed base transition and overall frequency stored in vector
 	 */
 	virtual void trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) = 0;
@@ -121,17 +104,6 @@ public:
 
 public:
 	/* static methods */
-	/**
-	 * calculate the p-distance between two aligned DigitalSeq in given region [start, end]
-	 */
-	static double pDist(const DigitalSeq& seq1, const DigitalSeq& seq2,
-			DigitalSeq::size_type start, DigitalSeq::size_type end);
-
-	/** calculate the p-distance between two aligned DigitalSeq */
-	static double pDist(const DigitalSeq& seq1, const DigitalSeq& seq2) {
-		return pDist(seq1, seq2, 0, seq1.length() - 1);
-	}
-
 	/** calculate the observed transition frequencies using Goldman (two-sequence) method */
 	static Matrix4d calcTransFreq2Seq(const DigitalSeq& seq1, const DigitalSeq& seq2);
 

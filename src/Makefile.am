@@ -22,6 +22,7 @@ AlphabetFactory.cpp \
 PrimarySeq.cpp \
 DigitalSeq.cpp \
 SeqIO.cpp \
+SeqUtils.cpp \
 MSA.cpp
 
 libHmmUFOtu_hmm_a_SOURCES = \

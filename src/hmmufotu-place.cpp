@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
 		vector<PTUnrooted::PTUNodePtr> leafHits;
 		for(vector<PTUnrooted::PTUNodePtr>::size_type i = 0; i < ptu.numNodes(); ++i) {
 			const PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
-			if(node->isLeaf() && DNASubModel::pDist(node->getSeq(), seq, start, end + 1) <= maxDist)
+			if(node->isLeaf() && SeqUtils::pDist(node->getSeq(), seq, start, end + 1) <= maxDist)
 				leafHits.push_back(node);
 		}
 		infoLog << "Found " << leafHits.size() << " leaf nodes for " << read.getId() << endl;

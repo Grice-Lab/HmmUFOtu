@@ -549,7 +549,7 @@ vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 		PTUnrooted::PTUNodePtr node = ptu.getNode(i);
 		if(node->isRoot())
 			continue;
-		double pDist = DNASubModel::pDist(node->getSeq(), seq, start, end);
+		double pDist = SeqUtils::pDist(node->getSeq(), seq, start, end);
 		if(pDist <= maxDist)
 			locs.push_back(PTLoc(node, pDist));
 	}
@@ -563,7 +563,7 @@ vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
 		const PTUnrooted::PTUNodePtr& cNode = loc->node;
 		const PTUnrooted::PTUNodePtr& pNode = cNode->getParent();
 		double cDist = loc->dist;
-		double pDist = DNASubModel::pDist(pNode->getSeq(), seq, start, end);
+		double pDist = SeqUtils::pDist(pNode->getSeq(), seq, start, end);
 		double ratio = cDist / (cDist + pDist);
 		if(::isnan(ratio)) // unable to estimate the ratio
 			ratio = 0.5;
