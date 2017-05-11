@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cctype>
 #include <iostream>
+#include <climits>
 #include "StringUtils.h"
 
 namespace EGriceLab {
@@ -126,4 +127,35 @@ string& StringUtils::removeEnd(string& str, const string& suffix) {
 	return str;
 }
 
+string::size_type StringUtils::common(const string& str1, const string& str2) {
+	string::size_type N = 0;
+	string::size_type count1[CHAR_MAX + 1] = { }; /* zero initialization */
+	string::size_type count2[CHAR_MAX + 1] = { }; /* zero initialization */
+
+	for(string::const_iterator it = str1.begin(); it != str1.end(); ++it)
+		count1[*it]++;
+	for(string::const_iterator it = str2.begin(); it != str2.end(); ++it)
+		count2[*it]++;
+	for(int i = 0; i <= CHAR_MAX; ++i)
+		if(count1[i] && count2[i])
+			N++;
+	return N;
+}
+
+size_t StringUtils::common(const char* str1, const char* str2) {
+	size_t N = 0;
+	size_t count1[CHAR_MAX + 1] = { }; /* zero initialization */
+	size_t count2[CHAR_MAX + 1] = { }; /* zero initialization */
+
+	for(; *str1; ++str1)
+		count1[*str1]++;
+	for(; *str2; ++str2)
+		count2[*str2]++;
+	for(int i = 0; i <= CHAR_MAX; ++i)
+		if(count1[i] && count2[i])
+			N++;
+	return N;
+}
+
 } /* namespace EGriceLab */
+

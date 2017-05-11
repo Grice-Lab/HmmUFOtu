@@ -122,10 +122,6 @@ public:
 		int alnFrom, alnTo; // final align from and to relative to seq (1-based)
 		//deque<p7_state> path;
 		string alnPath; // final align path
-		/** Back-trace matrix indicating which states this state is from
-		 * -1 indicates not determined yet
-		 */
-		//MatrixXi TRACE;
 	};
 
 
@@ -295,6 +291,15 @@ public:
 	 * Prepare the ViterbiScore DP matrices so they are ready for Viterbi algorithm
 	 */
 	ViterbiScores& prepareViterbiScores(ViterbiScores& vs) const;
+
+	/**
+	 * Initialize a Viterbi Align Path for the HMM algorithm
+	 * nothing is initialized, has same effect as the default constructor,
+	 * but kept for format consistency
+	 */
+	ViterbiAlignPath initViterbiAlignPath() const {
+		return ViterbiAlignPath();
+	}
 
 	/**
 	 * Initialize a Viterbi Align Path for the HMM algorithm

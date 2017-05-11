@@ -44,7 +44,7 @@ double SeqUtils::pDist(const string& seq1, const string& seq2,
 	assert(seq1.length() == seq2.length());
 	string::size_type d = 0;
 	for(string::size_type i = start; i <= end; ++i)
-		if(abc->encode(seq1[i]) == abc->encode(seq2[i]))
+		if(!abc->isMatch(seq1[i], seq2[i]))
 			d++;
 	return static_cast<double>(d) / (end - start + 1);
 }
@@ -55,7 +55,7 @@ double SeqUtils::pDist(const string& seq1, const DigitalSeq& seq2, size_t start,
 	const DegenAlphabet* abc = seq2.getAbc();
 	size_t d = 0;
 	for(size_t i = start; i <= end; ++i)
-		if(abc->encode(seq1[i]) == seq2[i])
+		if(!abc->isMatch(seq1[i], seq2[i]))
 			d++;
 	return static_cast<double>(d) / (end - start + 1);
 }

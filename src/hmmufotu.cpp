@@ -124,12 +124,19 @@ void printUsage(const string& progName) {
 		 << "            -h|--help          : print this message and exit" << endl;
 }
 
-/** Align seq with hmm and csfm, returns the alignment or empty seq if failed */
+/** Align seq with hmm and csfm, returns the alignment and update csStart and csEnd */
 string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
 		int seedLen, int seedRegion, BandedHMMP7::align_mode mode,
 		int& csStart, int& csEnd);
 
-/** Get seed placement locations by checking p-dist between a given seq and observed/inferred seq of nodes */
+/**
+ * Get seed placement locations by checking p-dist between a given seq and observed/inferred seq of nodes
+ * @param ptu  PTUnrooted
+ * @param seq  sequence to be placed
+ * @param start  0-based start
+ * @param end  0-based end
+ * @param maxDist  maximum p-Distance
+ * */
 vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 		int start, int end, double maxDist);
 
@@ -406,8 +413,8 @@ int main(int argc, char* argv[]) {
 
 #pragma omp task shared(hmm, csfm, ptu) /* task begin */
 			{
-				int csStart = -1;
-				int csEnd = -1;
+				int csStart = 0; /* 1-based consensus start */
+				int csEnd = 0;   /* 1-based consensus end */
 				string aln;
 				PTPlacement bestPlace;
 
@@ -416,8 +423,8 @@ int main(int argc, char* argv[]) {
 				assert(aln.length() == csLen);
 				if(revIn.is_open()) { /* align revRead */
 					// cerr << "Aligning mate: " << fwdRead.getId() << endl;
-					int revStart = -1;
-					int revEnd = -1;
+					int revStart = 0;
+					int revEnd = 0;
 					string revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode, revStart, revEnd);
 					assert(revAln.length() == csLen);
 					if(!(csStart <= revStart && csEnd <= revEnd))
@@ -426,9 +433,10 @@ int main(int argc, char* argv[]) {
 
 					/* update alignment */
 					csStart = ::min(csStart, revStart);
-					csEnd = ::min(csEnd, revEnd);
+					csEnd = ::max(csEnd, revEnd);
 					BandedHMMP7::mergeWith(aln, revAln);
 				}
+				assert(1 <= csStart && csStart <= csEnd && csEnd <= csLen);
 
 				if(alnOut.is_open()) /* write the alignment seq to output */
 #pragma omp critical(writeAln)
@@ -437,7 +445,7 @@ int main(int argc, char* argv[]) {
 				DigitalSeq seq(abc, id, aln);
 				/* place seq with seed-estimate-place (SEP) algorithm */
 				/* get potential locs */
-				vector<PTLoc> locs = getSeed(ptu, seq, csStart, csEnd, maxDist);
+				vector<PTLoc> locs = getSeed(ptu, seq, csStart - 1, csEnd - 1, maxDist);
 				if(locs.empty()) {
 #pragma omp critical(warning)
 					warningLog << "Warning: No seed loci found at " << id << endl;
@@ -449,7 +457,7 @@ int main(int argc, char* argv[]) {
 					//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
 
 					/* estimate placement */
-					vector<PTPlacement> places = estimateSeq(ptu, seq, csStart, csEnd, locs);
+					vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs);
 					std::sort(places.rbegin(), places.rend()); /* sort places decently by estimated loglik */
 					double bestEstLoglik = places.front().loglik;
 					vector<PTPlacement>::const_iterator it;
@@ -461,7 +469,7 @@ int main(int argc, char* argv[]) {
 					//	cerr << "Retaining " << places.size() << " branches for accurate placement" << endl;
 
 					/* accurate placement */
-					placeSeq(ptu, seq, csStart, csEnd, places);
+					placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
 					std::sort(places.rbegin(), places.rend());
 					bestPlace = places.front();
 				}
@@ -533,10 +541,6 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 	/* find seqStart and seqEnd */
 	csStart = hmm.getCSLoc(seqVpath.alnStart);
 	csEnd = hmm.getCSLoc(seqVpath.alnEnd);
-//	cerr << "alnStart: " << seqVpath.alnStart << " alnEnd: " << seqVpath.alnEnd << endl;
-//	cerr << "alnFrom: " << seqVpath.alnFrom << " alnTo: " << seqVpath.alnTo << endl;
-//	cerr << "csStart: " << csStart << " csEnd: " << csEnd << endl;
-//	cerr << "alnPath: " << seqVpath.alnPath << endl;
 
 	return hmm.buildGlobalAlign(seqVscore, seqVpath);
 }

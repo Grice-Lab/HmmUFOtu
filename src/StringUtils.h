@@ -159,6 +159,10 @@ public:
 		return saveString(src, out, src.length());
 	}
 
+	static string::size_type common(const string& str1, const string& str2);
+
+	static size_t common(const char* str1, const char* str2);
+
 }; /* end class StringUtils */
 
 } /* namespace EGriceLab */

@@ -114,7 +114,7 @@ public:
 
 	/* Get synonymous for a given symbol, or empty string if not exists */
 	string getSynonymous(char c) const {
-		if(isSynonymous(c))
+		if(degen_map.find(c) != degen_map.end())
 			return degen_map.find(c)->second;
 		return "";
 	}
@@ -129,6 +129,12 @@ public:
 		return sym_map[c] != INVALID_BASE;
 	}
 
+	/* test whether two characters c1 and c2 is a match */
+	bool isMatch(char c1, char c2) const;
+
+	/* test whether a character is a match to a coded base */
+	bool isMatch(char c, int8_t b) const;
+
 	/* pure virtual member method to be overridden by subclass */
 	virtual bool hasComplement() const = 0;
 
@@ -141,7 +147,6 @@ private:
 	string gap; /* gap characters */
 	char gapCh; /* representative gap char */
 	int8_t sym_map[INT8_MAX + 1]; /* internal map for symbols */
-	//int8_t gap_map[INT8_MAX + 1]; /* internal map for gaps */
 	map<char, string> degen_map; // map for degenerative synonymous
 
 public:

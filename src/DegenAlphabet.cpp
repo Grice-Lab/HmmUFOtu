@@ -39,6 +39,18 @@ DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const st
 		sym_map[*it] = GAP_BASE;
 }
 
+bool DegenAlphabet::isMatch(char c1, char c2) const {
+	return StringUtils::common(c1 + getSynonymous(c1), c2 + getSynonymous(c2)) > 0;
+}
+
+bool DegenAlphabet::isMatch(char c, int8_t b) const {
+	string synon = c + getSynonymous(c);
+	for(string::const_iterator ch = synon.begin(); ch != synon.end(); ++ch)
+		if(encode(*ch) == b)
+			return true;
+	return false;
+}
+
 bool operator==(const DegenAlphabet& lhs, const DegenAlphabet& rhs) {
 	return lhs.symbol == rhs.symbol && lhs.synon == rhs.synon &&
 			lhs.degen_map == rhs.degen_map && lhs.gap == rhs.gap;
