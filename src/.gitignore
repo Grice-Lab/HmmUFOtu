@@ -4,5 +4,4 @@
 *.lo
 *.Po
 *.a
-Makefile.in
 Makefile
