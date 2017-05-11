@@ -1,15 +1,8 @@
-# Ignore all
-*
-
-# Unignore all dirs
-
-!*/
-
-# Unignore all files with extentions
-!*.*
-
 # Ignore all logs, objects and archives
 *.log
 *.o
+*.lo
+*.Po
 *.a
-**/.deps
+Makefile.in
+Makefile

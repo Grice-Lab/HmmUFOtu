@@ -1,0 +1,23 @@
+*.dylib
+
+# Autotool cache
+*.cache
+# CMake ignores
+CMakeCache.txt
+CMakeFiles
+Makefile
+cmake_install.cmake
+install_manifest.txt
+#include/config.h
+#include/divsufsort.h
+#include/lfs.h
+pkgconfig/libdivsufsort.pc
+examples/unbwt
+examples/suftest 
+examples/sasearch
+examples/mksary
+examples/bwt
+examples/suftest
+CPackSourceConfig.cmake
+CPackConfig.cmake
+CMakeModules/cmake_uninstall.cmake

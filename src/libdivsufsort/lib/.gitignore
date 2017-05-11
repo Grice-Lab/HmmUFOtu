@@ -1,0 +1,6 @@
+# Ignore build targets
+*.o
+*.a
+*.so
+*.so.*
+.deps

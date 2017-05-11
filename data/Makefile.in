@@ -204,6 +204,7 @@ NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OPENMP_CFLAGS = @OPENMP_CFLAGS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -282,7 +283,12 @@ top_srcdir = @top_srcdir@
 # Install package data
 dist_pkgdata_DATA = \
 gg_97_otus.dm \
-gg_97_otus.sm
+gg_97_otus_GTR.sm \
+gg_97_otus_TN93.sm \
+gg_97_otus_HKY85.sm \
+gg_97_otus_F81.sm \
+gg_97_otus_K80.sm \
+gg_97_otus_JC69.sm
 
 all: all-am
 

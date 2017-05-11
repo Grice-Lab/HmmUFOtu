@@ -93,7 +93,9 @@ target_triplet = @target@
 bin_PROGRAMS = hmmufotu$(EXEEXT) hmmufotu-train-dm$(EXEEXT) \
 	hmmufotu-train-sm$(EXEEXT) hmmufotu-train-hmm$(EXEEXT) \
 	hmmufotu-sim$(EXEEXT) hmmufotu-place$(EXEEXT) \
-	hmmufotu-build$(EXEEXT)
+	hmmufotu-build$(EXEEXT) hmmufotu-inspect$(EXEEXT) \
+	hmmufotu$(EXEEXT) hmmufotu-sum$(EXEEXT) \
+	hmmufotu-anneal$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -119,7 +121,8 @@ am_libHmmUFOtu_common_a_OBJECTS = HmmUFOtuConst.$(OBJEXT) \
 	CommandOptions.$(OBJEXT) DegenAlphabet.$(OBJEXT) \
 	StringUtils.$(OBJEXT) IUPACNucl.$(OBJEXT) IUPACAmino.$(OBJEXT) \
 	DNA.$(OBJEXT) AlphabetFactory.$(OBJEXT) PrimarySeq.$(OBJEXT) \
-	DigitalSeq.$(OBJEXT) SeqIO.$(OBJEXT) MSA.$(OBJEXT)
+	DigitalSeq.$(OBJEXT) SeqIO.$(OBJEXT) SeqUtils.$(OBJEXT) \
+	MSA.$(OBJEXT)
 libHmmUFOtu_common_a_OBJECTS = $(am_libHmmUFOtu_common_a_OBJECTS)
 libHmmUFOtu_hmm_a_AR = $(AR) $(ARFLAGS)
 libHmmUFOtu_hmm_a_LIBADD =
@@ -131,13 +134,17 @@ libHmmUFOtu_phylo_a_AR = $(AR) $(ARFLAGS)
 libHmmUFOtu_phylo_a_LIBADD =
 am_libHmmUFOtu_phylo_a_OBJECTS = NewickTree.$(OBJEXT) \
 	PhyloTreeUnrooted.$(OBJEXT) DNASubModel.$(OBJEXT) \
-	GTR.$(OBJEXT) DNASubModelFactory.$(OBJEXT)
+	GTR.$(OBJEXT) TN93.$(OBJEXT) HKY85.$(OBJEXT) F81.$(OBJEXT) \
+	K80.$(OBJEXT) JC69.$(OBJEXT) DiscreteGammaModel.$(OBJEXT) \
+	DNASubModelFactory.$(OBJEXT)
 libHmmUFOtu_phylo_a_OBJECTS = $(am_libHmmUFOtu_phylo_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_hmmufotu_OBJECTS = hmmufotu.$(OBJEXT)
+am_hmmufotu_OBJECTS = hmmufotu-hmmufotu.$(OBJEXT)
 hmmufotu_OBJECTS = $(am_hmmufotu_OBJECTS)
-hmmufotu_LDADD = $(LDADD)
+hmmufotu_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a \
+	math/libEGMath.a libHmmUFOtu_common.a \
+	libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -145,14 +152,32 @@ am__v_lt_1 =
 hmmufotu_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(hmmufotu_LDFLAGS) $(LDFLAGS) -o $@
+am_hmmufotu_anneal_OBJECTS = hmmufotu-anneal.$(OBJEXT)
+hmmufotu_anneal_OBJECTS = $(am_hmmufotu_anneal_OBJECTS)
+hmmufotu_anneal_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a \
+	libHmmUFOtu_common.a math/libEGMath.a \
+	libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
+hmmufotu_anneal_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(hmmufotu_anneal_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_hmmufotu_build_OBJECTS = hmmufotu_build-hmmufotu-build.$(OBJEXT)
 hmmufotu_build_OBJECTS = $(am_hmmufotu_build_OBJECTS)
-hmmufotu_build_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_common.a \
-	libHmmUFOtu_hmm.a math/libEGMath.a \
+hmmufotu_build_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a \
+	libHmmUFOtu_common.a math/libEGMath.a \
 	libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_build_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(AM_CXXFLAGS) $(CXXFLAGS) $(hmmufotu_build_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_hmmufotu_inspect_OBJECTS = hmmufotu-inspect.$(OBJEXT)
+hmmufotu_inspect_OBJECTS = $(am_hmmufotu_inspect_OBJECTS)
+hmmufotu_inspect_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a \
+	libHmmUFOtu_common.a math/libEGMath.a \
+	libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
+hmmufotu_inspect_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(hmmufotu_inspect_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_hmmufotu_place_OBJECTS = hmmufotu-place.$(OBJEXT)
 hmmufotu_place_OBJECTS = $(am_hmmufotu_place_OBJECTS)
@@ -167,6 +192,13 @@ hmmufotu_sim_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
 hmmufotu_sim_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(hmmufotu_sim_LDFLAGS) $(LDFLAGS) -o $@
+am_hmmufotu_sum_OBJECTS = hmmufotu-sum.$(OBJEXT)
+hmmufotu_sum_OBJECTS = $(am_hmmufotu_sum_OBJECTS)
+hmmufotu_sum_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_common.a \
+	math/libEGMath.a
+hmmufotu_sum_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(hmmufotu_sum_LDFLAGS) $(LDFLAGS) -o $@
 am_hmmufotu_train_dm_OBJECTS = hmmufotu-train-dm.$(OBJEXT)
 hmmufotu_train_dm_OBJECTS = $(am_hmmufotu_train_dm_OBJECTS)
 hmmufotu_train_dm_DEPENDENCIES = libHmmUFOtu_common.a \
@@ -178,8 +210,8 @@ hmmufotu_train_dm_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 am_hmmufotu_train_hmm_OBJECTS =  \
 	hmmufotu_train_hmm-hmmufotu-train-hmm.$(OBJEXT)
 hmmufotu_train_hmm_OBJECTS = $(am_hmmufotu_train_hmm_OBJECTS)
-hmmufotu_train_hmm_DEPENDENCIES = libHmmUFOtu_common.a \
-	libHmmUFOtu_hmm.a math/libEGMath.a
+hmmufotu_train_hmm_DEPENDENCIES = libHmmUFOtu_hmm.a math/libEGMath.a \
+	libHmmUFOtu_common.a
 hmmufotu_train_hmm_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(AM_CXXFLAGS) $(CXXFLAGS) $(hmmufotu_train_hmm_LDFLAGS) \
@@ -228,15 +260,18 @@ am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(libHmmUFOtu_common_a_SOURCES) $(libHmmUFOtu_hmm_a_SOURCES) \
 	$(libHmmUFOtu_phylo_a_SOURCES) $(hmmufotu_SOURCES) \
-	$(hmmufotu_build_SOURCES) $(hmmufotu_place_SOURCES) \
-	$(hmmufotu_sim_SOURCES) $(hmmufotu_train_dm_SOURCES) \
-	$(hmmufotu_train_hmm_SOURCES) $(hmmufotu_train_sm_SOURCES)
-DIST_SOURCES = $(libHmmUFOtu_common_a_SOURCES) \
-	$(libHmmUFOtu_hmm_a_SOURCES) $(libHmmUFOtu_phylo_a_SOURCES) \
-	$(hmmufotu_SOURCES) $(hmmufotu_build_SOURCES) \
-	$(hmmufotu_place_SOURCES) $(hmmufotu_sim_SOURCES) \
+	$(hmmufotu_anneal_SOURCES) $(hmmufotu_build_SOURCES) \
+	$(hmmufotu_inspect_SOURCES) $(hmmufotu_place_SOURCES) \
+	$(hmmufotu_sim_SOURCES) $(hmmufotu_sum_SOURCES) \
 	$(hmmufotu_train_dm_SOURCES) $(hmmufotu_train_hmm_SOURCES) \
 	$(hmmufotu_train_sm_SOURCES)
+DIST_SOURCES = $(libHmmUFOtu_common_a_SOURCES) \
+	$(libHmmUFOtu_hmm_a_SOURCES) $(libHmmUFOtu_phylo_a_SOURCES) \
+	$(hmmufotu_SOURCES) $(hmmufotu_anneal_SOURCES) \
+	$(hmmufotu_build_SOURCES) $(hmmufotu_inspect_SOURCES) \
+	$(hmmufotu_place_SOURCES) $(hmmufotu_sim_SOURCES) \
+	$(hmmufotu_sum_SOURCES) $(hmmufotu_train_dm_SOURCES) \
+	$(hmmufotu_train_hmm_SOURCES) $(hmmufotu_train_sm_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -356,6 +391,7 @@ NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
 OBJEXT = @OBJEXT@
+OPENMP_CFLAGS = @OPENMP_CFLAGS@
 OTOOL = @OTOOL@
 OTOOL64 = @OTOOL64@
 PACKAGE = @PACKAGE@
@@ -453,6 +489,7 @@ AlphabetFactory.cpp \
 PrimarySeq.cpp \
 DigitalSeq.cpp \
 SeqIO.cpp \
+SeqUtils.cpp \
 MSA.cpp
 
 libHmmUFOtu_hmm_a_SOURCES = \
@@ -466,11 +503,14 @@ NewickTree.cpp \
 PhyloTreeUnrooted.cpp \
 DNASubModel.cpp \
 GTR.cpp \
+TN93.cpp \
+HKY85.cpp \
+F81.cpp \
+K80.cpp \
+JC69.cpp \
+DiscreteGammaModel.cpp \
 DNASubModelFactory.cpp
 
-hmmufotu_SOURCES = hmmufotu.cpp
-#hmmufotu_LDADD = libHmmUFOtu_common.a math/libEGMath.a
-hmmufotu_LDFLAGS = -static
 hmmufotu_train_dm_SOURCES = hmmufotu-train-dm.cpp
 hmmufotu_train_dm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a
 hmmufotu_train_dm_LDFLAGS = -static
@@ -478,9 +518,9 @@ hmmufotu_train_sm_SOURCES = hmmufotu-train-sm.cpp
 hmmufotu_train_sm_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
 hmmufotu_train_sm_LDFLAGS = -static
 hmmufotu_train_hmm_SOURCES = hmmufotu-train-hmm.cpp
-hmmufotu_train_hmm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a
+hmmufotu_train_hmm_LDADD = libHmmUFOtu_hmm.a math/libEGMath.a libHmmUFOtu_common.a
 hmmufotu_train_hmm_LDFLAGS = -static
-hmmufotu_train_hmm_CPPFLAGS = -DDM_DATADIR=\"$(pkgdatadir)\"
+hmmufotu_train_hmm_CPPFLAGS = $(AM_CPPFLAGS) -DDM_DATADIR=\"$(pkgdatadir)\"
 hmmufotu_sim_SOURCES = hmmufotu-sim.cpp
 hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
 hmmufotu_sim_LDFLAGS = -static
@@ -488,11 +528,31 @@ hmmufotu_place_SOURCES = hmmufotu-place.cpp
 hmmufotu_place_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
 hmmufotu_place_LDFLAGS = -static
 hmmufotu_build_SOURCES = hmmufotu-build.cpp
-hmmufotu_build_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a \
+hmmufotu_build_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 
 hmmufotu_build_LDFLAGS = -static
-hmmufotu_build_CPPFLAGS = -DDM_DATADIR=\"$(pkgdatadir)\" -DSM_DATADIR=\"$(pkgdatadir)\"
+hmmufotu_build_CPPFLAGS = $(AM_CPPFLAGS) -DDM_DATADIR=\"$(pkgdatadir)\" -DSM_DATADIR=\"$(pkgdatadir)\"
+hmmufotu_inspect_SOURCES = hmmufotu-inspect.cpp
+hmmufotu_inspect_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
+libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
+
+hmmufotu_inspect_LDFLAGS = -static
+hmmufotu_SOURCES = hmmufotu.cpp
+hmmufotu_CPPFLAGS = $(AM_CFLAGS) $(OPENMP_CFLAGS)
+hmmufotu_CFLAGS = $(AM_CFLAGS) $(OPENMP_CFLAGS)
+hmmufotu_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a math/libEGMath.a libHmmUFOtu_common.a \
+libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
+
+hmmufotu_LDFLAGS = -static $(OPENMP_CFLAGS)
+hmmufotu_sum_SOURCES = hmmufotu-sum.cpp
+hmmufotu_sum_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
+hmmufotu_sum_LDFLAGS = -static
+hmmufotu_anneal_SOURCES = hmmufotu-anneal.cpp
+hmmufotu_anneal_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
+libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
+
+hmmufotu_anneal_LDFLAGS = -static
 all: all-recursive
 
 .SUFFIXES:
@@ -598,9 +658,17 @@ hmmufotu$(EXEEXT): $(hmmufotu_OBJECTS) $(hmmufotu_DEPENDENCIES) $(EXTRA_hmmufotu
 	@rm -f hmmufotu$(EXEEXT)
 	$(AM_V_CXXLD)$(hmmufotu_LINK) $(hmmufotu_OBJECTS) $(hmmufotu_LDADD) $(LIBS)
 
+hmmufotu-anneal$(EXEEXT): $(hmmufotu_anneal_OBJECTS) $(hmmufotu_anneal_DEPENDENCIES) $(EXTRA_hmmufotu_anneal_DEPENDENCIES) 
+	@rm -f hmmufotu-anneal$(EXEEXT)
+	$(AM_V_CXXLD)$(hmmufotu_anneal_LINK) $(hmmufotu_anneal_OBJECTS) $(hmmufotu_anneal_LDADD) $(LIBS)
+
 hmmufotu-build$(EXEEXT): $(hmmufotu_build_OBJECTS) $(hmmufotu_build_DEPENDENCIES) $(EXTRA_hmmufotu_build_DEPENDENCIES) 
 	@rm -f hmmufotu-build$(EXEEXT)
 	$(AM_V_CXXLD)$(hmmufotu_build_LINK) $(hmmufotu_build_OBJECTS) $(hmmufotu_build_LDADD) $(LIBS)
+
+hmmufotu-inspect$(EXEEXT): $(hmmufotu_inspect_OBJECTS) $(hmmufotu_inspect_DEPENDENCIES) $(EXTRA_hmmufotu_inspect_DEPENDENCIES) 
+	@rm -f hmmufotu-inspect$(EXEEXT)
+	$(AM_V_CXXLD)$(hmmufotu_inspect_LINK) $(hmmufotu_inspect_OBJECTS) $(hmmufotu_inspect_LDADD) $(LIBS)
 
 hmmufotu-place$(EXEEXT): $(hmmufotu_place_OBJECTS) $(hmmufotu_place_DEPENDENCIES) $(EXTRA_hmmufotu_place_DEPENDENCIES) 
 	@rm -f hmmufotu-place$(EXEEXT)
@@ -609,6 +677,10 @@ hmmufotu-place$(EXEEXT): $(hmmufotu_place_OBJECTS) $(hmmufotu_place_DEPENDENCIES
 hmmufotu-sim$(EXEEXT): $(hmmufotu_sim_OBJECTS) $(hmmufotu_sim_DEPENDENCIES) $(EXTRA_hmmufotu_sim_DEPENDENCIES) 
 	@rm -f hmmufotu-sim$(EXEEXT)
 	$(AM_V_CXXLD)$(hmmufotu_sim_LINK) $(hmmufotu_sim_OBJECTS) $(hmmufotu_sim_LDADD) $(LIBS)
+
+hmmufotu-sum$(EXEEXT): $(hmmufotu_sum_OBJECTS) $(hmmufotu_sum_DEPENDENCIES) $(EXTRA_hmmufotu_sum_DEPENDENCIES) 
+	@rm -f hmmufotu-sum$(EXEEXT)
+	$(AM_V_CXXLD)$(hmmufotu_sum_LINK) $(hmmufotu_sum_OBJECTS) $(hmmufotu_sum_LDADD) $(LIBS)
 
 hmmufotu-train-dm$(EXEEXT): $(hmmufotu_train_dm_OBJECTS) $(hmmufotu_train_dm_DEPENDENCIES) $(EXTRA_hmmufotu_train_dm_DEPENDENCIES) 
 	@rm -f hmmufotu-train-dm$(EXEEXT)
@@ -639,23 +711,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DNASubModelFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DegenAlphabet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DigitalSeq.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DiscreteGammaModel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/F81.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GTR.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HKY85.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HmmUFOtuConst.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HmmUFOtuEnv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IUPACAmino.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IUPACNucl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/JC69.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/K80.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSA.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewickTree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PhyloTreeUnrooted.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PrimarySeq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ProgLog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqIO.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StringUtils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TN93.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-anneal.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-hmmufotu.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-inspect.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-place.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-sim.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-sum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-train-dm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-train-sm.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_build-hmmufotu-build.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_train_hmm-hmmufotu-train-hmm.Po@am__quote@
 
@@ -679,6 +761,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
+
+hmmufotu-hmmufotu.o: hmmufotu.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu-hmmufotu.o -MD -MP -MF $(DEPDIR)/hmmufotu-hmmufotu.Tpo -c -o hmmufotu-hmmufotu.o `test -f 'hmmufotu.cpp' || echo '$(srcdir)/'`hmmufotu.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu-hmmufotu.Tpo $(DEPDIR)/hmmufotu-hmmufotu.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='hmmufotu.cpp' object='hmmufotu-hmmufotu.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu-hmmufotu.o `test -f 'hmmufotu.cpp' || echo '$(srcdir)/'`hmmufotu.cpp
+
+hmmufotu-hmmufotu.obj: hmmufotu.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu-hmmufotu.obj -MD -MP -MF $(DEPDIR)/hmmufotu-hmmufotu.Tpo -c -o hmmufotu-hmmufotu.obj `if test -f 'hmmufotu.cpp'; then $(CYGPATH_W) 'hmmufotu.cpp'; else $(CYGPATH_W) '$(srcdir)/hmmufotu.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu-hmmufotu.Tpo $(DEPDIR)/hmmufotu-hmmufotu.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='hmmufotu.cpp' object='hmmufotu-hmmufotu.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu-hmmufotu.obj `if test -f 'hmmufotu.cpp'; then $(CYGPATH_W) 'hmmufotu.cpp'; else $(CYGPATH_W) '$(srcdir)/hmmufotu.cpp'; fi`
 
 hmmufotu_build-hmmufotu-build.o: hmmufotu-build.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_build_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu_build-hmmufotu-build.o -MD -MP -MF $(DEPDIR)/hmmufotu_build-hmmufotu-build.Tpo -c -o hmmufotu_build-hmmufotu-build.o `test -f 'hmmufotu-build.cpp' || echo '$(srcdir)/'`hmmufotu-build.cpp

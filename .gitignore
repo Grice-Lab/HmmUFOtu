@@ -10,4 +10,4 @@
 **/.project
 **/.settings
 # Ignore Autotools genereated Makefiles
-**/Makefile
+#**/Makefile
