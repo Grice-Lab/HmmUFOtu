@@ -17,7 +17,7 @@
 #include <cerrno>
 #include <limits>
 #include <boost/unordered_map.hpp>
-#include <boost/algorithm/string.hpp> /* for boost string split */
+#include <boost/algorithm/string.hpp> /* for boost string join */
 #include <boost/lexical_cast.hpp>
 #include "HmmUFOtu.h"
 
@@ -26,7 +26,7 @@ using namespace EGriceLab;
 using namespace Eigen;
 
 /* default values */
-static const size_t maxIgnore = numeric_limits<streamsize>::max();
+static const size_t MAX_IGNORE = numeric_limits<streamsize>::max();
 static const string ALPHABET = "dna";
 static const string ALIGN_FORMAT = "fasta";
 static const double DEFAULT_EFFN = 2;
@@ -224,9 +224,9 @@ int main(int argc, char* argv[]) {
 			if(StringUtils::startsWith(line, "id"))
 				continue;
 			istringstream iss(line);
-			iss.ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t');
+			iss.ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t');
 			iss >> aln;
-			iss.ignore(maxIgnore, '\t').ignore(maxIgnore, '\t').ignore(maxIgnore, '\t');
+			iss.ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t');
 			iss >> taxa_id;
 
 			if(taxa_id < 0)

@@ -8,11 +8,14 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <limits>
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_smallint.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/uniform_01.hpp>
 #include <boost/random/discrete_distribution.hpp>
+#include <boost/algorithm/string.hpp> /* for boost string split */
 #include <eigen3/Eigen/Dense>
 #include <cstdlib>
 #include <cstring>
@@ -35,6 +38,19 @@ static const double DEFAULT_SD_SIZE = 30;
 static const double DEFAULT_MIN_SIZE = 0;
 static const double DEFAULT_MAX_SIZE = 0;
 static const int DEFAULT_READ_LEN = -1;
+static const size_t MAX_IGNORE = numeric_limits<streamsize>::max();
+static const char GAP_SYM = '-';
+static const char PAD_SYM = '.';
+
+/* a simple POD for holding a CS locus */
+struct CSLoc {
+	/* constructors */
+	CSLoc() : csStart(), csEnd() { }
+	CSLoc(int csStart, int csEnd) : csStart(csStart), csEnd(csEnd) { }
+
+	int csStart; /* 1-based CS start */
+	int csEnd;   /* 1-based CS end */
+};
 
 /**
  * Print the usage information
@@ -53,6 +69,7 @@ void printUsage(const string& progName) {
 		 << "            -l|--min-size  DBL  : minimum 16S amplicon size, 0 for no limit [" << DEFAULT_MIN_SIZE << "]" << endl
 		 << "            -u|--max-size  DBL  : maximum 16S amplicon size, 0 for no limit [" << DEFAULT_MAX_SIZE << "]" << endl
 		 << "            -r|--read-len  INT  : read length for generating single/paired-end reads, set to -1 to use the actual amplicon size [" << DEFAULT_READ_LEN << "]" << endl
+		 << "            -R|--region  STRING : BED file for restricted consensus region where simulated reads should be drawn; setting this will ignore -m,-s,-l,-u togather" << endl
 		 << "            -S|--seed  INT      : random seed used for simulation, for debug purpose" << endl
 		 << "            -v  FLAG            : enable verbose information" << endl
 		 << "            -h|--help           : print this message and exit" << endl;
@@ -60,10 +77,10 @@ void printUsage(const string& progName) {
 
 int main(int argc, char* argv[]) {
 	/* variable declarations */
-	string inFn, msaFn, ptuFn, outFn, mateFn;
+	string inFn, msaFn, ptuFn, outFn, mateFn, regionFn;
 	bool keepGap = false;
 	long N = 0;
-	ifstream msaIn, ptuIn;
+	ifstream msaIn, ptuIn, regionIn;
 	MSA msa;
 	PTUnrooted ptu;
 
@@ -73,13 +90,14 @@ int main(int argc, char* argv[]) {
 	double minSize = DEFAULT_MIN_SIZE;
 	double maxSize = DEFAULT_MAX_SIZE;
 	int readLen = DEFAULT_READ_LEN;
+	vector<CSLoc> myLoci;
 
 	unsigned seed = time(NULL); // using time as default seed
 
 	typedef boost::random::mt11213b RNG; /* random number generator type */
 	typedef boost::random::discrete_distribution<size_t> NodeDistrib; /* node distribution in tree */
 	typedef boost::random::uniform_01<> BranchDistrib; /* branching point distribution on any branch */
-	typedef boost::random::uniform_smallint<> LocDistrib; /* location distribution on csLen */
+	typedef boost::random::uniform_smallint<> LocDistrib; /* location distribution either on csLen, or myLoci, if provided */
 	typedef boost::random::normal_distribution<> SizeDistrib; /* read size distribution */
 	typedef boost::random::uniform_01<> GapDistrib; /* gap observing distribution */
 	typedef boost::random::discrete_distribution<int8_t> BaseDistrib; /* base (nucleotide) distribution */
@@ -139,6 +157,11 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("--read-len"))
 		readLen = ::atoi(cmdOpts.getOptStr("--read-len"));
 
+	if(cmdOpts.hasOpt("-R"))
+		regionFn = cmdOpts.getOpt("-R");
+	if(cmdOpts.hasOpt("--region"))
+		regionFn = cmdOpts.getOpt("--region");
+
 	if(cmdOpts.hasOpt("-S"))
 		seed = ::atoi(cmdOpts.getOptStr("-S"));
 	if(cmdOpts.hasOpt("--seed"))
@@ -182,6 +205,13 @@ int main(int argc, char* argv[]) {
 		cerr << "Unable to open " << ptuFn << " : " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
+	if(!regionFn.empty()) {
+		regionIn.open(regionFn.c_str(), ios_base::in);
+		if(!regionIn.is_open()) {
+			cerr << "Unable to open " << regionFn << " : " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+	}
 
 	/* open outputs */
 	SeqIO seqOut(outFn, AlphabetFactory::nuclAbc, DEFAULT_FMT, SeqIO::WRITE, -1);
@@ -224,6 +254,25 @@ int main(int argc, char* argv[]) {
 	const int csLen = ptu.numAlignSites();
 	const size_t numNodes = ptu.numNodes();
 
+	/* read restricted regions, if provided */
+	if(regionIn.is_open()) {
+		int start, end;
+		while(regionIn) {
+			regionIn.ignore(MAX_IGNORE, '\t') >> start;
+			regionIn.ignore(MAX_IGNORE, '\t') >> end;
+			regionIn.ignore(MAX_IGNORE, '\n');
+			cerr << start << "-" << end << endl;
+			if(!(0 <= start && start < end && end <= csLen)) {
+				warningLog << "provided region (" << start << "," << end << "] is not in the consensus sequence range, ignored" << endl;
+				continue;
+			}
+			myLoci.push_back(CSLoc(start + 1, end));
+			if(regionIn.peek() == EOF)
+				break;
+		}
+		infoLog << "Read in " << myLoci.size() << " restricted regions" << endl;
+	}
+
 	/* constructor random sample generator and required distributions */
 	RNG rng(seed);
 
@@ -234,6 +283,8 @@ int main(int argc, char* argv[]) {
 	BranchDistrib branch_dist;
 
 	LocDistrib loc_dist(0, csLen - 1);
+	if(!myLoci.empty()) /* restricted regions provided */
+		loc_dist = LocDistrib(0, myLoci.size() - 1);
 
 	SizeDistrib size_dist(meanSize, sdSize);
 
@@ -246,7 +297,6 @@ int main(int argc, char* argv[]) {
 	char rid[22]; // enough to hold all numbers up to 64-bits + a prefix char
 	char desc[4096]; // enough to hold must descriptions
 	const DegenAlphabet* abc = msa.getAbc();
-	const char gapSym = abc->getGap().front();
 	const PTUnrooted::ModelPtr& model = ptu.getModel();
 	const Vector4d& pi = model->getPi();
 
@@ -290,33 +340,38 @@ int main(int argc, char* argv[]) {
 		if(!nodeHeight.empty() && nodeHeight[cNode] + v * rc > maxDist) /* this branching-point it too far from any leaf */
 			continue;
 		/* simulate a read range */
-		int start = loc_dist(rng);
-		double len = size_dist(rng);
-		if(len < minSize)
-			len = minSize;
-		if(maxSize > 0 && len > maxSize)
-			len = maxSize;
-		int end = start + static_cast<int> (len);
-		if(!(end < csLen)) /* outside consensus range */
-			continue;
+		int start, end, len;
+		if(myLoci.empty()) { /* simulate from the entire CSLen */
+			start = loc_dist(rng);
+			len = size_dist(rng);
+			if(len < minSize)
+				len = minSize;
+			if(maxSize > 0 && len > maxSize)
+				len = maxSize;
+			end = start + static_cast<int> (len);
+			if(!(end < csLen)) /* outside consensus range */
+				continue;
+		}
+		else { /* simulate from restricted regions */
+			size_t i = loc_dist(rng);
+			start = myLoci[i].csStart;
+			end = myLoci[i].csEnd;
+			len = end - start + 1;
+		}
 
 		/* simulate a read at [start, end] */
 		sprintf(rid, "r%d", n);
-		sprintf(desc, "ID=%ld->%ld;Name=\"%s\";AnnoDist=%f;Start=%d;End=%d;Len=%d;",
-				cNode->getId(), pNode->getId(),
-				rc < 0.5 ? cNode->getTaxa().c_str() : pNode->getTaxa().c_str(),
-				rc < 0.5 ? v * rc : v * (1 - rc),
-				start, end, end - start + 1);
-
 //		PrimarySeq seq(abc, rid, "", desc);
 		string seq;
 		if(keepGap)
-			seq.append(start, gapSym);
+			seq.append(start, PAD_SYM);
 
 		for(int j = start; j <= end; ++j) {
 			bool isGap = gap_dist(rng) <= msa.gapWFrac(j);
-			if(isGap && keepGap)
-				seq.push_back(gapSym);
+			if(isGap) {
+				if(keepGap)
+					seq.push_back(GAP_SYM);
+			}
 			else {
 				/* calculate the loglik of this branch point */
 				Vector4d rLoglik = PTUnrooted::dot_product_scaled(model->Pr(v * rc), ptu.getBranchLoglik(cNode, pNode, j)) +
@@ -330,7 +385,12 @@ int main(int argc, char* argv[]) {
 		}
 
 		if(keepGap)
-			seq.append(csLen - 1 - end, gapSym);
+			seq.append(csLen - 1 - end, PAD_SYM);
+		sprintf(desc, "ID=%ld->%ld;Name=\"%s\";AnnoDist=%f;csStart=%d;csEnd=%d;csLen=%d;InsertLen=%d;",
+				cNode->getId(), pNode->getId(),
+				rc < 0.5 ? cNode->getTaxa().c_str() : pNode->getTaxa().c_str(),
+				rc < 0.5 ? v * rc : v * (1 - rc),
+				start, end, end - start + 1, seq.length());
 
 		/* output */
 		PrimarySeq insert(abc, rid, seq, desc);

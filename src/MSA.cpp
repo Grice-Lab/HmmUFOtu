@@ -48,8 +48,8 @@ double MSA::gapFrac(unsigned j) const {
 }
 
 double MSA::gapWFrac(unsigned j) const {
-	double numRes = resCount.col(j).sum();
-	double numGap = gapCount(j);
+	double numRes = resWCount.col(j).sum();
+	double numGap = gapWCount(j);
 	return numGap / (numRes + numGap);
 }
 

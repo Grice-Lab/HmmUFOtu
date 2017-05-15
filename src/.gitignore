@@ -5,3 +5,12 @@
 *.Po
 *.a
 Makefile
+/hmmufotu
+/hmmufotu-anneal
+/hmmufotu-build
+/hmmufotu-inspect
+/hmmufotu-place
+/hmmufotu-sim
+/hmmufotu-sum
+/hmmufotu-train-dm
+/hmmufotu-train-sm
