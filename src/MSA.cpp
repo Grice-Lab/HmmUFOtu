@@ -48,13 +48,13 @@ double MSA::gapFrac(unsigned j) const {
 }
 
 double MSA::gapWFrac(unsigned j) const {
-	return gapWCount(j) / numSeq;
+	double numRes = resCount.col(j).sum();
+	double numGap = gapCount(j);
+	return numGap / (numRes + numGap);
 }
 
 double MSA::symFrac(unsigned j) const {
-	double numRes = resCount.col(j).sum();
-	double numGap = gapCount(j);
-	return numRes / (numRes + numGap);
+	return resCount.col(j).sum() / static_cast<double>(numSeq);
 }
 
 double MSA::symWFrac(unsigned j) const {
