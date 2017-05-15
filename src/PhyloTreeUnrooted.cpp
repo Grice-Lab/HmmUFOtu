@@ -180,7 +180,9 @@ unsigned PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 			continue;
 		(*node)->seq = msa.dsAt(result->second);
 		msaId2node[result->second] = *node;
+		node2msaId[*node] = result->second;
 	}
+	assert(msaId2node.size() == node2msaId.size());
 	return msaId2node.size() - n0;
 }
 
@@ -514,7 +516,8 @@ istream& PTUnrooted::loadMSAIndex(istream& in) {
 	for(unsigned i = 0; i < N; ++i) {
 		in.read((char*) &msaId, sizeof(unsigned));
 		in.read((char*) &id, sizeof(long));
-		msaId2node[msaId] = id2node.at(id); /* build index */
+		msaId2node[msaId] = id2node.at(id); /* build forward index */
+		node2msaId[id2node.at(id)] = msaId; /* build reverse index */
 	}
 
 	return in;

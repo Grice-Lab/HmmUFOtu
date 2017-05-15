@@ -387,14 +387,24 @@ public:
 		return root;
 	}
 
-	/** get MSA index */
-	const map<unsigned, PTUNodePtr>& getMSAIndex() const {
+	/** get MSA2Node index */
+	const map<unsigned, PTUNodePtr>& getMSA2NodeIndex() const {
 		return msaId2node;
+	}
+
+	/** get Node2MSA index */
+	const map<PTUNodePtr, unsigned>& getNode2MSAIndex() const {
+		return node2msaId;
 	}
 
 	/** get node by MSA id */
 	PTUNodePtr getNodeByMSAId(unsigned id) const {
 		return msaId2node.at(id);
+	}
+
+	/** get MSA id by node */
+	unsigned getMSAIdByNode(const PTUNodePtr& node) const {
+		return node2msaId.at(node);
 	}
 
 	/** get all nodes */
@@ -1146,6 +1156,7 @@ private:
 	PTUNodePtr root; /* root node of this tree */
 	vector<PTUNodePtr> id2node; /* indexed tree nodes */
 	map<unsigned, PTUNodePtr> msaId2node; /* original id in MSA to node map */
+	map<PTUNodePtr, unsigned> node2msaId; /* node to original id in MSA map */
 
 	BranchMap node2branch; /* branch length index storing edge length */
 
