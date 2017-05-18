@@ -71,7 +71,7 @@ struct PTPlacement {
 	PTPlacement(const PTUnrooted::PTUNodePtr& cNode, const PTUnrooted::PTUNodePtr& pNode,
 			double ratio, double wnr, double loglik,
 			double annoDist = 0, double qPlace = 0, double qTaxonomy = 0)
-	: cNode(cNode), pNode(pNode), ratio(ratio), wnr(wnr), loglik(loglik), annoDist(annoDist), qPlace(qPlace), qTaxonomy(qTaxonomy)
+	: cNode(cNode), pNode(pNode), ratio(ratio), wnr(wnr), loglik(loglik), annoDist(annoDist), qPlace(qPlace), qTaxon(qTaxonomy)
 	{ }
 
 	long getTaxonId() const {
@@ -98,7 +98,7 @@ struct PTPlacement {
 	double loglik;
 	double annoDist;
 	double qPlace;
-	double qTaxonomy;
+	double qTaxon;
 };
 
 /**
@@ -624,7 +624,6 @@ void PTPlacement::calcQValues(vector<PTPlacement>& places) {
 	if(places.empty())
 		return;
 
-	VectorXd p;
 	/* explore all placements */
 	VectorXd llPlace(places.size());
 	map<string, double> llTax;
@@ -634,11 +633,14 @@ void PTPlacement::calcQValues(vector<PTPlacement>& places) {
 	for(vector<PTPlacement>::const_iterator placement = places.begin(); placement != places.end(); ++placement) {
 		llPlace(i++) = placement->loglik;
 		string taxonomy = placement->getTaxonName();
-		llTax[taxonomy] = EGriceLab::Math::add_scaled(::log(llTax[taxonomy]), placement->loglik);
+		if(llTax.find(taxonomy) == llTax.end())
+			llTax[taxonomy] = placement->loglik;
+		else
+			llTax[taxonomy] = EGriceLab::Math::add_scaled(llTax[taxonomy], placement->loglik);
 		llTaxNorm = EGriceLab::Math::add_scaled(llTaxNorm, placement->loglik);
 	}
 	/* scale and normalize llPlace */
-	p = (llPlace.array() - llPlace.maxCoeff()).exp();
+	VectorXd p = (llPlace.array() - llPlace.maxCoeff()).exp();
 	p /= p.sum();
 	/* calculate qPlace */
 	for(vector<PTPlacement>::size_type i = 0; i < places.size(); ++i) {
@@ -647,9 +649,9 @@ void PTPlacement::calcQValues(vector<PTPlacement>& places) {
 	}
 
 	/* calculate qTaxonomy */
-	for(vector<PTPlacement>::const_iterator placement = places.begin(); placement != places.end(); ++placement) {
+	for(vector<PTPlacement>::iterator placement = places.begin(); placement != places.end(); ++placement) {
 		double q = EGriceLab::Math::p2q(1 - ::exp(llTax[placement->getTaxonName()] - llTaxNorm));
-		placement->qTaxonomy = q > MAX_Q ? MAX_Q : q;
+		placement->qTaxon = q > MAX_Q ? MAX_Q : q;
 	}
 }
 
@@ -665,11 +667,11 @@ inline ostream& operator<<(ostream& out, const PTPlacement& place) {
 	if(place.cNode != NULL && place.pNode != NULL)
 		out << place.getId() << "\t" << place.ratio << "\t"
 		<< place.getTaxonId() << "\t" << place.getTaxonName() << "\t"
-		<< place.annoDist << "\t" << place.loglik << "\t" << place.qPlace;
+		<< place.annoDist << "\t" << place.loglik << "\t" << place.qPlace << "\t" << place.qTaxon;
 	else
 		out << UNASSIGNED_ID << "\t" << UNASSIGNED_RATIO << "\t"
 		<< UNASSIGNED_TAXONID << "\t" << UNASSIGNED_TAXONNAME << "\t"
-		<< UNASSIGNED_DIST << "\t" << UNASSIGNED_LOGLIK << "\t" << UNASSIGNED_POSTQ;
+		<< UNASSIGNED_DIST << "\t" << UNASSIGNED_LOGLIK << "\t" << UNASSIGNED_POSTQ << "\t" << UNASSIGNED_POSTQ;
 	return out;
 }
 

@@ -176,7 +176,7 @@ size_t count_not_element(T x, const T* arr, size_t n) {
  * @param n  maximum number to encode
  * @return bits required to encode this numbers upto this value, or -1 if size is zero or negative
  */
-int bpe(int n) {
+inline int bpe(int n) {
 	if(n <= 0)
 		return -1;
 	int shift = 0;
@@ -219,7 +219,7 @@ double sum(const T* arr, const double* w, size_t n) {
 /**
  * normalize a given double array
  */
-void normalize(double* arr, size_t n, double C = 1.0) {
+inline void normalize(double* arr, size_t n, double C = 1.0) {
 	if(n == 0)
 		return;
 	double s = sum(arr, n);
@@ -230,18 +230,18 @@ void normalize(double* arr, size_t n, double C = 1.0) {
 /**
  * add two log-likelihood value without underflowing by scaling
  */
-double add_scaled(double logA, double logB) {
+inline double add_scaled(double logA, double logB) {
 	double scale = std::max(logA, logB); /* always scaling */
 	return ::log(::exp(logA - scale) + ::exp(logB - scale)) + scale;
 }
 
 /** calculate Q value from p-value */
-double p2q(double p, double b = 10) {
+inline double p2q(double p, double b = 10) {
 	return -b * ::log(p) / ::log(b);
 }
 
 /** calculate p value from q-value */
-double q2p(double q, double b = 10) {
+inline double q2p(double q, double b = 10) {
 	return ::exp(- q / b * ::log(b));
 }
 
