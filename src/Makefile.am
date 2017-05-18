@@ -56,7 +56,6 @@ hmmufotu-train-dm \
 hmmufotu-train-sm \
 hmmufotu-train-hmm \
 hmmufotu-sim \
-hmmufotu-place \
 hmmufotu-build \
 hmmufotu-inspect \
 hmmufotu \
@@ -79,10 +78,6 @@ hmmufotu_train_hmm_CPPFLAGS = $(AM_CPPFLAGS) -DDM_DATADIR=\"$(pkgdatadir)\"
 hmmufotu_sim_SOURCES = hmmufotu-sim.cpp
 hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
 hmmufotu_sim_LDFLAGS = -static
-
-hmmufotu_place_SOURCES = hmmufotu-place.cpp
-hmmufotu_place_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
-hmmufotu_place_LDFLAGS = -static
 
 hmmufotu_build_SOURCES = hmmufotu-build.cpp
 hmmufotu_build_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \

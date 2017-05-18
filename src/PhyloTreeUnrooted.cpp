@@ -31,7 +31,7 @@ using Eigen::Matrix4Xd;
 
 const double PhyloTreeUnrooted::MIN_LOGLIK_EXP = DBL_MIN_EXP / 2; /* use half of the DBL_MIN_EXP to avoid numeric-underflow */
 const double PhyloTreeUnrooted::INVALID_LOGLIK = 1;
-//const double PhyloTreeUnrooted::LOGLIK_REL_EPS = 1e-6;
+const double PhyloTreeUnrooted::LOGLIK_REL_EPS = 1e-6;
 const double PhyloTreeUnrooted::BRANCH_EPS = 1e-5;
 
 const string PhyloTreeUnrooted::KINDOM_PREFIX = "k__";

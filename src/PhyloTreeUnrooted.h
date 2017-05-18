@@ -1168,9 +1168,9 @@ public:
 	static const double MIN_LOGLIK_EXP;
 	static const double INVALID_LOGLIK;
 
-//	static const double LOGLIK_REL_EPS;
+	static const double LOGLIK_REL_EPS;
 	static const double BRANCH_EPS;
-	static const int MAX_ITER = 1000;
+	static const int MAX_ITER = 100;
 	static const char ANNO_FIELD_SEP = '\t';
 	static const string KINDOM_PREFIX;
 	static const string PHYLUM_PREFIX;
