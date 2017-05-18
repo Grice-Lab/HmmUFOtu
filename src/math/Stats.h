@@ -12,8 +12,10 @@
 #include <cstddef>
 #include <map>
 #include <vector>
+#include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <cfloat>
 
 namespace EGriceLab {
 
@@ -21,6 +23,9 @@ namespace Math {
 
 using std::map;
 using std::vector;
+
+const double inf = std::numeric_limits<double>::infinity();
+const double infV = -inf;
 
 /**
  * A template method to found the associated key of the maximum value in a std::map
@@ -171,7 +176,7 @@ size_t count_not_element(T x, const T* arr, size_t n) {
  * @param n  maximum number to encode
  * @return bits required to encode this numbers upto this value, or -1 if size is zero or negative
  */
-inline int bpe(int n) {
+int bpe(int n) {
 	if(n <= 0)
 		return -1;
 	int shift = 0;
@@ -214,12 +219,30 @@ double sum(const T* arr, const double* w, size_t n) {
 /**
  * normalize a given double array
  */
-inline void normalize(double* arr, size_t n, double C = 1.0) {
+void normalize(double* arr, size_t n, double C = 1.0) {
 	if(n == 0)
 		return;
 	double s = sum(arr, n);
 	for(double* ptr = arr; ptr != arr + n; ++ptr)
 		*ptr /= s * C;
+}
+
+/**
+ * add two log-likelihood value without underflowing by scaling
+ */
+double add_scaled(double logA, double logB) {
+	double scale = std::max(logA, logB); /* always scaling */
+	return ::log(::exp(logA - scale) + ::exp(logB - scale)) + scale;
+}
+
+/** calculate Q value from p-value */
+double p2q(double p, double b = 10) {
+	return -b * ::log(p) / ::log(b);
+}
+
+/** calculate p value from q-value */
+double q2p(double q, double b = 10) {
+	return ::exp(- q / b * ::log(b));
 }
 
 } /* namespace Math */
