@@ -218,7 +218,7 @@ int main(int argc, char* argv[]) {
 			return EXIT_FAILURE;
 		}
 		string line;
-		long taxa_id;
+		long taxon_id;
 		string aln;
 		while((std::getline(in, line))) {
 			if(StringUtils::startsWith(line, "id"))
@@ -227,11 +227,11 @@ int main(int argc, char* argv[]) {
 			iss.ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t');
 			iss >> aln;
 			iss.ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t');
-			iss >> taxa_id;
+			iss >> taxon_id;
 
-			if(taxa_id < 0)
+			if(taxon_id < 0)
 				continue; /* invalid placement */
-			const PTUnrooted::PTUNodePtr& node = ptu.getNode(taxa_id);
+			const PTUnrooted::PTUNodePtr& node = ptu.getNode(taxon_id);
 			if(otuData.find(node) == otuData.end()) /* not initiated */
 				otuData.insert(std::make_pair(node, NodeObsData(L, S)));
 			NodeObsData& data = otuData.find(node)->second;
@@ -263,12 +263,12 @@ int main(int argc, char* argv[]) {
 		otuOut << node->getId() << "\t";
 		for(int s = 0; s < S; ++s)
 			otuOut << data.count(s) << "\t";
-		otuOut << node->getTaxa() << endl;
+		otuOut << node->getTaxon() << endl;
 
 		if(csOut.is_open()) {
 			DigitalSeq seq = ptu.inferPostCS(node, data.freq, data.gap, effN);
 			string desc = "DBName="
-					+ dbName + ";Taxonomy=\"" + node->getTaxa()
+					+ dbName + ";Taxonomy=\"" + node->getTaxon()
 					+ "\";AnnoDist=" + boost::lexical_cast<string>(node->getAnnoDist())
 					+ ";ReadCount=" + boost::lexical_cast<string>(nRead)
 					+ ";SampleHits=" + boost::lexical_cast<string>(nSample);

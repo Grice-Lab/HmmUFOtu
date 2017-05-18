@@ -43,7 +43,7 @@ const string PhyloTreeUnrooted::GENUS_PREFIX = "g__";
 const string PhyloTreeUnrooted::SPECIES_PREFIX = "s__";
 const Matrix4d PhyloTreeUnrooted::leafMat = initLeafMat();
 
-static const char* TAXA_SEP = ";: "; /* valid taxa name separator */
+static const char* TAXON_SEP = ";: "; /* valid taxon name separator */
 
 bool PTUnrooted::isTip(const PTUNodePtr& node) {
 	if(node->isLeaf())
@@ -658,7 +658,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 	const Matrix4Xd& U = getBranchLoglik(u, v);
 	const Matrix4Xd& V = getBranchLoglik(v, u);
 	/* Felsenstein's iterative optimizing algorithm */
-	while(p >= 0 && p <= 1) {
+	for(int iter = 0; iter < MAX_ITER && p >= 0 && p <= 1; ++iter) {
 		p = 0;
 		int N = 0;
 		for(int j = start; j <= end; ++j) {
@@ -705,7 +705,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 	double wnr = wnr0;
 
 	/* every outgoing loglik(r,u), loglik(r,v) and loglik(r,n) depends on the other two incoming loglik */
-	while(0 <= wur && wur <= w0) {
+	for(int iter = 0; iter < MAX_ITER && 0 <= wur && wur <= w0; ++iter) {
 		/* evaluate loglik(r, n) and update wnr */
 		setRoot(n);
 		resetLoglik(r, n);
@@ -803,36 +803,36 @@ double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PT
 	return treeLoglik(start, end);
 }
 
-bool PhyloTreeUnrooted::isFullCanonicalName(const string& taxa) {
+bool PhyloTreeUnrooted::isFullCanonicalName(const string& taxon) {
 	vector<string> fields;
-	boost::split(fields, taxa, boost::is_any_of(TAXA_SEP), boost::token_compress_on);
+	boost::split(fields, taxon, boost::is_any_of(TAXON_SEP), boost::token_compress_on);
 	for(vector<string>::size_type level = 0; level < fields.size(); ++level)
-		if(!isCanonicalName(fields[level], static_cast<TaxaLevel> (level)))
+		if(!isCanonicalName(fields[level], static_cast<TaxonLevel> (level)))
 			return false;
 	return true;
 }
 
-bool PhyloTreeUnrooted::isPartialCanonicalName(const string& taxa) {
+bool PhyloTreeUnrooted::isPartialCanonicalName(const string& taxon) {
 	vector<string> fields;
-	boost::split(fields, taxa, boost::is_any_of(TAXA_SEP), boost::token_compress_on);
+	boost::split(fields, taxon, boost::is_any_of(TAXON_SEP), boost::token_compress_on);
 	for(vector<string>::const_iterator name = fields.begin(); name != fields.end(); ++name)
 		if(!isCanonicalName(*name))
 			return false;
 	return true;
 }
 
-string PhyloTreeUnrooted::formatTaxaName(const string& taxa) {
-	if(taxa.empty())
-		return taxa;
+string PhyloTreeUnrooted::formatTaxonName(const string& taxon) {
+	if(taxon.empty())
+		return taxon;
 
-	vector<string> formatedTaxa;
+	vector<string> formatedTaxon;
 	vector<string> fields;
-	boost::split(fields, taxa, boost::is_any_of(TAXA_SEP), boost::token_compress_on);
+	boost::split(fields, taxon, boost::is_any_of(TAXON_SEP), boost::token_compress_on);
 	for(vector<string>::const_iterator name = fields.begin(); name != fields.end(); ++name)
 		if(isCanonicalName(*name))
-			formatedTaxa.push_back(*name);
+			formatedTaxon.push_back(*name);
 
-	return boost::join(formatedTaxa, ";");
+	return boost::join(formatedTaxon, ";");
 }
 
 void PhyloTreeUnrooted::annotate() {

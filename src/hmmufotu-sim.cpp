@@ -261,7 +261,6 @@ int main(int argc, char* argv[]) {
 			regionIn.ignore(MAX_IGNORE, '\t') >> start;
 			regionIn.ignore(MAX_IGNORE, '\t') >> end;
 			regionIn.ignore(MAX_IGNORE, '\n');
-			cerr << start << "-" << end << endl;
 			if(!(0 <= start && start < end && end <= csLen)) {
 				warningLog << "provided region (" << start << "," << end << "] is not in the consensus sequence range, ignored" << endl;
 				continue;
@@ -388,7 +387,7 @@ int main(int argc, char* argv[]) {
 			seq.append(csLen - 1 - end, PAD_SYM);
 		sprintf(desc, "ID=%ld->%ld;Name=\"%s\";AnnoDist=%f;csStart=%d;csEnd=%d;csLen=%d;InsertLen=%d;",
 				cNode->getId(), pNode->getId(),
-				rc < 0.5 ? cNode->getTaxa().c_str() : pNode->getTaxa().c_str(),
+				rc < 0.5 ? cNode->getTaxon().c_str() : pNode->getTaxon().c_str(),
 				rc < 0.5 ? v * rc : v * (1 - rc),
 				start, end, end - start + 1, seq.length());
 

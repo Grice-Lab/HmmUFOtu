@@ -31,7 +31,7 @@ void printUsage(const string& progName) {
 		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <MSA-INFILE> [options]" << endl
 		 << "MSA-FILE  FILE                 : multiple-sequence aligned input" << endl
 		 << "Options:    -o  FILE           : write output to FILE instead of stdout" << endl
-		 << "            -T  FILE           : in addition to the placement output, write the taxa summary table to TAXA-FILE" << endl
+		 << "            -T  FILE           : in addition to the placement output, write the taxon summary table to TAXON-FILE" << endl
 		 << "            -d|--pdist  DBL    : maximum p-dist between placed read and observed leaves during the optimal search [" << DEFAULT_MAX_PDIST << "]" << endl
 		 << "            -q  DBL            : minimum Q-value (negative log10 of the error) required for a read placement [" << DEFAULT_MIN_Q << "]" << endl
 		 << "            -v  FLAG           : enable verbose information" << endl
@@ -40,10 +40,10 @@ void printUsage(const string& progName) {
 
 int main(int argc, char* argv[]) {
 	/* variable declarations */
-	string inFn, seqFn, outFn, taxaFn;
+	string inFn, seqFn, outFn, taxonFn;
 	string fmt;
 	ifstream ptuIn;
-	ofstream of, taxaOut;
+	ofstream of, taxonOut;
 
 	double maxDist = DEFAULT_MAX_PDIST;
 	double minQ = DEFAULT_MIN_Q;
@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
 				if(treeLik > maxLoglik) {
 					maxLoglik = treeLik;
 					bestNode = node;
-					bestAnnotation = n->getTaxa();
+					bestAnnotation = n->getTaxon();
 				}
 				if(treeLik <= prevlik)
 					break;

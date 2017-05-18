@@ -58,7 +58,7 @@ typedef PhyloTreeUnrooted PTUnrooted;
 class PhyloTreeUnrooted {
 public:
 	/* nested types and enums */
-	enum TaxaLevel {
+	enum TaxonLevel {
 		KINDOM, PHYLUM, CLASS, ORDER, FAMILY, GENUS, SPECIS
 	};
 
@@ -129,9 +129,9 @@ public:
 		}
 
 		/**
-		 * Get node taxa annotation, with an optional "Other" suffix if too far from its annotation source
+		 * Get node taxon annotation, with an optional "Other" suffix if too far from its annotation source
 		 */
-		string getTaxa(double maxDist = inf) const;
+		string getTaxon(double maxDist = inf) const;
 
 		long getId() const {
 			return id;
@@ -1107,27 +1107,27 @@ public:
 	/* return the rowwise mean of a given matrix at exponential scale, scale each row if neccessary */
 	static Vector4d row_mean_exp_scaled(const Matrix4Xd& X);
 
-	/** get taxa prefix by their level */
-	static string taxaLevel2prefix(TaxaLevel level);
+	/** get taxon prefix by their level */
+	static string taxonLevel2prefix(TaxonLevel level);
 
-	/** test whether this taxa subpart is a carnonical name at any level */
-	static bool isCanonicalName(const string& taxa);
+	/** test whether this taxon subpart is a carnonical name at any level */
+	static bool isCanonicalName(const string& taxon);
 
-	/** test whether this taxa subpart is a carnonical name at a given level */
-	static bool isCanonicalName(const string& taxa, TaxaLevel level);
+	/** test whether this taxon subpart is a carnonical name at a given level */
+	static bool isCanonicalName(const string& taxon, TaxonLevel level);
 
-	/** test whether this taxa name is in full canonical format */
-	static bool isFullCanonicalName(const string& taxa);
+	/** test whether this taxon name is in full canonical format */
+	static bool isFullCanonicalName(const string& taxon);
 
-	/** test whether this taxa name is in partial or full canonical format */
-	static bool isPartialCanonicalName(const string& taxa);
+	/** test whether this taxon name is in partial or full canonical format */
+	static bool isPartialCanonicalName(const string& taxon);
 
 	/**
-	 * format taxonomy name, removes white spaces and unnecessary unnamed taxa prefix
-	 * @param taxa  taxa name to be formated
+	 * format taxonomy name, removes white spaces and unnecessary unnamed taxon prefix
+	 * @param taxon  taxon name to be formated
 	 * @return  the formated name. which is empty or carnonical like 'k__xxx;p__xxx;c__xxx'
 	 */
-	static string formatTaxaName(const string& taxa);
+	static string formatTaxonName(const string& taxon);
 
 	/**
 	 * Infer the base based on a given loglik vector
@@ -1170,6 +1170,7 @@ public:
 
 //	static const double LOGLIK_REL_EPS;
 	static const double BRANCH_EPS;
+	static const int MAX_ITER = 1000;
 	static const char ANNO_FIELD_SEP = '\t';
 	static const string KINDOM_PREFIX;
 	static const string PHYLUM_PREFIX;
@@ -1367,7 +1368,7 @@ inline Vector4d PTUnrooted::row_mean_exp_scaled(const Matrix4Xd& X) {
 	return (X.colwise() + scale).array().exp().rowwise().mean().log().matrix() - scale;
 }
 
-inline string PTUnrooted::taxaLevel2prefix(TaxaLevel level) {
+inline string PTUnrooted::taxonLevel2prefix(TaxonLevel level) {
 	switch(level) {
 	case KINDOM:
 		return KINDOM_PREFIX;
@@ -1390,30 +1391,30 @@ inline string PTUnrooted::taxaLevel2prefix(TaxaLevel level) {
 
 inline void PTUnrooted::formatName() {
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
-		(*node)->name = formatTaxaName((*node)->name);
+		(*node)->name = formatTaxonName((*node)->name);
 }
 
 inline void PTUnrooted::formatAnnotation() {
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
-		(*node)->anno = formatTaxaName((*node)->anno);
+		(*node)->anno = formatTaxonName((*node)->anno);
 }
 
-inline bool PTUnrooted::isCanonicalName(const string& taxa) {
-	return  taxa.length() > 3 &&
-			(StringUtils::startsWith(taxa, KINDOM_PREFIX) ||
-			StringUtils::startsWith(taxa, PHYLUM_PREFIX) ||
-			StringUtils::startsWith(taxa, CLASS_PREFIX) ||
-			StringUtils::startsWith(taxa, ORDER_PREFIX) ||
-			StringUtils::startsWith(taxa, FAMILY_PREFIX) ||
-			StringUtils::startsWith(taxa, GENUS_PREFIX) ||
-			StringUtils::startsWith(taxa, SPECIES_PREFIX));
+inline bool PTUnrooted::isCanonicalName(const string& taxon) {
+	return  taxon.length() > 3 &&
+			(StringUtils::startsWith(taxon, KINDOM_PREFIX) ||
+			StringUtils::startsWith(taxon, PHYLUM_PREFIX) ||
+			StringUtils::startsWith(taxon, CLASS_PREFIX) ||
+			StringUtils::startsWith(taxon, ORDER_PREFIX) ||
+			StringUtils::startsWith(taxon, FAMILY_PREFIX) ||
+			StringUtils::startsWith(taxon, GENUS_PREFIX) ||
+			StringUtils::startsWith(taxon, SPECIES_PREFIX));
 }
 
-inline bool PTUnrooted::isCanonicalName(const string& taxa, TaxaLevel level) {
-	return StringUtils::startsWith(taxa, taxaLevel2prefix(level));
+inline bool PTUnrooted::isCanonicalName(const string& taxon, TaxonLevel level) {
+	return StringUtils::startsWith(taxon, taxonLevel2prefix(level));
 }
 
-inline string PTUnrooted::PTUNode::getTaxa(double maxDist) const {
+inline string PTUnrooted::PTUNode::getTaxon(double maxDist) const {
 	return annoDist <= maxDist ? anno : anno + ";Other";
 }
 

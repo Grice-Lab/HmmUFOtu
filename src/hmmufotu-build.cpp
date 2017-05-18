@@ -270,12 +270,12 @@ int main(int argc, char* argv[]) {
 			infoLog << "Taxonomy annotation loaded" << endl;
 	}
 	tree.formatName();
-	infoLog << "Taxa names formatted" << endl;
+	infoLog << "Taxon names formatted" << endl;
 
 	tree.annotate();
 	infoLog << "Unnamed tree nodes annotated" << endl;
 //	for(int i = 0; i < tree.numNodes(); ++i)
-//		cerr << "ID: " << tree.getNode(i)->getId() << " annotation: " << tree.getNode(i)->getTaxa() << endl;
+//		cerr << "ID: " << tree.getNode(i)->getId() << " annotation: " << tree.getNode(i)->getTaxon() << endl;
 
 	/* read DNA sub model from model file */
 	DNASubModel* model = NULL;

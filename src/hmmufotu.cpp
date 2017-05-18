@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
+#include <map>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/lexical_cast.hpp>
@@ -28,7 +29,7 @@ using namespace EGriceLab;
 using namespace Eigen;
 
 /* default values */
-static const double DEFAULT_MAX_PDIST = 0.1;
+static const double DEFAULT_MAX_PDIST = inf;
 static const size_t DEFAULT_MAX_LOCATION = 50;
 static const int DEFAULT_MIN_Q = 0;
 static const int MAX_Q = 250; /* maximum allowed Q value */
@@ -38,15 +39,15 @@ static const int MIN_SEED_LEN = 15;
 static const int DEFAULT_SEED_REGION = 50;
 static const double DEFAULT_MAX_PLACE_ERROR = 20;
 static const int DEFAULT_NUM_THREADS = 1;
-static const long UNASSIGNED_TAXAID = -1;
-static const string UNASSIGNED_TAXANAME = "UNASSIGNED";
+static const long UNASSIGNED_TAXONID = -1;
+static const string UNASSIGNED_TAXONNAME = "UNASSIGNED";
 static const double UNASSIGNED_LOGLIK = EGriceLab::nan;
 static const string UNASSIGNED_ID = "NULL";
 static const double UNASSIGNED_POSTQ = EGriceLab::nan;
 static const double UNASSIGNED_DIST = EGriceLab::nan;
 static const double UNASSIGNED_RATIO = EGriceLab::nan;
 
-static const string PLACE_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\tbranch_id\tbranch_ratio\ttaxa_id\ttaxa_anno\tanno_dist\tloglik\tQ_value";
+static const string PLACE_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\tbranch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
 
 /** struct to store potential placement location information reads */
 struct PTLoc {
@@ -69,15 +70,15 @@ struct PTPlacement {
 	/** construct a placement with basic info and optionally auxilary info */
 	PTPlacement(const PTUnrooted::PTUNodePtr& cNode, const PTUnrooted::PTUNodePtr& pNode,
 			double ratio, double wnr, double loglik,
-			double annoDist = 0, double q = 0)
-	: cNode(cNode), pNode(pNode), ratio(ratio), wnr(wnr), loglik(loglik), annoDist(annoDist), q(q)
+			double annoDist = 0, double qPlace = 0, double qTaxonomy = 0)
+	: cNode(cNode), pNode(pNode), ratio(ratio), wnr(wnr), loglik(loglik), annoDist(annoDist), qPlace(qPlace), qTaxonomy(qTaxonomy)
 	{ }
 
-	long getTaxaId() const {
+	long getTaxonId() const {
 		return ratio <= 0.5 ? cNode->getId() : pNode->getId();
 	}
 
-	string getTaxaName() const {
+	string getTaxonName() const {
 		return ratio <= 0.5 ? cNode->getAnno() : pNode->getAnno();
 	}
 
@@ -96,7 +97,8 @@ struct PTPlacement {
 	double wnr;   /* new branch length */
 	double loglik;
 	double annoDist;
-	double q;
+	double qPlace;
+	double qTaxonomy;
 };
 
 /**
@@ -112,7 +114,7 @@ void printUsage(const string& progName) {
 		 << "            -L|--seed-len  INT : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT            : size of 5'/3' seed region for finding seeds [" << DEFAULT_SEED_REGION << "]" << endl
 		 << "            -s  FLAG           : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
-		 << "            -d|--pdist  DBL    : maximum p-dist between placed read and observed leaves during the optimal search [" << DEFAULT_MAX_PDIST << "]" << endl
+		 << "            -d|--pdist  DBL    : maximum p-dist between read and tree nodes during the seed search stage [" << DEFAULT_MAX_PDIST << "]" << endl
 		 << "            -N  INT            : max number of most potential locations (based on p-dist) to try initial estimation [" << DEFAULT_MAX_LOCATION << "]" << endl
 		 << "            -e  DBL            : max placement error between fast estimation and accurate placement [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
 		 << "            -q  INT            : minimum Q-value (negative log10 of posterior placement probability) required for a read placement [" << DEFAULT_MIN_Q << "]" << endl
@@ -390,28 +392,26 @@ int main(int argc, char* argv[]) {
 	hmm.setSequenceMode(mode);
 	hmm.wingRetract();
 
+
 	/* process reads and output */
 	out << PLACE_HEADER << endl;
-#pragma omp parallel
-#pragma omp master /* use master thread to do un-threaded-IO */
+#pragma omp parallel shared(csfm, hmm, ptu, fwdIn, revIn)
+#pragma omp single
 	{
 		while(fwdIn.hasNext() && (!revIn.is_open() || revIn.hasNext())) {
 			string id;
 			string desc;
 			PrimarySeq fwdRead, revRead;
-
 			fwdRead = fwdIn.nextSeq();
 			id = fwdRead.getId();
 			desc = fwdRead.getDesc();
 			if(revIn.is_open()) { /* paired-ended */
 				revRead = revIn.nextSeq().revcom();
-				if(fwdRead.getId() != revRead.getId()) {
+				if(fwdRead.getId() != revRead.getId())
 					warningLog << "Warning: Paired-end read doesn't match at " << fwdRead.getId() << " vs. " << revRead.getId() << endl;
-					continue;
-				}
 			}
 
-#pragma omp task shared(hmm, csfm, ptu) /* task begin */
+#pragma omp task
 			{
 				int csStart = 0; /* 1-based consensus start */
 				int csEnd = 0;   /* 1-based consensus end */
@@ -429,7 +429,7 @@ int main(int argc, char* argv[]) {
 					assert(revAln.length() == csLen);
 					if(!(csStart <= revStart && csEnd <= revEnd))
 #pragma omp critical(warning)
-					warningLog << "Warning: Potential incorrectly oriented read found at " << id << endl;
+						warningLog << "Warning: Potential incorrectly oriented read found at " << id << endl;
 
 					/* update alignment */
 					csStart = ::min(csStart, revStart);
@@ -466,24 +466,21 @@ int main(int argc, char* argv[]) {
 							break;
 					}
 					places.erase(it, places.end()); /* remove too bad placements */
-					//	cerr << "Retaining " << places.size() << " branches for accurate placement" << endl;
 
 					/* accurate placement */
 					placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
-					std::sort(places.rbegin(), places.rend());
+					std::sort(places.rbegin(), places.rend()); /* sort places decently by real loglik */
 					bestPlace = places.front();
-				}
-
-
 
 				/* write main output */
 #pragma omp critical(writePlace)
 				out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t" << aln << "\t"
 						<< bestPlace << endl;
+				}
 			} /* end task */
 		} /* end each read/pair */
 #pragma omp taskwait
-	} /* end parallel */
+	} /* end single */
 	return 0;
 }
 
@@ -604,7 +601,6 @@ vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int 
 		double wur = subtree.getBranchLength(u, r);
 		double wvr = w0 - wur;
 		place->ratio = wur / w0;
-//		cerr << "Real placement ratio: " << ratio << " wnr: " << wnr << " loglik: " << loglik << endl;
 //		cerr << "delta loglik: " << (loglik - loglik0) << endl;
 		if(wvr <= wur) { /* r->v is shorter */
 			place->annoDist = v->getAnnoDist() + wvr + wnr;
@@ -628,21 +624,32 @@ void PTPlacement::calcQValues(vector<PTPlacement>& places) {
 	if(places.empty())
 		return;
 
-	VectorXd loglik(places.size());
+	VectorXd p;
+	/* explore all placements */
+	VectorXd llPlace(places.size());
+	map<string, double> llTax;
+	double llTaxNorm = infV; /* log(0) */
+
 	VectorXd::Index i = 0;
-	for(vector<PTPlacement>::const_iterator placement = places.begin(); placement != places.end(); ++placement)
-		loglik(i++) = placement->loglik;
-
-	/* scale and normalize */
-	VectorXd p = (loglik.array() - loglik.maxCoeff()).exp();
+	for(vector<PTPlacement>::const_iterator placement = places.begin(); placement != places.end(); ++placement) {
+		llPlace(i++) = placement->loglik;
+		string taxonomy = placement->getTaxonName();
+		llTax[taxonomy] = EGriceLab::Math::add_scaled(::log(llTax[taxonomy]), placement->loglik);
+		llTaxNorm = EGriceLab::Math::add_scaled(llTaxNorm, placement->loglik);
+	}
+	/* scale and normalize llPlace */
+	p = (llPlace.array() - llPlace.maxCoeff()).exp();
 	p /= p.sum();
-
-	/* assign q-values */
+	/* calculate qPlace */
 	for(vector<PTPlacement>::size_type i = 0; i < places.size(); ++i) {
-		double q = -::log10(1 - p(i));
-		if(q > MAX_Q)
-			q = MAX_Q;
-		places[i].q = q;
+		double q = EGriceLab::Math::p2q(1 - p(i));
+		places[i].qPlace = q > MAX_Q ? MAX_Q : q;
+	}
+
+	/* calculate qTaxonomy */
+	for(vector<PTPlacement>::const_iterator placement = places.begin(); placement != places.end(); ++placement) {
+		double q = EGriceLab::Math::p2q(1 - ::exp(llTax[placement->getTaxonName()] - llTaxNorm));
+		placement->qTaxonomy = q > MAX_Q ? MAX_Q : q;
 	}
 }
 
@@ -657,11 +664,11 @@ inline bool operator<(const PTPlacement& lhs, const PTPlacement& rhs) {
 inline ostream& operator<<(ostream& out, const PTPlacement& place) {
 	if(place.cNode != NULL && place.pNode != NULL)
 		out << place.getId() << "\t" << place.ratio << "\t"
-		<< place.getTaxaId() << "\t" << place.getTaxaName() << "\t"
-		<< place.annoDist << "\t" << place.loglik << "\t" << place.q;
+		<< place.getTaxonId() << "\t" << place.getTaxonName() << "\t"
+		<< place.annoDist << "\t" << place.loglik << "\t" << place.qPlace;
 	else
 		out << UNASSIGNED_ID << "\t" << UNASSIGNED_RATIO << "\t"
-		<< UNASSIGNED_TAXAID << "\t" << UNASSIGNED_TAXANAME << "\t"
+		<< UNASSIGNED_TAXONID << "\t" << UNASSIGNED_TAXONNAME << "\t"
 		<< UNASSIGNED_DIST << "\t" << UNASSIGNED_LOGLIK << "\t" << UNASSIGNED_POSTQ;
 	return out;
 }

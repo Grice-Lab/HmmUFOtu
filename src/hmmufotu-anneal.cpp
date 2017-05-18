@@ -28,7 +28,7 @@ static const char* TAXON_NAMES[7] = { "KINDOM", "PHYLUM", "CLASS", "ORDER", "FAM
 
 enum TaxonLevel { KINDOM, PHYLUM, CLASS, ORDER, FAMILY, GENUS, SPECIES };
 
-static const string ANNEAL_HEADER = "id\tdescription\tstrand\tCS_start\tCS_end\talignment\ttotal_nodes\ttotal_leaves\thit_nodes\thit_leaves\tefficiency_nodes\tefficiency_leaves";
+static const string ANNEAL_HEADER = "id\tdescription\tsequence\tstrand\tCS_start\tCS_end\talignment\ttotal_nodes\ttotal_leaves\thit_nodes\thit_leaves\tefficiency_nodes\tefficiency_leaves";
 
 /**
  * Print the usage information
@@ -253,7 +253,7 @@ int main(int argc, char* argv[]) {
 		}
 
 		/* output */
-		out << fwdRead.getId() << "\t" << fwdRead.getDesc() << "\t" <<
+		out << fwdRead.getId() << "\t" << fwdRead.getDesc() << "\t" << fwdRead.getSeq() << "\t" <<
 				strand << "\t" << csStart << "\t" << csEnd << "\t" << aln.substr(csStart - 1, csEnd - csStart + 1) << "\t" <<
 				nNodes << "\t" << nLeaves << "\t" << hitsNodes << "\t" << hitsLeaves << "\t" <<
 				static_cast<double>(hitsNodes) / nNodes << "\t" << static_cast<double>(hitsLeaves) / nLeaves << endl;
