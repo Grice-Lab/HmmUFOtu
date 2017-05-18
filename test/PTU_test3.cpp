@@ -91,7 +91,7 @@ int main(int argc, const char* argv[]) {
 		return EXIT_FAILURE;
 	}
 	else
-		cerr << "Taxa annotation loaded" << endl;
+		cerr << "Taxon annotation loaded" << endl;
 
 	tree.formatName();
 	cerr << "Tree node names formatted" << endl;
