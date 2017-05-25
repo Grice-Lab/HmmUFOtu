@@ -15,6 +15,7 @@
 #include <cstring>
 #include <cerrno>
 #include <map>
+#include <algorithm>
 #include <boost/unordered_set.hpp>
 #include <boost/unordered_map.hpp>
 #include <boost/lexical_cast.hpp>
@@ -49,6 +50,12 @@ static const double UNASSIGNED_RATIO = EGriceLab::nan;
 
 static const string PLACE_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\tbranch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
 
+/** prior probability method */
+enum PRIOR_TYPE {
+	UNIFORM,
+	HEIGHT
+};
+
 /** struct to store potential placement location information reads */
 struct PTLoc {
 	/** construct a location using given info */
@@ -70,8 +77,10 @@ struct PTPlacement {
 	/** construct a placement with basic info and optionally auxilary info */
 	PTPlacement(const PTUnrooted::PTUNodePtr& cNode, const PTUnrooted::PTUNodePtr& pNode,
 			double ratio, double wnr, double loglik,
-			double annoDist = 0, double qPlace = 0, double qTaxonomy = 0)
-	: cNode(cNode), pNode(pNode), ratio(ratio), wnr(wnr), loglik(loglik), annoDist(annoDist), qPlace(qPlace), qTaxon(qTaxonomy)
+			double height = 0, double annoDist = 0,
+			double qPlace = 0, double qTaxonomy = 0)
+	: cNode(cNode), pNode(pNode), ratio(ratio), wnr(wnr), loglik(loglik),
+	  height(height), annoDist(annoDist), qPlace(qPlace), qTaxon(qTaxonomy)
 	{ }
 
 	long getTaxonId() const {
@@ -86,9 +95,11 @@ struct PTPlacement {
 		return boost::lexical_cast<string> (cNode->getId()) + "->" + boost::lexical_cast<string> (cNode->getParent()->getId());
 	}
 
-	static void calcQValues(vector<PTPlacement>& places);
+	static void calcQValues(vector<PTPlacement>& places, PRIOR_TYPE type);
 
-	friend bool operator<(const PTPlacement& lhs, const PTPlacement& rhs);
+	friend bool compareByLoglik(const PTPlacement& lhs, const PTPlacement& rhs);
+	friend bool compareByQTaxon(const PTPlacement& lhs, const PTPlacement& rhs);
+	friend bool compareByQPlace(const PTPlacement& lhs, const PTPlacement& rhs);
 	friend ostream& operator<<(ostream& out, const PTPlacement& place);
 
 	PTUnrooted::PTUNodePtr cNode;
@@ -97,9 +108,22 @@ struct PTPlacement {
 	double wnr;   /* new branch length */
 	double loglik;
 	double annoDist;
+	double height;
 	double qPlace;
 	double qTaxon;
 };
+
+inline bool compareByLoglik(const PTPlacement& lhs, const PTPlacement& rhs) {
+	return lhs.loglik < rhs.loglik;
+}
+
+inline bool compareByQPlace(const PTPlacement& lhs, const PTPlacement& rhs) {
+	return lhs.qPlace < rhs.qPlace;
+}
+
+inline bool compareByQTaxon(const PTPlacement& lhs, const PTPlacement& rhs) {
+	return lhs.qTaxon < rhs.qTaxon;
+}
 
 /**
  * Print the usage information
@@ -117,7 +141,9 @@ void printUsage(const string& progName) {
 		 << "            -d|--pdist  DBL    : maximum p-dist between read and tree nodes during the seed search stage [" << DEFAULT_MAX_PDIST << "]" << endl
 		 << "            -N  INT            : max number of most potential locations (based on p-dist) to try initial estimation [" << DEFAULT_MAX_LOCATION << "]" << endl
 		 << "            -e  DBL            : max placement error between fast estimation and accurate placement [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
+		 << "            --ML  FLAG         : use maximum likelihood for placement, do not calculate posterior p-values, this will ignore -q and --prior options" << endl
 		 << "            -q  INT            : minimum Q-value (negative log10 of posterior placement probability) required for a read placement [" << DEFAULT_MIN_Q << "]" << endl
+		 << "            --prior  STR       : method for calculating prior probability of a placement, either 'uniform' (uniform prior) or 'height' (rooted distance to leaves)" << endl
 		 << "            -S|--seed  INT     : random seed used for banded HMM seed searches, for debug purpose" << endl
 #ifdef _OPENMP
 		 << "            -p|--process INT   : number of threads/cpus used for parallel processing" << endl
@@ -150,6 +176,31 @@ vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
 vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
 		vector<PTPlacement>& places);
 
+/**
+ * calculate prior probability at log-scale
+ * @param place  a placement
+ * @param type  prior type
+ * @param h  base height of this placement (for cNode)
+ * @return  log prior always no greater than 0
+ */
+double logPriorPr(const PTPlacement& place, PRIOR_TYPE type, double h) {
+	double logP;
+	switch(type) {
+	case UNIFORM:
+		logP = -0;
+		break;
+	case HEIGHT:
+		logP = -(place.annoDist - place.wnr + h);
+		break;
+	}
+	return logP;
+}
+
+/** calculate prior proability of a placement using given type of method */
+double priorPr(const PTPlacement& place, PRIOR_TYPE type, double h) {
+	return ::exp(logPriorPr(place, type, h));
+}
+
 int main(int argc, char* argv[]) {
 	/* variable declarations */
 	string dbName, fwdFn, revFn, msaFn, csfmFn, hmmFn, ptuFn;
@@ -166,6 +217,8 @@ int main(int argc, char* argv[]) {
 	double maxDist = DEFAULT_MAX_PDIST;
 	int maxLocs = DEFAULT_MAX_LOCATION;
 	double maxError = DEFAULT_MAX_PLACE_ERROR;
+	bool onlyML = false;
+	PRIOR_TYPE myPrior = UNIFORM;
 	int minQ = DEFAULT_MIN_Q;
 	int nThreads = DEFAULT_NUM_THREADS;
 
@@ -215,6 +268,20 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-e"))
 		maxError = ::atof(cmdOpts.getOptStr("-e"));
+
+	if(cmdOpts.hasOpt("--ML"))
+		onlyML = true;
+
+	if(cmdOpts.hasOpt("--prior")) {
+		if(cmdOpts.getOpt("--prior") == "uniform")
+			myPrior = UNIFORM;
+		else if(cmdOpts.getOpt("--prior") == "height")
+			myPrior = HEIGHT;
+		else {
+			cerr << "Unsupported prior specified, check the --prior option" << endl;
+			return EXIT_FAILURE;
+		}
+	}
 
 	if(cmdOpts.hasOpt("-q"))
 		minQ = ::atoi(cmdOpts.getOptStr("-q"));
@@ -278,6 +345,9 @@ int main(int argc, char* argv[]) {
 	}
 	omp_set_num_threads(nThreads);
 #endif
+
+	if(onlyML)
+		minQ = 0;
 
 	/* set filenames */
 	msaFn = dbName + MSA_FILE_SUFFIX;
@@ -458,7 +528,7 @@ int main(int argc, char* argv[]) {
 
 					/* estimate placement */
 					vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs);
-					std::sort(places.rbegin(), places.rend()); /* sort places decently by estimated loglik */
+					std::sort(places.rbegin(), places.rend(), ::compareByLoglik); /* sort places decently by estimated loglik */
 					double bestEstLoglik = places.front().loglik;
 					vector<PTPlacement>::const_iterator it;
 					for(it = places.begin(); it != places.end(); ++it) {
@@ -469,7 +539,14 @@ int main(int argc, char* argv[]) {
 
 					/* accurate placement */
 					placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
-					std::sort(places.rbegin(), places.rend()); /* sort places decently by real loglik */
+					if(onlyML) { /* don't calculate q-values */
+						std::sort(places.rbegin(), places.rend(), ::compareByLoglik); /* sort places decently by real loglik */
+					}
+					else { /* calculate q-values */
+						PTPlacement::calcQValues(places, myPrior);
+						std::sort(places.rbegin(), places.rend(), ::compareByQTaxon); /* sort places decently by QTaxon */
+					}
+
 					bestPlace = places.front();
 
 				/* write main output */
@@ -602,37 +679,38 @@ vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int 
 		double wvr = w0 - wur;
 		place->ratio = wur / w0;
 //		cerr << "delta loglik: " << (loglik - loglik0) << endl;
+		place->height = ptu.getHeight(place->cNode) + wur;
 		place->annoDist = wvr <= wur ? wvr + wnr : wur + wnr;
 		/* update other placement info */
 		place->wnr = wnr;
 		place->loglik = loglik;
 	} /* end each candidate placement */
-	/* calculate placement q-values */
-	PTPlacement::calcQValues(places);
+
 	return places;
 }
 
-void PTPlacement::calcQValues(vector<PTPlacement>& places) {
+void PTPlacement::calcQValues(vector<PTPlacement>& places, PRIOR_TYPE type) {
 	if(places.empty())
 		return;
 
 	/* explore all placements */
-	VectorXd llPlace(places.size());
-	map<string, double> llTax;
-	double llTaxNorm = infV; /* log(0) */
+	VectorXd ppPlace(places.size()); /* posterior logP at placement */
+	map<string, double> ppTaxon; /* posterior logP at taxon */
+	double ppTaxNorm = infV; /* log(0) */
 
 	VectorXd::Index i = 0;
 	for(vector<PTPlacement>::const_iterator placement = places.begin(); placement != places.end(); ++placement) {
-		llPlace(i++) = placement->loglik;
+		double p = placement->loglik + logPriorPr(*placement, type, placement->height);
+		ppPlace(i++) = p;
 		string taxonomy = placement->getTaxonName();
-		if(llTax.find(taxonomy) == llTax.end())
-			llTax[taxonomy] = placement->loglik;
+		if(ppTaxon.find(taxonomy) == ppTaxon.end())
+			ppTaxon[taxonomy] = p;
 		else
-			llTax[taxonomy] = EGriceLab::Math::add_scaled(llTax[taxonomy], placement->loglik);
-		llTaxNorm = EGriceLab::Math::add_scaled(llTaxNorm, placement->loglik);
+			ppTaxon[taxonomy] = EGriceLab::Math::add_scaled(ppTaxon[taxonomy], p);
+		ppTaxNorm = EGriceLab::Math::add_scaled(ppTaxNorm, p);
 	}
 	/* scale and normalize llPlace */
-	VectorXd p = (llPlace.array() - llPlace.maxCoeff()).exp();
+	VectorXd p = (ppPlace.array() - ppPlace.maxCoeff()).exp();
 	p /= p.sum();
 	/* calculate qPlace */
 	for(vector<PTPlacement>::size_type i = 0; i < places.size(); ++i) {
@@ -642,7 +720,7 @@ void PTPlacement::calcQValues(vector<PTPlacement>& places) {
 
 	/* calculate qTaxonomy */
 	for(vector<PTPlacement>::iterator placement = places.begin(); placement != places.end(); ++placement) {
-		double q = EGriceLab::Math::p2q(1 - ::exp(llTax[placement->getTaxonName()] - llTaxNorm));
+		double q = EGriceLab::Math::p2q(1 - ::exp(ppTaxon[placement->getTaxonName()] - ppTaxNorm));
 		placement->qTaxon = q > MAX_Q ? MAX_Q : q;
 	}
 }
@@ -651,9 +729,6 @@ inline bool operator<(const PTLoc& lhs, const PTLoc& rhs) {
 	return lhs.dist < rhs.dist;
 }
 
-inline bool operator<(const PTPlacement& lhs, const PTPlacement& rhs) {
-	return lhs.loglik < rhs.loglik;
-}
 
 inline ostream& operator<<(ostream& out, const PTPlacement& place) {
 	if(place.cNode != NULL && place.pNode != NULL)
