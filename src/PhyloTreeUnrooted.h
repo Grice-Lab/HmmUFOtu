@@ -75,6 +75,7 @@ public:
 	typedef shared_ptr<DiscreteGammaModel> DGammaPtr; /* use boost shared_ptr to hold DiscreteGammapModel */
 
 	typedef boost::unordered_map<PTUNodePtr, boost::unordered_map<PTUNodePtr, PTUBranch> > BranchMap;
+	typedef boost::unordered_map<PTUNodePtr, double> HeightMap;
 
 	/**
 	 * A PTUnrooed node that stores its basic information and neighbors
@@ -496,6 +497,27 @@ public:
 		node2branch[u][v].loglik = loglik;
 	}
 
+	/**
+	 * get node height given node ptr
+	 */
+	double getHeight(const PTUNodePtr& node) const {
+		return node2height.at(node);
+	}
+
+	/**
+	 * get node height given node id
+	 */
+	double getHeight(long id) const {
+		return getHeight(id2node[id]);
+	}
+
+	/**
+	 * get all node heights
+	 */
+	 const HeightMap& getHeights() const {
+		 return node2height;
+	 }
+
 	/** Load sequences from MSA into this tree
 	 * @param msa  MSA data to load
 	 * @return  number of loaded nodes, or -1 if error happend
@@ -582,6 +604,9 @@ public:
 	size_t setRoot(size_t newRootId) {
 		return setRoot(id2node[newRootId])->id;
 	}
+
+	/** calculate all node height at current root */
+	void calcNodeHeight();
 
 	/**
 	 * test whether the loglik (message) of node u -> v of all site j has been evaluated
@@ -748,7 +773,7 @@ public:
 	 * @param node  node to infer
 	 * @param j  alignment site
 	 * @return  the actual observed state if a leaf node,
-	 * or inferred state my maximazing the conditional liklihood
+	 * or inferred state my maximazing the conditional likelihood
 	 */
 	int8_t inferState(const PTUNodePtr& node, int j) const {
 		return inferState(node, node->parent, j);
@@ -760,14 +785,14 @@ public:
 	 * @param v  direction to infer
 	 * @param j  alignment site
 	 * @return  the actual observed state if a leaf node,
-	 * or inferred state my maximazing the conditional liklihood
+	 * or inferred state my maximazing the conditional likelihood
 	 */
 	int8_t inferState(const PTUNodePtr& u, const PTUNodePtr& v, int j) const;
 
 	/**
 	 * Infer the ancestor sequence of this node
 	 * the underlying seq will be resized and modified during inferring
-	 * before inferring, the conditional liklihood of this sequence should have been evaluated
+	 * before inferring, the conditional likelihood of this sequence should have been evaluated
 	 * it will not modify the seq if it is already inferred or assigned
 	 * return true if this node is actually inferred
 	 */
@@ -843,7 +868,7 @@ public:
 
 	/**
 	 * estimate the total number of mutations at given site,
-	 * using ML estimation based on conditional liklihoods
+	 * using ML estimation based on conditional likelihoods
 	 * @param j  site to estimate
 	 * @return  total estimated mutations at this site
 	 */
@@ -1030,6 +1055,16 @@ private:
 	ostream& saveEdge(ostream& out, const PTUNodePtr& node1, const PTUNodePtr& node2) const;
 
 	/**
+	 * load node height from a binary input
+	 */
+	istream& loadNodeHeight(istream& in);
+
+	/**
+	 * save node height to a binary input
+	 */
+	ostream& saveNodeHeight(ostream& out) const;
+
+	/**
 	 * load root information from a binary input
 	 */
 	istream& loadRoot(istream& in);
@@ -1159,6 +1194,7 @@ private:
 	map<PTUNodePtr, unsigned> node2msaId; /* node to original id in MSA map */
 
 	BranchMap node2branch; /* branch length index storing edge length */
+	HeightMap node2height; /* node hight (distance to closest leaf */
 
 	ModelPtr model; /* DNA Model used to evaluate this tree, needed to be stored with this tree */
 	DGammaPtr dG; /* DiscreteGammaModel used to conpensate rate-heterogeinity between alignment sites */

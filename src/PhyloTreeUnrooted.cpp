@@ -236,6 +236,21 @@ PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRo
 	return oldRoot;
 }
 
+void PhyloTreeUnrooted::calcNodeHeight() {
+	for(vector<PTUNodePtr>::const_iterator leaf = id2node.begin(); leaf != id2node.end(); ++leaf) {
+		if(!(*leaf)->isLeaf())
+			continue;
+		/* trace back this lineage */
+		double h = 0;
+		for(PTUnrooted::PTUNodePtr node = *leaf; node != NULL; node = node->parent) {
+			if(node2height.find(node) == node2height.end() || h < node2height[node]) /* first time or shorter */
+				node2height[node] = h;
+			if(!node->isRoot())
+				h += getBranchLength(node, node->getParent());
+		}
+	}
+}
+
 void PhyloTreeUnrooted::resetBranchLoglik() {
 	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u)
 		for(vector<PTUNodePtr>::iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
@@ -451,6 +466,9 @@ istream& PTUnrooted::load(istream& in) {
 	/* load root */
 	loadRoot(in);
 
+	/* load node height */
+	loadNodeHeight(in);
+
 	/* load root loglik */
 //	loadRootLoglik(in);
 
@@ -486,6 +504,9 @@ ostream& PTUnrooted::save(ostream& out) const {
 
 	/* save root */
 	saveRoot(out);
+
+	/* save node height */
+	saveNodeHeight(out);
 
 	/* write index */
 	saveMSAIndex(out);
@@ -547,6 +568,28 @@ istream& PTUnrooted::loadEdge(istream& in) {
 		node2->parent = node1;
 	/* construct a new empty branch and load */
 	node2branch[node1][node2].load(in);
+
+	return in;
+}
+
+ostream& PTUnrooted::saveNodeHeight(ostream& out) const {
+	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
+		out.write((const char*) &((*node)->id), sizeof(long));
+		out.write((const char*) &(node2height.at(*node)), sizeof(double));
+	}
+
+	return out;
+}
+
+istream& PTUnrooted::loadNodeHeight(istream& in) {
+	size_t N = numNodes();
+	long id;
+	double h;
+	for(size_t i = 0; i < N; ++i) {
+		in.read((char*) &id, sizeof(long));
+		in.read((char*) &h, sizeof(double));
+		node2height[id2node[id]] = h;
+	}
 
 	return in;
 }

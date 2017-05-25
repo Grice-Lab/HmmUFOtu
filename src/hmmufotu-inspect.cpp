@@ -36,7 +36,8 @@ int main(int argc, char* argv[]) {
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
 	ofstream treeOut, annoOut;
 	EGriceLab::SeqIO seqOut;
-	bool showSm, showDg;
+	bool showSm = false;
+	bool showDg = false;
 	bool leafOnly = true;
 
 	/* parse options */
@@ -187,8 +188,7 @@ int main(int argc, char* argv[]) {
 		 << " Number of nodes: " << ptu.numNodes()
 		 << " Number of branches: " << ptu.numBranches()
 		 << " Number of sites: " << ptu.numAlignSites() << endl;
-	cout << "Root name: " << ptu.getRoot()->getAnno() << endl
-		 << "Entire tree log-liklihood: " << ptu.treeLoglik() << endl;
+	cout << "Overall tree log-likelihood: " << ptu.treeLoglik() << endl;
 
 	if(showSm)
 		cout << (*ptu.getModel());

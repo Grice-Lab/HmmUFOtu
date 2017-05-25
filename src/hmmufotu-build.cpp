@@ -277,6 +277,9 @@ int main(int argc, char* argv[]) {
 //	for(int i = 0; i < tree.numNodes(); ++i)
 //		cerr << "ID: " << tree.getNode(i)->getId() << " annotation: " << tree.getNode(i)->getTaxon() << endl;
 
+	tree.calcNodeHeight();
+	infoLog << "Node height calculated" << endl;
+
 	/* read DNA sub model from model file */
 	DNASubModel* model = NULL;
 	string line, tag, type;
