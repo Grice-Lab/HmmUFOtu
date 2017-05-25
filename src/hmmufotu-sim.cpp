@@ -63,7 +63,7 @@ void printUsage(const string& progName) {
 		 << "            -N  LONG            : number of reads/pairs to generate" << endl
 		 << "            -f|--fmt  STRING    : output format [" << DEFAULT_FMT << "]" << endl
 		 << "            -k|--keep-gap FLAG  : keep simulated gaps in generated reads, so final seq will be aligned" << endl
-		 << "            -d|--max-dist       : maximum phylogenetic distance allowed for a read to ANY observed leaf (OTU) [" << DEFAULT_MAX_DIST << "]" << endl
+		 << "            -d|--max-dist       : maximum height allowed for simulated reads (as shorted phylogenetic distance to any leaf) [" << DEFAULT_MAX_DIST << "]" << endl
 		 << "            -m|--mean-size  DBL : mean 16S amplicon size [" << DEFAULT_MEAN_SIZE << "]" << endl
 		 << "            -s|--sd-size  DBL   : standard deviation of 16S amplicon size [" << DEFAULT_SD_SIZE << "]" << endl
 		 << "            -l|--min-size  DBL  : minimum 16S amplicon size, 0 for no limit [" << DEFAULT_MIN_SIZE << "]" << endl
@@ -299,24 +299,10 @@ int main(int argc, char* argv[]) {
 	const PTUnrooted::ModelPtr& model = ptu.getModel();
 	const Vector4d& pi = model->getPi();
 
-	boost::unordered_map<PTUnrooted::PTUNodePtr, double> nodeHeight; // node height is the shorted distance to any its offsprings
 	if(maxDist != EGriceLab::inf) { /* if -d specified */
-		infoLog << "Calculating branch weights based on their distance to leaves" << endl;
-		const vector<PTUnrooted::PTUNodePtr>& allNodes = ptu.getNodes();
-		for(vector<PTUnrooted::PTUNodePtr>::const_iterator leaf = allNodes.begin(); leaf != allNodes.end(); ++leaf) {
-			if(!(*leaf)->isLeaf())
-				continue;
-			/* trace back this linage */
-			double dist = 0;
-			for(PTUnrooted::PTUNodePtr node = *leaf; !node->isRoot(); node = node->getParent()) {
-				if(nodeHeight.find(node) == nodeHeight.end() || dist < nodeHeight[node]) /* first time or shorter */
-					nodeHeight[node] = dist;
-				dist += ptu.getBranchLength(node, node->getParent());
-			}
-		}
 		/* alter the node_dist weight */
 		for(size_t i = 0; i < numNodes; ++i)
-			if(nodeHeight[allNodes[i]] > maxDist)
+			if(ptu.getHeight(i) > maxDist)
 				nodePrMap(i) = 0;
 	}
 	/* construct node dist w/ potentially modified weights */
@@ -336,7 +322,7 @@ int main(int argc, char* argv[]) {
 		PTUnrooted::PTUNodePtr pNode = cNode->getParent();
 		double v = ptu.getBranchLength(pNode, cNode);
 		double rc = branch_dist(rng);
-		if(!nodeHeight.empty() && nodeHeight[cNode] + v * rc > maxDist) /* this branching-point it too far from any leaf */
+		if(ptu.getHeight(cNode) + v * rc > maxDist) /* this branching-point it too far from any leaf */
 			continue;
 		/* simulate a read range */
 		int start, end, len;
