@@ -6,6 +6,7 @@
  */
 
 #include <iostream>
+#include <boost/lexical_cast.hpp>
 #include "HmmUFOtu.h"
 
 using namespace std;
@@ -20,6 +21,10 @@ void printUsage(const string& progName) {
 		 << "DB-NAME  STR                    : HmmUFOtu database name (prefix)" << endl
 		 << "Options:    -sm  FLAG           : report the embedded build-in or customized DNA Submission Model in database" << endl
 		 << "            -dg  FLAG           : report the embedded build-in or customized Discrete Gamma Model (if enabled during training) in database" << endl
+		 << "            -t|--tree  FILE     : write the phylogenetic tree of this database to FILE in Newick format" << endl
+		 << "            -a|--anno  FILE     : write the tree node taxonomy annoation of this database to FILE" << endl
+		 << "            -s|--seq  FILE      : write the multiple-sequence alignment of this database to FILE in fasta format" << endl
+		 << "            -n|--node  FLAG     : write sequence alignment of all nodes instead of just leaves, ignored if -s is not set" << endl
 		 << "            -v  FLAG            : enable verbose information" << endl
 		 << "            -h|--help           : print this message and exit" << endl;
 }
@@ -27,8 +32,12 @@ void printUsage(const string& progName) {
 int main(int argc, char* argv[]) {
 	/* variable declarations */
 	string dbName, msaFn, csfmFn, hmmFn, ptuFn;
+	string treeFn, annoFn, seqFn;
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
+	ofstream treeOut, annoOut;
+	EGriceLab::SeqIO seqOut;
 	bool showSm, showDg;
+	bool leafOnly = true;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -53,6 +62,24 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-dg"))
 		showDg = true;
 
+	if(cmdOpts.hasOpt("-t"))
+		treeFn = cmdOpts.getOpt("-t");
+	if(cmdOpts.hasOpt("--tree"))
+		treeFn = cmdOpts.getOpt("--tree");
+
+	if(cmdOpts.hasOpt("-a"))
+		annoFn = cmdOpts.getOpt("-a");
+	if(cmdOpts.hasOpt("--anno"))
+		annoFn = cmdOpts.getOpt("--anno");
+
+	if(cmdOpts.hasOpt("-s"))
+		seqFn = cmdOpts.getOpt("-s");
+	if(cmdOpts.hasOpt("--seq"))
+		seqFn = cmdOpts.getOpt("--seq");
+
+	if(cmdOpts.hasOpt("-n") || cmdOpts.hasOpt("--node"))
+		leafOnly = false;
+
 	msaFn = dbName + MSA_FILE_SUFFIX;
 	csfmFn = dbName + CSFM_FILE_SUFFIX;
 	hmmFn = dbName + HMM_FILE_SUFFIX;
@@ -60,29 +87,55 @@ int main(int argc, char* argv[]) {
 
 	/* open inputs */
 	msaIn.open(msaFn.c_str(), ios_base::in | ios_base::binary);
-	if(!msaIn) {
+	if(!msaIn.is_open()) {
 		cerr << "Unable to open MSA data '" << msaFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 
 	csfmIn.open(csfmFn.c_str(), ios_base::in | ios_base::binary);
-	if(!csfmIn) {
+	if(!csfmIn.is_open()) {
 		cerr << "Unable to open CSFM-index '" << csfmFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 
 	hmmIn.open(hmmFn.c_str());
-	if(!hmmIn) {
+	if(!hmmIn.is_open()) {
 		cerr << "Unable to open HMM profile '" << hmmFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 
 	ptuIn.open(ptuFn.c_str(), ios_base::in | ios_base::binary);
-	if(!ptuIn) {
+	if(!ptuIn.is_open()) {
 		cerr << "Unable to open PTU data '" << ptuFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 
+	/* open outputs */
+	if(!treeFn.empty()) {
+		treeOut.open(treeFn.c_str());
+		if(!treeOut.is_open()) {
+			cerr << "Unable to write to tree file '" << treeFn << "': " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+	}
+
+	if(!annoFn.empty()) {
+		annoOut.open(annoFn.c_str());
+		if(!annoOut.is_open()) {
+			cerr << "Unable to write to tree file '" << annoFn << "': " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+	}
+
+	if(!seqFn.empty()) {
+		seqOut.open(seqFn, "dna", "fasta", EGriceLab::SeqIO::WRITE, 0);
+		if(!seqOut.is_open()) {
+			cerr << "Unable to write to tree file '" << seqFn << "': " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+	}
+
+	/* start inspecting */
 	int csLen;
 
 	infoLog << "Inspecting MSA data ..." << endl;
@@ -144,6 +197,29 @@ int main(int argc, char* argv[]) {
 		cout << "Discrete Gamma Model is enabled for this tree" << endl
 		     << "Number of categories used: " << ptu.getDGModel()->getK()
 			 << "Shape parameter: " << ptu.getDGModel()->getShape() << endl;
+
+	if(treeOut.is_open()) {
+		infoLog << "Writing phylogenetic tree ..." << endl;
+		ptu.exportTree(treeOut);
+	}
+
+	if(annoOut.is_open()) {
+		infoLog << "Writing tree node taxonomy annotation ..." << endl;
+		for(size_t i = 0; i < ptu.numNodes(); ++i)
+			annoOut << ptu.getNode(i)->getId() << "\t" << ptu.getNode(i)->getTaxon() << endl;
+	}
+
+	if(seqOut.is_open()) {
+		infoLog << "Writing sequence alignment ..." << endl;
+		const DegenAlphabet* abc = msa.getAbc();
+		for(size_t i = 0; i < ptu.numNodes(); ++i) {
+			const EGriceLab::PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
+			if(!leafOnly || node->isLeaf()) {
+				seqOut.writeSeq(PrimarySeq(abc, boost::lexical_cast<string>(node->getId()),
+						node->getSeq().toString(), node->getTaxon()));
+			}
+		}
+	}
 
 }
 

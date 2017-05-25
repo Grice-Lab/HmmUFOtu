@@ -65,9 +65,9 @@ void printUsage(const string& progName) {
 		 << "Options:    -o  FILE           : OTU summary output" << endl
 		 << "            -c  FILE           : OTU Consensus Sequence (CS) alignment output" << endl
 		 << "            -t  FILE           : OTU tree output" << endl
-		 << "            -e|--effN  double  : effective number of sequences (pseudo-count) underlying the pre-built Phylogenetic Tree used for Bayesian inferencing OTUs' CS with Dirichelet Density models [" << DEFAULT_EFFN << "]" << endl
-		 << "            -n  INT      : minimum number of observed reads required to define an OTU across all samples [" << DEFAULT_MIN_NREAD << "]" << endl
-		 << "            -s  INT   : minimum number of observed samples required to define an OTU" << DEFAULT_MIN_NSAMPLE << "]" << endl
+		 << "            -e|--effN  double  : effective number of sequences (pseudo-count) for inferencing CS of OTUs with Dirichelet Density models, set 0 to disable [" << DEFAULT_EFFN << "]" << endl
+		 << "            -n  INT            : minimum number of observed reads required to define an OTU across all samples [" << DEFAULT_MIN_NREAD << "]" << endl
+		 << "            -s  INT            : minimum number of observed samples required to define an OTU" << DEFAULT_MIN_NSAMPLE << "]" << endl
 		 << "            -v  FLAG           : enable verbose information" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }

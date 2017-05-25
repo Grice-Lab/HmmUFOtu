@@ -9,5 +9,7 @@
 **/.cproject
 **/.project
 **/.settings
+# pre-built binaries
+build/
 # Ignore Autotools genereated Makefiles
 #**/Makefile

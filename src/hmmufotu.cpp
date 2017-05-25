@@ -602,15 +602,7 @@ vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int 
 		double wvr = w0 - wur;
 		place->ratio = wur / w0;
 //		cerr << "delta loglik: " << (loglik - loglik0) << endl;
-		if(wvr <= wur) { /* r->v is shorter */
-			place->annoDist = v->getAnnoDist() + wvr + wnr;
-		}
-		else { /* u->r is shorter */
-			if(u->getAnnoDist() == 0) /* self-annotated */
-				place->annoDist = wur + wnr;
-			else /* annotated from v or ancestor */
-				place->annoDist = u->getAnnoDist() + wnr - wur;
-		}
+		place->annoDist = wvr <= wur ? wvr + wnr : wur + wnr;
 		/* update other placement info */
 		place->wnr = wnr;
 		place->loglik = loglik;

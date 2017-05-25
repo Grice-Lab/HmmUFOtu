@@ -777,6 +777,11 @@ public:
 	void inferSeq();
 
 	/**
+	 * write this PTUnrooted subtree structure into output in given format
+	 */
+	ostream& exportTree(ostream& out, const PTUNodePtr& node, string format) const;
+
+	/**
 	 * write this PTUnrooted tree structure into output in given format
 	 */
 	ostream& exportTree(ostream& out, string format = "newick") const {
@@ -784,17 +789,12 @@ public:
 	}
 
 	/**
-	 * write this PTUnrooted subtree structure into output in given format
-	 */
-	ostream& exportTree(ostream& out, const PTUNodePtr& node, string format = "newick") const;
-
-	/**
 	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
 	 */
 	template<typename V>
 	ostream& exportTree(ostream& out, const PTUNodePtr& node,
 			const boost::unordered_map<PTUNodePtr, V>& submap,
-			string format = "newick") const;
+			string format) const;
 
 	/**
 	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
