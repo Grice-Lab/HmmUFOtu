@@ -7,13 +7,17 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 
 noinst_PROGRAMS = \
 MSAIO_test \
+bHmmPrior_IO_test \
 bHMM_IO_test \
 FMIO_test \
-DD_IO_test \
 PTU_IO_test
 
 MSAIO_test_SOURCES = MSAIO_test.cpp
 MSAIO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
+
+bHmmPrior_IO_test_SOURCES = bHmmPrior_IO_test.cpp
+bHmmPrior_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a
 
 bHMM_IO_test_SOURCES = bHMM_IO_test.cpp
 bHMM_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \

@@ -1,7 +1,7 @@
 /*
- * bHMM_IO_test.cpp
+ * bHmmPrior_IO_test.cpp
  *
- *  Created on: Mar 25, 2016
+ *  Created on: May 31, 2017
  *      Author: zhengqi
  */
 
@@ -15,7 +15,7 @@ using namespace EGriceLab;
 
 int main(int argc, char *argv[]) {
 	if(argc != 3) {
-		cerr << "Usage:  " << argv[0] << " HMM-INFILE HMM-OUTFILE" << endl;
+		cerr << "Usage:  " << argv[0] << " PRIOR-INFILE PRIOR-OUTFILE" << endl;
 		return 0;
 	}
 
@@ -30,20 +30,20 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	BandedHMMP7 hmm;
-	in >> hmm;
+	BandedHMMP7Prior hmmPrior;
+	in >> hmmPrior;
 	if(in.good())
-		cerr << "Hmm read" << endl;
+		cerr << "HmmPrior read" << endl;
 	else {
-		cerr << "Unable to read Hmm file: " << argv[1] << endl;
+		cerr << "Unable to read HmmPrior file: " << argv[1] << endl;
 		return EXIT_FAILURE;
 	}
 
-	out << hmm;
+	out << hmmPrior;
 	if(out.good())
-		cerr << "Hmm written" << endl;
+		cerr << "HmmPrior written" << endl;
 	else {
-		cerr << "Unable to write to Hmm file: " << argv[2] << endl;
+		cerr << "Unable to write to HmmPrior file: " << argv[2] << endl;
 		return EXIT_FAILURE;
 	}
 
