@@ -32,12 +32,12 @@ int main(int argc, char *argv[]) {
 
 	BandedHMMP7Prior hmmPrior;
 	in >> hmmPrior;
-	if(in.good())
-		cerr << "HmmPrior read" << endl;
-	else {
+	if(in.bad()) {
 		cerr << "Unable to read HmmPrior file: " << argv[1] << endl;
 		return EXIT_FAILURE;
 	}
+	else
+		cerr << "HmmPrior read" << endl;
 
 	out << hmmPrior;
 	if(out.good())

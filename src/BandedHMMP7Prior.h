@@ -11,6 +11,7 @@
 
 #include <string>
 #include <iostream>
+#include "HmmUFOtuConst.h"
 #include "StringUtils.h"
 #include "DirichletModel.h"
 #include "DirichletDensity.h"
@@ -65,30 +66,6 @@ struct BandedHMMP7Prior {
 	static const double DEFAULT_ABS_EPS_PARAMS;
 	static const double DEFAULT_REL_EPS_PARAMS;
 };
-
-inline istream& operator>>(istream& in, BandedHMMP7Prior& pri) {
-	string head;
-	while(std::getline(in, head)) {
-		if(StringUtils::startsWith(head, "Match emission:"))
-			in >> pri.dmME;
-		else if(StringUtils::startsWith(head, "Insert emission:"))
-			in >> pri.dmIE;
-		else if(StringUtils::startsWith(head, "Match transition:"))
-			in >> pri.dmMT;
-		else if(StringUtils::startsWith(head, "Insert transition:"))
-			in >> pri.dmIT;
-		else if(StringUtils::startsWith(head, "Delete transition:"))
-			in >> pri.dmDT;
-		else
-			continue;
-	}
-	if(!(pri.dmME.getK() > 0 && pri.dmIE.getK() > 0
-			&& pri.dmMT.getK() > 0 && pri.dmIT.getK() > 0 && pri.dmDT.getK() > 0)) {
-		std::cerr << "Empty or partial BandedHMMP7Prior input" << endl;
-		in.setstate(std::ios_base::failbit);
-	}
-	return in;
-}
 
 inline void BandedHMMP7Prior::setDims(int K, int L) {
 	/* set the # of parameters */

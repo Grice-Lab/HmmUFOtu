@@ -143,7 +143,7 @@ istream& DirichletDensity::read(istream& in) {
 	}
 
 	std::getline(in, line);
-	sscanf(line.c_str(), "Training cost: %d", &c); /* read in training cost */
+	sscanf(line.c_str(), "Training cost: %lg", &c); /* read in training cost */
 
 	std::getline(in, line);
 	sscanf(line.c_str(), "K: %d", &K); /* Read K */

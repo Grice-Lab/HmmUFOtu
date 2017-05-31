@@ -261,7 +261,7 @@ istream& DirichletMixture::read(istream& in) {
 		return in;
 	}
 	std::getline(in, line);
-	sscanf(line.c_str(), "Training cost: ", &c); /* Read trainingCost */
+	sscanf(line.c_str(), "Training cost: %lg", &c); /* Read trainingCost */
 
 	std::getline(in, line);
 	sscanf(line.c_str(), "K: %d L: %d", &K, &L); /* Read K */
