@@ -24,9 +24,6 @@ namespace Math {
 using std::map;
 using std::vector;
 
-const double inf = std::numeric_limits<double>::infinity();
-const double infV = -inf;
-
 /**
  * A template method to found the associated key of the maximum value in a std::map
  * The mapped_type of the map must support strict less (operator<)
