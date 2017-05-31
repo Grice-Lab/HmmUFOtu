@@ -9,38 +9,38 @@ using namespace EGriceLab;
 
 int main(int argc, char *argv[]) {
 	if(argc != 3) {
-		cerr << "Usage:  " << argv[0] << " CS-INFILE CS-OUTFILE" << endl;
-		return -1;
+		cerr << "Usage:  " << argv[0] << " CSFM-INFILE CSFM-OUTFILE" << endl;
+		return EXIT_FAILURE;
 	}
-	VERBOSE_LEVEL += 2;
+
 
 	ifstream in(argv[1]);
 	if(!in.is_open()) {
-		cerr << "Unable to open " << argv[1] << endl;
-		return -1;
+		cerr << "Unable to open CSFM file: " << argv[1] << endl;
+		return EXIT_FAILURE;
 	}
-	else
-		infoLog << "infile opened successfully" << endl;
 
 	ofstream out(argv[2]);
 	if(!out.is_open()) {
-		cerr << "Unable to open " << argv[2] << endl;
-		return -1;
+		cerr << "Unable to write to CSFM file: " << argv[2] << endl;
+		return EXIT_FAILURE;
 	}
-	else
-		infoLog << "outfile opened successfully" << endl;
 
 	CSFMIndex csfm;
 	csfm.load(in);
 
-	infoLog << "FM index loaded" << endl;
-
-	if(!csfm.save(out)) {
-		cerr << "Unable to save CS-FMindex database" << endl;
-		return -1;
+	if(in.bad()) {
+		cerr << "Unable to load CSFM file: " << argv[1] << endl;
 	}
 	else
-		infoLog << "FM index saved successfully" << endl;
+		cerr << "CSFM index loaded" << endl;
+
+	if(!csfm.save(out)) {
+		cerr << "Unable to save CSFM index file: " << argv[2] << endl;
+		return EXIT_FAILURE;
+	}
+	else
+		cerr << "CSFM index file saved" << endl;
 
 	return 0;
 }
