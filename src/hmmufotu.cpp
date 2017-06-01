@@ -510,7 +510,7 @@ int main(int argc, char* argv[]) {
 
 				if(alnOut.is_open()) /* write the alignment seq to output */
 #pragma omp critical(writeAln)
-					alnOut.writeSeq(PrimarySeq(abc, id, aln));
+					alnOut.writeSeq(PrimarySeq(abc, id, aln, fwdRead.getDesc()));
 
 				DigitalSeq seq(abc, id, aln);
 				/* place seq with seed-estimate-place (SEP) algorithm */
