@@ -40,8 +40,8 @@ istream& GTR::read(istream& in) {
 				in >> pi(i);
 		}
 		else if(tag == "R:") {
-			for(Vector4d::Index i = 0; i < R.rows(); ++i)
-				for(Vector4d::Index j = 0; j < R.cols(); ++j)
+			for(Vector4d::Index i = 0; i < 4; ++i)
+				for(Vector4d::Index j = 0; j < 4; ++j)
 					in >> R(i, j);
 		}
 		else if(tag == "Q:") { // Q section for human read only

@@ -32,7 +32,7 @@ istream& F81::read(istream& in) {
 			}
 		}
 		else if(tag == "pi:") {
-			for(Vector4d::Index i = 0; i != pi.rows(); ++i)
+			for(Vector4d::Index i = 0; i != 4; ++i)
 				in >> pi(i);
 		}
 		else if(tag == "beta:") {
@@ -54,7 +54,7 @@ ostream& F81::write(ostream& out) const {
 	out << "# DNA Substitution Model" << endl;
 	out << "Type: " << modelType() << endl;
 	out << "pi: " << pi.transpose().format(FULL_FORMAT) << endl;
-	out << std::setprecision(DBL_MAX_DIGITS) << " beta: " << beta << endl;
+	out << std::setprecision(DBL_MAX_DIGITS) << "beta: " << beta << endl;
 
 	return out;
 }
