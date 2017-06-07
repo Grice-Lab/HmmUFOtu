@@ -508,9 +508,12 @@ int main(int argc, char* argv[]) {
 				}
 				assert(1 <= csStart && csStart <= csEnd && csEnd <= csLen);
 
-				if(alnOut.is_open()) /* write the alignment seq to output */
+				if(alnOut.is_open()) { /* write the alignment seq to output */
+					string desc = fwdRead.getDesc();
+					desc += ";csStart=" + boost::lexical_cast<string>(csStart) + ";csEnd=" + boost::lexical_cast<string>(csEnd) + ";";
 #pragma omp critical(writeAln)
 					alnOut.writeSeq(PrimarySeq(abc, id, aln, fwdRead.getDesc()));
+				}
 
 				DigitalSeq seq(abc, id, aln);
 				/* place seq with seed-estimate-place (SEP) algorithm */
