@@ -199,6 +199,8 @@ int main(int argc, char* argv[]) {
 	const vector<PTUnrooted::PTUNodePtr>& id2node = ptu.getNodes();
 
 	out << ANNEAL_HEADER << endl;
+	const int K = hmm.getProfileSize();
+
 	while(seqIn.hasNext()) {
 		PrimarySeq fwdRead = seqIn.nextSeq();
 		PrimarySeq revRead = fwdRead.revcom();
@@ -207,34 +209,32 @@ int main(int argc, char* argv[]) {
 		int csStart = 0; /* 1-based csStart */
 		int csEnd = 0; /* 1-based csEnd */
 		string aln;
-		BandedHMMP7::ViterbiScores seqVscore = hmm.initViterbiScores();
-		BandedHMMP7::ViterbiAlignPath seqVpath = hmm.initViterbiAlignPath();
+		BandedHMMP7::VScore seqVscore; /* construct an empty VScore */
+		BandedHMMP7::VTrace seqVtrace; /* construct an empty VTrace */
 
-		if(searchStrand | 02) {
-			hmm.resetViterbiScores(seqVscore, fwdRead); // construct an empty reusable score
-			hmm.resetViterbiAlignPath(seqVpath, fwdRead.length()); // construct an empty reusable path
-			hmm.calcViterbiScores(seqVscore); /* use original Viterbi algorithm */
-			float fwdMinCost = hmm.buildViterbiTrace(seqVscore, seqVpath);
-			if(fwdMinCost < minCost) {
+		if(searchStrand & 01) {
+			seqVscore.reset(fwdRead.length());
+			hmm.calcViterbiScores(fwdRead, seqVscore); /* use original Viterbi algorithm */
+			hmm.buildViterbiTrace(seqVscore, seqVtrace);
+			if(seqVtrace.minScore < minCost) {
 				strand = "+";
-				csStart = hmm.getCSLoc(seqVpath.alnStart);
-				csEnd = hmm.getCSLoc(seqVpath.alnEnd);
-				aln = hmm.buildGlobalAlign(seqVscore, seqVpath);
-				minCost = fwdMinCost;
+				csStart = hmm.getCSLoc(seqVtrace.alnStart);
+				csEnd = hmm.getCSLoc(seqVtrace.alnEnd);
+				aln = hmm.buildGlobalAlign(fwdRead, seqVscore, seqVtrace);
+				minCost = seqVtrace.minScore;
 			}
 		}
 
 		if(searchStrand & 02) {
-			hmm.resetViterbiScores(seqVscore, revRead);
-			hmm.resetViterbiAlignPath(seqVpath, revRead.length());
-			hmm.calcViterbiScores(seqVscore); /* use original Viterbi algorithm */
-			float revMinCost = hmm.buildViterbiTrace(seqVscore, seqVpath);
-			if(revMinCost < minCost) {
+			seqVscore.reset(revRead.length());
+			hmm.calcViterbiScores(revRead, seqVscore); /* use original Viterbi algorithm */
+			hmm.buildViterbiTrace(seqVscore, seqVtrace);
+			if(seqVtrace.minScore < minCost) {
 				strand = "-";
-				csStart = hmm.getCSLoc(seqVpath.alnStart);
-				csEnd = hmm.getCSLoc(seqVpath.alnEnd);
-				aln = hmm.buildGlobalAlign(seqVscore, seqVpath);
-				minCost = revMinCost;
+				csStart = hmm.getCSLoc(seqVtrace.alnStart);
+				csEnd = hmm.getCSLoc(seqVtrace.alnEnd);
+				aln = hmm.buildGlobalAlign(revRead, seqVscore, seqVtrace);
+				minCost = seqVtrace.minScore;
 			}
 		}
 		assert(aln.length() == csLen);

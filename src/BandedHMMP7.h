@@ -86,42 +86,96 @@ public:
 		JUSTIFIED
 	};
 
+	/* forward declaration of nested classes and alias */
+	struct ViterbiScores; /* struct storing the ViterbiScores used during the Viterbi algorithm */
+	struct ViterbiAlignPath; /* a known viterbi align path */
+	struct ViterbiAlignTrace; /* the final backtrace of the Viterbi algorithm */
+
+	typedef ViterbiScores VScore;
+	typedef ViterbiAlignPath VPath;
+	typedef ViterbiAlignTrace VTrace;
+
 	/**
 	 * A nested class storing public accessible Viterbi Scoring matrices
 	 */
-	class ViterbiScores {
-	public:
+	struct ViterbiScores {
 		/* constructors*/
-		/* default constructor to construct a ViterbiScores object without any given seq, do not do anything with it */
-		ViterbiScores() : seq(NULL) { }
+		/** default constructor, do nothing */
+		ViterbiScores() : K(0), L(0) {  }
 
-		/* construct a ViterbiScores object with given DigitalSeq */
-		explicit ViterbiScores(const PrimarySeq& seq) : seq(&seq) { }
+		/** construct a VScore with given sizes */
+		explicit ViterbiScores(int K, int L) : K(K), L(L)
+		{
+			reset();
+		}
 
-		const PrimarySeq* seq; // a pointer to a const DigitalSeq
-		/* Viterbi log-odd scoring matrices */
-		MatrixXd DP_M;  /* the cost of the best path matching the subsequence X1..i
+		/* member fields */
+		const int K; /* fixed profile size */
+		int L; /* current seq length */
+		/* Viterbi cost matrices */
+		MatrixXd DP_M;  /* (L+1) * (K+1) cost matrix of the best path matching the subsequence X1..i
 							to the profile submodel up to the column j, ending with xi being emitted by Mj*/
-		MatrixXd DP_I;  /* the cost of the best path matching the subsequence Xi..i
+		MatrixXd DP_I;  /* (L+1) * (K+1) cost matrix of the best path matching the subsequence Xi..i
 							to the profile submodel up to the ending in xi being emitted by Ij */
-		MatrixXd DP_D;  /* the lcost of the best path ending in Dj, and xi being the last character emitted before Dj).*/
+		MatrixXd DP_D;  /* (L+1) * (K+1) cost matrix of the best path ending in Dj, and xi being the last character emitted before Dj).*/
 
-		MatrixXd S;     /*  the Dynamic-Programming scoring matrix storing the whole ViterbiScores (log-odds)
-		of all combinations of i in 0..L and j in 0..K */
+		MatrixXd S;     /* (L+1) * (K+2) score matrix storing the whole ViterbiScores with the last column the cost exiting from Dk status */
+
+		/* member methods */
+		void reset(int L) {
+			this->L = L;
+			reset();
+		}
+
+		/** reset all matrix values according the current seq length */
+		void reset() {
+			DP_M.resize(L + 1, K + 1);
+			DP_I.resize(L + 1, K + 1);
+			DP_D.resize(L + 1, K + 1);
+			S.resize(L + 1, K + 2);
+
+			DP_M.setConstant(inf);
+			DP_I.setConstant(inf);
+			DP_D.setConstant(inf);
+			S.setConstant(inf);
+		}
 	};
 
-	class ViterbiAlignPath {
-	public:
-		int L; // sequence length
-		int K; // profile length
-		int N; // # of known path segments
-		vector<int> start, end; // known align path coordinates relative to profile (1-based)
-		vector<int> from, to; // known align path relative to sequence (1-based)
-		vector<int> numIns, numDel; // number of insertion and deletions in this path
+	struct ViterbiAlignPath {
+		/* constructors */
+		/** default constructor, do nothing */
+		ViterbiAlignPath() { }
+
+		/** construct a VPath from given information */
+		ViterbiAlignPath(int start, int end, int from, int to, int nIns, int nDel) :
+			start(start), end(end), from(from), to(to), nIns(nIns), nDel(nDel)
+		{  }
+
+		/* member fields */
+		int start, end; /* 1-based position on profile */
+		int from, to;   /* 1-based position on seq */
+		int nIns;       /* known number of insertions */
+		int nDel;       /* known number of deletions */
+	};
+
+	struct ViterbiAlignTrace {
+		/* constructors */
+		/** default constructor */
+		ViterbiAlignTrace() :
+			minScore(inf), alnStart(0), alnEnd(0), alnFrom(0), alnTo(0)
+		{  }
+
+		/** construct a VTrace using a given initial information */
+		ViterbiAlignTrace(double minScore, int alnStart, int alnEnd, int alnFrom, int alnTo, string alnTrace) :
+			minScore(minScore), alnStart(alnStart), alnEnd(alnEnd), alnFrom(alnFrom), alnTo(alnTo), alnTrace(alnTrace)
+		{  }
+
+		/* member fields */
+		double minScore;
 		int alnStart, alnEnd; // final align start and end (1-based)
 		int alnFrom, alnTo; // final align from and to relative to seq (1-based)
-		//deque<p7_state> path;
-		string alnPath; // final align path
+
+		string alnTrace; // descriptive trace info using the characters B, E, M, I, D
 	};
 
 
@@ -268,99 +322,50 @@ public:
 	}
 
 	/**
-	 * Initialize the HMM algorithm scoring schema without a given sequence,
-	 * nothing is initialized, has same effect as the default constructor,
-	 * but kept for format consistency
-	 */
-	ViterbiScores initViterbiScores() const {
-		return ViterbiScores();
-	}
-
-	/**
-	 * Initialize the HMM algorithm scoring schema with a given sequence,
-	 * set the all members and matrix elements to default values
-	 */
-	ViterbiScores initViterbiScores(const PrimarySeq& seq) const;
-
-	/**
-	 * Reset the ViterbiScore matrices size and elements to fit the new seq
-	 */
-	ViterbiScores& resetViterbiScores(ViterbiScores& vs, const PrimarySeq& seq) const;
-
-	/**
 	 * Prepare the ViterbiScore DP matrices so they are ready for Viterbi algorithm
 	 */
 	ViterbiScores& prepareViterbiScores(ViterbiScores& vs) const;
 
-	/**
-	 * Initialize a Viterbi Align Path for the HMM algorithm
-	 * nothing is initialized, has same effect as the default constructor,
-	 * but kept for format consistency
-	 */
-	ViterbiAlignPath initViterbiAlignPath() const {
-		return ViterbiAlignPath();
-	}
 
 	/**
-	 * Initialize a Viterbi Align Path for the HMM algorithm
-	 * set all members and matrix elements to default values
+	 * build a known VPath using calculated coordinates
+	 * @param csStart  1-based consensus start
+	 * @param csEnd  1-based consensus end
+	 * @param csFrom  1-based seq start
+	 * @param csTo  1-based seq end
+	 * @return  a new VPath
 	 */
-	ViterbiAlignPath initViterbiAlignPath(int L) const;
-
-	/**
-	 * Set the Viterbi Align Path to fit the new length
-	 */
-	ViterbiAlignPath& resetViterbiAlignPath(ViterbiAlignPath& vpath, int L) const;
-
-	/**
-	 * Set the forward scores in ViterbiScores to default values
-	 */
-/*	void resetForwardBackwardScores(ViterbiScores& bHmm) const;*/
-
-	/**
-	 * Set the tracke scores in ViterbiScores to default values
-	 */
-/*	void resetTraceScores(ViterbiScores& bHmm) const;*/
-
-	/**
-	 * Set a known alignment path (from database searches) for the BandedHMMP7 dynamic programming
-	 * fill the TRACE matrix with states
-	 * @param vpath  a ViterbiAlignPath
-	 * @param csStart  1-based start on consensus of MSA
-	 * @param csEnd  1-based end on consensus of MSA
-	 * @param csFrom  1-based start on sequence
-	 * @param csTo  1-based end on sequence
-	 */
-	void addKnownAlignPath(ViterbiAlignPath& vpath, const CSLoc& csLoc, int csFrom, int csTo) const;
+	ViterbiAlignPath buildAlignPath(const CSLoc& csLoc, int csFrom, int csTo) const;
 
 	/**
 	 * Calculate full Viterbi DP scores w/o known "seed" alignment region
-	 * @return a vector of size L giving the final Viterbi lods of the End state
+	 * the S values are updated in the VScore
 	 */
-	void calcViterbiScores(ViterbiScores& vs) const;
+	void calcViterbiScores(const PrimarySeq& seq, ViterbiScores& vs) const;
 
 	/**
 	 * Calculate banded Viterbi DP scores w/ a given known "seed" alignment region
 	 * @return a vector of size L giving the final Viterbi lods of the End state
 	 */
-	void calcViterbiScores(ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
+	void calcViterbiScores(const PrimarySeq& seq, ViterbiScores& vs, const vector<ViterbiAlignPath>& vpaths) const;
 
 	/**
 	 * build the ViterbiTrace matrix, using the B, M, I, D as indicator flags
 	 * only the cells in the best score path are filled
 	 * @param vs  a ViterbiScores with Viterbi Scores initiated
 	 * @param vpath  a ViterbiAlignPath of the DP values by one of the calcViterbiScores methods
-	 * @return  a track string of the entire sequence match, with same length as profile length
+	 * @param  a given VTrace to store the result
 	 */
-	double buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath& vpath) const;
+	void buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignTrace& vtrace) const;
 
 	/**
 	 * Build the global alignment string using calculated scores and backtrace path
-	 * @param vs  a ViterbiScores with Viterbi Scores initiated
-	 * @param vpath  a ViterbiAlignPath of the DP values by one of the calcViterbiScores methods
+ 	 * @param seq  the original seq
+	 * @param vs  a calculated VScore
+	 * @param vtrace  a calcluated VTrace
 	 * @return  the global aligned sequence of the query seq, i.e. "AC--GTCGA---ACGNC---";
 	 */
-	string buildGlobalAlign(const ViterbiScores& vs, const ViterbiAlignPath& vpath) const;
+	string buildGlobalAlign(const PrimarySeq& seq, const ViterbiScores& vs, const ViterbiAlignTrace& vtrace) const;
 
 	/**
 	 * build hmm from a MSA, override any old data
@@ -388,17 +393,6 @@ public:
 	 * the model is usually raw counts or scaled by calling scale()
 	 */
 	void normalize();
-
-	/**
-	 * test whether given viterbi align path is valid
-	 * @param L  query length
-	 * @param start  1-based index on profile
-	 * @param end  1-based index on profile
-	 * @param from 1-based index on query
-	 * @param to 1-based index on query
-	 * @param path  path string
-	 */
-	bool isValidAlignPath(const ViterbiAlignPath& vpath) const;
 
 private:
 	/* core fields */
@@ -571,13 +565,13 @@ private:
 
 	/* Private utility functions */
 	/** Get the minimum of three values */
-	static double min(double Vm, double Vi, double Vj) {
-		return std::min(Vm, std::min(Vi, Vj));
+	static double min(double Vm, double Vi, double Vd) {
+		return std::min(Vm, std::min(Vi, Vd));
 	}
 
 	/** Get the minimum of four values */
-	static double min(double Vb, double Vm, double Vi, double Vj) {
-		return std::min(Vb, min(Vm, Vi, Vj));
+	static double min(double Vb, double Vm, double Vi, double Vd) {
+		return std::min(Vb, min(Vm, Vi, Vd));
 	}
 
 	/**

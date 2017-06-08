@@ -688,40 +688,10 @@ void BandedHMMP7::adjustProfileLocalMode() {
 	exitPr_cost = -exitPr.array().log();
 }
 
-BandedHMMP7::ViterbiScores EGriceLab::BandedHMMP7::initViterbiScores(
-		const PrimarySeq& seq) const {
-	assert(abc == seq.getAbc());
-	ViterbiScores vs(seq);
-
-	return resetViterbiScores(vs, seq);
-/*	resetForwardBackwardScores(bHmm);
-	resetTraceScores(bHmm);*/
-}
-
-BandedHMMP7::ViterbiScores& EGriceLab::BandedHMMP7::resetViterbiScores(ViterbiScores& vs,
-		const PrimarySeq& seq) const {
-	vs.seq = &seq; // swap the pointer value but leave the pointing object untouched
-	const int L = vs.seq->length();
-	/* Use -Inf as initial values for Viterbi matrices */
-/*	vs.DP_M = vs.DP_I = vs.DP_D = vs.S = MatrixXd::Constant(L + 1, K + 1,
-			-numeric_limits<double>::infinity());*/
-	/* set dimension */
-	vs.DP_M.resize(L + 1, K + 1);
-	vs.DP_I.resize(L + 1, K + 1);
-	vs.DP_D.resize(L + 1, K + 1);
-
-	/* set elements */
-	vs.DP_M.setConstant(inf);
-	vs.DP_I.setConstant(inf);
-	vs.DP_D.setConstant(inf);
-	return vs;
-}
-
 BandedHMMP7::ViterbiScores& BandedHMMP7::prepareViterbiScores(ViterbiScores& vs) const {
-	const int L = vs.seq->length();
 	vs.DP_M(0, 0) = vs.DP_I(0, 0) = vs.DP_D(0, 0) = inf; /* B->B not possible */
 	/* Initialize the M(,0), the B state */
-	for (int i = 1; i <= L; i++)
+	for (int i = 1; i <= vs.L; i++)
 		vs.DP_M(i, 0) = i == 1 ? 0 /* no N->N loop */ : T_SP_cost(N, N) * (i - 1); /* N->N loops */
 	vs.DP_M.col(0).array() += T_SP_cost(N, B); /* N->B */
 
@@ -731,51 +701,22 @@ BandedHMMP7::ViterbiScores& BandedHMMP7::prepareViterbiScores(ViterbiScores& vs)
 	return vs;
 }
 
-BandedHMMP7::ViterbiAlignPath BandedHMMP7::initViterbiAlignPath(
-		int L) const {
-	ViterbiAlignPath vpath;
-	vpath.K = K; // K is fixed between different seq
-	vpath.N = 0;
-	return resetViterbiAlignPath(vpath, L);
-}
-
-BandedHMMP7::ViterbiAlignPath& BandedHMMP7::resetViterbiAlignPath(ViterbiAlignPath& vpath,
-		int L) const {
-	vpath.L = L;
-	vpath.N = 0;
-	/* reset values */
-	vpath.start.clear();
-	vpath.end.clear();
-	vpath.from.clear();
-	vpath.to.clear();
-	vpath.numIns.clear();
-	vpath.numDel.clear();
-	vpath.alnStart = vpath.alnEnd = 0;
-	vpath.alnFrom = vpath.alnTo = 0;
-	//vpath.path.clear();
-	vpath.alnPath.clear();
-	/* vpath.TRACE.resize(vpath.L + 1, vpath.K + 1); */
-	//vpath.TRACE.resize(L + 1, vpath.K + 1);
-	//vpath.TRACE.setConstant(-1);
-	return vpath;
-}
-
-void BandedHMMP7::calcViterbiScores(
-		ViterbiScores& vs) const {
-	assert(vs.seq != NULL);
-	const int L = vs.seq->length();
+void BandedHMMP7::calcViterbiScores(const PrimarySeq& seq, ViterbiScores& vs) const {
+	assert(seq.length() == vs.L);
 	assert(wingRetracted);
+
+	const int L = vs.L;
 	prepareViterbiScores(vs);
 
 	/* Full Dynamic-Programming at row-first order */
 	for (int j = 1; j <= K; ++j) {
 		for (int i = 1; i <= L; ++i) {
-			vs.DP_M(i, j) = E_M_cost(vs.seq->encodeAt(i-1), j) + EGriceLab::BandedHMMP7::min(
+			vs.DP_M(i, j) = E_M_cost(seq.encodeAt(i-1), j) + EGriceLab::BandedHMMP7::min(
 					static_cast<double> (vs.DP_M(i, 0) + entryPr_cost(j)), // from the B state
 					static_cast<double> (vs.DP_M(i - 1, j - 1) + Tmat_cost[j-1](M, M)), // from Mi-1,j-1
 					static_cast<double> (vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), // from Ii-1,j-1
 					static_cast<double> (vs.DP_D(i - 1, j - 1) + Tmat_cost[j-1](D, M))); // from Di-1,j-1
-			vs.DP_I(i, j) = E_I_cost(vs.seq->encodeAt(i - 1), j) + std::min(
+			vs.DP_I(i, j) = E_I_cost(seq.encodeAt(i - 1), j) + std::min(
 							static_cast<double> (vs.DP_M(i - 1, j) + Tmat_cost[j](M, I)), // from Mi-1,j
 							static_cast<double> (vs.DP_I(i - 1, j) + Tmat_cost[j](I, I))); // from Ii-1,j
 			if(j > 1 && j < K) /* D1 and Dk are retracted */
@@ -784,10 +725,8 @@ void BandedHMMP7::calcViterbiScores(
 						static_cast<double> (vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
 		}
 	}
-	vs.S.resize(L + 1, K + 2); // column K+1 represent the exit from IK state
 	vs.S.leftCols(K + 1) = vs.DP_M;; // 0..K columns copied from the calculated DP_M
 	vs.S.col(K + 1) = vs.DP_I.col(K);
-	vs.S.col(0).setConstant(inf); /* S(,0) is not useful */
 	// add M-E exit costs
 	vs.S.leftCols(K + 1).rowwise() += exitPr_cost.transpose();
 	vs.S.col(K + 1).array() += Tmat_cost[K](I, M); // IK->E
@@ -796,30 +735,25 @@ void BandedHMMP7::calcViterbiScores(
 		vs.S.row(i).array() += T_SP_cost(C, C) * (L - i); // add L-i C->C circles
 }
 
-void BandedHMMP7::calcViterbiScores(
-		ViterbiScores& vs, const ViterbiAlignPath& vpath) const {
-	assert(vs.seq != NULL);
-	if(vpath.N == 0) // no known path provided, do nothing
+void BandedHMMP7::calcViterbiScores(const PrimarySeq& seq,
+		ViterbiScores& vs, const vector<ViterbiAlignPath>& vpaths) const {
+	assert(seq.length() == vs.L);
+	assert(wingRetracted);
+
+	const int L = vs.L;
+	if(vpaths.empty()) // no known path provided, do nothing
 		return;
 
-	const int L = vs.seq->length();
-	assert(wingRetracted);
-	assert(K + 1 == vs.DP_M.cols() && K == vpath.K);
-	assert(L == vpath.L);
-	if (!isValidAlignPath(vpath)) {
-		std::cerr << "Incorrect alignment path(s) provided!" << endl;
-		return;
-	}
 	prepareViterbiScores(vs);
 
 	/* process each known path upstream and themselves */
-	for(vector<int>::size_type n = 0; n < vpath.N; ++n) {
+	for(vector<VPath>::const_iterator vpath = vpaths.begin(); vpath != vpaths.end(); ++vpath) {
 		/* Determine banded boundaries */
-		int upQLen = n == 0 ? vpath.from[n] - 1 : vpath.from[n] - vpath.to[n - 1];
-		int up_start = n == 0 ? vpath.start[n] - upQLen * (1 + kMinGapFrac) : vpath.end[n - 1];
+		int upQLen = vpath == vpaths.begin() /* first path ? */ ? vpath->from - 1 : vpath->from - (vpath - 1)->to;
+		int up_start = vpath == vpaths.begin() /* first path ? */ ? vpath->start - upQLen * (1 + kMinGapFrac) : (vpath - 1)->end;
 		if (up_start < 1)
 			up_start = 1;
-		int up_from = n == 0 ? vpath.from[n] - upQLen * (1 + kMinGapFrac) : vpath.to[n - 1];
+		int up_from = vpath == vpaths.begin() /* first path */ ? vpath->from - upQLen * (1 + kMinGapFrac) : (vpath - 1)->to;
 		if (up_from < 1)
 			up_from = 1;
 //		cerr << "upQLen:" << upQLen << endl;
@@ -827,15 +761,15 @@ void BandedHMMP7::calcViterbiScores(
 //		cerr << "up_from:" << up_from << " up_to:" << vpath.from[n] << endl;
 
 		/* Dynamic programming of upstream of this known path at row-first order */
-		for (int j = up_start; j <= vpath.start[n]; ++j) {
-			for (int i = up_from; i <= vpath.from[n]; ++i) {
-				vs.DP_M(i, j) = E_M_cost(vs.seq->encodeAt(i - 1), j)
+		for (int j = up_start; j <= vpath->start; ++j) {
+			for (int i = up_from; i <= vpath->from; ++i) {
+				vs.DP_M(i, j) = E_M_cost(seq.encodeAt(i - 1), j)
 						+ EGriceLab::BandedHMMP7::min(
 								static_cast<double>(vs.DP_M(i, 0) + entryPr_cost(j)), // from B state
 								static_cast<double>(vs.DP_M(i - 1, j - 1) + Tmat_cost[j-1](M, M)), // from Mi-1,j-1
 								static_cast<double>(vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), // from Ii-1,j-1
 								static_cast<double>(vs.DP_D(i - 1, j - 1) + Tmat_cost[j-1](D, M))); // from Di-1,j-1
-				vs.DP_I(i, j) = E_I_cost(vs.seq->encodeAt(i - 1), j)
+				vs.DP_I(i, j) = E_I_cost(seq.encodeAt(i - 1), j)
 								+ std::min(
 										static_cast<double>(vs.DP_M(i - 1, j) + Tmat_cost[j](M, I)), // from Mi-1,j
 										static_cast<double>(vs.DP_I(i - 1, j) + Tmat_cost[j](I, I))); // from Ii-1,j
@@ -846,18 +780,18 @@ void BandedHMMP7::calcViterbiScores(
 			}
 		}
 		/* Fill the score of the known alignment path */
-		for (int j = vpath.start[n]; j <= vpath.end[n]; ++j) {
-			for(int i = vpath.from[n]; i <= vpath.to[n]; ++i) {
-				int dist = diagnalDist(i, j, vpath.from[n], vpath.start[n]);
-				if(!(dist <= vpath.numIns[n] && dist >= -vpath.numDel[n]))
+		for (int j = vpath->start; j <= vpath->end; ++j) {
+			for(int i = vpath->from; i <= vpath->to; ++i) {
+				int dist = diagnalDist(i, j, vpath->from, vpath->start);
+				if(!(dist <= vpath->nIns && dist >= -vpath->nDel))
 					continue;
-				vs.DP_M(i, j) = E_M_cost(vs.seq->encodeAt(i - 1), j)
+				vs.DP_M(i, j) = E_M_cost(seq.encodeAt(i - 1), j)
 						+ EGriceLab::BandedHMMP7::min(
 								static_cast<double>(vs.DP_M(i, 0) + entryPr_cost(j)), // from B state
 								static_cast<double>(vs.DP_M(i - 1, j - 1) + Tmat_cost[j-1](M, M)), // from Mi-1,j-1
 								static_cast<double>(vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), // from Ii-1,j-1
 								static_cast<double>(vs.DP_D(i - 1, j - 1) + Tmat_cost[j-1](D, M))); // from Di-1,j-1
-				vs.DP_I(i, j) = E_I_cost(vs.seq->encodeAt(i - 1), j)
+				vs.DP_I(i, j) = E_I_cost(seq.encodeAt(i - 1), j)
 						+ std::min(
 								static_cast<double>(vs.DP_M(i - 1, j) + Tmat_cost[j](M, I)), // from Mi-1,j
 								static_cast<double>(vs.DP_I(i - 1, j) + Tmat_cost[j](I, I))); // from Ii-1,j
@@ -871,8 +805,8 @@ void BandedHMMP7::calcViterbiScores(
 	} /* end of each known path segment */
 //	cerr << "known path aligned" << endl;
 	/* Dynamic programming of the remaining downstream of the known paths, if any */
-	int last_end = vpath.end[vpath.N - 1];
-	int last_to = vpath.to[vpath.N - 1];
+	int last_end = vpaths.back().end;
+	int last_to = vpaths.back().to;
 	int downQLen = L - last_to;
 	int down_end = last_end + downQLen * (1 + kMinGapFrac);
 	int down_to = last_to + downQLen * (1 + kMinGapFrac);
@@ -883,13 +817,13 @@ void BandedHMMP7::calcViterbiScores(
 
 	for (int j = last_end; j <= down_end; ++j) {
 		for (int i = last_to; i <= down_to; ++i) {
-			vs.DP_M(i, j) = E_M_cost(vs.seq->encodeAt(i - 1), j) +
+			vs.DP_M(i, j) = E_M_cost(seq.encodeAt(i - 1), j) +
 					EGriceLab::BandedHMMP7::min(
 							// from Mi,0, the B state is not possible
 							static_cast<double>(vs.DP_M(i - 1, j - 1) + Tmat_cost[j-1](M, M)), // from Mi-1,j-1
 							static_cast<double>(vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), // from Ii-1,j-1
 							static_cast<double>(vs.DP_D(i - 1, j - 1) + Tmat_cost[j-1](D, M))); // from Di-1,j-1
-			vs.DP_I(i, j) = E_I_cost(vs.seq->encodeAt(i - 1), j) +
+			vs.DP_I(i, j) = E_I_cost(seq.encodeAt(i - 1), j) +
 					std::min(
 							static_cast<double>(vs.DP_M(i - 1, j) + Tmat_cost[j](M, I)), // from Mi-1,j
 							static_cast<double>(vs.DP_I(i - 1, j) + Tmat_cost[j](I, I))); // from Ii-1,j
@@ -900,11 +834,9 @@ void BandedHMMP7::calcViterbiScores(
 		}
 	}
 //	cerr << "downstream done" << endl;
-	vs.S.resize(L + 1, K + 2); // column K+1 represent the exit from IK state
 	vs.S.leftCols(K + 1) = vs.DP_M;; // 0..K columns copied from the calculated DP_M
 	vs.S.col(K + 1) = vs.DP_I.col(K);
 	//vs.S.col(K + 1).setConstant(inf);
-	vs.S.col(0).setConstant(inf);
 	// add M-E exit costs
 	vs.S.leftCols(K + 1).rowwise() += exitPr_cost.transpose();
 	vs.S.col(K + 1).array() += Tmat_cost[K](I, M); // IK->E
@@ -913,27 +845,26 @@ void BandedHMMP7::calcViterbiScores(
 		vs.S.row(i).array() += T_SP_cost(C, C) * (L - i); // add L-i C->C circles
 }
 
-void BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
-		const CSLoc& csLoc, int csFrom, int csTo) const {
-	using std::string;
+BandedHMMP7::ViterbiAlignPath BandedHMMP7::buildAlignPath(const CSLoc& csLoc, int csFrom, int csTo) const {
 //	cerr << "csStart:" << csLoc.start << " csEnd:" << csLoc.end << " csFrom:" << csFrom << " csTo:" << csTo <<
 //			" CSLen:" << csLoc.CS.length() << " CS:" << csLoc.CS << endl;
 	assert(csLoc.start >= 1 && csLoc.start <= csLoc.end
 			&& csFrom >= 1 && csFrom <= csTo
 			&& csLoc.CS.length() > csLoc.end - csLoc.start && csLoc.CS.length() > csTo - csFrom);
+
 	/* calculate profile start, end and path */
 	int start = 0;
 	int end = 0;
 	int from = 0;
 	int to = 0;
-	int numIns = 0;
-	int numDel = 0;
+	int nIns = 0;
+	int nDel = 0;
 
 	int i = csFrom;
 	int j = csLoc.start;
 	for(string::const_iterator it = csLoc.CS.begin(); it != csLoc.CS.end(); ++it) {
 		int k = getProfileLoc(j); // position on profile
-		cerr << "i:" << i << " j:" << j << " k:" << k << endl;
+//		cerr << "i:" << i << " j:" << j << " k:" << k << endl;
 //		cerr << "vpath.L:" << vpath.L << " vpath.K:" << vpath.K << endl;
 
 		bool nonGap = abc->isSymbol(*it);
@@ -947,11 +878,11 @@ void BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
 				start = k;
 			end = k; // keep updating
 			if(!nonGap) // a deletion
-				numDel++;
+				nDel++;
 		}
 		else { // a D loc on profile
 			if(nonGap) // an insertion
-				numIns++;
+				nIns++;
 		}
 		j++; // update j
 		if(nonGap)
@@ -960,41 +891,33 @@ void BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
 //	cerr << "vpath.path:" << vpath.alnPath << endl;
 //	cerr << "i:" << i << " j:" << j << " csTo:" << csTo << " csEnd:" << csLoc.end << endl;
 	assert(i == csTo + 1 && j == csLoc.end + 1);
-	if(from != 0 && to != 0 && start != 0 && end != 0) {
-		vpath.start.push_back(start);
-		vpath.end.push_back(end);
-		vpath.from.push_back(from);
-		vpath.to.push_back(to);
-		vpath.numIns.push_back(numIns);
-		vpath.numDel.push_back(numDel);
-		vpath.N++;
-	}
+
+	return ViterbiAlignPath(start, end, from, to, nIns, nDel);
 }
 
-double BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath& vpath) const {
-	assert(vs.seq != NULL);
-	assert(vs.S.rows() == vpath.L + 1 && vs.S.cols() == K + 2);
+void BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignTrace& vtrace) const {
 	MatrixXd::Index minRow, minCol;
-	double minScore = vs.S.minCoeff(&minRow, &minCol);
-	if(minScore == inf)
-		return minScore; // min score not found, do nothing
+	vtrace.minScore = vs.S.minCoeff(&minRow, &minCol);
+	if(vtrace.minScore == inf)
+		return; // return an invalid VTrace
+
 	/* do trace back in the vScore matrix */
 	char s = minCol <= K ? 'M' : 'I'; // exiting state either M1..K or IK
 	int i = minRow;
 	int j = minCol <= K ? minCol : K;
-	vpath.alnStart = minCol <= K ? minCol : K;
-	vpath.alnEnd = minCol <= K ? minCol : K;
-	vpath.alnFrom = vpath.alnTo = minRow;
-	//cerr << "id:" << vs.seq->getId() << " minRow:" << minRow << " minCol:" << minCol << " minScore:" << minScore << " minEnd:" << getCSLoc(minCol) << endl;
 
-	vpath.alnPath.push_back('E'); // ends with E
+	vtrace.alnStart = minCol <= K ? minCol : K;
+	vtrace.alnEnd = minCol <= K ? minCol : K;
+	vtrace.alnFrom = vtrace.alnTo = minRow;
+
+	vtrace.alnTrace.push_back('E'); // ends with E
 	while(i >= 1 && j >= 0) {
 //		cerr << "i: " << i << " j: " << j << " s: " << s << endl;
-		vpath.alnPath.push_back(s);
+		vtrace.alnTrace.push_back(s);
 		// update the status
 		if(s == 'M') {
-			vpath.alnStart--;
-			vpath.alnFrom--;
+			vtrace.alnStart--;
+			vtrace.alnFrom--;
 			s = BandedHMMP7::whichMin(
 					static_cast<double> (vs.DP_M(i, 0) + entryPr_cost(j)), /* from B-state */
 					static_cast<double> (vs.DP_M(i - 1, j - 1) + Tmat_cost[j-1](M, M)), /* from M(i-1,j-1) */
@@ -1008,7 +931,7 @@ double BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath&
 			}
 		}
 		else if(s == 'I') {
-			vpath.alnFrom--;
+			vtrace.alnFrom--;
 			s = BandedHMMP7::whichMin(
 					static_cast<double> (vs.DP_M(i - 1, j) + Tmat_cost[j](M, I)), /* from M(i-1,j) */
 					static_cast<double> (vs.DP_I(i - 1, j) + Tmat_cost[j](I, I)), /* from I(i-1,j) */
@@ -1016,7 +939,7 @@ double BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath&
 			i--;
 		}
 		else if(s == 'D') {
-			vpath.alnStart--;
+			vtrace.alnStart--;
 			s = BandedHMMP7::whichMin(
 					static_cast<double> (vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), /* from M(i,j-1) */
 					static_cast<double> (vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D)), /* from D(i,j-1) */
@@ -1028,53 +951,53 @@ double BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignPath&
 		else { } /* do nothing */
 	} /* end of while */
 
-	vpath.alnStart++; /* 1-based */
-	vpath.alnFrom++;  /* 1-based */
-	if(vpath.alnPath.back() != 'B')
-		vpath.alnPath.push_back('B');
-	reverse(vpath.alnPath.begin(), vpath.alnPath.end()); // reverse the alnPath string
-	return minScore;
+	vtrace.alnStart++; /* 1-based */
+	vtrace.alnFrom++;  /* 1-based */
+
+	if(vtrace.alnTrace.back() != 'B')
+		vtrace.alnTrace.push_back('B');
+	reverse(vtrace.alnTrace.begin(), vtrace.alnTrace.end()); // reverse the alnPath string
 }
 
-string BandedHMMP7::buildGlobalAlign(const ViterbiScores& vs,
-		const ViterbiAlignPath& vpath) const {
-	assert(vs.seq != NULL);
+string BandedHMMP7::buildGlobalAlign(const PrimarySeq& seq,
+		const ViterbiScores& vs, const ViterbiAlignTrace& vtrace) const {
+	assert(seq.length() == vs.L);
+
 	string aln; /* N', aligned and C' of the alignment */
-	const int L = getCSLen();
 
-	string seqN = vs.seq->getSeq().substr(0, vpath.alnFrom - 1); /* N' of unaligned seq, might be empty */
-	string seqC = vs.seq->getSeq().substr(vs.seq->length() - (vpath.L - vpath.alnTo), vpath.L - vpath.alnTo); /* C' of unaligned seq, might be empty */
+	string seqN = seq.getSeq().substr(0, vtrace.alnFrom - 1); /* N' of unaligned seq, might be empty */
+	string seqC = seq.getSeq().substr(vtrace.alnTo, L - vtrace.alnTo); /* C' of unaligned seq, might be empty */
 
-	int csStart = profile2CSIdx[vpath.alnStart]; /* 1-based */
-	int csEnd = profile2CSIdx[vpath.alnEnd]; /* 1-based */
+	int csStart = profile2CSIdx[vtrace.alnStart]; /* 1-based */
+	int csEnd = profile2CSIdx[vtrace.alnEnd]; /* 1-based */
 
 	int i = 0; /* 1-based position on CS */
 	int j = 0; /* 1-based position on seq */
 	int k = 0; /* 1-based position on HMM */
 
 	string insert;
-	for(string::const_iterator state = vpath.alnPath.begin(); state != vpath.alnPath.end(); ++state) {
-//		fprintf(stderr, "i:%d j:%d k:%d cs:%d state:%c aln:%s\n", state - vpath.alnPath.begin(), j, k, profile2CSIdx[k], *state, aln.c_str());
+	for(string::const_iterator state = vtrace.alnTrace.begin(); state != vtrace.alnTrace.end(); ++state) {
+//		fprintf(stderr, "i:%d j:%d k:%d cs:%d state:%c aln:%s\n", state - vtrace.alnTrace.begin(), j, k, profile2CSIdx[k], *state, aln.c_str());
 		switch(*state) {
 		case 'B':
 			aln.append(getPaddingSeq(csStart - 1, seqN, PAD_SYM, RIGHT)); /* right aligned N' padding */
 			i = csStart;
-			j = vpath.alnFrom;
-			k = vpath.alnStart;
+			j = vtrace.alnFrom;
+			k = vtrace.alnStart;
 			break;
 		case 'M':
-			if(k > 1 && state - vpath.alnPath.begin() > 1 && profile2CSIdx[k] - profile2CSIdx[k - 1] > 1) /* there are non-CS pos before 'M' */
+			if(k > 1 && state - vtrace.alnTrace.begin() > 1 && profile2CSIdx[k] - profile2CSIdx[k - 1] > 1) /* there are non-CS pos before 'M' */
 				/* fill in the gap with either insert or GAP */
 				aln.append(getPaddingSeq(profile2CSIdx[k] - profile2CSIdx[k - 1] - 1, insert, GAP_SYM, JUSTIFIED)); /* justified aligned gap padding */
 			insert.clear();
-			aln.push_back(vs.seq->charAt(j - 1));
+			aln.push_back(seq.charAt(j - 1));
 			j++;
 			k++;
 			break;
 		case 'I':
 			insert.clear();
 			while(*state == 'I') { /* process all insertions in once */
-				insert.push_back(::tolower(vs.seq->charAt(j - 1)));
+				insert.push_back(::tolower(seq.charAt(j - 1)));
 				j++;
 				state++;
 			}
@@ -1089,7 +1012,7 @@ string BandedHMMP7::buildGlobalAlign(const ViterbiScores& vs,
 			k++;
 			break;
 		case 'E':
-			assert(j == vpath.alnTo + 1);
+			assert(j == vtrace.alnTo + 1);
 			aln.append(getPaddingSeq(L - csEnd, seqC, PAD_SYM, LEFT)); /* left aligned C' padding */
 			break;
 		default:
@@ -1099,7 +1022,6 @@ string BandedHMMP7::buildGlobalAlign(const ViterbiScores& vs,
 	}
 
 	assert(aln.length() == L);
-
 	return aln;
 }
 
@@ -1140,21 +1062,6 @@ void BandedHMMP7::wingRetract() {
 //	cerr << "entry after retract: " << entryPr_cost.transpose() << endl;
 
 	wingRetracted = true;
-}
-
-bool BandedHMMP7::isValidAlignPath(const ViterbiAlignPath& vpath) const {
-	/* check start, end and from to */
-	for(int n = 0; n < vpath.N; ++n)
-		if(!(vpath.start[n] >= 1 && vpath.start[n] <= vpath.end[n] && vpath.end[n] <= vpath.K
-			&& vpath.from[n] >= 1 && vpath.from[n] <= vpath.to[n] && vpath.to[n] <= vpath.L) && // this path is valid
-				(n == 0 || (vpath.start[n] > vpath.end[n - 1] && vpath.from[n] > vpath.to[n - 1]))) // path is properly ordered
-			return false;
-	/* check path */
-	int L = 0;
-	for(string::const_iterator state = vpath.alnPath.begin(); state != vpath.alnPath.end(); ++state)
-		if(*state == 'M' || *state == 'D')
-			L++;
-	return L == 0 || L == vpath.alnEnd - vpath.alnStart + 1;
 }
 
 double RelativeEntropyTargetFunc::operator()(double x) {

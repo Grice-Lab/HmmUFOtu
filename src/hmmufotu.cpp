@@ -470,7 +470,6 @@ int main(int argc, char* argv[]) {
 	hmm.setSequenceMode(mode);
 	hmm.wingRetract();
 
-
 	/* process reads and output */
 	out << PLACE_HEADER << endl;
 #pragma omp parallel shared(csfm, hmm, ptu, fwdIn, revIn)
@@ -576,9 +575,12 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 		int seedLen, int seedRegion, BandedHMMP7::align_mode mode,
 		int& csStart, int& csEnd) {
 	const DegenAlphabet* abc = hmm.getNuclAbc();
+	const int K = hmm.getProfileSize();
+	const int L = read.length();
 
-	BandedHMMP7::ViterbiScores seqVscore = hmm.initViterbiScores(read); // construct an empty reusable score
-	BandedHMMP7::ViterbiAlignPath seqVpath = hmm.initViterbiAlignPath(read.length()); // construct an empty reusable path
+	BandedHMMP7::ViterbiScores seqVscore(K, L); // construct an empty reusable score
+	vector<BandedHMMP7::ViterbiAlignPath> seqVpaths; // construct an empty list of VPaths
+	BandedHMMP7::ViterbiAlignTrace seqVtrace; // construct an empty VTrace
 
 	int regionLen = seedRegion < read.length() ? seedRegion : read.length(); /* search region */
 	/* find seed in 5' */
@@ -587,8 +589,7 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 		const CSLoc& loc = csfm.locateOne(seed.getSeq());
 		if(loc.start > 0 && loc.end > 0) /* a read seed located */ {
 //					fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedFrom + 1, seedFrom + seedLen, loc.CS.length(), loc.CS.c_str());
-			hmm.addKnownAlignPath(seqVpath, loc, seedFrom + 1, seedFrom + seedLen); /* seed_from and seed_to are 1-based */
-			const set<unsigned>& hits = csfm.locateIndex(seed.getSeq());
+			seqVpaths.push_back(hmm.buildAlignPath(loc, seedFrom + 1, seedFrom + seedLen)); /* seed_from and seed_to are 1-based */
 			break; /* only one 5'-seed necessary */
 		}
 	}
@@ -599,35 +600,34 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 			const CSLoc& loc = csfm.locateOne(seed.getSeq());
 			if(loc.start > 0 && loc.end > 0) /* a read seed located */ {
 //						fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedTo - seedLen + 2, seedTo + 1, loc.CS.length(), loc.CS.c_str());
-				hmm.addKnownAlignPath(seqVpath, loc, seedTo - seedLen + 2, seedTo + 1); /* seed_from and seed_to are 1-based */
-				const set<unsigned>& hits = csfm.locateIndex(seed.getSeq());
+				seqVpaths.push_back(hmm.buildAlignPath(loc, seedTo - seedLen + 2, seedTo + 1)); /* seed_from and seed_to are 1-based */
 				break; /* only one 3'-seed necessary */
 			}
 		}
 	}
-//	cerr << "nSeed: " << seqVpath.N << endl;
 
 	/* banded HMM align */
-	if(seqVpath.N > 0) { /* use banded Viterbi algorithm */
-		hmm.calcViterbiScores(seqVscore, seqVpath);
+	if(!seqVpaths.empty()) { /* use banded Viterbi algorithm */
+		hmm.calcViterbiScores(read, seqVscore, seqVpaths);
 		if(seqVscore.S.minCoeff() == inf) { /* banded version failed */
 			debugLog << "Banded HMM algorithm didn't find a potential Viterbi path, returning to regular HMM" << endl;
-			hmm.resetViterbiScores(seqVscore, read);
-//			hmm.resetViterbiAlignPath(seqVpath, L);
-			hmm.calcViterbiScores(seqVscore);
+			seqVscore.reset();
+			hmm.calcViterbiScores(read, seqVscore);
 		}
 	}
 	else
-		hmm.calcViterbiScores(seqVscore); /* use original Viterbi algorithm */
-	float minCost = hmm.buildViterbiTrace(seqVscore, seqVpath);
+		hmm.calcViterbiScores(read, seqVscore); /* use original Viterbi algorithm */
 
-	assert(minCost != inf);
+	/* build VTrace */
+	hmm.buildViterbiTrace(seqVscore, seqVtrace);
+
+	assert(seqVtrace.minScore != inf);
 
 	/* find seqStart and seqEnd */
-	csStart = hmm.getCSLoc(seqVpath.alnStart);
-	csEnd = hmm.getCSLoc(seqVpath.alnEnd);
+	csStart = hmm.getCSLoc(seqVtrace.alnStart);
+	csEnd = hmm.getCSLoc(seqVtrace.alnEnd);
 
-	return hmm.buildGlobalAlign(seqVscore, seqVpath);
+	return hmm.buildGlobalAlign(read, seqVscore, seqVtrace);
 }
 
 vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
