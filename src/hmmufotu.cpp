@@ -72,7 +72,9 @@ struct PTLoc {
 /** struct to store placement information */
 struct PTPlacement {
 //	/** default constructor */
-	PTPlacement() { }
+	PTPlacement() : ratio(UNASSIGNED_RATIO), wnr(UNASSIGNED_DIST), loglik(UNASSIGNED_LOGLIK),
+			height(EGriceLab::nan), annoDist(EGriceLab::nan), qPlace(EGriceLab::nan), qTaxon(EGriceLab::nan)
+	{ }
 
 	/** construct a placement with basic info and optionally auxilary info */
 	PTPlacement(const PTUnrooted::PTUNodePtr& cNode, const PTUnrooted::PTUNodePtr& pNode,
@@ -148,6 +150,7 @@ void printUsage(const string& progName) {
 #ifdef _OPENMP
 		 << "            -p|--process INT   : number of threads/cpus used for parallel processing" << endl
 #endif
+		 << "            --align-only  FLAG : only align the read but not try to place it into the tree, this will make " + progName + " behaviors like a HMM aligner" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
@@ -210,6 +213,7 @@ int main(int argc, char* argv[]) {
 	ofstream of;
 	SeqIO fwdIn, revIn, alnOut;
 	bool isAssembled = true; /* assume assembled seq if not paired-end */
+	bool alignOnly = false;
 	BandedHMMP7::align_mode mode;
 
 	int seedLen = DEFAULT_SEED_LEN;
@@ -299,6 +303,8 @@ int main(int argc, char* argv[]) {
 		nThreads = ::atoi(cmdOpts.getOptStr("--process"));
 #endif
 
+	if(cmdOpts.hasOpt("--align-only"))
+		alignOnly = true;
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
@@ -449,12 +455,14 @@ int main(int argc, char* argv[]) {
 	}
 
 	PTUnrooted ptu;
-	ptu.load(ptuIn);
-	if(ptuIn.bad()) {
-		cerr << "Unable to load Phylogenetic tree data '" << ptuFn << "': " << ::strerror(errno) << endl;
-		return EXIT_FAILURE;
+	if(!alignOnly) {
+		ptu.load(ptuIn);
+		if(ptuIn.bad()) {
+			cerr << "Unable to load Phylogenetic tree data '" << ptuFn << "': " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+		infoLog << "Phylogenetic tree loaded" << endl;
 	}
-	infoLog << "Phylogenetic tree loaded" << endl;
 
 	const DegenAlphabet* abc = hmm.getNuclAbc();
 
@@ -486,7 +494,6 @@ int main(int argc, char* argv[]) {
 				int csStart = 0; /* 1-based consensus start */
 				int csEnd = 0;   /* 1-based consensus end */
 				string aln;
-				PTPlacement bestPlace;
 
 				/* align fwdRead */
 				aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode, csStart, csEnd);
@@ -514,54 +521,55 @@ int main(int argc, char* argv[]) {
 #pragma omp critical(writeAln)
 					alnOut.writeSeq(PrimarySeq(abc, id, aln, fwdRead.getDesc()));
 				}
-
-				DigitalSeq seq(abc, id, aln);
-				/* place seq with seed-estimate-place (SEP) algorithm */
-				/* get potential locs */
-				vector<PTLoc> locs = getSeed(ptu, seq, csStart - 1, csEnd - 1, maxDist);
-				if(locs.empty()) {
+				PTPlacement bestPlace;
+				if(!alignOnly) {
+					DigitalSeq seq(abc, id, aln);
+					/* place seq with seed-estimate-place (SEP) algorithm */
+					/* get potential locs */
+					vector<PTLoc> locs = getSeed(ptu, seq, csStart - 1, csEnd - 1, maxDist);
+					if(locs.empty()) {
 #pragma omp critical(warning)
-					warningLog << "Warning: No seed loci found at " << id << endl;
-				}
-				else {
-					std::sort(locs.begin(), locs.end()); /* sort by dist */
-					if(locs.size() > maxLocs)
-						locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
-					//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
-
-					/* estimate placement */
-					vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs);
-					std::sort(places.rbegin(), places.rend(), ::compareByLoglik); /* sort places decently by estimated loglik */
-					double bestEstLoglik = places.front().loglik;
-					vector<PTPlacement>::const_iterator it;
-					for(it = places.begin(); it != places.end(); ++it) {
-						if(::abs(it->loglik - bestEstLoglik) > maxError)
-							break;
+						warningLog << "Warning: No seed loci found at " << id << endl;
 					}
-					places.erase(it, places.end()); /* remove too bad placements */
+					else {
+						std::sort(locs.begin(), locs.end()); /* sort by dist */
+						if(locs.size() > maxLocs)
+							locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
+						//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
 
-					/* accurate placement */
-					placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
-					if(onlyML) { /* don't calculate q-values */
-						std::sort(places.rbegin(), places.rend(), ::compareByLoglik); /* sort places decently by real loglik */
+						/* estimate placement */
+						vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs);
+						std::sort(places.rbegin(), places.rend(), ::compareByLoglik); /* sort places decently by estimated loglik */
+						double bestEstLoglik = places.front().loglik;
+						vector<PTPlacement>::const_iterator it;
+						for(it = places.begin(); it != places.end(); ++it) {
+							if(::abs(it->loglik - bestEstLoglik) > maxError)
+								break;
+						}
+						places.erase(it, places.end()); /* remove too bad placements */
+
+						/* accurate placement */
+						placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
+						if(onlyML) { /* don't calculate q-values */
+							std::sort(places.rbegin(), places.rend(), ::compareByLoglik); /* sort places decently by real loglik */
+						}
+						else { /* calculate q-values */
+							PTPlacement::calcQValues(places, myPrior);
+							std::sort(places.rbegin(), places.rend(), ::compareByQTaxon); /* sort places decently by QTaxon */
+						}
+
+						bestPlace = places.front();
 					}
-					else { /* calculate q-values */
-						PTPlacement::calcQValues(places, myPrior);
-						std::sort(places.rbegin(), places.rend(), ::compareByQTaxon); /* sort places decently by QTaxon */
-					}
-
-					bestPlace = places.front();
-
+				} /* end if bestOnly */
 				/* write main output */
 #pragma omp critical(writePlace)
 				out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t" << aln << "\t"
 						<< bestPlace << endl;
-				}
 			} /* end task */
 		} /* end each read/pair */
 #pragma omp taskwait
 	} /* end single */
-	return 0;
+return 0;
 }
 
 string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
@@ -593,7 +601,7 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 //						fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedTo - seedLen + 2, seedTo + 1, loc.CS.length(), loc.CS.c_str());
 				hmm.addKnownAlignPath(seqVpath, loc, seedTo - seedLen + 2, seedTo + 1); /* seed_from and seed_to are 1-based */
 				const set<unsigned>& hits = csfm.locateIndex(seed.getSeq());
-				break; /* only one 5'-seed necessary */
+				break; /* only one 3'-seed necessary */
 			}
 		}
 	}

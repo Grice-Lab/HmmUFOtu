@@ -822,7 +822,7 @@ void BandedHMMP7::calcViterbiScores(
 		int up_from = n == 0 ? vpath.from[n] - upQLen * (1 + kMinGapFrac) : vpath.to[n - 1];
 		if (up_from < 1)
 			up_from = 1;
-		//cerr << "upQLen:" << upQLen << endl;
+//		cerr << "upQLen:" << upQLen << endl;
 //		cerr << "up_start:" << up_start << " up_end:" << vpath.start[n] << endl;
 //		cerr << "up_from:" << up_from << " up_to:" << vpath.from[n] << endl;
 
@@ -933,7 +933,7 @@ void BandedHMMP7::addKnownAlignPath(ViterbiAlignPath& vpath,
 	int j = csLoc.start;
 	for(string::const_iterator it = csLoc.CS.begin(); it != csLoc.CS.end(); ++it) {
 		int k = getProfileLoc(j); // position on profile
-//		cerr << "i:" << i << " j:" << j << " k:" << k << endl;
+		cerr << "i:" << i << " j:" << j << " k:" << k << endl;
 //		cerr << "vpath.L:" << vpath.L << " vpath.K:" << vpath.K << endl;
 
 		bool nonGap = abc->isSymbol(*it);
