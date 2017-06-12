@@ -1,9 +1,2 @@
 *.o
-*.fasta
-*.fastq
-*.dat
-*test?
-*.csfm
-*.msa
-*.log
-*test?
+*test

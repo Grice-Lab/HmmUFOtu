@@ -1,2 +1,17 @@
+autoscan: warning: missing AC_CHECK_FUNCS([select]) wanted by: 
+	build/hmmufotu-x86_64-linux/include/SequenceAlphPart.h:52
+	build/hmmufotu-x86_64-linux/include/WaveletTreeNoptrsS.h:55
+	build/hmmufotu-x86_64-linux/include/BitmapsSequence.h:51
+	build/hmmufotu-x86_64-linux/include/wt_node.h:48
+	build/hmmufotu-x86_64-linux/include/SequenceGMR.h:53
+	build/hmmufotu-x86_64-linux/include/WaveletMatrix.h:56
+	build/hmmufotu-x86_64-linux/include/SequenceGMRChunk.h:63
+	build/hmmufotu-x86_64-linux/include/WaveletTree.h:79
+	build/hmmufotu-x86_64-linux/include/wt_node_leaf.h:45
+	build/hmmufotu-x86_64-linux/include/WaveletTreeNoptrs.h:70
+	build/hmmufotu-x86_64-linux/include/wt_node_internal.h:47
+	build/hmmufotu-x86_64-linux/include/Sequence.h:63
+autoscan: warning: missing AC_CHECK_HEADERS([sys/timeb.h]) wanted by: 
+	build/hmmufotu-x86_64-linux/include/sdarraySadakane.h:30
 autoscan: warning: missing AC_PROG_RANLIB wanted by: 
 	ltmain.sh:3772

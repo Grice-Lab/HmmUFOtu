@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT([FULL-PACKAGE-NAME], [VERSION], [BUG-REPORT-ADDRESS])
-AC_CONFIG_SRCDIR([test/dna_model_IO_test1.cpp])
+AC_CONFIG_SRCDIR([build/hmmufotu-x86_64-linux/include/SequenceAlphPart.h])
 AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
@@ -19,7 +19,7 @@ AC_PROG_RANLIB
 # Checks for libraries.
 
 # Checks for header files.
-AC_CHECK_HEADERS([stdint.h])
+AC_CHECK_HEADERS([stdint.h stdlib.h sys/timeb.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
@@ -32,7 +32,7 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
 
 # Checks for library functions.
-AC_CHECK_FUNCS([floor strerror])
+AC_CHECK_FUNCS([floor select strerror])
 
 AC_CONFIG_FILES([Makefile
                  data/Makefile

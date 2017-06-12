@@ -1,9 +1,9 @@
 # Ignore all logs
 *.log
 
-# Ignore Autotools related files
-**/*.cache
-**/.deps
+# Ignore hidden directories
+**/.deps/*
+**/.libs/*
 # Ignore any Eclipse metadata recursively
 **/.autotools
 **/.cproject

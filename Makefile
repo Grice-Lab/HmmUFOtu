@@ -331,7 +331,6 @@ top_build_prefix =
 top_builddir = .
 top_srcdir = .
 SUBDIRS = data  src test
-ACLOCAL_AMFLAGS = -I m4
 all: all-recursive
 
 .SUFFIXES:
@@ -797,6 +796,7 @@ uninstall-am:
 
 .PRECIOUS: Makefile
 
+#ACLOCAL_AMFLAGS = -I m4
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
