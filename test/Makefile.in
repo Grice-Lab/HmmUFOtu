@@ -144,6 +144,10 @@ dna_model_IO_test_DEPENDENCIES =  \
 	$(top_srcdir)/src/libHmmUFOtu_phylo.a \
 	$(top_srcdir)/src/libHmmUFOtu_common.a \
 	$(top_srcdir)/src/math/libEGMath.a
+dna_model_IO_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(AM_CXXFLAGS) $(CXXFLAGS) $(dna_model_IO_test_LDFLAGS) \
+	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -356,7 +360,7 @@ dna_model_IO_test_SOURCES = dna_model_IO_test.cpp
 dna_model_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
 $(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a
 
-PTU_IO_test_LDFLAGS = -static
+dna_model_IO_test_LDFLAGS = -static
 FMIO_test_SOURCES = FMIO_test.cpp
 FMIO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
 $(top_srcdir)/src/libHmmUFOtu_common.a \
@@ -368,6 +372,7 @@ PTU_IO_test_SOURCES = PTU_IO_test.cpp
 PTU_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
 $(top_srcdir)/src/libHmmUFOtu_common.a
 
+PTU_IO_test_LDFLAGS = -static
 all: all-am
 
 .SUFFIXES:
@@ -433,7 +438,7 @@ bHmm_IO_test$(EXEEXT): $(bHmm_IO_test_OBJECTS) $(bHmm_IO_test_DEPENDENCIES) $(EX
 
 dna_model_IO_test$(EXEEXT): $(dna_model_IO_test_OBJECTS) $(dna_model_IO_test_DEPENDENCIES) $(EXTRA_dna_model_IO_test_DEPENDENCIES) 
 	@rm -f dna_model_IO_test$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(dna_model_IO_test_OBJECTS) $(dna_model_IO_test_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(dna_model_IO_test_LINK) $(dna_model_IO_test_OBJECTS) $(dna_model_IO_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
