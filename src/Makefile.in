@@ -92,10 +92,9 @@ host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = hmmufotu$(EXEEXT) hmmufotu-train-dm$(EXEEXT) \
 	hmmufotu-train-sm$(EXEEXT) hmmufotu-train-hmm$(EXEEXT) \
-	hmmufotu-sim$(EXEEXT) hmmufotu-place$(EXEEXT) \
-	hmmufotu-build$(EXEEXT) hmmufotu-inspect$(EXEEXT) \
-	hmmufotu$(EXEEXT) hmmufotu-sum$(EXEEXT) \
-	hmmufotu-anneal$(EXEEXT)
+	hmmufotu-sim$(EXEEXT) hmmufotu-build$(EXEEXT) \
+	hmmufotu-inspect$(EXEEXT) hmmufotu$(EXEEXT) \
+	hmmufotu-sum$(EXEEXT) hmmufotu-anneal$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -179,13 +178,6 @@ hmmufotu_inspect_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(AM_CXXFLAGS) $(CXXFLAGS) $(hmmufotu_inspect_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am_hmmufotu_place_OBJECTS = hmmufotu-place.$(OBJEXT)
-hmmufotu_place_OBJECTS = $(am_hmmufotu_place_OBJECTS)
-hmmufotu_place_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
-hmmufotu_place_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) $(hmmufotu_place_LDFLAGS) \
-	$(LDFLAGS) -o $@
 am_hmmufotu_sim_OBJECTS = hmmufotu-sim.$(OBJEXT)
 hmmufotu_sim_OBJECTS = $(am_hmmufotu_sim_OBJECTS)
 hmmufotu_sim_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
@@ -261,17 +253,16 @@ am__v_CXXLD_1 =
 SOURCES = $(libHmmUFOtu_common_a_SOURCES) $(libHmmUFOtu_hmm_a_SOURCES) \
 	$(libHmmUFOtu_phylo_a_SOURCES) $(hmmufotu_SOURCES) \
 	$(hmmufotu_anneal_SOURCES) $(hmmufotu_build_SOURCES) \
-	$(hmmufotu_inspect_SOURCES) $(hmmufotu_place_SOURCES) \
-	$(hmmufotu_sim_SOURCES) $(hmmufotu_sum_SOURCES) \
-	$(hmmufotu_train_dm_SOURCES) $(hmmufotu_train_hmm_SOURCES) \
-	$(hmmufotu_train_sm_SOURCES)
+	$(hmmufotu_inspect_SOURCES) $(hmmufotu_sim_SOURCES) \
+	$(hmmufotu_sum_SOURCES) $(hmmufotu_train_dm_SOURCES) \
+	$(hmmufotu_train_hmm_SOURCES) $(hmmufotu_train_sm_SOURCES)
 DIST_SOURCES = $(libHmmUFOtu_common_a_SOURCES) \
 	$(libHmmUFOtu_hmm_a_SOURCES) $(libHmmUFOtu_phylo_a_SOURCES) \
 	$(hmmufotu_SOURCES) $(hmmufotu_anneal_SOURCES) \
 	$(hmmufotu_build_SOURCES) $(hmmufotu_inspect_SOURCES) \
-	$(hmmufotu_place_SOURCES) $(hmmufotu_sim_SOURCES) \
-	$(hmmufotu_sum_SOURCES) $(hmmufotu_train_dm_SOURCES) \
-	$(hmmufotu_train_hmm_SOURCES) $(hmmufotu_train_sm_SOURCES)
+	$(hmmufotu_sim_SOURCES) $(hmmufotu_sum_SOURCES) \
+	$(hmmufotu_train_dm_SOURCES) $(hmmufotu_train_hmm_SOURCES) \
+	$(hmmufotu_train_sm_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -524,9 +515,6 @@ hmmufotu_train_hmm_CPPFLAGS = $(AM_CPPFLAGS) -DDM_DATADIR=\"$(pkgdatadir)\"
 hmmufotu_sim_SOURCES = hmmufotu-sim.cpp
 hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
 hmmufotu_sim_LDFLAGS = -static
-hmmufotu_place_SOURCES = hmmufotu-place.cpp
-hmmufotu_place_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
-hmmufotu_place_LDFLAGS = -static
 hmmufotu_build_SOURCES = hmmufotu-build.cpp
 hmmufotu_build_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
@@ -670,10 +658,6 @@ hmmufotu-inspect$(EXEEXT): $(hmmufotu_inspect_OBJECTS) $(hmmufotu_inspect_DEPEND
 	@rm -f hmmufotu-inspect$(EXEEXT)
 	$(AM_V_CXXLD)$(hmmufotu_inspect_LINK) $(hmmufotu_inspect_OBJECTS) $(hmmufotu_inspect_LDADD) $(LIBS)
 
-hmmufotu-place$(EXEEXT): $(hmmufotu_place_OBJECTS) $(hmmufotu_place_DEPENDENCIES) $(EXTRA_hmmufotu_place_DEPENDENCIES) 
-	@rm -f hmmufotu-place$(EXEEXT)
-	$(AM_V_CXXLD)$(hmmufotu_place_LINK) $(hmmufotu_place_OBJECTS) $(hmmufotu_place_LDADD) $(LIBS)
-
 hmmufotu-sim$(EXEEXT): $(hmmufotu_sim_OBJECTS) $(hmmufotu_sim_DEPENDENCIES) $(EXTRA_hmmufotu_sim_DEPENDENCIES) 
 	@rm -f hmmufotu-sim$(EXEEXT)
 	$(AM_V_CXXLD)$(hmmufotu_sim_LINK) $(hmmufotu_sim_OBJECTS) $(hmmufotu_sim_LDADD) $(LIBS)
@@ -733,7 +717,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-anneal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-hmmufotu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-inspect.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-place.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-sim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-sum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-train-dm.Po@am__quote@

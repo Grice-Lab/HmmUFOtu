@@ -89,21 +89,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = dna_test1$(EXEEXT) nucl_test1$(EXEEXT) \
-	amino_test1$(EXEEXT) bHMM_IO_test1$(EXEEXT) \
-	seqIO_test1$(EXEEXT) bHMM_IO_test1$(EXEEXT) \
-	banded_align_known_seed_test1$(EXEEXT) MSAIO_test1$(EXEEXT) \
-	MSAIO_test2$(EXEEXT) MSAIO_test3$(EXEEXT) MSAIO_test4$(EXEEXT) \
-	MSA_test1$(EXEEXT) FMIO_test1$(EXEEXT) FMIO_test2$(EXEEXT) \
-	banded_align_csfm_test1$(EXEEXT) \
-	banded_pair_csfm_test1$(EXEEXT) dm_density_train1$(EXEEXT) \
-	dm_mixture_train1$(EXEEXT) dm_mixture_train2$(EXEEXT) \
-	DD_IO_test1$(EXEEXT) NT_IO_test1$(EXEEXT) NT_IO_test2$(EXEEXT) \
-	PTU_IO_test1$(EXEEXT) PTU_IO_test2$(EXEEXT) \
-	PTU_IO_test3$(EXEEXT) PTU_IO_test4$(EXEEXT) PTU_test1$(EXEEXT) \
-	PTU_test2$(EXEEXT) PTU_test3$(EXEEXT) PTU_test4$(EXEEXT) \
-	PTU_test5$(EXEEXT) dna_model_IO_test1$(EXEEXT) \
-	dna_model_test1$(EXEEXT) RootFinder_test1$(EXEEXT)
+noinst_PROGRAMS = MSAIO_test$(EXEEXT) bHmmPrior_IO_test$(EXEEXT) \
+	bHmm_IO_test$(EXEEXT) dna_model_IO_test$(EXEEXT) \
+	FMIO_test$(EXEEXT) PTU_IO_test$(EXEEXT)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -117,238 +105,45 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_DD_IO_test1_OBJECTS = DD_IO_test1.$(OBJEXT)
-DD_IO_test1_OBJECTS = $(am_DD_IO_test1_OBJECTS)
-DD_IO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_common.a \
-	$(top_srcdir)/src/math/libEGMath.a
+am_FMIO_test_OBJECTS = FMIO_test.$(OBJEXT)
+FMIO_test_OBJECTS = $(am_FMIO_test_OBJECTS)
+FMIO_test_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+	$(top_srcdir)/src/libHmmUFOtu_common.a \
+	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+	$(top_srcdir)/src/libcds/src/libcds.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-DD_IO_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+FMIO_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(DD_IO_test1_LDFLAGS) $(LDFLAGS) -o $@
-am_FMIO_test1_OBJECTS = FMIO_test1.$(OBJEXT)
-FMIO_test1_OBJECTS = $(am_FMIO_test1_OBJECTS)
-FMIO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a \
-	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-	$(top_srcdir)/src/libcds/src/libcds.la
-FMIO_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(FMIO_test1_LDFLAGS) $(LDFLAGS) -o $@
-am_FMIO_test2_OBJECTS = FMIO_test2.$(OBJEXT)
-FMIO_test2_OBJECTS = $(am_FMIO_test2_OBJECTS)
-FMIO_test2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a \
-	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-	$(top_srcdir)/src/libcds/src/libcds.la
-FMIO_test2_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(FMIO_test2_LDFLAGS) $(LDFLAGS) -o $@
-am_MSAIO_test1_OBJECTS = MSAIO_test1.$(OBJEXT)
-MSAIO_test1_OBJECTS = $(am_MSAIO_test1_OBJECTS)
-MSAIO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_common.a
-am_MSAIO_test2_OBJECTS = MSAIO_test2.$(OBJEXT)
-MSAIO_test2_OBJECTS = $(am_MSAIO_test2_OBJECTS)
-MSAIO_test2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_common.a
-am_MSAIO_test3_OBJECTS = MSAIO_test3.$(OBJEXT)
-MSAIO_test3_OBJECTS = $(am_MSAIO_test3_OBJECTS)
-MSAIO_test3_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_common.a
-am_MSAIO_test4_OBJECTS = MSAIO_test4.$(OBJEXT)
-MSAIO_test4_OBJECTS = $(am_MSAIO_test4_OBJECTS)
-MSAIO_test4_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_common.a
-am_MSA_test1_OBJECTS = MSA_test1.$(OBJEXT)
-MSA_test1_OBJECTS = $(am_MSA_test1_OBJECTS)
-MSA_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_common.a
-am_NT_IO_test1_OBJECTS = NT_IO_test1.$(OBJEXT)
-NT_IO_test1_OBJECTS = $(am_NT_IO_test1_OBJECTS)
-NT_IO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+	$(CXXFLAGS) $(FMIO_test_LDFLAGS) $(LDFLAGS) -o $@
+am_MSAIO_test_OBJECTS = MSAIO_test.$(OBJEXT)
+MSAIO_test_OBJECTS = $(am_MSAIO_test_OBJECTS)
+MSAIO_test_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_common.a
+am_PTU_IO_test_OBJECTS = PTU_IO_test.$(OBJEXT)
+PTU_IO_test_OBJECTS = $(am_PTU_IO_test_OBJECTS)
+PTU_IO_test_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
 	$(top_srcdir)/src/libHmmUFOtu_common.a
-NT_IO_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+PTU_IO_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(NT_IO_test1_LDFLAGS) $(LDFLAGS) -o $@
-am_NT_IO_test2_OBJECTS = NT_IO_test2.$(OBJEXT)
-NT_IO_test2_OBJECTS = $(am_NT_IO_test2_OBJECTS)
-NT_IO_test2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a
-NT_IO_test2_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(NT_IO_test2_LDFLAGS) $(LDFLAGS) -o $@
-am_PTU_IO_test1_OBJECTS = PTU_IO_test1.$(OBJEXT)
-PTU_IO_test1_OBJECTS = $(am_PTU_IO_test1_OBJECTS)
-PTU_IO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a
-PTU_IO_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(PTU_IO_test1_LDFLAGS) $(LDFLAGS) -o $@
-am_PTU_IO_test2_OBJECTS = PTU_IO_test2.$(OBJEXT)
-PTU_IO_test2_OBJECTS = $(am_PTU_IO_test2_OBJECTS)
-PTU_IO_test2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a
-PTU_IO_test2_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(PTU_IO_test2_LDFLAGS) $(LDFLAGS) -o $@
-am_PTU_IO_test3_OBJECTS = PTU_IO_test3.$(OBJEXT)
-PTU_IO_test3_OBJECTS = $(am_PTU_IO_test3_OBJECTS)
-PTU_IO_test3_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a
-PTU_IO_test3_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(PTU_IO_test3_LDFLAGS) $(LDFLAGS) -o $@
-am_PTU_IO_test4_OBJECTS = PTU_IO_test4.$(OBJEXT)
-PTU_IO_test4_OBJECTS = $(am_PTU_IO_test4_OBJECTS)
-PTU_IO_test4_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a
-PTU_IO_test4_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(PTU_IO_test4_LDFLAGS) $(LDFLAGS) -o $@
-am_PTU_test1_OBJECTS = PTU_test1.$(OBJEXT)
-PTU_test1_OBJECTS = $(am_PTU_test1_OBJECTS)
-PTU_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a
-PTU_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(PTU_test1_LDFLAGS) $(LDFLAGS) -o $@
-am_PTU_test2_OBJECTS = PTU_test2.$(OBJEXT)
-PTU_test2_OBJECTS = $(am_PTU_test2_OBJECTS)
-PTU_test2_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a
-PTU_test2_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(PTU_test2_LDFLAGS) $(LDFLAGS) -o $@
-am_PTU_test3_OBJECTS = PTU_test3.$(OBJEXT)
-PTU_test3_OBJECTS = $(am_PTU_test3_OBJECTS)
-PTU_test3_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a
-PTU_test3_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(PTU_test3_LDFLAGS) $(LDFLAGS) -o $@
-am_PTU_test4_OBJECTS = PTU_test4.$(OBJEXT)
-PTU_test4_OBJECTS = $(am_PTU_test4_OBJECTS)
-PTU_test4_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a
-PTU_test4_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(PTU_test4_LDFLAGS) $(LDFLAGS) -o $@
-am_PTU_test5_OBJECTS = PTU_test5.$(OBJEXT)
-PTU_test5_OBJECTS = $(am_PTU_test5_OBJECTS)
-PTU_test5_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a
-PTU_test5_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(PTU_test5_LDFLAGS) $(LDFLAGS) -o $@
-am_RootFinder_test1_OBJECTS = RootFinder_test1.$(OBJEXT)
-RootFinder_test1_OBJECTS = $(am_RootFinder_test1_OBJECTS)
-RootFinder_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+	$(CXXFLAGS) $(PTU_IO_test_LDFLAGS) $(LDFLAGS) -o $@
+am_bHmmPrior_IO_test_OBJECTS = bHmmPrior_IO_test.$(OBJEXT)
+bHmmPrior_IO_test_OBJECTS = $(am_bHmmPrior_IO_test_OBJECTS)
+bHmmPrior_IO_test_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
 	$(top_srcdir)/src/libHmmUFOtu_common.a \
 	$(top_srcdir)/src/math/libEGMath.a
-RootFinder_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) $(RootFinder_test1_LDFLAGS) \
-	$(LDFLAGS) -o $@
-am_amino_test1_OBJECTS = amino_test1.$(OBJEXT)
-amino_test1_OBJECTS = $(am_amino_test1_OBJECTS)
-amino_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_common.a
-am_bHMM_IO_test1_OBJECTS = bHMM_IO_test1.$(OBJEXT)
-bHMM_IO_test1_OBJECTS = $(am_bHMM_IO_test1_OBJECTS)
-bHMM_IO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+am_bHmm_IO_test_OBJECTS = bHmm_IO_test.$(OBJEXT)
+bHmm_IO_test_OBJECTS = $(am_bHmm_IO_test_OBJECTS)
+bHmm_IO_test_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
 	$(top_srcdir)/src/libHmmUFOtu_common.a \
 	$(top_srcdir)/src/math/libEGMath.a
-am_banded_align_csfm_test1_OBJECTS =  \
-	banded_align_csfm_test1.$(OBJEXT)
-banded_align_csfm_test1_OBJECTS =  \
-	$(am_banded_align_csfm_test1_OBJECTS)
-banded_align_csfm_test1_DEPENDENCIES =  \
-	$(top_srcdir)/src/libHmmUFOtu_hmm.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a \
-	$(top_srcdir)/src/math/libEGMath.a \
-	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-	$(top_srcdir)/src/libcds/src/libcds.la
-banded_align_csfm_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) $(banded_align_csfm_test1_LDFLAGS) \
-	$(LDFLAGS) -o $@
-am_banded_align_known_seed_test1_OBJECTS =  \
-	banded_align_known_seed_test1.$(OBJEXT)
-banded_align_known_seed_test1_OBJECTS =  \
-	$(am_banded_align_known_seed_test1_OBJECTS)
-banded_align_known_seed_test1_DEPENDENCIES =  \
-	$(top_srcdir)/src/libHmmUFOtu_hmm.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a \
-	$(top_srcdir)/src/math/libEGMath.a
-am_banded_pair_csfm_test1_OBJECTS = banded_pair_csfm_test1.$(OBJEXT)
-banded_pair_csfm_test1_OBJECTS = $(am_banded_pair_csfm_test1_OBJECTS)
-banded_pair_csfm_test1_DEPENDENCIES =  \
-	$(top_srcdir)/src/libHmmUFOtu_hmm.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a \
-	$(top_srcdir)/src/math/libEGMath.a \
-	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-	$(top_srcdir)/src/libcds/src/libcds.la
-banded_pair_csfm_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) $(banded_pair_csfm_test1_LDFLAGS) \
-	$(LDFLAGS) -o $@
-am_dm_density_train1_OBJECTS = dm_density_train1.$(OBJEXT)
-dm_density_train1_OBJECTS = $(am_dm_density_train1_OBJECTS)
-dm_density_train1_DEPENDENCIES =  \
-	$(top_srcdir)/src/libHmmUFOtu_common.a \
-	$(top_srcdir)/src/math/libEGMath.a \
-	$(top_srcdir)/src/math/libEGMath.a \
-	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-	$(top_srcdir)/src/libcds/src/libcds.la
-dm_density_train1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) $(dm_density_train1_LDFLAGS) \
-	$(LDFLAGS) -o $@
-am_dm_mixture_train1_OBJECTS = dm_mixture_train1.$(OBJEXT)
-dm_mixture_train1_OBJECTS = $(am_dm_mixture_train1_OBJECTS)
-dm_mixture_train1_DEPENDENCIES =  \
-	$(top_srcdir)/src/libHmmUFOtu_common.a \
-	$(top_srcdir)/src/math/libEGMath.a \
-	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-	$(top_srcdir)/src/libcds/src/libcds.la
-dm_mixture_train1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) $(dm_mixture_train1_LDFLAGS) \
-	$(LDFLAGS) -o $@
-am_dm_mixture_train2_OBJECTS = dm_mixture_train2.$(OBJEXT)
-dm_mixture_train2_OBJECTS = $(am_dm_mixture_train2_OBJECTS)
-dm_mixture_train2_DEPENDENCIES =  \
-	$(top_srcdir)/src/libHmmUFOtu_common.a \
-	$(top_srcdir)/src/math/libEGMath.a \
-	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-	$(top_srcdir)/src/libcds/src/libcds.la
-dm_mixture_train2_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) $(dm_mixture_train2_LDFLAGS) \
-	$(LDFLAGS) -o $@
-am_dna_model_IO_test1_OBJECTS = dna_model_IO_test1.$(OBJEXT)
-dna_model_IO_test1_OBJECTS = $(am_dna_model_IO_test1_OBJECTS)
-dna_model_IO_test1_DEPENDENCIES =  \
+am_dna_model_IO_test_OBJECTS = dna_model_IO_test.$(OBJEXT)
+dna_model_IO_test_OBJECTS = $(am_dna_model_IO_test_OBJECTS)
+dna_model_IO_test_DEPENDENCIES =  \
 	$(top_srcdir)/src/libHmmUFOtu_phylo.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a
-dna_model_IO_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) $(dna_model_IO_test1_LDFLAGS) \
-	$(LDFLAGS) -o $@
-am_dna_model_test1_OBJECTS = dna_model_test1.$(OBJEXT)
-dna_model_test1_OBJECTS = $(am_dna_model_test1_OBJECTS)
-dna_model_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-	$(top_srcdir)/src/libHmmUFOtu_common.a
-dna_model_test1_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) $(dna_model_test1_LDFLAGS) \
-	$(LDFLAGS) -o $@
-am_dna_test1_OBJECTS = dna_test1.$(OBJEXT)
-dna_test1_OBJECTS = $(am_dna_test1_OBJECTS)
-dna_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_common.a
-am_nucl_test1_OBJECTS = nucl_test1.$(OBJEXT)
-nucl_test1_OBJECTS = $(am_nucl_test1_OBJECTS)
-nucl_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_common.a
-am_seqIO_test1_OBJECTS = seqIO_test1.$(OBJEXT)
-seqIO_test1_OBJECTS = $(am_seqIO_test1_OBJECTS)
-seqIO_test1_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_common.a
+	$(top_srcdir)/src/libHmmUFOtu_common.a \
+	$(top_srcdir)/src/math/libEGMath.a
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -383,40 +178,12 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
-	$(FMIO_test2_SOURCES) $(MSAIO_test1_SOURCES) \
-	$(MSAIO_test2_SOURCES) $(MSAIO_test3_SOURCES) \
-	$(MSAIO_test4_SOURCES) $(MSA_test1_SOURCES) \
-	$(NT_IO_test1_SOURCES) $(NT_IO_test2_SOURCES) \
-	$(PTU_IO_test1_SOURCES) $(PTU_IO_test2_SOURCES) \
-	$(PTU_IO_test3_SOURCES) $(PTU_IO_test4_SOURCES) \
-	$(PTU_test1_SOURCES) $(PTU_test2_SOURCES) $(PTU_test3_SOURCES) \
-	$(PTU_test4_SOURCES) $(PTU_test5_SOURCES) \
-	$(RootFinder_test1_SOURCES) $(amino_test1_SOURCES) \
-	$(bHMM_IO_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
-	$(banded_align_known_seed_test1_SOURCES) \
-	$(banded_pair_csfm_test1_SOURCES) $(dm_density_train1_SOURCES) \
-	$(dm_mixture_train1_SOURCES) $(dm_mixture_train2_SOURCES) \
-	$(dna_model_IO_test1_SOURCES) $(dna_model_test1_SOURCES) \
-	$(dna_test1_SOURCES) $(nucl_test1_SOURCES) \
-	$(seqIO_test1_SOURCES)
-DIST_SOURCES = $(DD_IO_test1_SOURCES) $(FMIO_test1_SOURCES) \
-	$(FMIO_test2_SOURCES) $(MSAIO_test1_SOURCES) \
-	$(MSAIO_test2_SOURCES) $(MSAIO_test3_SOURCES) \
-	$(MSAIO_test4_SOURCES) $(MSA_test1_SOURCES) \
-	$(NT_IO_test1_SOURCES) $(NT_IO_test2_SOURCES) \
-	$(PTU_IO_test1_SOURCES) $(PTU_IO_test2_SOURCES) \
-	$(PTU_IO_test3_SOURCES) $(PTU_IO_test4_SOURCES) \
-	$(PTU_test1_SOURCES) $(PTU_test2_SOURCES) $(PTU_test3_SOURCES) \
-	$(PTU_test4_SOURCES) $(PTU_test5_SOURCES) \
-	$(RootFinder_test1_SOURCES) $(amino_test1_SOURCES) \
-	$(bHMM_IO_test1_SOURCES) $(banded_align_csfm_test1_SOURCES) \
-	$(banded_align_known_seed_test1_SOURCES) \
-	$(banded_pair_csfm_test1_SOURCES) $(dm_density_train1_SOURCES) \
-	$(dm_mixture_train1_SOURCES) $(dm_mixture_train2_SOURCES) \
-	$(dna_model_IO_test1_SOURCES) $(dna_model_test1_SOURCES) \
-	$(dna_test1_SOURCES) $(nucl_test1_SOURCES) \
-	$(seqIO_test1_SOURCES)
+SOURCES = $(FMIO_test_SOURCES) $(MSAIO_test_SOURCES) \
+	$(PTU_IO_test_SOURCES) $(bHmmPrior_IO_test_SOURCES) \
+	$(bHmm_IO_test_SOURCES) $(dna_model_IO_test_SOURCES)
+DIST_SOURCES = $(FMIO_test_SOURCES) $(MSAIO_test_SOURCES) \
+	$(PTU_IO_test_SOURCES) $(bHmmPrior_IO_test_SOURCES) \
+	$(bHmm_IO_test_SOURCES) $(dna_model_IO_test_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -575,160 +342,32 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/libdivsufsort/include \
 -I$(top_srcdir)/src/libcds/include
 
-dna_test1_SOURCES = dna_test1.cpp
-dna_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
-nucl_test1_SOURCES = nucl_test1.cpp
-nucl_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
-amino_test1_SOURCES = amino_test1.cpp
-amino_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
-seqIO_test1_SOURCES = seqIO_test1.cpp
-seqIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
-bHMM_IO_test1_SOURCES = bHMM_IO_test1.cpp
-bHMM_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+MSAIO_test_SOURCES = MSAIO_test.cpp
+MSAIO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
+bHmmPrior_IO_test_SOURCES = bHmmPrior_IO_test.cpp
+bHmmPrior_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
 $(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a
 
-banded_align_known_seed_test1_SOURCES = banded_align_known_seed_test1.cpp
-banded_align_known_seed_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+bHmm_IO_test_SOURCES = bHmm_IO_test.cpp
+bHmm_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
 $(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a
 
-MSAIO_test1_SOURCES = MSAIO_test1.cpp
-MSAIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
-MSAIO_test2_SOURCES = MSAIO_test2.cpp
-MSAIO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
-MSAIO_test3_SOURCES = MSAIO_test3.cpp
-MSAIO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
-MSAIO_test4_SOURCES = MSAIO_test4.cpp
-MSAIO_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
-MSA_test1_SOURCES = MSA_test1.cpp
-MSA_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
-FMIO_test1_SOURCES = FMIO_test1.cpp
-FMIO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+dna_model_IO_test_SOURCES = dna_model_IO_test.cpp
+dna_model_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+$(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a
+
+PTU_IO_test_LDFLAGS = -static
+FMIO_test_SOURCES = FMIO_test.cpp
+FMIO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
 $(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 $(top_srcdir)/src/libcds/src/libcds.la
 
-FMIO_test1_LDFLAGS = -static
-FMIO_test2_SOURCES = FMIO_test2.cpp
-FMIO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a \
-$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-$(top_srcdir)/src/libcds/src/libcds.la
-
-FMIO_test2_LDFLAGS = -static
-banded_align_csfm_test1_SOURCES = banded_align_csfm_test1.cpp
-banded_align_csfm_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a \
-$(top_srcdir)/src/math/libEGMath.a \
-$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-$(top_srcdir)/src/libcds/src/libcds.la
-
-banded_align_csfm_test1_LDFLAGS = -static
-banded_pair_csfm_test1_SOURCES = banded_pair_csfm_test1.cpp
-banded_pair_csfm_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a \
-$(top_srcdir)/src/math/libEGMath.a \
-$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-$(top_srcdir)/src/libcds/src/libcds.la
-
-banded_pair_csfm_test1_LDFLAGS = -static
-dm_density_train1_SOURCES = dm_density_train1.cpp
-dm_density_train1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a \
-$(top_srcdir)/src/math/libEGMath.a \
-$(top_srcdir)/src/math/libEGMath.a \
-$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-$(top_srcdir)/src/libcds/src/libcds.la
-
-dm_density_train1_LDFLAGS = -static
-dm_mixture_train1_SOURCES = dm_mixture_train1.cpp
-dm_mixture_train1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a \
-$(top_srcdir)/src/math/libEGMath.a \
-$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-$(top_srcdir)/src/libcds/src/libcds.la
-
-dm_mixture_train1_LDFLAGS = -static
-dm_mixture_train2_SOURCES = dm_mixture_train2.cpp
-dm_mixture_train2_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a \
-$(top_srcdir)/src/math/libEGMath.a \
-$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-$(top_srcdir)/src/libcds/src/libcds.la
-
-dm_mixture_train2_LDFLAGS = -static
-DD_IO_test1_SOURCES = DD_IO_test1.cpp
-DD_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a \
-$(top_srcdir)/src/math/libEGMath.a
-
-DD_IO_test1_LDFLAGS = -static
-NT_IO_test1_SOURCES = NT_IO_test1.cpp
-NT_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
+FMIO_test_LDFLAGS = -static
+PTU_IO_test_SOURCES = PTU_IO_test.cpp
+PTU_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
 $(top_srcdir)/src/libHmmUFOtu_common.a
 
-NT_IO_test1_LDFLAGS = -static
-NT_IO_test2_SOURCES = NT_IO_test2.cpp
-NT_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-
-NT_IO_test2_LDFLAGS = -static
-PTU_IO_test1_SOURCES = PTU_IO_test1.cpp
-PTU_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-
-PTU_IO_test1_LDFLAGS = -static
-PTU_IO_test2_SOURCES = PTU_IO_test2.cpp
-PTU_IO_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-
-PTU_IO_test2_LDFLAGS = -static
-PTU_IO_test3_SOURCES = PTU_IO_test3.cpp
-PTU_IO_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-
-PTU_IO_test3_LDFLAGS = -static
-PTU_IO_test4_SOURCES = PTU_IO_test4.cpp
-PTU_IO_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-
-PTU_IO_test4_LDFLAGS = -static
-PTU_test1_SOURCES = PTU_test1.cpp
-PTU_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-
-PTU_test1_LDFLAGS = -static
-PTU_test2_SOURCES = PTU_test2.cpp
-PTU_test2_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-
-PTU_test2_LDFLAGS = -static
-PTU_test3_SOURCES = PTU_test3.cpp
-PTU_test3_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-
-PTU_test3_LDFLAGS = -static
-PTU_test4_SOURCES = PTU_test4.cpp
-PTU_test4_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-
-PTU_test4_LDFLAGS = -static
-PTU_test5_SOURCES = PTU_test5.cpp
-PTU_test5_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-
-PTU_test5_LDFLAGS = -static
-dna_model_IO_test1_SOURCES = dna_model_IO_test1.cpp
-dna_model_IO_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-
-dna_model_IO_test1_LDFLAGS = -static
-dna_model_test1_SOURCES = dna_model_test1.cpp
-dna_model_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-
-dna_model_test1_LDFLAGS = -static
-RootFinder_test1_SOURCES = RootFinder_test1.cpp
-RootFinder_test1_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a \
-$(top_srcdir)/src/math/libEGMath.a
-
-RootFinder_test1_LDFLAGS = -static
 all: all-am
 
 .SUFFIXES:
@@ -772,137 +411,29 @@ clean-noinstPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
-DD_IO_test1$(EXEEXT): $(DD_IO_test1_OBJECTS) $(DD_IO_test1_DEPENDENCIES) $(EXTRA_DD_IO_test1_DEPENDENCIES) 
-	@rm -f DD_IO_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(DD_IO_test1_LINK) $(DD_IO_test1_OBJECTS) $(DD_IO_test1_LDADD) $(LIBS)
+FMIO_test$(EXEEXT): $(FMIO_test_OBJECTS) $(FMIO_test_DEPENDENCIES) $(EXTRA_FMIO_test_DEPENDENCIES) 
+	@rm -f FMIO_test$(EXEEXT)
+	$(AM_V_CXXLD)$(FMIO_test_LINK) $(FMIO_test_OBJECTS) $(FMIO_test_LDADD) $(LIBS)
 
-FMIO_test1$(EXEEXT): $(FMIO_test1_OBJECTS) $(FMIO_test1_DEPENDENCIES) $(EXTRA_FMIO_test1_DEPENDENCIES) 
-	@rm -f FMIO_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(FMIO_test1_LINK) $(FMIO_test1_OBJECTS) $(FMIO_test1_LDADD) $(LIBS)
+MSAIO_test$(EXEEXT): $(MSAIO_test_OBJECTS) $(MSAIO_test_DEPENDENCIES) $(EXTRA_MSAIO_test_DEPENDENCIES) 
+	@rm -f MSAIO_test$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(MSAIO_test_OBJECTS) $(MSAIO_test_LDADD) $(LIBS)
 
-FMIO_test2$(EXEEXT): $(FMIO_test2_OBJECTS) $(FMIO_test2_DEPENDENCIES) $(EXTRA_FMIO_test2_DEPENDENCIES) 
-	@rm -f FMIO_test2$(EXEEXT)
-	$(AM_V_CXXLD)$(FMIO_test2_LINK) $(FMIO_test2_OBJECTS) $(FMIO_test2_LDADD) $(LIBS)
+PTU_IO_test$(EXEEXT): $(PTU_IO_test_OBJECTS) $(PTU_IO_test_DEPENDENCIES) $(EXTRA_PTU_IO_test_DEPENDENCIES) 
+	@rm -f PTU_IO_test$(EXEEXT)
+	$(AM_V_CXXLD)$(PTU_IO_test_LINK) $(PTU_IO_test_OBJECTS) $(PTU_IO_test_LDADD) $(LIBS)
 
-MSAIO_test1$(EXEEXT): $(MSAIO_test1_OBJECTS) $(MSAIO_test1_DEPENDENCIES) $(EXTRA_MSAIO_test1_DEPENDENCIES) 
-	@rm -f MSAIO_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(MSAIO_test1_OBJECTS) $(MSAIO_test1_LDADD) $(LIBS)
+bHmmPrior_IO_test$(EXEEXT): $(bHmmPrior_IO_test_OBJECTS) $(bHmmPrior_IO_test_DEPENDENCIES) $(EXTRA_bHmmPrior_IO_test_DEPENDENCIES) 
+	@rm -f bHmmPrior_IO_test$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(bHmmPrior_IO_test_OBJECTS) $(bHmmPrior_IO_test_LDADD) $(LIBS)
 
-MSAIO_test2$(EXEEXT): $(MSAIO_test2_OBJECTS) $(MSAIO_test2_DEPENDENCIES) $(EXTRA_MSAIO_test2_DEPENDENCIES) 
-	@rm -f MSAIO_test2$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(MSAIO_test2_OBJECTS) $(MSAIO_test2_LDADD) $(LIBS)
+bHmm_IO_test$(EXEEXT): $(bHmm_IO_test_OBJECTS) $(bHmm_IO_test_DEPENDENCIES) $(EXTRA_bHmm_IO_test_DEPENDENCIES) 
+	@rm -f bHmm_IO_test$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(bHmm_IO_test_OBJECTS) $(bHmm_IO_test_LDADD) $(LIBS)
 
-MSAIO_test3$(EXEEXT): $(MSAIO_test3_OBJECTS) $(MSAIO_test3_DEPENDENCIES) $(EXTRA_MSAIO_test3_DEPENDENCIES) 
-	@rm -f MSAIO_test3$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(MSAIO_test3_OBJECTS) $(MSAIO_test3_LDADD) $(LIBS)
-
-MSAIO_test4$(EXEEXT): $(MSAIO_test4_OBJECTS) $(MSAIO_test4_DEPENDENCIES) $(EXTRA_MSAIO_test4_DEPENDENCIES) 
-	@rm -f MSAIO_test4$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(MSAIO_test4_OBJECTS) $(MSAIO_test4_LDADD) $(LIBS)
-
-MSA_test1$(EXEEXT): $(MSA_test1_OBJECTS) $(MSA_test1_DEPENDENCIES) $(EXTRA_MSA_test1_DEPENDENCIES) 
-	@rm -f MSA_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(MSA_test1_OBJECTS) $(MSA_test1_LDADD) $(LIBS)
-
-NT_IO_test1$(EXEEXT): $(NT_IO_test1_OBJECTS) $(NT_IO_test1_DEPENDENCIES) $(EXTRA_NT_IO_test1_DEPENDENCIES) 
-	@rm -f NT_IO_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(NT_IO_test1_LINK) $(NT_IO_test1_OBJECTS) $(NT_IO_test1_LDADD) $(LIBS)
-
-NT_IO_test2$(EXEEXT): $(NT_IO_test2_OBJECTS) $(NT_IO_test2_DEPENDENCIES) $(EXTRA_NT_IO_test2_DEPENDENCIES) 
-	@rm -f NT_IO_test2$(EXEEXT)
-	$(AM_V_CXXLD)$(NT_IO_test2_LINK) $(NT_IO_test2_OBJECTS) $(NT_IO_test2_LDADD) $(LIBS)
-
-PTU_IO_test1$(EXEEXT): $(PTU_IO_test1_OBJECTS) $(PTU_IO_test1_DEPENDENCIES) $(EXTRA_PTU_IO_test1_DEPENDENCIES) 
-	@rm -f PTU_IO_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(PTU_IO_test1_LINK) $(PTU_IO_test1_OBJECTS) $(PTU_IO_test1_LDADD) $(LIBS)
-
-PTU_IO_test2$(EXEEXT): $(PTU_IO_test2_OBJECTS) $(PTU_IO_test2_DEPENDENCIES) $(EXTRA_PTU_IO_test2_DEPENDENCIES) 
-	@rm -f PTU_IO_test2$(EXEEXT)
-	$(AM_V_CXXLD)$(PTU_IO_test2_LINK) $(PTU_IO_test2_OBJECTS) $(PTU_IO_test2_LDADD) $(LIBS)
-
-PTU_IO_test3$(EXEEXT): $(PTU_IO_test3_OBJECTS) $(PTU_IO_test3_DEPENDENCIES) $(EXTRA_PTU_IO_test3_DEPENDENCIES) 
-	@rm -f PTU_IO_test3$(EXEEXT)
-	$(AM_V_CXXLD)$(PTU_IO_test3_LINK) $(PTU_IO_test3_OBJECTS) $(PTU_IO_test3_LDADD) $(LIBS)
-
-PTU_IO_test4$(EXEEXT): $(PTU_IO_test4_OBJECTS) $(PTU_IO_test4_DEPENDENCIES) $(EXTRA_PTU_IO_test4_DEPENDENCIES) 
-	@rm -f PTU_IO_test4$(EXEEXT)
-	$(AM_V_CXXLD)$(PTU_IO_test4_LINK) $(PTU_IO_test4_OBJECTS) $(PTU_IO_test4_LDADD) $(LIBS)
-
-PTU_test1$(EXEEXT): $(PTU_test1_OBJECTS) $(PTU_test1_DEPENDENCIES) $(EXTRA_PTU_test1_DEPENDENCIES) 
-	@rm -f PTU_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(PTU_test1_LINK) $(PTU_test1_OBJECTS) $(PTU_test1_LDADD) $(LIBS)
-
-PTU_test2$(EXEEXT): $(PTU_test2_OBJECTS) $(PTU_test2_DEPENDENCIES) $(EXTRA_PTU_test2_DEPENDENCIES) 
-	@rm -f PTU_test2$(EXEEXT)
-	$(AM_V_CXXLD)$(PTU_test2_LINK) $(PTU_test2_OBJECTS) $(PTU_test2_LDADD) $(LIBS)
-
-PTU_test3$(EXEEXT): $(PTU_test3_OBJECTS) $(PTU_test3_DEPENDENCIES) $(EXTRA_PTU_test3_DEPENDENCIES) 
-	@rm -f PTU_test3$(EXEEXT)
-	$(AM_V_CXXLD)$(PTU_test3_LINK) $(PTU_test3_OBJECTS) $(PTU_test3_LDADD) $(LIBS)
-
-PTU_test4$(EXEEXT): $(PTU_test4_OBJECTS) $(PTU_test4_DEPENDENCIES) $(EXTRA_PTU_test4_DEPENDENCIES) 
-	@rm -f PTU_test4$(EXEEXT)
-	$(AM_V_CXXLD)$(PTU_test4_LINK) $(PTU_test4_OBJECTS) $(PTU_test4_LDADD) $(LIBS)
-
-PTU_test5$(EXEEXT): $(PTU_test5_OBJECTS) $(PTU_test5_DEPENDENCIES) $(EXTRA_PTU_test5_DEPENDENCIES) 
-	@rm -f PTU_test5$(EXEEXT)
-	$(AM_V_CXXLD)$(PTU_test5_LINK) $(PTU_test5_OBJECTS) $(PTU_test5_LDADD) $(LIBS)
-
-RootFinder_test1$(EXEEXT): $(RootFinder_test1_OBJECTS) $(RootFinder_test1_DEPENDENCIES) $(EXTRA_RootFinder_test1_DEPENDENCIES) 
-	@rm -f RootFinder_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(RootFinder_test1_LINK) $(RootFinder_test1_OBJECTS) $(RootFinder_test1_LDADD) $(LIBS)
-
-amino_test1$(EXEEXT): $(amino_test1_OBJECTS) $(amino_test1_DEPENDENCIES) $(EXTRA_amino_test1_DEPENDENCIES) 
-	@rm -f amino_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(amino_test1_OBJECTS) $(amino_test1_LDADD) $(LIBS)
-
-bHMM_IO_test1$(EXEEXT): $(bHMM_IO_test1_OBJECTS) $(bHMM_IO_test1_DEPENDENCIES) $(EXTRA_bHMM_IO_test1_DEPENDENCIES) 
-	@rm -f bHMM_IO_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(bHMM_IO_test1_OBJECTS) $(bHMM_IO_test1_LDADD) $(LIBS)
-
-banded_align_csfm_test1$(EXEEXT): $(banded_align_csfm_test1_OBJECTS) $(banded_align_csfm_test1_DEPENDENCIES) $(EXTRA_banded_align_csfm_test1_DEPENDENCIES) 
-	@rm -f banded_align_csfm_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(banded_align_csfm_test1_LINK) $(banded_align_csfm_test1_OBJECTS) $(banded_align_csfm_test1_LDADD) $(LIBS)
-
-banded_align_known_seed_test1$(EXEEXT): $(banded_align_known_seed_test1_OBJECTS) $(banded_align_known_seed_test1_DEPENDENCIES) $(EXTRA_banded_align_known_seed_test1_DEPENDENCIES) 
-	@rm -f banded_align_known_seed_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(banded_align_known_seed_test1_OBJECTS) $(banded_align_known_seed_test1_LDADD) $(LIBS)
-
-banded_pair_csfm_test1$(EXEEXT): $(banded_pair_csfm_test1_OBJECTS) $(banded_pair_csfm_test1_DEPENDENCIES) $(EXTRA_banded_pair_csfm_test1_DEPENDENCIES) 
-	@rm -f banded_pair_csfm_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(banded_pair_csfm_test1_LINK) $(banded_pair_csfm_test1_OBJECTS) $(banded_pair_csfm_test1_LDADD) $(LIBS)
-
-dm_density_train1$(EXEEXT): $(dm_density_train1_OBJECTS) $(dm_density_train1_DEPENDENCIES) $(EXTRA_dm_density_train1_DEPENDENCIES) 
-	@rm -f dm_density_train1$(EXEEXT)
-	$(AM_V_CXXLD)$(dm_density_train1_LINK) $(dm_density_train1_OBJECTS) $(dm_density_train1_LDADD) $(LIBS)
-
-dm_mixture_train1$(EXEEXT): $(dm_mixture_train1_OBJECTS) $(dm_mixture_train1_DEPENDENCIES) $(EXTRA_dm_mixture_train1_DEPENDENCIES) 
-	@rm -f dm_mixture_train1$(EXEEXT)
-	$(AM_V_CXXLD)$(dm_mixture_train1_LINK) $(dm_mixture_train1_OBJECTS) $(dm_mixture_train1_LDADD) $(LIBS)
-
-dm_mixture_train2$(EXEEXT): $(dm_mixture_train2_OBJECTS) $(dm_mixture_train2_DEPENDENCIES) $(EXTRA_dm_mixture_train2_DEPENDENCIES) 
-	@rm -f dm_mixture_train2$(EXEEXT)
-	$(AM_V_CXXLD)$(dm_mixture_train2_LINK) $(dm_mixture_train2_OBJECTS) $(dm_mixture_train2_LDADD) $(LIBS)
-
-dna_model_IO_test1$(EXEEXT): $(dna_model_IO_test1_OBJECTS) $(dna_model_IO_test1_DEPENDENCIES) $(EXTRA_dna_model_IO_test1_DEPENDENCIES) 
-	@rm -f dna_model_IO_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(dna_model_IO_test1_LINK) $(dna_model_IO_test1_OBJECTS) $(dna_model_IO_test1_LDADD) $(LIBS)
-
-dna_model_test1$(EXEEXT): $(dna_model_test1_OBJECTS) $(dna_model_test1_DEPENDENCIES) $(EXTRA_dna_model_test1_DEPENDENCIES) 
-	@rm -f dna_model_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(dna_model_test1_LINK) $(dna_model_test1_OBJECTS) $(dna_model_test1_LDADD) $(LIBS)
-
-dna_test1$(EXEEXT): $(dna_test1_OBJECTS) $(dna_test1_DEPENDENCIES) $(EXTRA_dna_test1_DEPENDENCIES) 
-	@rm -f dna_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(dna_test1_OBJECTS) $(dna_test1_LDADD) $(LIBS)
-
-nucl_test1$(EXEEXT): $(nucl_test1_OBJECTS) $(nucl_test1_DEPENDENCIES) $(EXTRA_nucl_test1_DEPENDENCIES) 
-	@rm -f nucl_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(nucl_test1_OBJECTS) $(nucl_test1_LDADD) $(LIBS)
-
-seqIO_test1$(EXEEXT): $(seqIO_test1_OBJECTS) $(seqIO_test1_DEPENDENCIES) $(EXTRA_seqIO_test1_DEPENDENCIES) 
-	@rm -f seqIO_test1$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(seqIO_test1_OBJECTS) $(seqIO_test1_LDADD) $(LIBS)
+dna_model_IO_test$(EXEEXT): $(dna_model_IO_test_OBJECTS) $(dna_model_IO_test_DEPENDENCIES) $(EXTRA_dna_model_IO_test_DEPENDENCIES) 
+	@rm -f dna_model_IO_test$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(dna_model_IO_test_OBJECTS) $(dna_model_IO_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -910,39 +441,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DD_IO_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FMIO_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FMIO_test2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSAIO_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSAIO_test2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSAIO_test3.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSAIO_test4.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSA_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NT_IO_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NT_IO_test2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTU_IO_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTU_IO_test2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTU_IO_test3.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTU_IO_test4.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTU_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTU_test2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTU_test3.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTU_test4.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTU_test5.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RootFinder_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amino_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bHMM_IO_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/banded_align_csfm_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/banded_align_known_seed_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/banded_pair_csfm_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dm_density_train1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dm_mixture_train1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dm_mixture_train2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dna_model_IO_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dna_model_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dna_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nucl_test1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/seqIO_test1.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FMIO_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSAIO_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTU_IO_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bHmmPrior_IO_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bHmm_IO_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dna_model_IO_test.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
