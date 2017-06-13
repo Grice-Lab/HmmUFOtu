@@ -1,2 +1,2 @@
 SUBDIRS=data  src test
-#ACLOCAL_AMFLAGS = -I m4
+ACLOCAL_AMFLAGS = -I m4
