@@ -11,12 +11,7 @@
 **/autom4te.cache/**
 autom4te.cache/**
 **/configure
-**/install-sh
-**/libtool
-**/ltmain.sh
-**/missing
 **/.deps/**
-**/dirstamp
 **/.libs/**
 **/*.lo
 **/*~
