@@ -1,16 +1,24 @@
 # Ignore all logs
 *.log
 
-# Ignore hidden directories
-**/.deps/*
-**/.libs/*
 # Ignore any Eclipse metadata recursively
 **/.autotools
 **/.cproject
 **/.project
 **/.settings
-# pre-built binaries
-build/
 # Ignore Autotools genereated Makefiles
 **/Makefile
 **/Makefile.in
+**/aclocal.m4
+**/autom4te.cache/**
+**/configure
+**/install-sh
+**/libtool
+**/ltmain.sh
+**/m4/**
+**/missing
+**/.deps/**
+**/dirstamp
+**/.libs/**
+**/*.lo
+**/*~

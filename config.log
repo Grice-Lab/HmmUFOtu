@@ -925,7 +925,7 @@ configure:16296: gcc -o conftest -g -O2   conftest.c  >&5
 conftest.c:49:6: warning: conflicting types for built-in function 'sqrt'
  char sqrt ();
       ^~~~
-/tmp/ccLmuIDX.o: In function `main':
+/tmp/ccRFOM4M.o: In function `main':
 /home/zhengqi/git/HmmUFOtu/HmmUFOtu/conftest.c:60: undefined reference to `sqrt'
 collect2: error: ld returned 1 exit status
 configure:16296: $? = 1
@@ -1006,7 +1006,7 @@ configure:16296: gcc -o conftest -g -O2   conftest.c  >&5
 conftest.c:50:6: warning: conflicting types for built-in function 'floor'
  char floor ();
       ^~~~~
-/tmp/ccDK9Bo3.o: In function `main':
+/tmp/ccgowS6S.o: In function `main':
 /home/zhengqi/git/HmmUFOtu/HmmUFOtu/conftest.c:61: undefined reference to `floor'
 collect2: error: ld returned 1 exit status
 configure:16296: $? = 1
