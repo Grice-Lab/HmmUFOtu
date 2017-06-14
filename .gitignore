@@ -22,3 +22,4 @@
 **/.libs/**
 **/*.lo
 **/*~
+**/configure.scan
