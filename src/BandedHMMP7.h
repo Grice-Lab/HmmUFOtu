@@ -11,7 +11,7 @@
 #include <vector>
 #include <map>
 #include <deque>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <limits>
 #include <cmath>
 #include <cstdio>

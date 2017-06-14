@@ -8,7 +8,7 @@
 #ifndef SRC_MATH_LINEARALGEBRABASIC_H_
 #define SRC_MATH_LINEARALGEBRABASIC_H_
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <iostream>
 #include <cassert>
 #include <cmath>

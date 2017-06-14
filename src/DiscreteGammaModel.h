@@ -10,7 +10,7 @@
 
 #include <string>
 #include <iostream>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <math.h> /* C99 header */
 #include "HmmUFOtuConst.h"
 

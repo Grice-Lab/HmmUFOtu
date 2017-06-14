@@ -13,7 +13,7 @@
 #include <cfloat>
 #include <stdexcept>
 #include <iostream>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 namespace EGriceLab {
 namespace Math {

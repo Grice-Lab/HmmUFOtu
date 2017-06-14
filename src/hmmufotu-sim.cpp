@@ -16,7 +16,7 @@
 #include <boost/random/uniform_01.hpp>
 #include <boost/random/discrete_distribution.hpp>
 #include <boost/algorithm/string.hpp> /* for boost string split */
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>

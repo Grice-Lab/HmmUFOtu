@@ -21,7 +21,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <cassert>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/unordered_map.hpp>

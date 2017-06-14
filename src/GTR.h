@@ -9,7 +9,7 @@
 #define GTR_H_
 #include <string>
 #include <vector>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <cassert>
 #include "DNASubModel.h"
 

@@ -13,7 +13,7 @@
 #include <limits>
 #include <cassert>
 #include <stdexcept>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include "DegenAlphabet.h"
 #include "DigitalSeq.h"
 #include "MSA.h"

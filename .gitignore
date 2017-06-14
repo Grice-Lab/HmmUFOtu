@@ -12,4 +12,5 @@
 # pre-built binaries
 build/
 # Ignore Autotools genereated Makefiles
-#**/Makefile
+**/Makefile
+**/Makefile.in

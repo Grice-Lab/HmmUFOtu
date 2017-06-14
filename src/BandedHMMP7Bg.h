@@ -10,7 +10,7 @@
 #include <cmath>
 #include <cassert>
 #include <limits>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 #include "AlphabetFactory.h"
 #include "IUPACNucl.h"

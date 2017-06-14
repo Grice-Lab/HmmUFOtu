@@ -28,8 +28,8 @@ uname -v = #1 SMP Mon May 8 18:46:06 UTC 2017
 /bin/universe          = unknown
 
 PATH: /usr/local/bin
-PATH: /usr/local/sbin
 PATH: /usr/bin
+PATH: /usr/local/sbin
 PATH: /usr/sbin
 PATH: /usr/local/bin
 PATH: /home/zhengqi/.local/bin
@@ -925,7 +925,7 @@ configure:16296: gcc -o conftest -g -O2   conftest.c  >&5
 conftest.c:49:6: warning: conflicting types for built-in function 'sqrt'
  char sqrt ();
       ^~~~
-/tmp/ccxx2XTv.o: In function `main':
+/tmp/ccLmuIDX.o: In function `main':
 /home/zhengqi/git/HmmUFOtu/HmmUFOtu/conftest.c:60: undefined reference to `sqrt'
 collect2: error: ld returned 1 exit status
 configure:16296: $? = 1
@@ -1006,7 +1006,7 @@ configure:16296: gcc -o conftest -g -O2   conftest.c  >&5
 conftest.c:50:6: warning: conflicting types for built-in function 'floor'
  char floor ();
       ^~~~~
-/tmp/ccGSB5VA.o: In function `main':
+/tmp/ccDK9Bo3.o: In function `main':
 /home/zhengqi/git/HmmUFOtu/HmmUFOtu/conftest.c:61: undefined reference to `floor'
 collect2: error: ld returned 1 exit status
 configure:16296: $? = 1
