@@ -9,6 +9,7 @@
 # Ignore Autotools genereated Makefiles
 **/Makefile
 **/autom4te.cache/**
+autom4te.cache/**
 **/configure
 **/install-sh
 **/libtool
