@@ -546,7 +546,6 @@ int main(int argc, char* argv[]) {
 								break;
 						}
 						places.erase(it, places.end()); /* remove too bad placements */
-
 						/* accurate placement */
 						placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
 						if(onlyML) { /* don't calculate q-values */
@@ -656,7 +655,7 @@ vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
 		double ratio = cDist / (cDist + pDist);
 		if(::isnan(ratio)) // unable to estimate the ratio
 			ratio = 0.5;
-//		cerr << "Estimating at " << node->getId() << " cDist: " << cDist << " pDist: " << pDist << " ratio: " << ratio << endl;
+//		cerr << "Estimating at " << cNode->getId() << " cDist: " << cDist << " pDist: " << pDist << " ratio: " << ratio << endl;
 		/* estimate the placement */
 		double wnr;
 		double loglik = ptu.estimateSeq(seq, cNode, pNode, start, end, ratio, wnr);

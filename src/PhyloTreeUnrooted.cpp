@@ -737,6 +737,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 		p /= N;
 		q = 1 - p;
 
+//		cerr << "N: " << N << " p: " << p << " q: " << q << endl;
 		if(::fabs(::log(q) - ::log(q0)) < BRANCH_EPS)
 			break;
 		// update p0 and q0
@@ -772,7 +773,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 		setRoot(n);
 		resetLoglik(r, n);
 		evaluate(n, start, end);
-		wnr = optimizeBranchLength(r, n, start, end);
+		wnr = optimizeBranchLength(r, n, start, end, 1); /* do not use branch length > 1 */
 		/* update loglik(r,u) and wur */
 		setRoot(u);
 		resetLoglik(r, u);
@@ -821,6 +822,8 @@ double PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const
 
 double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
 		int start, int end, double ratio0, double wnr0) {
+//	cerr << "Placing seq " << seq.getName() << " at " << u->getId() << "->" << v->getId() <<
+//			" start: " << start << " end: " << end << " ratio0: " << ratio0 << " wnr0: " << wnr0 << endl;
 	assert(seq.length() == csLen); /* make sure this is an aligned seq */
 	assert(isParent(v, u));
 	assert(0 <= ratio0 && ratio0 <= 1);
