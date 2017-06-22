@@ -9,6 +9,7 @@
 #define SRC_MATH_ROOTFINDER_H_
 
 #include <limits>
+#include <stdexcept>
 #include <cmath>
 #include <cassert>
 
