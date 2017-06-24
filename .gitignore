@@ -10,7 +10,7 @@
 **/Makefile
 **/autom4te.cache/**
 autom4te.cache/**
-**/config.log
+config.log
 **/.deps/**
 **/.libs/**
 **/*.lo
