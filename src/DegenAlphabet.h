@@ -31,6 +31,7 @@
 #include <string>
 #include <stdexcept>
 #include <stdint.h>
+#include <limits>
 
 namespace EGriceLab {
 using std::string;
