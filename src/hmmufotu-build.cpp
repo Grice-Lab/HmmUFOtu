@@ -345,8 +345,8 @@ int main(int argc, char* argv[]) {
 		double alpha = DiscreteGammaModel::estimateShape(numMut);
 		if(alpha == inf)
 			cerr << "Unable to estimate the shape parameter with less than 2 alignment sites" << endl;
-		else if(alpha < 0)
-			cerr << "Unable to estimate the shape parameter with near invariant rates, reducing to fixed rate model" << endl;
+		else if(alpha <= 0)
+			cerr << "Unable to estimate the shape parameter with near invariant rates, reducing to fixed rate model" << endl << numMut.transpose() << endl;
 		else {
 			infoLog << "Estimated alpha = " << alpha << endl;
 			tree.setDGModel(DiscreteGammaModel(K, alpha));

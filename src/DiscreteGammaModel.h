@@ -99,10 +99,21 @@ public:
 
 	/* static methods */
 	/**
-	 * use moment-matching traning of observed number of mutations to estimate the shape parameter alpha
-	 * given gamma-distrubuted rate, the observed number of changes is negative-binomial distribution
+	 * Estimate the shape parameter (alpha) of a beta distribution given a sample using specified method
+	 * @param X  iid sample of observed changes
+	 * @param method  estimation method
+	 * @return estimated shape parameter
+	 * @return 0 if method is not recognized
 	 */
-	static double estimateShape(const VectorXi& X);
+	static double estimateShape(const VectorXi& X, const string& method = "moment");
+
+	/**
+	 * Estimate the shape parameter (alpha) of a beta distribution using moment matching method
+	 * the observed changes should follow a negative-binomial distribution
+	 * @param X  iid sample of observed changes
+	 * @return estimated shape parameter
+	 */
+	static double estimateShapeMoment(const VectorXi& X);
 
 	/* private member methods */
 private:
@@ -125,6 +136,13 @@ private:
 	VectorXd b; // break-points to devide Gamma distribution to equal prob-K categories
 	VectorXd r; // average rate of each category
 };
+
+inline double DiscreteGammaModel::estimateShape(const VectorXi& X, const string& method) {
+	if(method == "moment")
+		return estimateShapeMoment(X);
+	else
+		return 0;
+}
 
 } /* namespace EGriceLab */
 

@@ -88,7 +88,7 @@ ostream& DiscreteGammaModel::save(ostream& out) const {
 	return out;
 }
 
-double DiscreteGammaModel::estimateShape(const VectorXi& X) {
+double DiscreteGammaModel::estimateShapeMoment(const VectorXi& X) {
 	if(X.rows() < 2)
 		return EGriceLab::inf; // cannot estimate alpha, use inf
 	double m = X.mean();
