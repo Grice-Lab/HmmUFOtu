@@ -34,7 +34,6 @@
 #include "HmmUFOtuConst.h"
 
 using Eigen::VectorXd;
-using Eigen::VectorXi;
 
 namespace EGriceLab {
 
@@ -97,15 +96,15 @@ public:
 		return new DiscreteGammaModel(*this);
 	}
 
-	/* static methods */
 	/**
 	 * Estimate the shape parameter (alpha) of a beta distribution given a sample using specified method
 	 * @param X  iid sample of observed changes
+	 * @param K  number of categories
 	 * @param method  estimation method
 	 * @return estimated shape parameter
 	 * @return 0 if method is not recognized
 	 */
-	static double estimateShape(const VectorXi& X, const string& method = "moment");
+	static double estimateShape(const VectorXd& X, const string& method = "moment");
 
 	/**
 	 * Estimate the shape parameter (alpha) of a beta distribution using moment matching method
@@ -113,7 +112,7 @@ public:
 	 * @param X  iid sample of observed changes
 	 * @return estimated shape parameter
 	 */
-	static double estimateShapeMoment(const VectorXi& X);
+	static double estimateShapeMoment(const VectorXd& X);
 
 	/* private member methods */
 private:
@@ -137,7 +136,7 @@ private:
 	VectorXd r; // average rate of each category
 };
 
-inline double DiscreteGammaModel::estimateShape(const VectorXi& X, const string& method) {
+inline double DiscreteGammaModel::estimateShape(const VectorXd& X, const string& method) {
 	if(method == "moment")
 		return estimateShapeMoment(X);
 	else

@@ -339,14 +339,14 @@ int main(int argc, char* argv[]) {
 	/* construct DG model, if isVar is set */
 	if(isVar) {
 		infoLog << "Estimating the shape parameter of the Discrete Gamma Distributin based among-site variation ..." << endl;
-		VectorXi numMut(tree.numAlignSites());
+		VectorXd numMut(tree.numAlignSites());
 		for(int j = 0; j < tree.numAlignSites(); ++j)
 			numMut(j) = tree.estimateNumMutations(j);
 		double alpha = DiscreteGammaModel::estimateShape(numMut);
 		if(alpha == inf)
 			cerr << "Unable to estimate the shape parameter with less than 2 alignment sites" << endl;
 		else if(alpha <= 0)
-			cerr << "Unable to estimate the shape parameter with near invariant rates, reducing to fixed rate model" << endl << numMut.transpose() << endl;
+			cerr << "Unable to estimate the shape parameter with near invariant rates, reducing to fixed rate model" << endl;
 		else {
 			infoLog << "Estimated alpha = " << alpha << endl;
 			tree.setDGModel(DiscreteGammaModel(K, alpha));
