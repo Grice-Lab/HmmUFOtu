@@ -139,6 +139,12 @@ inline Matrix4d TN93::Pr(double v) const {
 	P(T, G) = g * (1 - e);                                    /* Tv */
 	P(T, T) = (t * (c + t + (a + g) * e) + c * eY) / (c + t); /* self */
 
+	/* set any negative values to 0 due to numerical unstable */
+	for(Matrix4d::Index i = 0; i < 4; ++i)
+		for(Matrix4d::Index j = 0; j < 4; ++j)
+			if(P(i, j) < 0)
+				P(i, j) = 0;
+
 	return P;
 }
 

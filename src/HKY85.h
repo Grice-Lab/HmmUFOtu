@@ -108,7 +108,8 @@ private:
 };
 
 inline Matrix4d HKY85::Pr(double v) const {
-	Matrix4d P;
+	assert(v >= 0);
+	Matrix4d P = Matrix4d::Zero();
 	double a = pi(A);
 	double c = pi(C);
 	double g = pi(G);
@@ -136,6 +137,12 @@ inline Matrix4d HKY85::Pr(double v) const {
 	P(T, C) = (c * (c + t + (a + g) * e) - c * eY) / (c + t); /* Ti */
 	P(T, G) = g * (1 - e);                                    /* Tv */
 	P(T, T) = (t * (c + t + (a + g) * e) + c * eY) / (c + t); /* self */
+
+	/* set any negative values to 0 due to numerical unstable */
+	for(Matrix4d::Index i = 0; i < 4; ++i)
+		for(Matrix4d::Index j = 0; j < 4; ++j)
+			if(P(i, j) < 0)
+				P(i, j) = 0;
 
 	return P;
 }
