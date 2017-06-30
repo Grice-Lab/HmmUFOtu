@@ -91,9 +91,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 check_PROGRAMS = testHuffman$(EXEEXT) testSequence$(EXEEXT) \
-	testQuantile$(EXEEXT) testBitSequence$(EXEEXT) \
-	testArray$(EXEEXT) toArray2$(EXEEXT) toArray$(EXEEXT) \
-	timeSequence$(EXEEXT)
+	testBitSequence$(EXEEXT) testArray$(EXEEXT) toArray2$(EXEEXT) \
+	toArray$(EXEEXT) timeSequence$(EXEEXT)
 subdir = tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_prog_doxygen.m4 \
@@ -123,10 +122,6 @@ am_testHuffman_OBJECTS = testHuffman.$(OBJEXT)
 testHuffman_OBJECTS = $(am_testHuffman_OBJECTS)
 testHuffman_LDADD = $(LDADD)
 testHuffman_DEPENDENCIES = ../src/libcds.la
-am_testQuantile_OBJECTS = testQuantile.$(OBJEXT)
-testQuantile_OBJECTS = $(am_testQuantile_OBJECTS)
-testQuantile_LDADD = $(LDADD)
-testQuantile_DEPENDENCIES = ../src/libcds.la
 am_testSequence_OBJECTS = testSequence.$(OBJEXT)
 testSequence_OBJECTS = $(am_testSequence_OBJECTS)
 testSequence_LDADD = $(LDADD)
@@ -178,13 +173,11 @@ am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
 SOURCES = $(testArray_SOURCES) $(testBitSequence_SOURCES) \
-	$(testHuffman_SOURCES) $(testQuantile_SOURCES) \
-	$(testSequence_SOURCES) $(timeSequence_SOURCES) \
-	$(toArray_SOURCES) $(toArray2_SOURCES)
+	$(testHuffman_SOURCES) $(testSequence_SOURCES) \
+	$(timeSequence_SOURCES) $(toArray_SOURCES) $(toArray2_SOURCES)
 DIST_SOURCES = $(testArray_SOURCES) $(testBitSequence_SOURCES) \
-	$(testHuffman_SOURCES) $(testQuantile_SOURCES) \
-	$(testSequence_SOURCES) $(timeSequence_SOURCES) \
-	$(toArray_SOURCES) $(toArray2_SOURCES)
+	$(testHuffman_SOURCES) $(testSequence_SOURCES) \
+	$(timeSequence_SOURCES) $(toArray_SOURCES) $(toArray2_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -565,9 +558,10 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AM_CXXFLAGS = -I../include/
 LDADD = ../src/libcds.la
+#check_PROGRAMS = testHuffman testSequence testQuantile.cpp testBitSequence testArray toArray2 toArray timeSequence
 testHuffman_SOURCES = testHuffman.cpp
 testSequence_SOURCES = testSequence.cpp
-testQuantile_SOURCES = testQuantile.cpp
+#testQuantile_SOURCES = testQuantile.cpp # disabled by zhengqi
 testBitSequence_SOURCES = testBitSequence.cpp
 testArray_SOURCES = testArray.cpp
 toArray2_SOURCES = toArray2.cpp
@@ -645,10 +639,6 @@ testHuffman$(EXEEXT): $(testHuffman_OBJECTS) $(testHuffman_DEPENDENCIES) $(EXTRA
 	@rm -f testHuffman$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(testHuffman_OBJECTS) $(testHuffman_LDADD) $(LIBS)
 
-testQuantile$(EXEEXT): $(testQuantile_OBJECTS) $(testQuantile_DEPENDENCIES) $(EXTRA_testQuantile_DEPENDENCIES) 
-	@rm -f testQuantile$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(testQuantile_OBJECTS) $(testQuantile_LDADD) $(LIBS)
-
 testSequence$(EXEEXT): $(testSequence_OBJECTS) $(testSequence_DEPENDENCIES) $(EXTRA_testSequence_DEPENDENCIES) 
 	@rm -f testSequence$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(testSequence_OBJECTS) $(testSequence_LDADD) $(LIBS)
@@ -674,7 +664,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testArray.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testBitSequence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testHuffman.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testQuantile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testSequence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timeSequence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/toArray.Po@am__quote@
@@ -913,13 +902,6 @@ testHuffman.log: testHuffman$(EXEEXT)
 testSequence.log: testSequence$(EXEEXT)
 	@p='testSequence$(EXEEXT)'; \
 	b='testSequence'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
-testQuantile.log: testQuantile$(EXEEXT)
-	@p='testQuantile$(EXEEXT)'; \
-	b='testQuantile'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

@@ -35,8 +35,12 @@
 #include "HmmUFOtu_hmm.h"
 #include "EGMath.h"
 
-#ifndef DM_DATADIR
-#define DM_DATADIR "."
+#ifndef PKG_DATADIR
+#define PKG_DATADIR "."
+#endif
+
+#ifndef SRC_DATADIR
+#define SRC_DATADIR "."
 #endif
 
 using namespace std;
@@ -69,7 +73,7 @@ int main(int argc, char *argv[]) {
 	string infn;
 	string outfn;
 	string fmt;
-	string dmfn = DM_DATADIR + string("/") + DEFAULT_DM_FILE;
+	string dmfn;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -107,6 +111,10 @@ int main(int argc, char *argv[]) {
 		cerr << "-f|--symfrac must between 0 and 1" << endl;
 		return EXIT_FAILURE;
 	}
+
+	dmfn = PKG_DATADIR + string("/") + DEFAULT_DM_FILE;
+	if(!ifstream(dmfn).good())
+		dmfn = SRC_DATADIR + string("/") + DEFAULT_DM_FILE;
 
 	if(cmdOpts.hasOpt("-dm"))
 		dmfn = cmdOpts.getOpt("-dm");

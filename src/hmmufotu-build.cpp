@@ -30,12 +30,12 @@
 #include <string>
 #include "HmmUFOtu.h"
 
-#ifndef DM_DATADIR
-#define DM_DATADIR "."
+#ifndef SRC_DATADIR
+#define SRC_DATADIR "."
 #endif
 
-#ifndef SM_DATADIR
-#define SM_DATADIR "."
+#ifndef PKG_DATADIR
+#define PKG_DATADIR "."
 #endif
 
 using namespace std;
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
 	string fmt;
 	string smType = DEFAULT_SM_TYPE;
 	double symfrac = DEFAULT_SYMFRAC;
-	string dmFn = DM_DATADIR + string("/") + DEFAULT_DM_FILE;
+	string dmFn;
 	string smFn;
 	bool noHmm = false;
 	bool isVar = false;
@@ -118,6 +118,9 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("--anno"))
 		annoFn = cmdOpts.getOpt("--anno");
 
+	dmFn = PKG_DATADIR + string("/") + DEFAULT_DM_FILE;
+	if(!ifstream(dmFn.c_str()).good())
+		dmFn = SRC_DATADIR + string("/") + DEFAULT_DM_FILE;
 	if(cmdOpts.hasOpt("-dm"))
 		dmFn = cmdOpts.getOpt("-dm");
 
@@ -125,7 +128,9 @@ int main(int argc, char* argv[]) {
 		smType = cmdOpts.getOpt("-s");
 	if(cmdOpts.hasOpt("--sub-model"))
 		smType = cmdOpts.getOpt("--sub-model");
-	smFn = SM_DATADIR + string("/") + DEFAULT_SM_NAME + "_" + smType + SUB_MODEL_FILE_SUFFIX;
+	smFn = PKG_DATADIR + string("/") + DEFAULT_SM_NAME + "_" + smType + SUB_MODEL_FILE_SUFFIX;
+	if(!ifstream(smFn.c_str()).good())
+		smFn = SRC_DATADIR + string("/") + DEFAULT_SM_NAME + "_" + smType + SUB_MODEL_FILE_SUFFIX;
 
 	if(cmdOpts.hasOpt("-sm"))
 		smFn = cmdOpts.getOpt("-sm");

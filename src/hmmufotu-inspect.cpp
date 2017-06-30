@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) {
 		cerr << "Failed to load CSFM-index '" << csfmFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
-	cout << "CSFM-index loaded. Concatednated length: " << csfm.getConcatLen() << " CS length: " << csfm.getCSLen() << endl;
+	cout << "CSFM-index loaded. Concatenated length: " << csfm.getConcatLen() << " CS length: " << csfm.getCSLen() << endl;
 	if(csfm.getCSLen() != csLen) {
 		cerr << "Error: Unmatched CS length between CSFM-index and MSA data" << endl;
 		return EXIT_FAILURE;
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
 	if(showDg && ptu.getDGModel() != NULL)
 		cout << "Discrete Gamma Model is enabled for this tree" << endl
 		     << "Number of categories used: " << ptu.getDGModel()->getK()
-			 << "Shape parameter: " << ptu.getDGModel()->getShape() << endl;
+			 << " Shape parameter: " << ptu.getDGModel()->getShape() << endl;
 
 	if(treeOut.is_open()) {
 		infoLog << "Writing phylogenetic tree ..." << endl;
