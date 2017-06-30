@@ -1407,8 +1407,8 @@ inline double PTUnrooted::dot_product_scaled(const Vector4d& P, const Vector4d& 
 inline double PTUnrooted::dot_product_double_scaled(const Vector4d& V1, const Vector4d& V2) {
 	double maxV1 = V1.maxCoeff();
 	double maxV2 = V2.maxCoeff();
-	double scale1 = maxV1 != inf && maxV1 < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV1 : 0;
-	double scale2 = maxV2 != inf && maxV2 < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV2 : 0;
+	double scale1 = maxV1 != infV && maxV1 < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV1 : 0;
+	double scale2 = maxV2 != infV && maxV2 < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV2 : 0;
 
 	return ::log((V1.array() + scale1).exp().matrix().dot((V2.array() + scale2).exp().matrix())) - scale1 - scale2;
 }
@@ -1418,7 +1418,7 @@ inline Vector4d PTUnrooted::row_mean_exp_scaled(const Matrix4Xd& X) {
 	Vector4d scale;
 	for(Matrix4Xd::Index i = 0; i < X.rows(); ++i) {
 		double maxV = X.row(i).maxCoeff();
-		scale(i) = maxV != inf && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
+		scale(i) = maxV != infV && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
 	}
 	return (X.colwise() + scale).array().exp().rowwise().mean().log().matrix() - scale;
 }

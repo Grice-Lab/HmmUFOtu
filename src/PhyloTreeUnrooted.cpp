@@ -308,7 +308,7 @@ Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
 		for(int k = 0; k < dG->getK(); ++k)
 			loglikMat.col(k) = loglik(node, j, dG->rate(k));
 		const Vector4d& loglikVec = row_mean_exp_scaled(loglikMat); // use average of DiscreteGammaModel rate
-		/* cache this conditional loglik */
+		/* cache this conditional loglik, parent could be NULL */
 		setBranchLoglik(node, node->parent, j, loglikVec);
 		return loglikVec;
 	}

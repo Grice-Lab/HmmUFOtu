@@ -351,6 +351,7 @@ int main(int argc, char* argv[]) {
 			infoLog << "Estimated alpha = " << alpha << endl;
 			tree.setDGModel(DiscreteGammaModel(K, alpha));
 			tree.resetBranchLoglik(); /* reset all cached values */
+			tree.resetRootLoglik();   /* reset cached root value */
 		}
 	}
 
@@ -361,13 +362,14 @@ int main(int argc, char* argv[]) {
 
 	const size_t numNodes = tree.numNodes();
 	for(size_t i = 0; i < numNodes; ++i) {
+//		cerr << "Setting root at " << i << endl;
 		tree.setRoot(i);
 		tree.evaluate();
+//		cerr << "loglik: " << tree.loglik() << endl;
 	}
 	/* reset to original root, and evaluate its root Loglik */
 	tree.setRoot(root);
-	tree.initRootLoglik();
-	tree.loglik();
+	tree.loglik(); /* evaluate the root and store value */
 	infoLog << "Final Tree log-liklihood: " << tree.treeLoglik() << endl;
 
 	/* infer the ancestor seq of all intermediate nodes */
