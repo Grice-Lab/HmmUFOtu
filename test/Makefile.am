@@ -5,7 +5,7 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/libdivsufsort/include \
 -I$(top_srcdir)/src/libcds/include
 
-noinst_PROGRAMS = \
+check_PROGRAMS = \
 MSAIO_test \
 bHmmPrior_IO_test \
 bHmm_IO_test \
@@ -40,3 +40,5 @@ PTU_IO_test_SOURCES = PTU_IO_test.cpp
 PTU_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
 $(top_srcdir)/src/libHmmUFOtu_common.a
 PTU_IO_test_LDFLAGS = -static
+
+TESTS = gtr-t.sh
