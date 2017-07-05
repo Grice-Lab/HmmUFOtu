@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 INPUT="79_otus"
 DBNAME="gg_79_otus"
