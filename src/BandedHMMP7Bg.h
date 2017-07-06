@@ -55,14 +55,19 @@ public:
 	/**
 	 * return the background transition prob between G states
 	 */
-	float getBgTransPr() const {
+	double getBgTransPr() const {
 		return p1;
+	}
+
+	/** return the background termination prob between G and F state */
+	double getBgTermPr() const {
+		return 1 - p1;
 	}
 
 	/**
 	 * return the background transition lods between G states
 	 */
-	float getBgTransLods() const {
+	double getBgTransLods() const {
 		return log(p1);
 	}
 
@@ -83,7 +88,7 @@ public:
 	/*
 	 * return the background emission probability of Aphabet i
 	 */
-	float getBgEmitPr(int i) const {
+	double getBgEmitPr(int i) const {
 		return bgFreq(i);
 	}
 

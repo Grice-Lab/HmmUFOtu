@@ -539,14 +539,14 @@ void BandedHMMP7::setSequenceMode(enum align_mode mode) {
 		T_SP(N, N) = T_SP(C, C) = 0;
 		break;
 	case LOCAL:
-		T_SP(N, N) = T_SP(C, C) = hmmBg.getBgTransPr();
+		T_SP(N, N) = T_SP(C, C) = hmmBg.getBgTermPr();
 		break;
 	case NGCL:
 		T_SP(N, N) = 0;
-		T_SP(C, C) = hmmBg.getBgTransPr();
+		T_SP(C, C) = hmmBg.getBgTermPr();
 		break;
 	case CGNL:
-		T_SP(N, N) = hmmBg.getBgTransPr();
+		T_SP(N, N) = hmmBg.getBgTermPr();
 		T_SP(C, C) = 0;
 		break;
 	default:
