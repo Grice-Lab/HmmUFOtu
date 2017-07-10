@@ -90,7 +90,7 @@ hmmufotu_inspect_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_commo
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_inspect_LDFLAGS = -static
 
-hmmufotu_SOURCES = hmmufotu.cpp
+hmmufotu_SOURCES = HmmUFOtu_main.cpp hmmufotu.cpp
 hmmufotu_CPPFLAGS = $(AM_CFLAGS)
 hmmufotu_CPPFLAGS += $(OPENMP_CFLAGS)
 hmmufotu_CFLAGS = $(AM_CFLAGS)
