@@ -35,6 +35,7 @@
 #include <cstring>
 #include <cerrno>
 #include <limits>
+#include <map>
 #include <boost/unordered_map.hpp>
 #include <boost/algorithm/string.hpp> /* for boost string join */
 #include <boost/lexical_cast.hpp>
@@ -79,9 +80,10 @@ void printIntro(void) {
  * Print the usage information
  */
 void printUsage(const string& progName) {
-	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <PLACE-FILE> [PLACE-FILE2 ...]> <-o OTU-OUT> [options]" << endl
-		 << "PLACE-FILE      FILE           : placement file(s) from hmmufotu" << endl
+	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <(INFILE [INFILE2 ...]> <-o OTU-OUT> [options]" << endl
+		 << "INFILE          FILE           : assignment file(s) from hmmufotu, by default the filenames will be used as sample names" << endl
 		 << "Options:    -o  FILE           : OTU summary output" << endl
+		 << "            -l  FILE           : an optional sample list, with 1st field sample-name and 2nd field input filename" << endl
 		 << "            -c  FILE           : OTU Consensus Sequence (CS) alignment output" << endl
 		 << "            -t  FILE           : OTU tree output" << endl
 		 << "            -e|--effN  double  : effective number of sequences (pseudo-count) for inferencing CS of OTUs with Dirichelet Density models, set 0 to disable [" << DEFAULT_EFFN << "]" << endl
@@ -95,7 +97,8 @@ int main(int argc, char* argv[]) {
 	/* variable declarations */
 	string dbName, msaFn, ptuFn;
 	vector<string> inFiles;
-	vector<string> sampleNames;
+	map<string, string> sampleFn2Name;
+	string listFn;
 	string otuFn, csFn, treeFn;
 	ifstream msaIn, ptuIn;
 	ofstream otuOut, treeOut;
@@ -119,8 +122,9 @@ int main(int argc, char* argv[]) {
 	}
 	dbName = cmdOpts.getMainOpt(0);
 	for(int i = 1; i < cmdOpts.numMainOpts(); ++i) {
-		inFiles.push_back(cmdOpts.getMainOpt(i));
-		sampleNames.push_back(StringUtils::basename(inFiles.back()));
+		string fn = cmdOpts.getMainOpt(i);
+		inFiles.push_back(fn);
+		sampleFn2Name[fn] = fn; /* use filename as samplename by default */
 	}
 
 	if(cmdOpts.hasOpt("-o"))
@@ -133,6 +137,9 @@ int main(int argc, char* argv[]) {
 		csFn = cmdOpts.getOpt("-c");
 	if(cmdOpts.hasOpt("-t"))
 		treeFn = cmdOpts.getOpt("-t");
+
+	if(cmdOpts.hasOpt("-l"))
+		listFn = cmdOpts.getOpt("-l");
 
 	if(cmdOpts.hasOpt("-e"))
 		effN = ::atof(cmdOpts.getOptStr("-e"));
@@ -166,6 +173,29 @@ int main(int argc, char* argv[]) {
 	ptuFn = dbName + PHYLOTREE_FILE_SUFFIX;
 
 	/* open inputs */
+	if(!listFn.empty()) {
+		ifstream listIn(listFn.c_str());
+		int nRead = 0;
+		if(!listIn.is_open()) {
+			cerr << "Unable to open sample list '" << listFn << "': " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+		infoLog << "Read in sample names from " << listFn << endl;
+		string line;
+		while(std::getline(listIn, line)) {
+			if(line.front() == '#')
+				continue;
+			vector<string> fields;
+			boost::split(fields, line, boost::is_any_of("\t"));
+			if(fields.size() >= 2) {
+				sampleFn2Name[fields[1]] = fields[0];
+				nRead++;
+			}
+		}
+		listIn.close();
+		infoLog << nRead << " user-provided sample names read" << endl;
+	}
+
 	msaIn.open(msaFn.c_str(), ios_base::in | ios_base::binary);
 	if(!msaIn) {
 		cerr << "Unable to open MSA data '" << msaFn << "': " << ::strerror(errno) << endl;
@@ -228,14 +258,18 @@ int main(int argc, char* argv[]) {
 	infoLog << "Getting sample names from placement file names" << endl;
 
 	boost::unordered_map<PTUnrooted::PTUNodePtr, NodeObsData> otuData;
+	vector<string> sampleNames;
 
-	for(int s = 0; s < S; ++s) {
-		infoLog << "Processing " << inFiles[s] << " ..." << endl;
-		ifstream in(inFiles[s].c_str());
+	for(int s = 0; s < inFiles.size(); ++s) {
+		string infn = inFiles[s];
+		string sample = sampleFn2Name[infn];
+		infoLog << "Processing sample " << sampleFn2Name[infn] << " ..." << endl;
+		ifstream in(infn.c_str());
 		if(!in.is_open()) {
-			cerr << "Unable to open '" << inFiles[s] << "': " << ::strerror(errno) << endl;
+			cerr << "Unable to open '" << infn << "': " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
+		sampleNames.push_back(sample);
 		string line;
 		long taxon_id;
 		string aln;

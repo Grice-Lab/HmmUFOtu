@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
+#include <boost/algorithm/string.hpp> /* for boost string split */
 
 #ifdef _OPENMP
 #include <omp.h>
