@@ -6,7 +6,7 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/libcds/include
 
 # Build convenient libraries
-noinst_LIBRARIES = libHmmUFOtu_common.a libHmmUFOtu_hmm.a libHmmUFOtu_phylo.a
+noinst_LIBRARIES = libHmmUFOtu_common.a libHmmUFOtu_hmm.a libHmmUFOtu_phylo.a libHmmUFOtu_OTU.a
 
 libHmmUFOtu_common_a_SOURCES = \
 HmmUFOtuConst.cpp \
@@ -43,6 +43,10 @@ K80.cpp \
 JC69.cpp \
 DiscreteGammaModel.cpp \
 DNASubModelFactory.cpp
+
+libHmmUFOtu_OTU_a_SOURCES = \
+OTUObserved.cpp \
+OTUTable.cpp
 
 #libHmmUFOtu_phylo_CPPFLAGS = $(AM_CFLAGS)
 #libHmmUFOtu_phylo_CPPFLAGS += $(OPENMP_CFLAGS)
@@ -101,7 +105,7 @@ hmmufotu_LDFLAGS = -static
 hmmufotu_LDFLAGS += $(OPENMP_CFLAGS)
 
 hmmufotu_sum_SOURCES = hmmufotu-sum.cpp
-hmmufotu_sum_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
+hmmufotu_sum_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
 hmmufotu_sum_LDFLAGS = -static
 
 hmmufotu_anneal_SOURCES = hmmufotu-anneal.cpp

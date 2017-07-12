@@ -113,6 +113,11 @@ AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
+libHmmUFOtu_OTU_a_AR = $(AR) $(ARFLAGS)
+libHmmUFOtu_OTU_a_LIBADD =
+am_libHmmUFOtu_OTU_a_OBJECTS = OTUObserved.$(OBJEXT) \
+	OTUTable.$(OBJEXT)
+libHmmUFOtu_OTU_a_OBJECTS = $(am_libHmmUFOtu_OTU_a_OBJECTS)
 libHmmUFOtu_common_a_AR = $(AR) $(ARFLAGS)
 libHmmUFOtu_common_a_LIBADD =
 am_libHmmUFOtu_common_a_OBJECTS = HmmUFOtuConst.$(OBJEXT) \
@@ -187,8 +192,8 @@ hmmufotu_sim_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(CXXFLAGS) $(hmmufotu_sim_LDFLAGS) $(LDFLAGS) -o $@
 am_hmmufotu_sum_OBJECTS = hmmufotu-sum.$(OBJEXT)
 hmmufotu_sum_OBJECTS = $(am_hmmufotu_sum_OBJECTS)
-hmmufotu_sum_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_common.a \
-	math/libEGMath.a
+hmmufotu_sum_DEPENDENCIES = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a \
+	libHmmUFOtu_common.a math/libEGMath.a
 hmmufotu_sum_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(hmmufotu_sum_LDFLAGS) $(LDFLAGS) -o $@
@@ -251,19 +256,20 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libHmmUFOtu_common_a_SOURCES) $(libHmmUFOtu_hmm_a_SOURCES) \
-	$(libHmmUFOtu_phylo_a_SOURCES) $(hmmufotu_SOURCES) \
-	$(hmmufotu_anneal_SOURCES) $(hmmufotu_build_SOURCES) \
-	$(hmmufotu_inspect_SOURCES) $(hmmufotu_sim_SOURCES) \
-	$(hmmufotu_sum_SOURCES) $(hmmufotu_train_dm_SOURCES) \
-	$(hmmufotu_train_hmm_SOURCES) $(hmmufotu_train_sm_SOURCES)
-DIST_SOURCES = $(libHmmUFOtu_common_a_SOURCES) \
+SOURCES = $(libHmmUFOtu_OTU_a_SOURCES) $(libHmmUFOtu_common_a_SOURCES) \
 	$(libHmmUFOtu_hmm_a_SOURCES) $(libHmmUFOtu_phylo_a_SOURCES) \
 	$(hmmufotu_SOURCES) $(hmmufotu_anneal_SOURCES) \
 	$(hmmufotu_build_SOURCES) $(hmmufotu_inspect_SOURCES) \
 	$(hmmufotu_sim_SOURCES) $(hmmufotu_sum_SOURCES) \
 	$(hmmufotu_train_dm_SOURCES) $(hmmufotu_train_hmm_SOURCES) \
 	$(hmmufotu_train_sm_SOURCES)
+DIST_SOURCES = $(libHmmUFOtu_OTU_a_SOURCES) \
+	$(libHmmUFOtu_common_a_SOURCES) $(libHmmUFOtu_hmm_a_SOURCES) \
+	$(libHmmUFOtu_phylo_a_SOURCES) $(hmmufotu_SOURCES) \
+	$(hmmufotu_anneal_SOURCES) $(hmmufotu_build_SOURCES) \
+	$(hmmufotu_inspect_SOURCES) $(hmmufotu_sim_SOURCES) \
+	$(hmmufotu_sum_SOURCES) $(hmmufotu_train_dm_SOURCES) \
+	$(hmmufotu_train_hmm_SOURCES) $(hmmufotu_train_sm_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -466,7 +472,7 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 
 
 # Build convenient libraries
-noinst_LIBRARIES = libHmmUFOtu_common.a libHmmUFOtu_hmm.a libHmmUFOtu_phylo.a
+noinst_LIBRARIES = libHmmUFOtu_common.a libHmmUFOtu_hmm.a libHmmUFOtu_phylo.a libHmmUFOtu_OTU.a
 libHmmUFOtu_common_a_SOURCES = \
 HmmUFOtuConst.cpp \
 HmmUFOtuEnv.cpp \
@@ -503,6 +509,10 @@ JC69.cpp \
 DiscreteGammaModel.cpp \
 DNASubModelFactory.cpp
 
+libHmmUFOtu_OTU_a_SOURCES = \
+OTUObserved.cpp \
+OTUTable.cpp
+
 hmmufotu_train_dm_SOURCES = hmmufotu-train-dm.cpp
 hmmufotu_train_dm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a math/libEGMath.a
 hmmufotu_train_dm_LDFLAGS = -static
@@ -535,7 +545,7 @@ libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 
 hmmufotu_LDFLAGS = -static $(OPENMP_CFLAGS)
 hmmufotu_sum_SOURCES = hmmufotu-sum.cpp
-hmmufotu_sum_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
+hmmufotu_sum_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
 hmmufotu_sum_LDFLAGS = -static
 hmmufotu_anneal_SOURCES = hmmufotu-anneal.cpp
 hmmufotu_anneal_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
@@ -578,6 +588,11 @@ $(am__aclocal_m4_deps):
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+
+libHmmUFOtu_OTU.a: $(libHmmUFOtu_OTU_a_OBJECTS) $(libHmmUFOtu_OTU_a_DEPENDENCIES) $(EXTRA_libHmmUFOtu_OTU_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libHmmUFOtu_OTU.a
+	$(AM_V_AR)$(libHmmUFOtu_OTU_a_AR) libHmmUFOtu_OTU.a $(libHmmUFOtu_OTU_a_OBJECTS) $(libHmmUFOtu_OTU_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libHmmUFOtu_OTU.a
 
 libHmmUFOtu_common.a: $(libHmmUFOtu_common_a_OBJECTS) $(libHmmUFOtu_common_a_DEPENDENCIES) $(EXTRA_libHmmUFOtu_common_a_DEPENDENCIES) 
 	$(AM_V_at)-rm -f libHmmUFOtu_common.a
@@ -708,6 +723,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/K80.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSA.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewickTree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OTUObserved.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OTUTable.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PhyloTreeUnrooted.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PrimarySeq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ProgLog.Po@am__quote@

@@ -37,6 +37,7 @@
 #include <limits>
 #include <map>
 #include <boost/unordered_map.hpp>
+#include <boost/unordered_set.hpp>
 #include <boost/algorithm/string.hpp> /* for boost string join */
 #include <boost/lexical_cast.hpp>
 #include "HmmUFOtu.h"
@@ -52,22 +53,8 @@ static const string ALIGN_FORMAT = "fasta";
 static const double DEFAULT_EFFN = 2;
 static const int DEFAULT_MIN_NREAD = 1;
 static const int DEFAULT_MIN_NSAMPLE = 1;
-//static const Eigen::IOFormat otuFmt(StreamPrecision, 0, "\t");
-
-/** struct to store observed count information for a node */
-struct NodeObsData {
-	NodeObsData(int L, int S) :
-		freq(4, L), gap(L), count(S)
-	{
-		freq.setZero();
-		gap.setZero();
-		count.setZero();
-	}
-
-	Matrix4Xd freq;  /* observed aggregate base frequency over all samples */
-	RowVectorXd gap; /* observed aggregate gap over all samples */
-	VectorXi count;  /* observed sequence count for each sample separately */
-};
+static const double DEFAULT_NORM = 0;
+typedef boost::unordered_map<PTUnrooted::PTUNodePtr, OTUObserved> OTUMap;
 
 /**
  * Print introduction of this program
@@ -86,9 +73,10 @@ void printUsage(const string& progName) {
 		 << "            -l  FILE           : an optional sample list, with 1st field sample-name and 2nd field input filename" << endl
 		 << "            -c  FILE           : OTU Consensus Sequence (CS) alignment output" << endl
 		 << "            -t  FILE           : OTU tree output" << endl
-		 << "            -e|--effN  double  : effective number of sequences (pseudo-count) for inferencing CS of OTUs with Dirichelet Density models, set 0 to disable [" << DEFAULT_EFFN << "]" << endl
+		 << "            -e|--effN  DBL     : effective number of sequences (pseudo-count) for inferencing CS of OTUs with Dirichelet Density models, set 0 to disable [" << DEFAULT_EFFN << "]" << endl
 		 << "            -n  INT            : minimum number of observed reads required to define an OTU across all samples [" << DEFAULT_MIN_NREAD << "]" << endl
 		 << "            -s  INT            : minimum number of observed samples required to define an OTU" << DEFAULT_MIN_NSAMPLE << "]" << endl
+		 << "            -Z  DBL            : constant normalize the OTU Table so each sample will have K total numbers, set to 0 to use default value [" << DEFAULT_NORM << endl
 		 << "            -v  FLAG           : enable verbose information" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
@@ -107,10 +95,12 @@ int main(int argc, char* argv[]) {
 	double effN = DEFAULT_EFFN;
 	int minRead = DEFAULT_MIN_NREAD;
 	int minSample = DEFAULT_MIN_NSAMPLE;
+	double normZ = -1;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
 	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
+		printIntro();
 		printUsage(argv[0]);
 		return EXIT_SUCCESS;
 	}
@@ -151,6 +141,9 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-s"))
 		minSample = ::atoi(cmdOpts.getOptStr("-s"));
 
+	if(cmdOpts.hasOpt("-Z"))
+		normZ = ::atof(cmdOpts.getOptStr("-Z"));
+
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
@@ -165,6 +158,10 @@ int main(int argc, char* argv[]) {
 	}
 	if(!(minSample > 0)) {
 		cerr << "-s must be positive integer" << endl;
+		return EXIT_FAILURE;
+	}
+	if(normZ != -1 && normZ < 0) {
+		cerr << "-Z must be non-negative" << endl;
 		return EXIT_FAILURE;
 	}
 
@@ -257,7 +254,7 @@ int main(int argc, char* argv[]) {
 
 	infoLog << "Getting sample names from placement file names" << endl;
 
-	boost::unordered_map<PTUnrooted::PTUNodePtr, NodeObsData> otuData;
+	OTUMap otuData;
 	vector<string> sampleNames;
 
 	for(int s = 0; s < inFiles.size(); ++s) {
@@ -285,43 +282,60 @@ int main(int argc, char* argv[]) {
 			if(taxon_id < 0)
 				continue; /* invalid placement */
 			const PTUnrooted::PTUNodePtr& node = ptu.getNode(taxon_id);
-			if(otuData.find(node) == otuData.end()) /* not initiated */
-				otuData.insert(std::make_pair(node, NodeObsData(L, S)));
-			NodeObsData& data = otuData.find(node)->second;
-			data.count(s)++;
+
+			if(otuData.count(node) == 0) /* not initiated */
+				otuData.insert(std::make_pair(node, OTUObserved(boost::lexical_cast<string>(node->getId()), node->getTaxon(), L, S)));
+			OTUObserved& otu = otuData.find(node)->second;
+			otu.count(s)++;
 			for(int j = 0; j < L; ++j) {
 				int8_t b = abc->encode(::toupper(aln[j]));
 				if(b >= 0)
-					data.freq(b, j)++;
+					otu.freq(b, j)++;
 				else
-					data.gap(j)++;
+					otu.gap(j)++;
 			}
 		}
 	}
 
-	/* output OTU table and alignment */
-	infoLog << "Generating output files" << endl;
-	otuOut << "OTU_id\t" << boost::join(sampleNames, "\t") << "\tTaxonomy" << endl;
+	/* construct an OTU table and output alignment */
+	infoLog << "Computing OTU Table" << endl;
+	OTUTable otuTable(sampleNames);
+
 	for(int i = 0; i < N; ++i) {
 		const PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
-		if(otuData.find(node) == otuData.end())
+		if(otuData.count(node) == 0) // not an observed OTU
 			continue;
-		otuData.begin();
-		NodeObsData& data = otuData.find(node)->second;
-		int nRead = data.count.sum();
-		int nSample = (data.count.array() > 0).count();
-		if(!(nRead >= minRead && nSample >= minSample)) /* filter OTUs */
-			continue;
+		OTUObserved& otu = otuData.find(node)->second;
+		if(otu.numReads() >= minRead && otu.numSamples() >= minSample) /* filter OTUs */
+			otuTable.addOTU(otu);
+	}
 
-		otuOut << node->getId() << "\t";
-		for(int s = 0; s < S; ++s)
-			otuOut << data.count(s) << "\t";
-		otuOut << node->getTaxon() << endl;
+	/* OTUTable process */
+	if(normZ >= 0) {
+		infoLog << "Normalazing OTU Table" << endl;
+		if(normZ == 0)
+			otuTable.normalize();
+		else
+			otuTable.normalize(normZ);
+	}
 
-		if(csOut.is_open()) {
+	/* write the OTU table */
+	infoLog << "Writing OTU Table" << endl;
+	otuOut << otuTable;
+
+	/* write the CS tree */
+	if(csOut.is_open()) {
+		infoLog << "Writing OTU Consensus Sequences" << endl;
+		const vector<string>& otuIDs = otuTable.getOTUs();
+		for(size_t i = 0; i < otuTable.numOTUs(); ++i) {
+			PTUnrooted::PTUNodePtr node = ptu.getNode(boost::lexical_cast<long> (otuTable.getOTU(i)));
+			OTUObserved& data = otuData.find(node)->second;
+			int nRead = data.count.sum();
+			int nSample = (data.count.array() > 0).count();
+
 			DigitalSeq seq = ptu.inferPostCS(node, data.freq, data.gap, effN);
 			string desc = "DBName="
-					+ dbName + ";Taxonomy=\"" + node->getTaxon()
+					+ dbName + ";Taxonomy=\"" + otuTable.getTaxon(i)
 					+ "\";AnnoDist=" + boost::lexical_cast<string>(node->getAnnoDist())
 					+ ";ReadCount=" + boost::lexical_cast<string>(nRead)
 					+ ";SampleHits=" + boost::lexical_cast<string>(nSample);
@@ -330,6 +344,13 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* write the tree */
-	if(treeOut.is_open())
-		ptu.exportTree(treeOut, otuData, "newick");
+	if(treeOut.is_open()) {
+		infoLog << "Writing OTU tree" << endl;
+
+		boost::unordered_set<PTUnrooted::PTUNodePtr> otuSet;
+		for(size_t i = 0; i < otuTable.numOTUs(); ++i)
+			otuSet.insert(ptu.getNode(boost::lexical_cast<long> (otuTable.getOTU(i))));
+
+		ptu.exportTree(treeOut, otuSet, "newick");
+	}
 }

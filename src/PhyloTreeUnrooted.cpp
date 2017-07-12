@@ -1046,6 +1046,24 @@ DigitalSeq PTUnrooted::inferPostCS(const PTUNodePtr& node, const Matrix4Xd& coun
 	return seq;
 }
 
+ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& node,
+		boost::unordered_set<PTUNodePtr> subset,
+		string format) const {
+	StringUtils::toLower(format);
+	/* expand subset to all their ancestors */
+	for(typename boost::unordered_set<PTUNodePtr>::const_iterator it = subset.begin(); it != subset.end(); ++it)
+		for(PTUNodePtr node = *it; node != NULL; node = node->parent)
+			subset.insert(node);
+
+	if(format == "newick")
+		return exportTreeNewick(out, node, subset) << ";";
+	else {
+		errorLog << "Cannot write PTUnrooted tree, unknown tree format '" << format << "'" << std::endl;
+		out.setstate(std::ios_base::failbit);
+		return out;
+	}
+}
+
 } /* namespace EGriceLab */
 
 

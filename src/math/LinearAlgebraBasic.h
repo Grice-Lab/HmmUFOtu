@@ -77,7 +77,7 @@ inline double dDirichlet(const VectorXd& alpha, const VectorXd& x) {
 		logDenom += ::lgamma(static_cast<double> (alpha(i))); /* lgamma is a C99 function */
 	logDenom -= ::lgamma(alpha.sum());
 
-	std::cerr << "logNumer:" << logNumer << " logDenom:" << logDenom << std::endl;
+//	std::cerr << "logNumer:" << logNumer << " logDenom:" << logDenom << std::endl;
 
 	return ::exp(logNumer - logDenom);
 }

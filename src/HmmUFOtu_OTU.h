@@ -18,19 +18,15 @@
  * along with AlignerBoost.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 /*
- * HmmUFOtu.h
- *  Created on: Oct 22, 2015
+ * HmmUFOtu_OTU.h
+ *  Header includes for OTU related types
+ *  Created on: Jul 11, 2017
  *      Author: zhengqi
  */
 
-#ifndef HMMUFOTU_H_
-#define HMMUFOTU_H_
+#ifndef SRC_HMMUFOTU_OTU_H_
+#define SRC_HMMUFOTU_OTU_H_
 
-#include "HmmUFOtu_common.h"
-#include "HmmUFOtu_hmm.h"
-#include "HmmUFOtu_phylo.h"
-#include "HmmUFOtu_OTU.h"
+#include "OTUTable.h"
 
-#include "EGMath.h"
-
-#endif /* HMMUFOTU_H_ */
+#endif /* SRC_HMMUFOTU_OTU_H_ */

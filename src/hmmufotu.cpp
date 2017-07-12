@@ -40,11 +40,17 @@ static const int DEFAULT_NUM_THREADS = 1;
 static const string PLACE_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\tbranch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
 
 /**
+ * Print introduction of this program
+ */
+void printIntro(void) {
+	cerr << "Ultra-fast 16S read OTU assignment using profile-HMM and phylogenetic placement" << endl;
+}
+
+/**
  * Print the usage information
  */
 void printUsage(const string& progName) {
-	cerr << "Ultra-fast 16S read OTU assignment using profile-HMM and phylogenetic placement" << endl
-		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <READ-FILE1> [READ-FILE2] [options]" << endl
+	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <READ-FILE1> [READ-FILE2] [options]" << endl
 		 << "READ-FILE1  FILE               : sequence read file for the assembled/forward read" << endl
 		 << "READ-FILE2  FILE               : sequence read file for the reverse read" << endl
 		 << "Options:    -o  FILE           : write the PLACEMENT output to FILE instead of stdout" << endl
@@ -66,7 +72,6 @@ void printUsage(const string& progName) {
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
-
 
 
 int main(int argc, char* argv[]) {
@@ -96,6 +101,7 @@ int main(int argc, char* argv[]) {
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
 	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
+		printIntro();
 		printUsage(argv[0]);
 		return EXIT_SUCCESS;
 	}

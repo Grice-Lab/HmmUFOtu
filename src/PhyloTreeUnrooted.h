@@ -835,19 +835,17 @@ public:
 	/**
 	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
 	 */
-	template<typename V>
 	ostream& exportTree(ostream& out, const PTUNodePtr& node,
-			const boost::unordered_map<PTUNodePtr, V>& submap,
+			boost::unordered_set<PTUNodePtr> subset,
 			string format) const;
 
 	/**
 	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
 	 */
-	template<typename V>
 	ostream& exportTree(ostream& out,
-			const boost::unordered_map<PTUNodePtr, V>& submap,
+			const boost::unordered_set<PTUNodePtr>& subset,
 			string format = "newick") const {
-		return exportTree(out, root, submap, format);
+		return exportTree(out, root, subset, format);
 	}
 
 private:
@@ -1265,25 +1263,6 @@ inline ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& subtree, 
 	}
 }
 
-template<typename V>
-inline ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& node,
-		const boost::unordered_map<PTUNodePtr, V>& submap,
-		string format) const {
-	StringUtils::toLower(format);
-	/* expand subset to all their ancestors */
-	boost::unordered_set<PTUNodePtr> subset;
-	for(typename boost::unordered_map<PTUNodePtr, V>::const_iterator it = submap.begin(); it != submap.end(); ++it)
-		for(PTUNodePtr node = it->first; node != NULL; node = node->parent)
-			subset.insert(node);
-
-	if(format == "newick")
-		return exportTreeNewick(out, node, subset) << ";";
-	else {
-		errorLog << "Cannot write PTUnrooted tree, unknown tree format " << format << std::endl;
-		out.setstate(std::ios_base::failbit);
-		return out;
-	}
-}
 
 inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v) const {
 	BranchMap::const_iterator outerResult = node2branch.find(u);
