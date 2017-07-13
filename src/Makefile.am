@@ -23,7 +23,9 @@ PrimarySeq.cpp \
 DigitalSeq.cpp \
 SeqIO.cpp \
 SeqUtils.cpp \
-MSA.cpp
+MSA.cpp \
+TSVRecord.cpp \
+TSVScanner.cpp
 
 libHmmUFOtu_hmm_a_SOURCES = \
 BandedHMMP7Bg.cpp \

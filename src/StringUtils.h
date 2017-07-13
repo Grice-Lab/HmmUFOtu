@@ -113,6 +113,14 @@ public:
 	static string stripQuotes(const string& str, const string& quotes = "\"'");
 
 	/**
+	 * Remove leading and tailing quotes from a given string
+	 * @param str  string input
+	 * @param quote  quoting character
+	 * @return a new string with all quotes in "quote" removed
+	 */
+	static string stripQuotes(const string& str, char quote = '"');
+
+	/**
 	 * check whether a string contains any white space characters
 	 * @param str  input string
 	 * @return  true if it has any white space character (' ', '\t', '\n', '\r', '\v')

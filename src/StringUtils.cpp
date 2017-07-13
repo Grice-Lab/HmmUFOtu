@@ -119,6 +119,18 @@ string StringUtils::stripQuotes(const string& str, const string& quotes) {
 	return newStr;
 }
 
+string StringUtils::stripQuotes(const string& str, char quote) {
+	string newStr;
+	newStr.reserve(str.length());
+	for(string::const_iterator it = str.begin(); it != str.end(); ++it) {
+		if((it == str.begin() || it == str.end() - 1) && /* leading or tailing character */
+				*it == quote) /* is the quote character */
+			continue;
+		newStr.push_back(*it);
+	}
+	return newStr;
+}
+
 bool StringUtils::containsWhiteSpace(const string& str) {
 	for(string::const_iterator it = str.begin(); it != str.end(); ++it)
 		if(::isspace(*it))

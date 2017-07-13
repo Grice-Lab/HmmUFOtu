@@ -42,5 +42,7 @@
 #include "SeqIO.h"
 #include "MSA.h"
 #include "StringUtils.h"
+#include "TSVRecord.h"
+#include "TSVScanner.h"
 
 #endif /* SRC_HMMUFOTU_COMMON_H_ */

@@ -252,11 +252,9 @@ int main(int argc, char* argv[]) {
 	const int L = ptu.numAlignSites();
 	const size_t N = ptu.numNodes();
 
-	infoLog << "Getting sample names from placement file names" << endl;
-
+	/* process input files */
 	OTUMap otuData;
 	vector<string> sampleNames;
-
 	for(int s = 0; s < inFiles.size(); ++s) {
 		string infn = inFiles[s];
 		string sample = sampleFn2Name[infn];
@@ -266,23 +264,16 @@ int main(int argc, char* argv[]) {
 			cerr << "Unable to open '" << infn << "': " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
+		TSVScanner tsvIn(in, true);
 		sampleNames.push_back(sample);
-		string line;
-		long taxon_id;
-		string aln;
-		while((std::getline(in, line))) {
-			if(StringUtils::startsWith(line, "id"))
-				continue;
-			istringstream iss(line);
-			iss.ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t');
-			iss >> aln;
-			iss.ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t').ignore(MAX_IGNORE, '\t');
-			iss >> taxon_id;
-
+		while(tsvIn.hasNext()) {
+			const TSVRecord& record = tsvIn.nextRecord();
+			const string& aln = record.getFieldByName("alignment");
+			const long taxon_id = boost::lexical_cast<long> (record.getFieldByName("taxon_id"));
 			if(taxon_id < 0)
 				continue; /* invalid placement */
-			const PTUnrooted::PTUNodePtr& node = ptu.getNode(taxon_id);
 
+			const PTUnrooted::PTUNodePtr& node = ptu.getNode(taxon_id);
 			if(otuData.count(node) == 0) /* not initiated */
 				otuData.insert(std::make_pair(node, OTUObserved(boost::lexical_cast<string>(node->getId()), node->getTaxon(), L, S)));
 			OTUObserved& otu = otuData.find(node)->second;
