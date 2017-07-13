@@ -167,6 +167,12 @@ vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
 vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
 		vector<PTPlacement>& places);
 
+/** get alignment identity, as fraction of non-gap characters in the alignment part */
+double alignIdentity(const DegenAlphabet* abc, const string& align, int start, int end);
+
+/** get profile-HMM identity, as fraction of non-gap characters in HMM profile sites */
+double hmmIdentity(const BandedHMMP7& hmm, const string& align, int start, int end);
+
 
 inline bool operator<(const PTLoc& lhs, const PTLoc& rhs) {
 	return lhs.dist < rhs.dist;

@@ -126,7 +126,7 @@ am_libHmmUFOtu_common_a_OBJECTS = HmmUFOtuConst.$(OBJEXT) \
 	StringUtils.$(OBJEXT) IUPACNucl.$(OBJEXT) IUPACAmino.$(OBJEXT) \
 	DNA.$(OBJEXT) AlphabetFactory.$(OBJEXT) PrimarySeq.$(OBJEXT) \
 	DigitalSeq.$(OBJEXT) SeqIO.$(OBJEXT) SeqUtils.$(OBJEXT) \
-	MSA.$(OBJEXT)
+	MSA.$(OBJEXT) TSVRecord.$(OBJEXT) TSVScanner.$(OBJEXT)
 libHmmUFOtu_common_a_OBJECTS = $(am_libHmmUFOtu_common_a_OBJECTS)
 libHmmUFOtu_hmm_a_AR = $(AR) $(ARFLAGS)
 libHmmUFOtu_hmm_a_LIBADD =
@@ -488,7 +488,9 @@ PrimarySeq.cpp \
 DigitalSeq.cpp \
 SeqIO.cpp \
 SeqUtils.cpp \
-MSA.cpp
+MSA.cpp \
+TSVRecord.cpp \
+TSVScanner.cpp
 
 libHmmUFOtu_hmm_a_SOURCES = \
 BandedHMMP7Bg.cpp \
@@ -732,6 +734,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StringUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TN93.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TSVRecord.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TSVScanner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-HmmUFOtu_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-anneal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-hmmufotu.Po@am__quote@

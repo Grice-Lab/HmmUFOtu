@@ -25,6 +25,7 @@
  */
 
 #include <Eigen/Dense>
+#include <cassert>
 #include "HmmUFOtu_main.h"
 using namespace std;
 using namespace Eigen;
@@ -221,6 +222,29 @@ vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int 
 	} /* end each candidate placement */
 
 	return places;
+}
+
+double alignIdentity(const DegenAlphabet* abc, const string& align, int start, int end) {
+	assert(0 <= start && start <= end && end < align.size());
+	int identity = 0;
+	for(int i = start; i <= end; ++i)
+		if(abc->isSymbol(align[i]))
+			identity++;
+	return static_cast<double> (identity) / (end - start + 1);
+}
+
+double hmmIdentity(const BandedHMMP7& hmm, const string& align, int start, int end) {
+	assert(0 <= start && start <= end && end < align.size());
+	int identity = 0;
+	int nSite = 0;
+	for(int i = start; i <= end; ++i) {
+		if(hmm.getProfileLoc(i + 1) != 0) { /* a profile site */
+			nSite++;
+			if(hmm.getNuclAbc()->isSymbol(align[i]))
+				identity++;
+		}
+	}
+	return static_cast<double> (identity) / nSite;
 }
 
 } /* End namespace EGriceLab */

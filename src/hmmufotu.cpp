@@ -37,7 +37,7 @@ static const int DEFAULT_SEED_REGION = 50;
 static const double DEFAULT_MAX_PLACE_ERROR = 20;
 static const int DEFAULT_NUM_THREADS = 1;
 
-static const string PLACE_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\tbranch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
+static const string PLACE_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\talign_identity\thmm_identity\tbranch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
 
 /**
  * Print introduction of this program
@@ -391,6 +391,10 @@ int main(int argc, char* argv[]) {
 #pragma omp critical(writeAln)
 					alnOut.writeSeq(PrimarySeq(abc, id, aln, fwdRead.getDesc()));
 				}
+				/* get align and hmm identities */
+				double alignIden = alignIdentity(abc, aln, csStart - 1, csEnd - 1);
+				double hmmIden = hmmIdentity(hmm, aln, csStart - 1, csEnd - 1);
+
 				PTPlacement bestPlace;
 				if(!alignOnly) {
 					DigitalSeq seq(abc, id, aln);
@@ -432,7 +436,8 @@ int main(int argc, char* argv[]) {
 				} /* end if bestOnly */
 				/* write main output */
 #pragma omp critical(writePlace)
-				out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t" << aln << "\t"
+				out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t"
+						<< aln << "\t" << alignIden << "\t" << hmmIden << "\t"
 						<< bestPlace << endl;
 			} /* end task */
 		} /* end each read/pair */
