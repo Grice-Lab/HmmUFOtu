@@ -29,9 +29,11 @@
 
 namespace EGriceLab {
 
-CommandOptions::CommandOptions(int argc, char** argv) {
+CommandOptions::CommandOptions(int argc, char** argv) : prog(argv[0])
+{
 	/* parse options */
 	for(int i = 1; i < argc; ++i) {
+		optStr += i < argc - 1 ? argv[i] + string(" ") : argv[i];
 		if(*argv[i] == '-') { /* a tag name */
 			if(i < argc - 1 && *argv[i+1] != '-') {/* a tag value */
 				opts[argv[i]] = argv[i+1];

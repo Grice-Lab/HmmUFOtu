@@ -40,8 +40,11 @@ using std::vector;
 
 class CommandOptions {
 public:
+	/** constructors */
+	/* construct a CommandOptions from a C main args */
 	CommandOptions(int argc, char** argv);
 
+	/** member methods */
 	bool hasOpt(const string& name) const {
 		return opts.find(name) != opts.end();
 	}
@@ -62,7 +65,21 @@ public:
 		return mainOpts.at(i);
 	}
 
+	const string& getProg() const {
+		return prog;
+	}
+
+	const string& getOptStr() const {
+		return optStr;
+	}
+
+	string getCmdStr() const {
+		return prog + " " + optStr;
+	}
+
 private:
+	string prog; /* program called */
+	string optStr; /* all options as a string */
 	vector<string> mainOpts; /* mandatory options not following any -tag-name */
 	map<string, string> opts; /* optional named options in -tag-name [value] pairs */
 };
