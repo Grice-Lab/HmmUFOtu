@@ -350,100 +350,109 @@ int main(int argc, char* argv[]) {
 			string id;
 			string desc;
 			PrimarySeq fwdRead, revRead;
+			bool isPaired = true;
+			bool isOriented = true;
+
 			fwdRead = fwdIn.nextSeq();
 			id = fwdRead.getId();
 			desc = fwdRead.getDesc();
 			if(revIn.is_open()) { /* paired-ended */
 				revRead = revIn.nextSeq().revcom();
 				if(fwdRead.getId() != revRead.getId())
-					warningLog << "Warning: Paired-end read doesn't match at " << fwdRead.getId() << " vs. " << revRead.getId() << endl;
+					isPaired = false;
 			}
-
-#pragma omp task
+			if(!isPaired)
+				warningLog << "Warning: Paired-end read doesn't match at " << fwdRead.getId() << " vs. " << revRead.getId() << " , ignored" << endl;
+			else
 			{
-				int csStart = 0; /* 1-based consensus start */
-				int csEnd = 0;   /* 1-based consensus end */
-				string aln;
+#pragma omp task
+				{
+					int csStart = 0; /* 1-based consensus start */
+					int csEnd = 0;   /* 1-based consensus end */
+					string aln;
 
-				/* align fwdRead */
-				aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode, csStart, csEnd);
-				assert(aln.length() == csLen);
-				if(revIn.is_open()) { /* align revRead */
-					// cerr << "Aligning mate: " << fwdRead.getId() << endl;
-					int revStart = 0;
-					int revEnd = 0;
-					string revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode, revStart, revEnd);
-					assert(revAln.length() == csLen);
-					if(!(csStart <= revStart && csEnd <= revEnd))
+					/* align fwdRead */
+					aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode, csStart, csEnd);
+					assert(aln.length() == csLen);
+					if(revIn.is_open()) { /* align revRead */
+						// cerr << "Aligning mate: " << fwdRead.getId() << endl;
+						int revStart = 0;
+						int revEnd = 0;
+						string revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode, revStart, revEnd);
+						assert(revAln.length() == csLen);
+						if(!(csStart <= revStart && csEnd <= revEnd)) {
+							isOriented = false;
 #pragma omp critical(warning)
-						warningLog << "Warning: Potential incorrectly oriented read found at " << id << endl;
+							warningLog << "Warning: Potential incorrectly oriented read found at " << id << " , ignored" << endl;
+						}
 
-					/* update alignment */
-					csStart = ::min(csStart, revStart);
-					csEnd = ::max(csEnd, revEnd);
-					BandedHMMP7::mergeWith(aln, revAln);
-				}
-				assert(1 <= csStart && csStart <= csEnd && csEnd <= csLen);
+						/* update alignment */
+						csStart = ::min(csStart, revStart);
+						csEnd = ::max(csEnd, revEnd);
+						BandedHMMP7::mergeWith(aln, revAln);
+					}
+					assert(1 <= csStart && csStart <= csEnd && csEnd <= csLen);
 
-				if(alnOut.is_open()) { /* write the alignment seq to output */
-					string desc = fwdRead.getDesc();
-					desc += ";csStart=" + boost::lexical_cast<string>(csStart) + ";csEnd=" + boost::lexical_cast<string>(csEnd) + ";";
+					if(alnOut.is_open() && isOriented) { /* write the alignment seq to output */
+						string desc = fwdRead.getDesc();
+						desc += ";csStart=" + boost::lexical_cast<string>(csStart) + ";csEnd=" + boost::lexical_cast<string>(csEnd) + ";";
 #pragma omp critical(writeAln)
-					alnOut.writeSeq(PrimarySeq(abc, id, aln, fwdRead.getDesc()));
-				}
-				/* get align and hmm identities */
-				double alignIden = alignIdentity(abc, aln, csStart - 1, csEnd - 1);
-				double hmmIden = hmmIdentity(hmm, aln, csStart - 1, csEnd - 1);
+						alnOut.writeSeq(PrimarySeq(abc, id, aln, fwdRead.getDesc()));
+					}
+					/* get align and hmm identities */
+					double alignIden = alignIdentity(abc, aln, csStart - 1, csEnd - 1);
+					double hmmIden = hmmIdentity(hmm, aln, csStart - 1, csEnd - 1);
 
-				PTPlacement bestPlace;
-				if(!alignOnly) {
-					DigitalSeq seq(abc, id, aln);
-					/* place seq with seed-estimate-place (SEP) algorithm */
-					/* get potential locs */
-					vector<PTLoc> locs = getSeed(ptu, seq, csStart - 1, csEnd - 1, maxDist);
-					if(locs.empty()) {
+					PTPlacement bestPlace;
+					if(!alignOnly && isOriented) {
+						DigitalSeq seq(abc, id, aln);
+						/* place seq with seed-estimate-place (SEP) algorithm */
+						/* get potential locs */
+						vector<PTLoc> locs = getSeed(ptu, seq, csStart - 1, csEnd - 1, maxDist);
+						if(locs.empty()) {
 #pragma omp critical(warning)
-						warningLog << "Warning: No seed loci found at " << id << endl;
-					}
-					else {
-						std::sort(locs.begin(), locs.end()); /* sort by dist */
-						if(locs.size() > maxLocs)
-							locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
-						//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
+							warningLog << "Warning: No seed loci found at " << id << endl;
+						}
+						else {
+							std::sort(locs.begin(), locs.end()); /* sort by dist */
+							if(locs.size() > maxLocs)
+								locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
+							//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
 
-						/* estimate placement */
-						vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs);
-						std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by estimated loglik */
-						double bestEstLoglik = places.front().loglik;
-						vector<PTPlacement>::const_iterator it;
-						for(it = places.begin(); it != places.end(); ++it) {
-							if(::abs(it->loglik - bestEstLoglik) > maxError)
-								break;
-						}
-						places.erase(it, places.end()); /* remove too bad placements */
-						/* accurate placement */
-						placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
-						if(onlyML) { /* don't calculate q-values */
-							std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by real loglik */
-						}
-						else { /* calculate q-values */
-							PTPlacement::calcQValues(places, myPrior);
-							std::sort(places.rbegin(), places.rend(), EGriceLab::compareByQTaxon); /* sort places decently by QTaxon */
-						}
+							/* estimate placement */
+							vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs);
+							std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by estimated loglik */
+							double bestEstLoglik = places.front().loglik;
+							vector<PTPlacement>::const_iterator it;
+							for(it = places.begin(); it != places.end(); ++it) {
+								if(::abs(it->loglik - bestEstLoglik) > maxError)
+									break;
+							}
+							places.erase(it, places.end()); /* remove too bad placements */
+							/* accurate placement */
+							placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
+							if(onlyML) { /* don't calculate q-values */
+								std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by real loglik */
+							}
+							else { /* calculate q-values */
+								PTPlacement::calcQValues(places, myPrior);
+								std::sort(places.rbegin(), places.rend(), EGriceLab::compareByQTaxon); /* sort places decently by QTaxon */
+							}
 
-						bestPlace = places.front();
-					}
-				} /* end if bestOnly */
-				/* write main output */
+							bestPlace = places.front();
+						}
+					} /* end if bestOnly */
+					/* write main output */
+					if(isOriented)
 #pragma omp critical(writePlace)
-				out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t"
+						out << id << "\t" << desc << "\t" << csStart << "\t" << csEnd << "\t"
 						<< aln << "\t" << alignIden << "\t" << hmmIden << "\t"
 						<< bestPlace << endl;
-			} /* end task */
+				} /* end task */
+			} /* end else */
 		} /* end each read/pair */
 #pragma omp taskwait
 	} /* end single */
-return 0;
 }
 
 
