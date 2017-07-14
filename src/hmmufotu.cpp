@@ -36,7 +36,7 @@ static const int DEFAULT_SEED_REGION = 50;
 static const double DEFAULT_MAX_PLACE_ERROR = 20;
 static const int DEFAULT_NUM_THREADS = 1;
 
-static const string ASSIGNMENT_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\t" + PTPlacement::PLACEMENT_HEADER;
+static const string ASSIGNMENT_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\tbranch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
 
 /**
  * Print introduction of this program

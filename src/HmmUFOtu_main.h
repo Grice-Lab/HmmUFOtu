@@ -141,7 +141,6 @@ struct PTPlacement {
 	static const double UNASSIGNED_POSTQ;
 	static const double UNASSIGNED_DIST;
 	static const double UNASSIGNED_RATIO;
-	static const string PLACEMENT_HEADER;
 };
 
 /** Align seq with hmm and csfm, returns the alignment and update csStart and csEnd */
