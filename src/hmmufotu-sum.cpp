@@ -41,6 +41,7 @@
 #include <boost/algorithm/string.hpp> /* for boost string join */
 #include <boost/lexical_cast.hpp>
 #include "HmmUFOtu.h"
+#include "HmmUFOtu_main.h"
 
 using namespace std;
 using namespace EGriceLab;

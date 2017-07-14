@@ -106,8 +106,9 @@ libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_LDFLAGS = -static
 hmmufotu_LDFLAGS += $(OPENMP_CFLAGS)
 
-hmmufotu_sum_SOURCES = hmmufotu-sum.cpp
-hmmufotu_sum_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
+hmmufotu_sum_SOURCES = HmmUFOtu_main.cpp hmmufotu-sum.cpp
+hmmufotu_sum_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
+libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_sum_LDFLAGS = -static
 
 hmmufotu_anneal_SOURCES = hmmufotu-anneal.cpp
