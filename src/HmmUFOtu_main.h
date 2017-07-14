@@ -141,6 +141,7 @@ struct PTPlacement {
 	static const double UNASSIGNED_POSTQ;
 	static const double UNASSIGNED_DIST;
 	static const double UNASSIGNED_RATIO;
+	static const string PLACEMENT_HEADER;
 };
 
 /** Align seq with hmm and csfm, returns the alignment and update csStart and csEnd */
@@ -181,7 +182,8 @@ inline bool operator<(const PTLoc& lhs, const PTLoc& rhs) {
 inline ostream& operator<<(ostream& out, const PTPlacement& place) {
 	out << place.getId() << "\t" << place.ratio << "\t"
 			<< place.getTaxonId() << "\t" << place.getTaxonName() << "\t"
-			<< place.annoDist << "\t" << place.loglik << "\t" << place.qPlace << "\t" << place.qTaxon;
+			<< place.annoDist << "\t" << place.loglik << "\t"
+			<< place.qPlace << "\t" << place.qTaxon;
 	return out;
 }
 

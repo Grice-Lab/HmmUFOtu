@@ -82,7 +82,12 @@ bool OTUTable::removeOTU(const string& otuID) {
 }
 
 void OTUTable::normalize(double Z) {
-	assert(Z > 0);
+	assert(Z >= 0);
+	if(isEmpty() || (otuMetric.array() == 0).all()) /* empty or all zero metric */
+		return;
+	if(Z == 0)
+		Z = otuMetric.colwise().sum().maxCoeff(); /* use max column sum as constant */
+
 	const size_t N = otuMetric.cols();
 	RowVectorXd norm = otuMetric.colwise().sum() / Z;
 	for(MatrixXd::Index j = 0; j < N; ++j)

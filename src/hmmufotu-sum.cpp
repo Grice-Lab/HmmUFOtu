@@ -47,12 +47,14 @@ using namespace EGriceLab;
 using namespace Eigen;
 
 /* default values */
-static const size_t MAX_IGNORE = numeric_limits<streamsize>::max();
 static const string ALPHABET = "dna";
 static const string ALIGN_FORMAT = "fasta";
 static const double DEFAULT_EFFN = 2;
 static const int DEFAULT_MIN_NREAD = 1;
 static const int DEFAULT_MIN_NSAMPLE = 1;
+static const double DEFAULT_MIN_Q = 0;
+static const double DEFAULT_MIN_ALN_IDENTITY = 0;
+static const double DEFAULT_MIN_HMM_IDENTITY = 0;
 static const double DEFAULT_NORM = 0;
 typedef boost::unordered_map<PTUnrooted::PTUNodePtr, OTUObserved> OTUMap;
 
@@ -73,28 +75,36 @@ void printUsage(const string& progName) {
 		 << "            -l  FILE           : an optional sample list, with 1st field sample-name and 2nd field input filename" << endl
 		 << "            -c  FILE           : OTU Consensus Sequence (CS) alignment output" << endl
 		 << "            -t  FILE           : OTU tree output" << endl
+		 << "            -q  DBL            : minimum qTaxon score (negative log10 posterior error rate) required [" << DEFAULT_MIN_Q << "]" << endl
+		 << "            --aln-iden DBL     : minimum alignment identity required for assignment result [" << DEFAULT_MIN_ALN_IDENTITY << "]" << endl
+		 << "            --hmm-iden DBL     : minimum profile-HMM identity required for assignment result [" << DEFAULT_MIN_HMM_IDENTITY << "]" << endl
 		 << "            -e|--effN  DBL     : effective number of sequences (pseudo-count) for inferencing CS of OTUs with Dirichelet Density models, set 0 to disable [" << DEFAULT_EFFN << "]" << endl
 		 << "            -n  INT            : minimum number of observed reads required to define an OTU across all samples [" << DEFAULT_MIN_NREAD << "]" << endl
 		 << "            -s  INT            : minimum number of observed samples required to define an OTU" << DEFAULT_MIN_NSAMPLE << "]" << endl
-		 << "            -Z  DBL            : constant normalize the OTU Table so each sample will have K total numbers, set to 0 to use default value [" << DEFAULT_NORM << endl
+		 << "            -N|--norm  FLAG    : apply constant normalization after calculating the OTU Table" << endl
+		 << "            -Z  DBL            : normalization factor for -N, set to 0 to use the default value [" << DEFAULT_NORM << "]" << endl
 		 << "            -v  FLAG           : enable verbose information" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
 
 int main(int argc, char* argv[]) {
 	/* variable declarations */
-	string dbName, msaFn, ptuFn;
+	string dbName, msaFn, hmmFn, ptuFn;
 	vector<string> inFiles;
 	map<string, string> sampleFn2Name;
 	string listFn;
 	string otuFn, csFn, treeFn;
-	ifstream msaIn, ptuIn;
+	ifstream msaIn, hmmIn, ptuIn;
 	ofstream otuOut, treeOut;
 	SeqIO csOut;
 
 	double effN = DEFAULT_EFFN;
+	double minQ = DEFAULT_MIN_Q;
+	double minAlnIden = DEFAULT_MIN_ALN_IDENTITY;
+	double minHmmIden = DEFAULT_MIN_HMM_IDENTITY;
 	int minRead = DEFAULT_MIN_NREAD;
 	int minSample = DEFAULT_MIN_NSAMPLE;
+	bool doNorm = false;
 	double normZ = -1;
 
 	/* parse options */
@@ -136,11 +146,20 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("--effN"))
 		effN = ::atof(cmdOpts.getOptStr("--effN"));
 
+	if(cmdOpts.hasOpt("-q"))
+		minQ = ::atof(cmdOpts.getOptStr("-q"));
+	if(cmdOpts.hasOpt("--aln-iden"))
+		minAlnIden = ::atof(cmdOpts.getOptStr("--aln-iden"));
+	if(cmdOpts.hasOpt("--hmm-iden"))
+		minHmmIden = ::atof(cmdOpts.getOptStr("--hmm-iden"));
+
 	if(cmdOpts.hasOpt("-n"))
 		minRead = ::atoi(cmdOpts.getOptStr("-n"));
 	if(cmdOpts.hasOpt("-s"))
 		minSample = ::atoi(cmdOpts.getOptStr("-s"));
 
+	if(cmdOpts.hasOpt("-N") || cmdOpts.hasOpt("--norm"))
+		doNorm = true;
 	if(cmdOpts.hasOpt("-Z"))
 		normZ = ::atof(cmdOpts.getOptStr("-Z"));
 
@@ -160,13 +179,14 @@ int main(int argc, char* argv[]) {
 		cerr << "-s must be positive integer" << endl;
 		return EXIT_FAILURE;
 	}
-	if(normZ != -1 && normZ < 0) {
+	if(normZ < 0) {
 		cerr << "-Z must be non-negative" << endl;
 		return EXIT_FAILURE;
 	}
 
 	/* set filenames */
 	msaFn = dbName + MSA_FILE_SUFFIX;
+	hmmFn = dbName + HMM_FILE_SUFFIX;
 	ptuFn = dbName + PHYLOTREE_FILE_SUFFIX;
 
 	/* open inputs */
@@ -196,6 +216,12 @@ int main(int argc, char* argv[]) {
 	msaIn.open(msaFn.c_str(), ios_base::in | ios_base::binary);
 	if(!msaIn) {
 		cerr << "Unable to open MSA data '" << msaFn << "': " << ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
+
+	hmmIn.open(hmmFn.c_str());
+	if(!hmmIn) {
+		cerr << "Unable to open HMM profile '" << hmmFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 
@@ -238,6 +264,18 @@ int main(int argc, char* argv[]) {
 	int csLen = msa.getCSLen();
 	infoLog << "MSA loaded" << endl;
 
+	BandedHMMP7 hmm;
+	hmmIn >> hmm;
+	if(hmmIn.bad()) {
+		cerr << "Unable to read HMM profile '" << hmmFn << "': " << ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
+	infoLog << "HMM profile read" << endl;
+	if(hmm.getProfileSize() > csLen) {
+		cerr << "Error: HMM profile size is found greater than the MSA CS length" << endl;
+		return EXIT_FAILURE;
+	}
+
 	PTUnrooted ptu;
 	ptu.load(ptuIn);
 	if(ptuIn.bad()) {
@@ -268,22 +306,27 @@ int main(int argc, char* argv[]) {
 		sampleNames.push_back(sample);
 		while(tsvIn.hasNext()) {
 			const TSVRecord& record = tsvIn.nextRecord();
+			int csStart = boost::lexical_cast<int> (record.getFieldByName("csStart"));
+			int csEnd = boost::lexical_cast<int> (record.getFieldByName("csEnd"));
 			const string& aln = record.getFieldByName("alignment");
 			const long taxon_id = boost::lexical_cast<long> (record.getFieldByName("taxon_id"));
-			if(taxon_id < 0)
-				continue; /* invalid placement */
+			double qTaxon = boost::lexical_cast<double> (record.getFieldByName("qTaxon"));
 
-			const PTUnrooted::PTUNodePtr& node = ptu.getNode(taxon_id);
-			if(otuData.count(node) == 0) /* not initiated */
-				otuData.insert(std::make_pair(node, OTUObserved(boost::lexical_cast<string>(node->getId()), node->getTaxon(), L, S)));
-			OTUObserved& otu = otuData.find(node)->second;
-			otu.count(s)++;
-			for(int j = 0; j < L; ++j) {
-				int8_t b = abc->encode(::toupper(aln[j]));
-				if(b >= 0)
-					otu.freq(b, j)++;
-				else
-					otu.gap(j)++;
+			if(taxon_id >= 0 && qTaxon >= minQ
+					&& EGriceLab::alignIdentity(abc, aln, csStart - 1, csEnd -1)
+					&& EGriceLab::hmmIdentity(hmm, aln, csStart - 1, csEnd - 1)) { /* a valid assignment */
+				const PTUnrooted::PTUNodePtr& node = ptu.getNode(taxon_id);
+				if(otuData.count(node) == 0) /* not initiated */
+					otuData.insert(std::make_pair(node, OTUObserved(boost::lexical_cast<string>(node->getId()), node->getTaxon(), L, S)));
+				OTUObserved& otu = otuData.find(node)->second;
+				otu.count(s)++;
+				for(int j = 0; j < L; ++j) {
+					int8_t b = abc->encode(::toupper(aln[j]));
+					if(b >= 0)
+						otu.freq(b, j)++;
+					else
+						otu.gap(j)++;
+				}
 			}
 		}
 	}
@@ -302,12 +345,9 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* OTUTable process */
-	if(normZ >= 0) {
-		infoLog << "Normalazing OTU Table" << endl;
-		if(normZ == 0)
-			otuTable.normalize();
-		else
-			otuTable.normalize(normZ);
+	if(doNorm) {
+		infoLog << "Normalizing OTU Table" << endl;
+		otuTable.normalize(normZ);
 	}
 
 	/* write the OTU table */

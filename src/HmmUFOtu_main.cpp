@@ -38,6 +38,7 @@ const string PTPlacement::UNASSIGNED_ID = "NULL";
 const double PTPlacement::UNASSIGNED_POSTQ = EGriceLab::nan;
 const double PTPlacement::UNASSIGNED_DIST = EGriceLab::nan;
 const double PTPlacement::UNASSIGNED_RATIO = EGriceLab::nan;
+const string PTPlacement::PLACEMENT_HEADER = "branch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
 
 void PTPlacement::calcQValues(vector<PTPlacement>& places, PRIOR_TYPE type) {
 	if(places.empty())

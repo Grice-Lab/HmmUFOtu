@@ -225,13 +225,7 @@ public:
 	 * @param Z  normalization constant
 	 * @return  the modifled OTUTable
 	 */
-	void normalize(double Z);
-
-	/** normalize the OTU table using default constant */
-	void normalize() {
-		if(!isEmpty() && (otuMetric.array() > 0).any())
-			normalize(otuMetric.colwise().sum().maxCoeff());
-	}
+	void normalize(double Z = 0);
 
 	/**
 	 * subset this OTU table to a minimum read count using given method
