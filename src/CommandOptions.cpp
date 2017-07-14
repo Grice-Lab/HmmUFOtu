@@ -33,18 +33,21 @@ CommandOptions::CommandOptions(int argc, char** argv) : prog(argv[0])
 {
 	/* parse options */
 	for(int i = 1; i < argc; ++i) {
-		optStr += i < argc - 1 ? argv[i] + string(" ") : argv[i];
 		if(*argv[i] == '-') { /* a tag name */
 			if(i < argc - 1 && *argv[i+1] != '-') {/* a tag value */
 				opts[argv[i]] = argv[i+1];
 				i++;
 			}
-			else /* a flag tag */
+			else { /* a flag tag */
 				opts[argv[i]].push_back('\0'); /* append null values */
+			}
 		}
 		else /* a main opt */
 			mainOpts.push_back(argv[i]);
 	}
+	/* concatenate optStr */
+	for(int i = 1; i < argc; ++i)
+		optStr += i < argc - 1 ? argv[i] + string(" "): argv[i];
 }
 
 } /* namespace EGriceLab */

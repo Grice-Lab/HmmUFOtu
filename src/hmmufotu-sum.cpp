@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
 	int minRead = DEFAULT_MIN_NREAD;
 	int minSample = DEFAULT_MIN_NSAMPLE;
 	bool doNorm = false;
-	double normZ = -1;
+	double normZ = DEFAULT_NORM;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -307,11 +307,11 @@ int main(int argc, char* argv[]) {
 		sampleNames.push_back(sample);
 		while(tsvIn.hasNext()) {
 			const TSVRecord& record = tsvIn.nextRecord();
-			int csStart = boost::lexical_cast<int> (record.getFieldByName("csStart"));
-			int csEnd = boost::lexical_cast<int> (record.getFieldByName("csEnd"));
+			int csStart = boost::lexical_cast<int> (record.getFieldByName("CS_start"));
+			int csEnd = boost::lexical_cast<int> (record.getFieldByName("CS_end"));
 			const string& aln = record.getFieldByName("alignment");
 			const long taxon_id = boost::lexical_cast<long> (record.getFieldByName("taxon_id"));
-			double qTaxon = boost::lexical_cast<double> (record.getFieldByName("qTaxon"));
+			double qTaxon = boost::lexical_cast<double> (record.getFieldByName("Q_taxon"));
 
 			if(taxon_id >= 0 && qTaxon >= minQ
 					&& EGriceLab::alignIdentity(abc, aln, csStart - 1, csEnd -1)
