@@ -96,7 +96,7 @@ hmmufotu_inspect_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_commo
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_inspect_LDFLAGS = -static
 
-hmmufotu_SOURCES = HmmUFOtu_main.cpp hmmufotu.cpp
+hmmufotu_SOURCES = hmmufotu.cpp HmmUFOtu_main.cpp
 hmmufotu_CPPFLAGS = $(AM_CFLAGS)
 hmmufotu_CPPFLAGS += $(OPENMP_CFLAGS)
 hmmufotu_CFLAGS = $(AM_CFLAGS)
@@ -106,7 +106,7 @@ libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_LDFLAGS = -static
 hmmufotu_LDFLAGS += $(OPENMP_CFLAGS)
 
-hmmufotu_sum_SOURCES = HmmUFOtu_main.cpp hmmufotu-sum.cpp
+hmmufotu_sum_SOURCES = hmmufotu-sum.cpp HmmUFOtu_main.cpp
 hmmufotu_sum_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_sum_LDFLAGS = -static
