@@ -307,11 +307,11 @@ int main(int argc, char* argv[]) {
 		sampleNames.push_back(sample);
 		while(tsvIn.hasNext()) {
 			const TSVRecord& record = tsvIn.nextRecord();
-			int csStart = boost::lexical_cast<int> (record.getFieldByName("CS_start"));
-			int csEnd = boost::lexical_cast<int> (record.getFieldByName("CS_end"));
+			int csStart = ::atoi(record.getFieldByName("CS_start").c_str());
+			int csEnd = ::atoi(record.getFieldByName("CS_end").c_str());
 			const string& aln = record.getFieldByName("alignment");
-			const long taxon_id = boost::lexical_cast<long> (record.getFieldByName("taxon_id"));
-			double qTaxon = boost::lexical_cast<double> (record.getFieldByName("Q_taxon"));
+			const long taxon_id = ::atol(record.getFieldByName("taxon_id").c_str());
+			double qTaxon = ::atof(record.getFieldByName("Q_taxon").c_str());
 
 			if(taxon_id >= 0 && qTaxon >= minQ
 					&& EGriceLab::alignIdentity(abc, aln, csStart - 1, csEnd -1)
@@ -360,7 +360,7 @@ int main(int argc, char* argv[]) {
 		infoLog << "Writing OTU Consensus Sequences" << endl;
 		const vector<string>& otuIDs = otuTable.getOTUs();
 		for(size_t i = 0; i < otuTable.numOTUs(); ++i) {
-			PTUnrooted::PTUNodePtr node = ptu.getNode(boost::lexical_cast<long> (otuTable.getOTU(i)));
+			PTUnrooted::PTUNodePtr node = ptu.getNode(::atol(otuTable.getOTU(i).c_str()));
 			OTUObserved& data = otuData.find(node)->second;
 			int nRead = data.count.sum();
 			int nSample = (data.count.array() > 0).count();
