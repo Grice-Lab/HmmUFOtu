@@ -68,7 +68,7 @@ void printUsage(const string& progName) {
 		 << "            --no-hmm FLAG        : do not build the Hmm profile. Users should build the Hmm profile by 3rd party programs, i.e. HMMER3" << endl
 		 << "            -V|--var FLAG        : enable among-site rate varation evaluation of the tree, using a Discrete Gamma Distribution based model" << endl
 		 << "            -k INT               : number of Discrete Gamma Distribution categories to evaluate the tree, ignored if -V not set [" << DEFAULT_DG_CATEGORY << "]" << endl
-		 << "            -v  FLAG             : enable verbose information" << endl
+		 << "            -v  FLAG             : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help            : print this message and exit" << endl;
 }
 

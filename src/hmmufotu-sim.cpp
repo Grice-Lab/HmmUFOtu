@@ -90,7 +90,7 @@ void printUsage(const string& progName) {
 		 << "            -r|--read-len  INT  : read length for generating single/paired-end reads, set to -1 to use the actual amplicon size [" << DEFAULT_READ_LEN << "]" << endl
 		 << "            -R|--region  STRING : BED file for restricted consensus region where simulated reads should be drawn; setting this will ignore -m,-s,-l,-u togather" << endl
 		 << "            -S|--seed  INT      : random seed used for simulation, for debug purpose" << endl
-		 << "            -v  FLAG            : enable verbose information" << endl
+		 << "            -v  FLAG            : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help           : print this message and exit" << endl;
 }
 

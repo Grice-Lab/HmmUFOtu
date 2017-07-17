@@ -81,10 +81,10 @@ void printUsage(const string& progName) {
 		 << "            --hmm-iden DBL     : minimum profile-HMM identity required for assignment result [" << DEFAULT_MIN_HMM_IDENTITY << "]" << endl
 		 << "            -e|--effN  DBL     : effective number of sequences (pseudo-count) for inferencing CS of OTUs with Dirichelet Density models, set 0 to disable [" << DEFAULT_EFFN << "]" << endl
 		 << "            -n  INT            : minimum number of observed reads required to define an OTU across all samples [" << DEFAULT_MIN_NREAD << "]" << endl
-		 << "            -s  INT            : minimum number of observed samples required to define an OTU" << DEFAULT_MIN_NSAMPLE << "]" << endl
+		 << "            -s  INT            : minimum number of observed samples required to define an OTU [" << DEFAULT_MIN_NSAMPLE << "]" << endl
 		 << "            -N|--norm  FLAG    : apply constant normalization after calculating the OTU Table" << endl
 		 << "            -Z  DBL            : normalization factor for -N, set to 0 to use the default value [" << DEFAULT_NORM << "]" << endl
-		 << "            -v  FLAG           : enable verbose information" << endl
+		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
 

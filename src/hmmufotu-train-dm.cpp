@@ -62,7 +62,7 @@ void printUsage(const string& progName) {
 		 << "            --pri-rate DBL : adjust the sequence weights so the prior information is roughly this ratio in training [" << DEFAULT_PRI_RATE << "]" << endl
 		 << "            -s|--seed INT  : random seed used in Dirichlet Mixture model training (-qM > 1) for debug purpose" << endl
 		 << "            -n  INT        : number of different random seeds in Dirichlet Mixture model training [" << DEFAULT_NSEED << "]" << endl
-		 << "            -v  FLAG       : enable verbose information" << endl
+		 << "            -v  FLAG       : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help      : print this help and exit" << endl;
 }
 

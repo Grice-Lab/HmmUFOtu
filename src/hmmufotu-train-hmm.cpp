@@ -62,7 +62,7 @@ void printUsage(const string& progName) {
 		 << "Options:    -o FILE              : write output to FILE instead of stdout" << endl
 		 << "            -f|--symfrac DOUBLE  : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
 		 << "            -dm FILE             : use customized trained Dirichlet Model in FILE instead of the build-in file " << endl
-		 << "            -v  FLAG             : enable verbose information" << endl
+		 << "            -v  FLAG             : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help            : print this message and exit" << endl;
 }
 

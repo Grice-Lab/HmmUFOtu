@@ -44,7 +44,7 @@ void printUsage(const string& progName) {
 		 << "            -a|--anno  FILE     : write the tree node taxonomy annoation of this database to FILE" << endl
 		 << "            -s|--seq  FILE      : write the multiple-sequence alignment of this database to FILE in fasta format" << endl
 		 << "            -n|--node  FLAG     : write sequence alignment of all nodes instead of just leaves, ignored if -s is not set" << endl
-		 << "            -v  FLAG            : enable verbose information" << endl
+		 << "            -v  FLAG            : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help           : print this message and exit" << endl;
 }
 

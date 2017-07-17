@@ -51,7 +51,7 @@ void printUsage(const string& progName) {
 		 << "Options:    -o FILE              : write output to FILE instead of stdout" << endl
 		 << "            -s|--sub-model STR   : build a time-reversible DNA Substitution Model type, must be one of GTR, TN93, HKY85, F81, K80 or JC69 [" << DEFAULT_SM_TYPE << "]" << endl
 		 << "            -m|--method  STR     : model training method using known phylogenetic tree data, either 'Gojobori' or 'Goldman' [" << DEFAULT_TRAINING_METHOD << "]" << endl
-		 << "            -v  FLAG             : enable verbose information" << endl
+		 << "            -v  FLAG             : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help            : print this message and exit" << endl;
 }
 
