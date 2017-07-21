@@ -836,7 +836,7 @@ inline BandedHMMP7::p7_state BandedHMMP7::encode(char c) {
 	case 'P':
 		return P;
 	default:
-		throw std::invalid_argument("Invalid state encountered");;
+		throw std::invalid_argument("Invalid state encountered");
 	}
 }
 

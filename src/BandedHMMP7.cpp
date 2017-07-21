@@ -744,7 +744,7 @@ void BandedHMMP7::calcViterbiScores(const PrimarySeq& seq, ViterbiScores& vs) co
 						static_cast<double> (vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
 		}
 	}
-	vs.S.leftCols(K + 1) = vs.DP_M;; // 0..K columns copied from the calculated DP_M
+	vs.S.leftCols(K + 1) = vs.DP_M; // 0..K columns copied from the calculated DP_M
 	vs.S.col(K + 1) = vs.DP_I.col(K);
 	// add M-E exit costs
 	vs.S.leftCols(K + 1).rowwise() += exitPr_cost.transpose();
