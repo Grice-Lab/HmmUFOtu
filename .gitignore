@@ -19,3 +19,4 @@ config.status
 **/configure.scan
 # Ignore test temporaries
 **/*.trs
+**/*.swp
