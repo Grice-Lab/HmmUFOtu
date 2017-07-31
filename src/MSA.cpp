@@ -135,11 +135,10 @@ MSA& MSA::prune() {
 	return *this;
 }
 
-long MSA::loadFastaFile(const string& alphabet, const string& filename) {
-	setName(StringUtils::basename(filename));
-	SeqIO seqIn(filename, alphabet, "fasta");
-	while(seqIn.hasNext()) {
-		const PrimarySeq& seq = seqIn.nextSeq();
+long MSA::loadMSAFasta(const DegenAlphabet* abc, istream& in) {
+	SeqIO seqI(&in, abc, "fasta");
+	while(seqI.hasNext()) {
+		const PrimarySeq& seq = seqI.nextSeq();
 		//cerr << seq.getId() << " " << seq.getSeq() << endl;
 		/* check new seq */
 		if(csLen != 0 && seq.length() != csLen) {

@@ -19,7 +19,7 @@
  *******************************************************************************/
 /*
  * SeqIO.h
- *
+ *  A class for popular sequence file IO
  *  Created on: Jul 23, 2015
  *      Author: zhengqi
  */
@@ -28,11 +28,15 @@
 #define SEQIO_H_
 
 #include <fstream>
+#include <boost/iostreams/filtering_streambuf.hpp>
 #include "PrimarySeq.h"
 
 namespace EGriceLab {
 
 using std::string;
+using std::istream;
+using std::ostream;
+using std::streambuf;
 using std::ifstream;
 using std::ofstream;
 /**
@@ -40,34 +44,28 @@ using std::ofstream;
  */
 class SeqIO {
 public:
-	/* nested class and enums */
-	enum Mode { READ, WRITE };
-
 	/* constructors */
-	/** default constructor */
-	SeqIO() : abc(NULL) {  }
+	/** default constructor, do nothing */
+	SeqIO() : abc(NULL), in(NULL), out(NULL) {  }
 
 	/**
-	 * Construct a SeqIO object with given info
+	 * Construct a SeqIO object in READ mode with given info
 	 */
-	SeqIO(const string& filename, const string& alphabet, const string& format, Mode mode = READ, int maxLine = DEFAULT_MAX_LINE);
+	SeqIO(istream* in, const DegenAlphabet* abc, const string& format, int maxLine = DEFAULT_MAX_LINE);
 
 	/**
-	 * Construct a SeqIO object with given info
+	 * Construct a SeqIO object in WRITE mode with given info
 	 */
-	SeqIO(const string& filename, const DegenAlphabet* abc, const string& format, Mode mode = READ, int maxLine = DEFAULT_MAX_LINE);
+	SeqIO(ostream* out, const DegenAlphabet* abc, const string& format, int maxLine = DEFAULT_MAX_LINE);
+
+	/** destructor, do nothing */
+	virtual ~SeqIO() {  }
+
+public:
 
 	/* Getters and Setters */
-	const string& getFilename() const {
-		return filename;
-	}
-
 	const string& getFormat() const {
 		return format;
-	}
-
-	const Mode getMode() const {
-		return mode;
 	}
 
 	int getMaxLine() const {
@@ -79,28 +77,11 @@ public:
 	}
 
 	/* member methods */
-	/** open a new SeqIO, close old one if necessary */
-	void open(const string& filename, const DegenAlphabet* abc, const string& format, Mode mode = READ, int maxLine = DEFAULT_MAX_LINE);
+	/** set the input to a given a new istream, will not close the old one */
+	void reset(istream* in, const DegenAlphabet* abc, const string& format, int maxLine = DEFAULT_MAX_LINE);
 
-	/** open a new SeqIO, close old one if necessary */
-	void open(const string& filename, const string& alphabet, const string& format, Mode mode = READ, int maxLine = DEFAULT_MAX_LINE) {
-		open(filename, AlphabetFactory::getAlphabetByName(alphabet), format, mode, maxLine);
-	}
-
-	/**
-	 * close underlying iostreams explicitly
-	 */
-	void close() {
-		if(in.is_open())
-			in.close();
-		if(out.is_open())
-			out.close();
-	}
-
-	/** test whether this SeqIO is open */
-	bool is_open() const {
-		return mode == READ ? in.is_open() : out.is_open();
-	}
+	/** set the out to a given a new ostream, will not close the old one */
+	void reset(ostream* out, const DegenAlphabet* abc, const string& format, int maxLine = DEFAULT_MAX_LINE);
 
 	/**
 	 * test whether this file has next PrimarySeq
@@ -170,14 +151,14 @@ private:
 	void writeFastqSeq(const PrimarySeq& seq);
 
 private:
-	string filename;
+	/** member fields */
 	string format;
 	const DegenAlphabet* abc;
-	Mode mode;
 	int maxLine;
 
-	ifstream in;
-	ofstream out;
+	istream* in; /* input */
+	ostream* out; /* output */
+
 	/* static members */
 	static const char fastaHead = '>';
 	static const char fastqHead = '@';
@@ -194,8 +175,6 @@ inline bool SeqIO::hasNext() {
 }
 
 inline PrimarySeq SeqIO::nextSeq() {
-	if(!in.is_open())
-		throw std::ios_base::failure("Unable to read from an unopened file");
 	if(format == "fasta")
 		return nextFastaSeq();
 	else if(format == "fastq")
@@ -205,8 +184,6 @@ inline PrimarySeq SeqIO::nextSeq() {
 }
 
 inline void SeqIO::writeSeq(const PrimarySeq& seq) {
-	if(!out.is_open())
-		throw std::ios_base::failure("Unable to write to an unopened file");
 	if(format == "fasta")
 		writeFastaSeq(seq);
 	else if(format == "fastq")

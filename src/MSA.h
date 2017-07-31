@@ -37,6 +37,7 @@
 #include "StringUtils.h"
 #include "PrimarySeq.h"
 #include "DigitalSeq.h"
+#include "ProgLog.h"
 
 namespace EGriceLab {
 using std::string;
@@ -359,10 +360,23 @@ public:
 
 	/**
 	 * Load an MSA binary file
-	 * @param f  the binary input
+	 * @param abc  alphabet of input
+	 * @param in  input stream
+	 * @param format  input format
 	 * @return  number of MSA sequences successfully read in
 	 */
-	long loadMSAFile(const string& alphabet, const string& filename, const string& format);
+	long loadMSA(const DegenAlphabet* abc, istream& in, const string& format);
+
+	/**
+	 * Load an MSA binary file
+	 * @param alphabet  alphabet name of input
+	 * @param in  input stream
+	 * @param format  input format
+	 * @return  number of MSA sequences successfully read in
+	 */
+	long loadMSA(const string& alphabet, istream& in, const string& format) {
+		return loadMSA(AlphabetFactory::getAlphabetByName(alphabet), in, format);
+	}
 
 	/**
 	 * Load an MSA file in fasta format
@@ -370,7 +384,7 @@ public:
 	 * @return  a newly constructed MSA pointer
 	 * @throws invalid_argument if alphabet or format is not known
 	 */
-	long loadFastaFile(const string& alphabet, const string& filename);
+	long loadMSAFasta(const DegenAlphabet* abc, istream& in);
 
 	/* constructors */
 	/**
@@ -502,12 +516,12 @@ inline void MSA::sclaleWeight(double r) {
 	updateWeightedCounts();
 }
 
-inline long MSA::loadMSAFile(const string& alphabet,
-		const string& filename, const string& format) {
+inline long MSA::loadMSA(const DegenAlphabet* abc,
+		istream& in, const string& format) {
 	if(format == "fasta")
-		return loadFastaFile(alphabet, filename);
+		return loadMSAFasta(abc, in);
 	else {
-		std::cerr << "Unsupported MSA file format '" + format + "'";
+		errorLog << "Unsupported MSA file format '" + format + "'";
 		return -1;
 	}
 }
