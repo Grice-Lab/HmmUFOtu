@@ -113,6 +113,15 @@ int main(int argc, char* argv[]) {
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* open input files */
+	if(fmt != "msa")
+		msaIn.open(msaFn.c_str());
+	else
+		msaIn.open(msaFn.c_str(), ios_base::binary);
+	if(!msaIn.is_open()) {
+		cerr << "Unable to open '" << msaFn << "': " << ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
+
 	treeIn.open(treeFn.c_str());
 	if(!treeIn.is_open()) {
 		cerr << "Unable to open '" << treeFn << "': " << ::strerror(errno) << endl;
@@ -132,14 +141,9 @@ int main(int argc, char* argv[]) {
 	/* Load data */
 	MSA msa;
 	if(fmt == "msa") { /* binary file provided */
-		ifstream in(msaFn.c_str());
-		msa.load(in);
-		if(!in.good()) {
-			cerr << "Unable to load MSA database from '" << msaFn << "'" << endl;
-			return EXIT_FAILURE;
-		}
+		msa.load(msaIn);
 	}
-	else if(msa.loadMSAFile(ALPHABET, msaFn, fmt) >= 0)
+	else if(msa.loadMSA(ALPHABET, msaIn, fmt) >= 0)
 		infoLog << "MSA loaded" << endl;
 	else {
 		cerr << "Unable to load MSA seq from '" << msaFn << "'" << endl;

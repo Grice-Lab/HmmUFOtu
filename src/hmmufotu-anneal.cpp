@@ -70,7 +70,8 @@ int main(int argc, char* argv[]) {
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
 	const string seqFmt = "fasta";
 	ofstream of;
-	SeqIO seqIn;
+	ifstream seqIn;
+	SeqIO seqI;
 	const BandedHMMP7::align_mode mode = BandedHMMP7::GLOBAL;
 
 	double maxDist = 1 - DEFAULT_MIN_IDENTITY;
@@ -148,11 +149,12 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	seqIn.open(seqFn, AlphabetFactory::nuclAbc, seqFmt);
+	seqIn.open(seqFn.c_str());
 	if(!seqIn.is_open()) {
 		cerr << "Unable to open seq file '" << seqFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
+	seqI.reset(&seqIn, AlphabetFactory::nuclAbc, seqFmt);
 
 	/* open outputs */
 	if(!outFn.empty()) {
@@ -220,8 +222,8 @@ int main(int argc, char* argv[]) {
 	out << ANNEAL_HEADER << endl;
 	const int K = hmm.getProfileSize();
 
-	while(seqIn.hasNext()) {
-		PrimarySeq fwdRead = seqIn.nextSeq();
+	while(seqI.hasNext()) {
+		PrimarySeq fwdRead = seqI.nextSeq();
 		PrimarySeq revRead = fwdRead.revcom();
 		string strand;
 		double minCost = inf;

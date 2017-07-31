@@ -53,8 +53,8 @@ int main(int argc, char* argv[]) {
 	string dbName, msaFn, csfmFn, hmmFn, ptuFn;
 	string treeFn, annoFn, seqFn;
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
-	ofstream treeOut, annoOut;
-	EGriceLab::SeqIO seqOut;
+	ofstream treeOut, annoOut, seqOut;
+	SeqIO seqO;
 	bool showSm = false;
 	bool showDg = false;
 	bool leafOnly = true;
@@ -148,11 +148,12 @@ int main(int argc, char* argv[]) {
 	}
 
 	if(!seqFn.empty()) {
-		seqOut.open(seqFn, "dna", "fasta", EGriceLab::SeqIO::WRITE, 0);
+		seqOut.open(seqFn.c_str());
 		if(!seqOut.is_open()) {
 			cerr << "Unable to write to tree file '" << seqFn << "': " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
+		seqO.reset(&seqOut, AlphabetFactory::nuclAbc, "fasta");
 	}
 
 	/* start inspecting */
@@ -202,6 +203,8 @@ int main(int argc, char* argv[]) {
 		cerr << "Unable to load Phylogenetic tree data '" << ptuFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
+	const DegenAlphabet* abc = msa.getAbc();
+
 	cout << "Phylogenetic tree loaded. Root ID: " << ptu.getRoot()->getId()
 		 << " Number of leaves: " << ptu.numLeaves()
 		 << " Number of nodes: " << ptu.numNodes()
@@ -230,11 +233,10 @@ int main(int argc, char* argv[]) {
 
 	if(seqOut.is_open()) {
 		infoLog << "Writing sequence alignment ..." << endl;
-		const DegenAlphabet* abc = msa.getAbc();
 		for(size_t i = 0; i < ptu.numNodes(); ++i) {
 			const EGriceLab::PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
 			if(!leafOnly || node->isLeaf()) {
-				seqOut.writeSeq(PrimarySeq(abc, boost::lexical_cast<string>(node->getId()),
+				seqO.writeSeq(PrimarySeq(abc, boost::lexical_cast<string>(node->getId()),
 						node->getSeq().toString(), node->getTaxon()));
 			}
 		}

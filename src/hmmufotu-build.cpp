@@ -169,6 +169,11 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* open inputs */
+	seqIn.open(seqFn.c_str());
+	if(!seqIn.is_open()) {
+		cerr << "Unable to open '" << seqFn << "': " << ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
 	dmIn.open(dmFn.c_str());
 	if(!dmIn.is_open()) {
 		cerr << "Unable to open '" << dmFn << "': " << ::strerror(errno) << endl;
@@ -226,7 +231,7 @@ int main(int argc, char* argv[]) {
 
 	/* build msa */
 	MSA msa;
-	if(msa.loadMSAFile(ALPHABET, seqFn, fmt) >= 0)
+	if(msa.loadMSA(ALPHABET, seqIn, fmt) >= 0)
 		infoLog << "MSA loaded" << endl;
 	else {
 		cerr << "Unable to load MSA from '" << seqFn << "'" << endl;

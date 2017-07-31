@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
 	double priRate = DEFAULT_PRI_RATE;
 	int maxIter = MAX_ITER;
 	string inFn;
-	string outfn;
+	string outFn;
 	string fmt;
 	unsigned seed = time(NULL); // using time as default seed
 	int nSeed = DEFAULT_NSEED;
@@ -92,22 +92,10 @@ int main(int argc, char* argv[]) {
 	}
 
 	inFn = cmdOpts.getMainOpt(0);
-	in.open(inFn.c_str());
-	if(!in.is_open()) {
-		cerr << "Unable to open '" << cmdOpts.getMainOpt(0) << "'" << endl;
-		return EXIT_FAILURE;
-	}
 
-	if(cmdOpts.hasOpt("-o")) {
-		outfn = cmdOpts.getOpt("-o");
-		of.open(outfn.c_str());
-		if(!of.is_open()) {
-			cerr << "Unable to write to '" << outfn << "': " << ::strerror(errno) << endl;
-			return EXIT_FAILURE;
-		}
-	}
+	if(cmdOpts.hasOpt("-o"))
+		outFn = cmdOpts.getOpt("-o");
 
-	ostream& out = of.is_open() ? of : cout;
 
 	if(cmdOpts.hasOpt("-qM"))
 		qM = ::atoi(cmdOpts.getOpt("-qM").c_str());
@@ -162,23 +150,39 @@ int main(int argc, char* argv[]) {
 	/* set random seed */
 	srand(seed);
 
-	/* Load data */
-	MSA msa;
-	if(fmt == "msa") { /* binary file provided */
-		ifstream in(inFn.c_str());
-		msa.load(in);
-		if(!in.good()) {
-			cerr << "Unable to load MSA database from '" << inFn << "'" << endl;
+	/* open input */
+	if(fmt != "msa")
+		in.open(inFn.c_str());
+	else
+		in.open(inFn.c_str(), ios_base::binary);
+	if(!in.is_open()) {
+		cerr << "Unable to open '" << inFn << "': " << ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
+
+	/* open output */
+	if(!outFn.empty()) {
+		of.open(outFn.c_str());
+		if(!of.is_open()) {
+			cerr << "Unable to write to '" << outFn << "': " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
 	}
-	else if(msa.loadMSAFile(ALPHABET, inFn, fmt) >= 0)
+	ostream& out = of.is_open() ? of : cout;
+
+	/* Load data */
+	MSA msa;
+	long nLoad;
+	if(fmt == "msa") /* binary file provided */
+		msa.load(in);
+	else
+		nLoad = msa.loadMSA(ALPHABET, in, fmt);
+	if(!in.bad() && nLoad >= 0) /* load sequence format */
 		infoLog << "MSA loaded" << endl;
 	else {
 		cerr << "Unable to load MSA seq from '" << inFn << "'" << endl;
 		return EXIT_FAILURE;
 	}
-
 	if(!msa.pruned()) {
 		msa.prune(); /* prune MSA if necessary*/
 		infoLog << "MSA pruned" << endl;

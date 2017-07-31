@@ -9,12 +9,12 @@
 # Ignore Autotools genereated Makefiles
 **/Makefile
 **/autom4te.cache/**
-autom4te.cache/**
 config.log
 config.status
 **/.deps/**
 **/.libs/**
 **/*.lo
+**/*.la
 **/*~
 **/configure.scan
 # Ignore test temporaries

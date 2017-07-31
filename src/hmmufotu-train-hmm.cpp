@@ -67,13 +67,13 @@ void printUsage(const string& progName) {
 }
 
 int main(int argc, char *argv[]) {
-	ifstream in, dmin;
+	ifstream in, dmIn;
 	ofstream of;
 	double symfrac = DEFAULT_SYMFRAC;
-	string infn;
-	string outfn;
+	string inFn;
+	string outFn;
 	string fmt;
-	string dmfn;
+	string dmFn;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -87,21 +87,11 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	infn = cmdOpts.getMainOpt(0);
-	in.open(infn.c_str());
-	if(!in.is_open()) {
-		cerr << "Unable to open " << infn << " : " << ::strerror(errno)<< endl;
-		return EXIT_FAILURE;
-	}
+	inFn = cmdOpts.getMainOpt(0);
 
-	if(cmdOpts.hasOpt("-o")) {
-		outfn = cmdOpts.getOpt("-o");
-		of.open(outfn.c_str());
-		if(!of.is_open()) {
-			cerr << "Unable to write to " << outfn << endl;
-			return EXIT_FAILURE;
-		}
-	}
+
+	if(cmdOpts.hasOpt("-o"))
+		outFn = cmdOpts.getOpt("-o");
 
 	if(cmdOpts.hasOpt("-f"))
 		symfrac = atof(cmdOpts.getOptStr("-f"));
@@ -112,15 +102,15 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	dmfn = PKG_DATADIR + string("/") + DEFAULT_DM_FILE;
-	if(!ifstream(dmfn).good())
-		dmfn = SRC_DATADIR + string("/") + DEFAULT_DM_FILE;
+	dmFn = PKG_DATADIR + string("/") + DEFAULT_DM_FILE;
+	if(!ifstream(dmFn).good())
+		dmFn = SRC_DATADIR + string("/") + DEFAULT_DM_FILE;
 
 	if(cmdOpts.hasOpt("-dm"))
-		dmfn = cmdOpts.getOpt("-dm");
-	dmin.open(dmfn.c_str());
-	if(!dmin.is_open()) {
-		cerr << "Unable to open " << dmfn << endl;
+		dmFn = cmdOpts.getOpt("-dm");
+	dmIn.open(dmFn.c_str());
+	if(!dmIn.is_open()) {
+		cerr << "Unable to open " << dmFn << endl;
 		return EXIT_FAILURE;
 	}
 
@@ -128,45 +118,61 @@ int main(int argc, char *argv[]) {
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* guess input format */
-	if(StringUtils::endsWith(infn, ".fasta") || StringUtils::endsWith(infn, ".fas")
-		|| StringUtils::endsWith(infn, ".fa") || StringUtils::endsWith(infn, ".fna"))
+	if(StringUtils::endsWith(inFn, ".fasta") || StringUtils::endsWith(inFn, ".fas")
+		|| StringUtils::endsWith(inFn, ".fa") || StringUtils::endsWith(inFn, ".fna"))
 		fmt = "fasta";
-	else if(StringUtils::endsWith(infn, ".msa"))
+	else if(StringUtils::endsWith(inFn, ".msa"))
 		fmt = "msa";
 	else {
 		cerr << "Unrecognized MSA file format" << endl;
 		return EXIT_FAILURE;
 	}
 
+	/* open input and output */
+	if(fmt != "msa")
+		in.open(inFn.c_str());
+	else
+		in.open(inFn.c_str(), ios_base::binary);
+	if(!in.is_open()) {
+		cerr << "Unable to open " << inFn << " : " << ::strerror(errno)<< endl;
+		return EXIT_FAILURE;
+	}
+
+	if(!outFn.empty()) {
+		of.open(outFn.c_str());
+		if(!of.is_open()) {
+			cerr << "Unable to write to " << outFn << endl;
+			return EXIT_FAILURE;
+		}
+	}
 	/* Load in BandedHmmPrior for the HMM training */
 	BandedHMMP7Prior hmmPrior;
-	dmin >> hmmPrior;
-	if(dmin.bad()) {
+	dmIn >> hmmPrior;
+	if(dmIn.bad()) {
 		cerr << "Failed to read in the HMM Prior file " << endl;
 		return EXIT_FAILURE;
 	}
 
 	/* Load data */
 	MSA msa;
-	if(fmt == "msa") { /* binary file provided */
-		ifstream in(infn.c_str());
+	long nLoad;
+	if(fmt == "msa") /* binary file provided */
 		msa.load(in);
-		if(!in.good()) {
-			cerr << "Unable to load MSA database" << endl;
-			return EXIT_FAILURE;
-		}
-	}
+	else
+		nLoad = msa.loadMSA(ALPHABET, in, fmt);
+	if(!in.bad() && nLoad >= 0) /* load sequence format */
+		infoLog << "MSA loaded" << endl;
 	else {
-		long nLoad = msa.loadMSAFile(ALPHABET, infn, fmt);
-		if(nLoad <= 0) {
-			cerr << "Unable to load MSA file" << endl;
-			return EXIT_FAILURE;
-		}
+		cerr << "Unable to load MSA seq from '" << inFn << "'" << endl;
+		return EXIT_FAILURE;
 	}
+	if(!msa.pruned()) {
+		msa.prune(); /* prune MSA if necessary*/
+		infoLog << "MSA pruned" << endl;
+	}
+	infoLog << "MSA database created for " << msa.getNumSeq() << " X " << msa.getCSLen() << " aligned sequences" << endl;
 
-	infoLog << "MSA loaded, found " << msa.getNumSeq() << " X " << msa.getCSLen() << " aligned sequences" << endl;
-
-	ostream& out = outfn.empty() ? cout : of;
+	ostream& out = outFn.empty() ? cout : of;
 
 	BandedHMMP7 hmm; /* construct an empty profile */
 	hmm.build(msa, symfrac, hmmPrior);

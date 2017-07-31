@@ -14,6 +14,9 @@
 #include <cstring>
 #include <cerrno>
 #include <boost/algorithm/string.hpp> /* for boost string split and join */
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filter/gzip.hpp> /* for gzip support */
+#include <boost/iostreams/filter/bzip2.hpp> /* for bzip2 support */
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -38,6 +41,13 @@ static const int DEFAULT_NUM_THREADS = 1;
 
 static const string ASSIGNMENT_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\tbranch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
 
+#ifndef HAVE_LIBZ
+static const string ZLIB_SUPPORT = "";
+#else
+static const string ZLIB_SUPPORT = ", support .gz or .bz2 compressed file";
+#endif
+
+
 /**
  * Print introduction of this program
  */
@@ -49,18 +59,19 @@ void printIntro(void) {
  * Print the usage information
  */
 void printUsage(const string& progName) {
+
 	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <READ-FILE1> [READ-FILE2] [options]" << endl
-		 << "READ-FILE1  FILE               : sequence read file for the assembled/forward read" << endl
-		 << "READ-FILE2  FILE               : sequence read file for the reverse read" << endl
-		 << "Options:    -o  FILE           : write the PLACEMENT output to FILE instead of stdout" << endl
-		 << "            -a  FILE           : in addition to the placement output, write the read alignment to FILE" << endl
+		 << "READ-FILE1  FILE               : sequence read file for the assembled/forward read" << ZLIB_SUPPORT << endl
+		 << "READ-FILE2  FILE               : sequence read file for the reverse read" << ZLIB_SUPPORT << endl
+		 << "Options:    -o  FILE           : write the assignment output to FILE instead of stdout" << endl
+		 << "            -a  FILE           : in addition to the assignment output, write the read alignment to FILE" << endl
 		 << "            -L|--seed-len  INT : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT            : size of 5'/3' seed region for finding seeds [" << DEFAULT_SEED_REGION << "]" << endl
 		 << "            -s  FLAG           : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
 		 << "            -d|--pdist  DBL    : maximum p-dist between read and tree nodes during the seed search stage [" << DEFAULT_MAX_PDIST << "]" << endl
 		 << "            -N  INT            : max number of most potential locations (based on p-dist) to try initial estimation [" << DEFAULT_MAX_LOCATION << "]" << endl
 		 << "            -e  DBL            : max placement error between fast estimation and accurate placement [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
-		 << "            --ML  FLAG         : use maximum likelihood for placement, do not calculate posterior p-values, this will ignore -q and --prior options" << endl
+		 << "            --ML  FLAG         : use maximum likelihood in phylogenetic placement, do not calculate posterior p-values, this will ignore -q and --prior options" << endl
 		 << "            --prior  STR       : method for calculating prior probability of a placement, either 'uniform' (uniform prior) or 'height' (rooted distance to leaves)" << endl
 		 << "            -S|--seed  INT     : random seed used for banded HMM seed searches, for debug purpose" << endl
 #ifdef _OPENMP
@@ -79,7 +90,10 @@ int main(int argc, char* argv[]) {
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
 	string seqFmt;
 	ofstream of;
-	SeqIO fwdIn, revIn, alnOut;
+	ifstream fwdIn, revIn;
+	ofstream alnOut;
+	SeqIO fwdSeqI, revSeqI, alnSeqO;
+
 	bool isAssembled = true; /* assume assembled seq if not paired-end */
 	bool alignOnly = false;
 	BandedHMMP7::align_mode mode;
@@ -174,10 +188,13 @@ int main(int argc, char* argv[]) {
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* guess seq format */
-	if(StringUtils::endsWith(fwdFn, ".fasta") || StringUtils::endsWith(fwdFn, ".fas")
-		|| StringUtils::endsWith(fwdFn, ".fa") || StringUtils::endsWith(fwdFn, ".fna"))
+	string fn = fwdFn;
+	StringUtils::removeEnd(fn, GZIP_FILE_SUFFIX);
+	StringUtils::removeEnd(fn, BZIP2_FILE_SUFFIX);
+	if(StringUtils::endsWith(fn, ".fasta") || StringUtils::endsWith(fn, ".fas")
+		|| StringUtils::endsWith(fn, ".fa") || StringUtils::endsWith(fn, ".fna"))
 		seqFmt = "fasta";
-	else if(StringUtils::endsWith(fwdFn, ".fastq") || StringUtils::endsWith(fwdFn, ".fq"))
+	else if(StringUtils::endsWith(fn, ".fastq") || StringUtils::endsWith(fn, ".fq"))
 		seqFmt = "fastq";
 	else {
 		cerr << "Unrecognized format of MSA file '" << fwdFn << "'" << endl;
@@ -247,13 +264,14 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	fwdIn.open(fwdFn, AlphabetFactory::nuclAbc, seqFmt);
+	fwdIn.open(fwdFn.c_str());
 	if(!fwdIn.is_open()) {
 		cerr << "Unable to open seq file '" << fwdFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
+
 	if(!revFn.empty()) {
-		revIn.open(revFn, AlphabetFactory::nuclAbc, seqFmt);
+		revIn.open(revFn.c_str());
 		if(!revIn.is_open()) {
 			cerr << "Unable to open mate file '" << revFn << "': " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
@@ -271,7 +289,7 @@ int main(int argc, char* argv[]) {
 	ostream& out = of.is_open() ? of : cout;
 
 	if(!alnFn.empty()) {
-		alnOut.open(alnFn, "dna", "fasta", SeqIO::WRITE);
+		alnOut.open(alnFn.c_str());
 		if(!alnOut.is_open()) {
 			cerr << "Unable to write to '" << alnFn << "': " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
@@ -288,6 +306,56 @@ int main(int argc, char* argv[]) {
 	int csLen = msa.getCSLen();
 	infoLog << "MSA loaded" << endl;
 
+	BandedHMMP7 hmm;
+	hmmIn >> hmm;
+	if(hmmIn.bad()) {
+		cerr << "Unable to read HMM profile '" << hmmFn << "': " << ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
+	infoLog << "HMM profile read" << endl;
+	if(hmm.getProfileSize() > csLen) {
+		cerr << "Error: HMM profile size is found greater than the MSA CS length" << endl;
+		return EXIT_FAILURE;
+	}
+	const DegenAlphabet* abc = hmm.getNuclAbc();
+
+	/* prepare SeqIO */
+	if(StringUtils::endsWith(fwdFn, GZIP_FILE_SUFFIX)) {
+		boost::iostreams::filtering_istream* zipI = new boost::iostreams::filtering_istream();
+		zipI->push(boost::iostreams::gzip_decompressor());
+		zipI->push(fwdIn);
+		fwdSeqI.reset(reinterpret_cast<istream*> (zipI), abc, seqFmt);
+	}
+	else if(StringUtils::endsWith(fwdFn, BZIP2_FILE_SUFFIX)) {
+		boost::iostreams::filtering_istream* zipI = new boost::iostreams::filtering_istream();
+		zipI->push(boost::iostreams::bzip2_decompressor());
+		zipI->push(fwdIn);
+		fwdSeqI.reset(reinterpret_cast<istream*> (zipI), abc, seqFmt);
+	}
+	else {
+		fwdSeqI.reset(&fwdIn, abc, seqFmt);
+	}
+	if(revIn.is_open()) {
+		if(StringUtils::endsWith(revFn, GZIP_FILE_SUFFIX)) {
+			boost::iostreams::filtering_istream* zipI = new boost::iostreams::filtering_istream();
+			zipI->push(boost::iostreams::gzip_decompressor());
+			zipI->push(revIn);
+			revSeqI.reset(reinterpret_cast<istream*> (zipI), abc, seqFmt);
+		}
+		else if(StringUtils::endsWith(revFn, BZIP2_FILE_SUFFIX)) {
+			boost::iostreams::filtering_istream* zipI = new boost::iostreams::filtering_istream();
+			zipI->push(boost::iostreams::bzip2_decompressor());
+			zipI->push(revIn);
+			revSeqI.reset(reinterpret_cast<istream*> (zipI), abc, seqFmt);
+		}
+		else {
+			revSeqI.reset(&fwdIn, abc, seqFmt);
+		}
+	}
+	if(alnOut.is_open()) {
+		alnSeqO.reset(&alnOut, abc, "fasta");
+	}
+
 	CSFMIndex csfm;
 	csfm.load(csfmIn);
 	if(csfmIn.bad()) {
@@ -300,17 +368,6 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	BandedHMMP7 hmm;
-	hmmIn >> hmm;
-	if(hmmIn.bad()) {
-		cerr << "Unable to read HMM profile '" << hmmFn << "': " << ::strerror(errno) << endl;
-		return EXIT_FAILURE;
-	}
-	infoLog << "HMM profile read" << endl;
-	if(hmm.getProfileSize() > csLen) {
-		cerr << "Error: HMM profile size is found greater than the MSA CS length" << endl;
-		return EXIT_FAILURE;
-	}
 
 	PTUnrooted ptu;
 	if(!alignOnly) {
@@ -322,12 +379,11 @@ int main(int argc, char* argv[]) {
 		infoLog << "Phylogenetic tree loaded" << endl;
 	}
 
-	const DegenAlphabet* abc = hmm.getNuclAbc();
-
 	/* configure HMM mode */
 	hmm.setSequenceMode(mode);
 	hmm.wingRetract();
 
+	infoLog << "Processing read ..." << endl;
 	/* process reads and output */
 	out << "# Taxonomy assignment generated by: " << progName << " " << progVersion << endl;
 	out << "# command: "<< cmdOpts.getCmdStr() << endl;
@@ -335,18 +391,18 @@ int main(int argc, char* argv[]) {
 #pragma omp parallel shared(csfm, hmm, ptu, fwdIn, revIn)
 #pragma omp single
 	{
-		while(fwdIn.hasNext() && (!revIn.is_open() || revIn.hasNext())) {
+		while(fwdSeqI.hasNext() && (!revIn.is_open() || revSeqI.hasNext())) {
 			string id;
 			string desc;
 			PrimarySeq fwdRead, revRead;
 			bool isPaired = true;
 			bool isOriented = true;
 
-			fwdRead = fwdIn.nextSeq();
+			fwdRead = fwdSeqI.nextSeq();
 			id = fwdRead.getId();
 			desc = fwdRead.getDesc();
 			if(revIn.is_open()) { /* paired-ended */
-				revRead = revIn.nextSeq().revcom();
+				revRead = revSeqI.nextSeq().revcom();
 				if(fwdRead.getId() != revRead.getId())
 					isPaired = false;
 			}
@@ -386,7 +442,7 @@ int main(int argc, char* argv[]) {
 						string desc = fwdRead.getDesc();
 						desc += ";csStart=" + boost::lexical_cast<string>(csStart) + ";csEnd=" + boost::lexical_cast<string>(csEnd) + ";";
 #pragma omp critical(writeAln)
-						alnOut.writeSeq(PrimarySeq(abc, id, aln, fwdRead.getDesc()));
+						alnSeqO.writeSeq(PrimarySeq(abc, id, aln, fwdRead.getDesc()));
 					}
 
 					PTPlacement bestPlace;

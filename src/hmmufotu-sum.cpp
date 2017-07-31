@@ -48,7 +48,6 @@ using namespace EGriceLab;
 using namespace Eigen;
 
 /* default values */
-static const string ALPHABET = "dna";
 static const string ALIGN_FORMAT = "fasta";
 static const double DEFAULT_EFFN = 2;
 static const int DEFAULT_MIN_NREAD = 1;
@@ -96,8 +95,8 @@ int main(int argc, char* argv[]) {
 	string listFn;
 	string otuFn, csFn, treeFn;
 	ifstream msaIn, hmmIn, ptuIn;
-	ofstream otuOut, treeOut;
-	SeqIO csOut;
+	ofstream otuOut, treeOut, csOut;
+	SeqIO csO;
 
 	double effN = DEFAULT_EFFN;
 	double minQ = DEFAULT_MIN_Q;
@@ -240,11 +239,12 @@ int main(int argc, char* argv[]) {
 	}
 
 	if(!csFn.empty()) {
-		csOut.open(csFn, ALPHABET, ALIGN_FORMAT, SeqIO::WRITE);
+		csOut.open(csFn.c_str());
 		if(!csOut.is_open()) {
 			cerr << "Unable to write to '" << csFn << "': " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
+		csO.reset(&csOut, AlphabetFactory::nuclAbc, ALIGN_FORMAT);
 	}
 
 	if(!treeFn.empty()) {
@@ -371,7 +371,7 @@ int main(int argc, char* argv[]) {
 					+ "\";AnnoDist=" + boost::lexical_cast<string>(node->getAnnoDist())
 					+ ";ReadCount=" + boost::lexical_cast<string>(nRead)
 					+ ";SampleHits=" + boost::lexical_cast<string>(nSample);
-			csOut.writeSeq(PrimarySeq(seq.getAbc(), seq.getName(), seq.toString(), desc));
+			csO.writeSeq(PrimarySeq(seq.getAbc(), seq.getName(), seq.toString(), desc));
 		}
 	}
 

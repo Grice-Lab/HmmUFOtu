@@ -100,6 +100,7 @@ int main(int argc, char* argv[]) {
 	bool keepGap = false;
 	long N = 0;
 	ifstream msaIn, ptuIn, regionIn;
+	ofstream seqOut, mateOut;
 	MSA msa;
 	PTUnrooted ptu;
 
@@ -233,19 +234,21 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* open outputs */
-	SeqIO seqOut(outFn, AlphabetFactory::nuclAbc, DEFAULT_FMT, SeqIO::WRITE, -1);
+	SeqIO seqO, mateO;
+	seqOut.open(outFn.c_str());
 	if(!seqOut.is_open()) {
 		cerr << "Unable to write seq to '" << outFn << "' : " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
-	SeqIO mateOut;
+	seqO.reset(&seqOut, AlphabetFactory::nuclAbc, DEFAULT_FMT, -1);
 	if(!mateFn.empty()) {
 		keepGap = false; /* suppress -k if paired end */
-		mateOut.open(mateFn, AlphabetFactory::nuclAbc, DEFAULT_FMT, SeqIO::WRITE, -1);
+		mateOut.open(mateFn.c_str());
 		if(!mateOut.is_open()) {
 			cerr << "Unable to write mate to '" << mateFn << "' : " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
+		mateO.reset(&mateOut, AlphabetFactory::nuclAbc, DEFAULT_FMT, -1);
 	}
 
 	/* load input database */
@@ -398,9 +401,9 @@ int main(int argc, char* argv[]) {
 
 		/* output */
 		PrimarySeq insert(abc, rid, seq, desc);
-		seqOut.writeSeq(insert.trunc(0, readLen));
+		seqO.writeSeq(insert.trunc(0, readLen));
 		if(mateOut.is_open())
-			mateOut.writeSeq(insert.revcom().trunc(0, readLen));
+			mateO.writeSeq(insert.revcom().trunc(0, readLen));
 		n++;
 	}
 }
