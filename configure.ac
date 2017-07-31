@@ -6,7 +6,6 @@ LT_INIT([shared static])
 
 AC_CANONICAL_SYSTEM
 
-
 AC_C_INLINE
 AC_TYPE_SIZE_T
 AC_TYPE_INT8_T
@@ -36,10 +35,10 @@ AX_BOOST_BASE()
 AX_BOOST_IOSTREAMS()
 
 AC_CONFIG_FILES([Makefile
-								 data/Makefile
-								 src/Makefile
-								 src/math/Makefile
-								 test/Makefile])
+				 data/Makefile
+				 src/Makefile
+				 src/math/Makefile
+				 test/Makefile])
 
 AC_CONFIG_SUBDIRS([src/libcds
                    src/libdivsufsort])
