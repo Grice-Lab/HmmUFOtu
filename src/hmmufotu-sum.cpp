@@ -50,12 +50,14 @@ using namespace Eigen;
 /* default values */
 static const string ALIGN_FORMAT = "fasta";
 static const double DEFAULT_EFFN = 2;
-static const int DEFAULT_MIN_NREAD = 1;
-static const int DEFAULT_MIN_NSAMPLE = 1;
+static const int DEFAULT_MIN_NREAD = 0;
+static const int DEFAULT_MIN_NSAMPLE = 0;
 static const double DEFAULT_MIN_Q = 0;
 static const double DEFAULT_MIN_ALN_IDENTITY = 0;
 static const double DEFAULT_MIN_HMM_IDENTITY = 0;
 static const double DEFAULT_NORM = 0;
+static const unsigned long DEFAULT_SUBSET = 0;
+static const string DEFAULT_SUBSET_METHOD = "uniform";
 typedef boost::unordered_map<PTUnrooted::PTUNodePtr, OTUObserved> OTUMap;
 
 /**
@@ -79,10 +81,13 @@ void printUsage(const string& progName) {
 		 << "            --aln-iden DBL     : minimum alignment identity required for assignment result [" << DEFAULT_MIN_ALN_IDENTITY << "]" << endl
 		 << "            --hmm-iden DBL     : minimum profile-HMM identity required for assignment result [" << DEFAULT_MIN_HMM_IDENTITY << "]" << endl
 		 << "            -e|--effN  DBL     : effective number of sequences (pseudo-count) for inferencing CS of OTUs with Dirichelet Density models, set 0 to disable [" << DEFAULT_EFFN << "]" << endl
-		 << "            -n  INT            : minimum number of observed reads required to define an OTU across all samples [" << DEFAULT_MIN_NREAD << "]" << endl
-		 << "            -s  INT            : minimum number of observed samples required to define an OTU [" << DEFAULT_MIN_NSAMPLE << "]" << endl
+		 << "            -n  INT            : minimum number of observed reads required to define an OTU across all samples, 0 for no filtering [" << DEFAULT_MIN_NREAD << "]" << endl
+		 << "            -s  INT            : minimum number of observed samples required to define an OTU, 0 for no filtering [" << DEFAULT_MIN_NSAMPLE << "]" << endl
 		 << "            -N|--norm  FLAG    : apply constant normalization after calculating the OTU Table" << endl
 		 << "            -Z  DBL            : normalization factor for -N, set to 0 to use the default value [" << DEFAULT_NORM << "]" << endl
+		 << "            --subset  LONG     : subsample each sample to reduce the read count to GIVEN VALUE, 0 for not subsampling [" << DEFAULT_SUBSET << "]" << endl
+		 << "            --sub-method  STR  : subsampling method if --subset requested, either 'uniform' (wo/ replacement) or 'multinomial' (w/ placement) [" << DEFAULT_SUBSET_METHOD << "]" << endl
+		 << "            -S|--seed  INT     : random seed used for --subset, for debug purpose" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
@@ -106,6 +111,9 @@ int main(int argc, char* argv[]) {
 	int minSample = DEFAULT_MIN_NSAMPLE;
 	bool doNorm = false;
 	double normZ = DEFAULT_NORM;
+	unsigned long subN = DEFAULT_SUBSET;
+	string subMethod = DEFAULT_SUBSET_METHOD;
+	unsigned seed = time(NULL); // using time as default seed
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -163,6 +171,16 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-Z"))
 		normZ = ::atof(cmdOpts.getOptStr("-Z"));
 
+	if(cmdOpts.hasOpt("--subset"))
+		subN = ::atol(cmdOpts.getOptStr("--subset"));
+	if(cmdOpts.hasOpt("--sub-method"))
+		subMethod = cmdOpts.getOpt("--sub-method");
+
+	if(cmdOpts.hasOpt("-S"))
+		seed = ::atoi(cmdOpts.getOptStr("-S"));
+	if(cmdOpts.hasOpt("--seed"))
+		seed = ::atoi(cmdOpts.getOptStr("--seed"));
+
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
@@ -171,12 +189,12 @@ int main(int argc, char* argv[]) {
 		cerr << "-e|--effN must be positive" << endl;
 		return EXIT_FAILURE;
 	}
-	if(!(minRead > 0)) {
-		cerr << "-n must be positive integer" << endl;
+	if(!(minRead >= 0)) {
+		cerr << "-n must be non-negative integer" << endl;
 		return EXIT_FAILURE;
 	}
-	if(!(minSample > 0)) {
-		cerr << "-s must be positive integer" << endl;
+	if(!(minSample >= 0)) {
+		cerr << "-s must be non-negative integer" << endl;
 		return EXIT_FAILURE;
 	}
 	if(normZ < 0) {
@@ -350,6 +368,17 @@ int main(int argc, char* argv[]) {
 		infoLog << "Normalizing OTU Table" << endl;
 		otuTable.normalize(normZ);
 	}
+
+	if(subN > 0) {
+		infoLog << "Subsampling OTU Table" << endl;
+		otuTable.seed(seed);
+		otuTable.subset(subN, subMethod);
+
+		/* prune OTUTable */
+		otuTable.pruneSamples(subN);
+		otuTable.pruneOTUs(minRead);
+	}
+
 
 	/* write the OTU table */
 	infoLog << "Writing OTU Table" << endl;

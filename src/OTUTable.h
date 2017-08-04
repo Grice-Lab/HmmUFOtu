@@ -35,6 +35,9 @@
 #include <stdexcept>
 #include <algorithm>
 #include <boost/algorithm/string.hpp> /* for boost::split */
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/range/algorithm/random_shuffle.hpp>
+#include <boost/random/discrete_distribution.hpp>
 #include "ProgLog.h"
 #include "OTUObserved.h"
 
@@ -51,10 +54,13 @@ using Eigen::MatrixXd;
 using Eigen::RowVectorXd;
 
 class OTUTable {
+public:
 	/* typedefs */
 	typedef map<string, string> otuMap;
+	typedef boost::random::mt11213b RNG; /* preferred random number generator type */
+	typedef boost::random::discrete_distribution<size_t> ReadDistrib; /* base (nucleotide) distribution */
+	typedef ReadDistrib::param_type ReadParam; /* read distribution parameters */
 
-public:
 	/** constructors */
 	/** default constructor */
 	OTUTable() {  }
@@ -87,6 +93,7 @@ public:
 	size_t numOTUs() const {
 		return otus.size();
 	}
+
 
 	/** get all sample names */
 	const vector<string>& getSamples() const {
@@ -159,14 +166,28 @@ public:
 	}
 
 	/**
+	 * get number of reads in sample j
+	 */
+	double numSampleReads(size_t j) const {
+		return otuMetric.col(j).sum();
+	}
+
+	/**
+	 * get number of reads in OTU i
+	 */
+	double numOTUReads(size_t i) const {
+		return otuMetric.row(i).sum();
+	}
+
+	/**
 	 * get total count of a given sample across all OTUs, or 0 if not found
 	 */
-	double sampleTotal(const string& sampleName) const;
+	double numSampleReads(const string& sampleName) const;
 
 	/**
 	 * get total count of an OTU across all samples, or 0 if not found
 	 */
-	double otuTotal(const string& otuTotal) const;
+	double numOTUReads(const string& otuTotal) const;
 
 	/**
 	 * add a new sample into this OTUTable, ignored if already exists
@@ -180,6 +201,14 @@ public:
 	 * @return  true only if this sampleName exists
 	 */
 	bool removeSample(const string& sampleName);
+
+
+	/** delete an existing sample from this OTUTable using its index
+	 * @param j  sample index
+	 * @return  true only if the index is in range
+	 */
+	bool removeSample(size_t j);
+
 
 	/**
 	 * add a new OTU into this OTUTable, ignored if already exists
@@ -209,6 +238,12 @@ public:
 		return addOTU(otu.id, otu.taxon, otu.count);
 	}
 
+	/** delete an existing otuID from this OTUTable at index i, ignored if outside range
+	 * @param i  OTU index
+	 * @return  true only if this OTU index is in range
+	 */
+	bool removeOTU(size_t i);
+
 	/** delete an existing otuID from this OTUTable, ignored if not exists
 	 * @param otuID  existing OTU ID
 	 * @return  true only if this otuID exists
@@ -221,11 +256,28 @@ public:
 	void clear();
 
 	/**
+	 * prune bad samples with less than min reads, usually after calling subset
+	 */
+	void pruneSamples(size_t min = 0);
+
+	/**
+	 * prune bad OTUs with less than min reads, usually after calling subset
+	 */
+	void pruneOTUs(size_t min = 0);
+
+	/**
 	 * normalize the metric using given normalization constant
 	 * @param Z  normalization constant
 	 * @return  the modifled OTUTable
 	 */
 	void normalize(double Z = 0);
+
+	/**
+	 * set seed for subset functions
+	 */
+	void seed(unsigned newSeed) {
+		rng.seed(newSeed);
+	}
 
 	/**
 	 * subset this OTU table to a minimum read count using given method
@@ -235,10 +287,10 @@ public:
 	 * @param method  sampleing method
 	 * @throw  invalid_argument if the sampling method is not supported
 	 */
-	void subset(double min, const string& method) {
+	void subset(size_t min, const string& method) {
 		if(method == "uniform")
 			subsetUniform(min);
-		else if(method == "multinom")
+		else if(method == "multinomial")
 			subsetMultinom(min);
 		else
 			throw invalid_argument("Unsupported subsetting method '" + method + "'");
@@ -247,12 +299,12 @@ public:
 	/**
 	 * subset this OTU table to a minimum read count using uniform sampling
 	 */
-	void subsetUniform(double min);
+	void subsetUniform(size_t min);
 
 	/**
 	 * subset this OTU table to a minimum read count using Multinomial sampling
 	 */
-	void subsetMultinom(double min);
+	void subsetMultinom(size_t min);
 
 	/**
 	 * load a table from an input stream
@@ -301,6 +353,7 @@ private:
 	/** static fields */
 	static const Eigen::IOFormat dblTabFmt;
 	static const Eigen::IOFormat fltTabFmt;
+	static RNG rng;
 };
 
 inline void OTUTable::clear() {
@@ -310,14 +363,14 @@ inline void OTUTable::clear() {
 	otu2Taxon.clear();
 }
 
-inline double OTUTable::sampleTotal(const string& sampleName) const {
+inline double OTUTable::numSampleReads(const string& sampleName) const {
 	size_t j = getSampleIndex(sampleName);
-	return j != -1 ? otuMetric.col(j).sum() : 0;
+	return j != -1 ? numSampleReads(j) : 0;
 }
 
-inline double OTUTable::otuTotal(const string& otuID) const {
+inline double OTUTable::numOTUReads(const string& otuID) const {
 	size_t i = getOTUIndex(otuID);
-	return i != -1 ? otuMetric.row(i).sum() : 0;
+	return i != -1 ? numOTUReads(i) : 0;
 }
 
 inline std::istream& operator>>(std::istream& in, OTUTable& otu) {
@@ -346,6 +399,14 @@ inline std::ostream& OTUTable::save(ostream& out, const string& format) const {
 		out.setstate(std::ios_base::failbit);
 		return out;
 	}
+}
+
+inline bool OTUTable::removeSample(const string& sampleName) {
+	return removeSample(std::find(samples.begin(), samples.end(), sampleName) - samples.begin());
+}
+
+inline bool OTUTable::removeOTU(const string& otuID) {
+	return removeOTU(std::find(otus.begin(), otus.end(), otuID) - otus.begin());
 }
 
 } /* namespace EGriceLab */
