@@ -74,7 +74,7 @@ void printUsage(const string& progName) {
 	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <(INFILE [INFILE2 ...]> <-o OTU-OUT> [options]" << endl
 		 << "INFILE          FILE           : assignment file(s) from hmmufotu, by default the filenames will be used as sample names" << endl
 		 << "Options:    -o  FILE           : OTU summary output" << endl
-		 << "            -l  FILE           : an optional sample list, with 1st field sample-name and 2nd field input filename" << endl
+		 << "            -l  FILE           : an optional sample list, with 1st field sample-name and 2nd field input filename, only input files in list will be used" << endl
 		 << "            -c  FILE           : OTU Consensus Sequence (CS) alignment output" << endl
 		 << "            -t  FILE           : OTU tree output" << endl
 		 << "            -q  DBL            : minimum qTaxon score (negative log10 posterior error rate) required [" << DEFAULT_MIN_Q << "]" << endl
@@ -216,6 +216,8 @@ int main(int argc, char* argv[]) {
 			return EXIT_FAILURE;
 		}
 		infoLog << "Read in sample names from " << listFn << endl;
+		inFiles.clear(); /* clear inFiles */
+		sampleFn2Name.clear(); /* clear sample names */
 		string line;
 		while(std::getline(listIn, line)) {
 			if(line.front() == '#')
@@ -223,6 +225,7 @@ int main(int argc, char* argv[]) {
 			vector<string> fields;
 			boost::split(fields, line, boost::is_any_of("\t"));
 			if(fields.size() >= 2) {
+				inFiles.push_back(fields[1]);
 				sampleFn2Name[fields[1]] = fields[0];
 				nRead++;
 			}
