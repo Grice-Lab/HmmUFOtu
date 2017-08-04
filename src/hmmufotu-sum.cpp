@@ -390,7 +390,6 @@ int main(int argc, char* argv[]) {
 	/* write the CS tree */
 	if(csOut.is_open()) {
 		infoLog << "Writing OTU Consensus Sequences" << endl;
-		const vector<string>& otuIDs = otuTable.getOTUs();
 		for(size_t i = 0; i < otuTable.numOTUs(); ++i) {
 			PTUnrooted::PTUNodePtr node = ptu.getNode(::atol(otuTable.getOTU(i).c_str()));
 			OTUObserved& data = otuData.find(node)->second;
