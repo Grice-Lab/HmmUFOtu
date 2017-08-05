@@ -28,5 +28,6 @@
 #define SRC_HMMUFOTU_OTU_H_
 
 #include "OTUTable.h"
+#include "OTUObserved.h"
 
 #endif /* SRC_HMMUFOTU_OTU_H_ */
