@@ -266,11 +266,22 @@ public:
 	void pruneOTUs(size_t min = 0);
 
 	/**
-	 * normalize the metric using given normalization constant
+	 * normalize the metric with constant method
 	 * @param Z  normalization constant
-	 * @return  the modifled OTUTable
 	 */
-	void normalize(double Z = 0);
+	void normalizeConst(double Z = 0);
+
+	/**
+	 * normalize the metric
+	 * @param Z  normalization constant
+	 * @param method  normalization method
+	 */
+	void normalize(double Z = 0, const string& method = "constant") {
+		if(method == "constant")
+			normalizeConst(Z);
+		else
+			throw invalid_argument("Unsupported subsetting method '" + method + "'");
+	}
 
 	/**
 	 * set seed for subset functions

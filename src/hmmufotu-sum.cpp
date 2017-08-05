@@ -340,7 +340,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* construct an OTU table and output alignment */
-	infoLog << "Computing OTU Table" << endl;
+	infoLog << "Computing OTUTable" << endl;
 	OTUTable otuTable(sampleNames);
 
 	for(int i = 0; i < N; ++i) {
@@ -357,7 +357,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* write the OTU table */
-	infoLog << "Writing OTU Table" << endl;
+	infoLog << "Writing OTUTable" << endl;
 	otuOut << otuTable;
 
 	/* write read list */

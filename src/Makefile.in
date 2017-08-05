@@ -94,7 +94,8 @@ bin_PROGRAMS = hmmufotu$(EXEEXT) hmmufotu-train-dm$(EXEEXT) \
 	hmmufotu-train-sm$(EXEEXT) hmmufotu-train-hmm$(EXEEXT) \
 	hmmufotu-sim$(EXEEXT) hmmufotu-build$(EXEEXT) \
 	hmmufotu-inspect$(EXEEXT) hmmufotu$(EXEEXT) \
-	hmmufotu-sum$(EXEEXT) hmmufotu-anneal$(EXEEXT)
+	hmmufotu-sum$(EXEEXT) hmmufotu-anneal$(EXEEXT) \
+	hmmufotu-subset$(EXEEXT)
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -180,6 +181,9 @@ hmmufotu_inspect_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a \
 am_hmmufotu_sim_OBJECTS = hmmufotu-sim.$(OBJEXT)
 hmmufotu_sim_OBJECTS = $(am_hmmufotu_sim_OBJECTS)
 hmmufotu_sim_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
+am_hmmufotu_subset_OBJECTS = hmmufotu-subset.$(OBJEXT)
+hmmufotu_subset_OBJECTS = $(am_hmmufotu_subset_OBJECTS)
+hmmufotu_subset_DEPENDENCIES = libHmmUFOtu_OTU.a libHmmUFOtu_common.a
 am_hmmufotu_sum_OBJECTS = hmmufotu-sum.$(OBJEXT) \
 	HmmUFOtu_main.$(OBJEXT)
 hmmufotu_sum_OBJECTS = $(am_hmmufotu_sum_OBJECTS)
@@ -241,16 +245,17 @@ SOURCES = $(libHmmUFOtu_OTU_a_SOURCES) $(libHmmUFOtu_common_a_SOURCES) \
 	$(libHmmUFOtu_hmm_a_SOURCES) $(libHmmUFOtu_phylo_a_SOURCES) \
 	$(hmmufotu_SOURCES) $(hmmufotu_anneal_SOURCES) \
 	$(hmmufotu_build_SOURCES) $(hmmufotu_inspect_SOURCES) \
-	$(hmmufotu_sim_SOURCES) $(hmmufotu_sum_SOURCES) \
-	$(hmmufotu_train_dm_SOURCES) $(hmmufotu_train_hmm_SOURCES) \
-	$(hmmufotu_train_sm_SOURCES)
+	$(hmmufotu_sim_SOURCES) $(hmmufotu_subset_SOURCES) \
+	$(hmmufotu_sum_SOURCES) $(hmmufotu_train_dm_SOURCES) \
+	$(hmmufotu_train_hmm_SOURCES) $(hmmufotu_train_sm_SOURCES)
 DIST_SOURCES = $(libHmmUFOtu_OTU_a_SOURCES) \
 	$(libHmmUFOtu_common_a_SOURCES) $(libHmmUFOtu_hmm_a_SOURCES) \
 	$(libHmmUFOtu_phylo_a_SOURCES) $(hmmufotu_SOURCES) \
 	$(hmmufotu_anneal_SOURCES) $(hmmufotu_build_SOURCES) \
 	$(hmmufotu_inspect_SOURCES) $(hmmufotu_sim_SOURCES) \
-	$(hmmufotu_sum_SOURCES) $(hmmufotu_train_dm_SOURCES) \
-	$(hmmufotu_train_hmm_SOURCES) $(hmmufotu_train_sm_SOURCES)
+	$(hmmufotu_subset_SOURCES) $(hmmufotu_sum_SOURCES) \
+	$(hmmufotu_train_dm_SOURCES) $(hmmufotu_train_hmm_SOURCES) \
+	$(hmmufotu_train_sm_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -535,6 +540,8 @@ hmmufotu_anneal_SOURCES = hmmufotu-anneal.cpp
 hmmufotu_anneal_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 
+hmmufotu_subset_SOURCES = hmmufotu-subset.cpp
+hmmufotu_subset_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_common.a
 all: all-recursive
 
 .SUFFIXES:
@@ -661,6 +668,10 @@ hmmufotu-sim$(EXEEXT): $(hmmufotu_sim_OBJECTS) $(hmmufotu_sim_DEPENDENCIES) $(EX
 	@rm -f hmmufotu-sim$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(hmmufotu_sim_OBJECTS) $(hmmufotu_sim_LDADD) $(LIBS)
 
+hmmufotu-subset$(EXEEXT): $(hmmufotu_subset_OBJECTS) $(hmmufotu_subset_DEPENDENCIES) $(EXTRA_hmmufotu_subset_DEPENDENCIES) 
+	@rm -f hmmufotu-subset$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(hmmufotu_subset_OBJECTS) $(hmmufotu_subset_LDADD) $(LIBS)
+
 hmmufotu-sum$(EXEEXT): $(hmmufotu_sum_OBJECTS) $(hmmufotu_sum_DEPENDENCIES) $(EXTRA_hmmufotu_sum_DEPENDENCIES) 
 	@rm -f hmmufotu-sum$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(hmmufotu_sum_OBJECTS) $(hmmufotu_sum_LDADD) $(LIBS)
@@ -723,6 +734,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-hmmufotu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-inspect.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-sim.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-subset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-sum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-train-dm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-train-sm.Po@am__quote@
