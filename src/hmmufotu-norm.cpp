@@ -18,8 +18,8 @@
  * along with AlignerBoost.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
 /*
- * hmmufotu-subset.cpp
- *  subset OTUTable
+ * hmmufotu-norm.cpp
+ *  normalize OTUTable
  *  Created on: Aug 5, 2017
  *      Author: zhengqi
  */
@@ -29,7 +29,6 @@
 #include <cctype>
 #include <cfloat>
 #include <cstdlib>
-#include <ctime>
 #include <cstring>
 #include <cerrno>
 #include "HmmUFOtu_common.h"
@@ -41,8 +40,8 @@ using namespace Eigen;
 
 /* default values */
 static const string TABLE_FORMAT = "table";
-static const unsigned long DEFAULT_SIZE = 0;
-static const string DEFAULT_METHOD = "uniform";
+static const unsigned long DEFAULT_Z = 0;
+static const string DEFAULT_METHOD = "constant";
 
 /**
  * Print introduction of this program
@@ -55,12 +54,11 @@ void printIntro(void) {
  * Print the usage information
  */
 void printUsage(const string& progName) {
-	cerr << "Usage:    " << progName << "  <OTU-IN> <OTU-OUT> <-s SIZE> [options]" << endl
+	cerr << "Usage:    " << progName << "  <OTU-IN> <OTU-OUT> [options]" << endl
 		 << "OTU-IN   FILE                  : OTUTable generate from hmmufotu-sum" << endl
 		 << "OTU-OUT  FILE                  : update OTUTable output" << endl
-		 << "-s              LONG           : subset sample size for each sample" << endl
+		 << "-Z             DBL             : normalization constant, 0 for auto-set" << endl
 		 << "Options:    --method  STR      : subsetting method, either 'uniform' (wo/ replacement) or 'multinomial' (w/ placement) [" << DEFAULT_METHOD << "]" << endl
-		 << "            -S|--seed  INT     : random seed used for subsetting, for debug purpose" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
@@ -72,9 +70,8 @@ int main(int argc, char* argv[]) {
 	ifstream in;
 	ofstream out;
 
-	unsigned long size = DEFAULT_SIZE;
+	unsigned long normZ = DEFAULT_Z;
 	string method = DEFAULT_METHOD;
-	unsigned seed = time(NULL); // using time as default seed
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -92,28 +89,18 @@ int main(int argc, char* argv[]) {
 	inFn = cmdOpts.getMainOpt(0);
 	outFn = cmdOpts.getMainOpt(1);
 
-	if(!cmdOpts.hasOpt("-s")) {
-		cerr <<"Error: option -s is required"<< endl;
-		printUsage(argv[0]);
-		return EXIT_FAILURE;
-	}
-	else
-		size = ::atol(cmdOpts.getOptStr("-s"));
+	if(cmdOpts.hasOpt("-Z"))
+		normZ = ::atof(cmdOpts.getOptStr("-Z"));
 
 	if(cmdOpts.hasOpt("--method"))
 		method = cmdOpts.getOpt("--method");
-
-	if(cmdOpts.hasOpt("-S"))
-		seed = ::atoi(cmdOpts.getOptStr("-S"));
-	if(cmdOpts.hasOpt("--seed"))
-		seed = ::atoi(cmdOpts.getOptStr("--seed"));
 
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* validate options */
-	if(size <= 0) {
-		cerr << "-s must be positive integer" << endl;
+	if(normZ < 0) {
+		cerr << "-Z must be non-negative" << endl;
 		return EXIT_FAILURE;
 	}
 
@@ -136,13 +123,8 @@ int main(int argc, char* argv[]) {
 	OTUTable otuTable;
 	otuTable.load(in, TABLE_FORMAT);
 
-	infoLog << "Subsetting OTUTable" << endl;
-	otuTable.seed(seed);
-	otuTable.subset(size, method);
-
-	/* prune OTUTable */
-	otuTable.pruneSamples(size);
-	otuTable.pruneOTUs();
+	infoLog << "Normalizing OTUTable" << endl;
+	otuTable.normalize(normZ, method);
 
 	/* write the OTU table */
 	infoLog << "Writing OTUTable" << endl;

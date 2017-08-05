@@ -102,7 +102,7 @@ void OTUTable::pruneOTUs(size_t min) {
 	const size_t M = numOTUs();
 	/* remove samples backwards */
 	for(size_t i = M; i > 0; --i) {
-		size_t nRead = static_cast<size_t> (numOTUReads(i - 1));
+		double nRead = numOTUReads(i - 1);
 		if(min > 0 && nRead < min || min == 0 && nRead == 0)
 			removeOTU(i - 1);
 	}
@@ -150,11 +150,9 @@ istream& OTUTable::loadTable(istream& in) {
 		boost::split(fields, line, boost::is_any_of("\t"));
 		if(isHeader) {
 			N = fields.size() - 2;
-			cerr << "N: " << N << endl;
 			/* update samples */
 			samples.resize(N);
 			std::copy(fields.begin() + 1, fields.end() - 1, samples.begin());
-			cerr << "samples.size: " << samples.size() << " " << boost::join(samples, " ") << endl;
 			otuMetric.resize(0, N);
 			isHeader = false;
 		}
@@ -170,7 +168,6 @@ istream& OTUTable::loadTable(istream& in) {
 			M++;
 		}
 	}
-	cerr << "M x N: " << M << " x " << N << endl;
 
 	return in;
 }
