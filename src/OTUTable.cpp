@@ -78,7 +78,7 @@ bool OTUTable::removeOTU(size_t i) {
 	otuMetric.resize(M - 1, Eigen::NoChange);
 	for(MatrixXd::Index m = 0, k = 0; m < M; ++m) {
 		if(m != i) { /* not the deleted row */
-			otuMetric.row(k) = oldMetric.row(k);
+			otuMetric.row(k) = oldMetric.row(m);
 			k++;
 		}
 	}
@@ -93,9 +93,8 @@ void OTUTable::pruneSamples(size_t min) {
 	const size_t N = numSamples();
 	/* remove samples backwards */
 	for(size_t j = N; j > 0; --j) {
-		if(numSampleReads(j - 1) < min) {
+		if(numSampleReads(j - 1) < min)
 			removeSample(j - 1);
-		}
 	}
 }
 
@@ -103,9 +102,10 @@ void OTUTable::pruneOTUs(size_t min) {
 	const size_t M = numOTUs();
 	/* remove samples backwards */
 	for(size_t i = M; i > 0; --i) {
-		if(min > 0 && numOTUReads(i - 1) < min || min == 0 && numOTUReads(i - 1) == 0) {
+		size_t nRead = static_cast<size_t> (numOTUReads(i - 1));
+		cerr << "OTU " << i << " nRead: " << nRead << endl;
+		if(min > 0 && nRead < min || min == 0 && nRead == 0)
 			removeOTU(i - 1);
-		}
 	}
 }
 
