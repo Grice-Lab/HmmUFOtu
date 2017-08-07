@@ -34,7 +34,8 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/uniform_01.hpp>
 #include <boost/random/discrete_distribution.hpp>
-#include <boost/algorithm/string.hpp> /* for boost string split */
+#include <boost/algorithm/string.hpp> /* for boost string split and join */
+#include <boost/lexical_cast.hpp>
 #include <Eigen/Dense>
 #include <cstdlib>
 #include <cstring>
@@ -57,7 +58,7 @@ static const double DEFAULT_SD_SIZE = 30;
 static const double DEFAULT_MIN_SIZE = 0;
 static const double DEFAULT_MAX_SIZE = 0;
 static const int DEFAULT_READ_LEN = -1;
-static const size_t MAX_IGNORE = numeric_limits<streamsize>::max();
+static const string DEFAULT_READ_PREFIX = "r";
 static const char GAP_SYM = '-';
 static const char PAD_SYM = '.';
 
@@ -89,6 +90,7 @@ void printUsage(const string& progName) {
 		 << "            -u|--max-size  DBL  : maximum 16S amplicon size, 0 for no limit [" << DEFAULT_MAX_SIZE << "]" << endl
 		 << "            -r|--read-len  INT  : read length for generating single/paired-end reads, set to -1 to use the actual amplicon size [" << DEFAULT_READ_LEN << "]" << endl
 		 << "            -R|--region  STRING : BED file for restricted consensus region where simulated reads should be drawn; setting this will ignore -m,-s,-l,-u togather" << endl
+		 << "            --prefix STRING  : prefix for random read IDs [" << DEFAULT_READ_PREFIX << "]" << endl
 		 << "            -S|--seed  INT      : random seed used for simulation, for debug purpose" << endl
 		 << "            -v  FLAG            : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help           : print this message and exit" << endl;
@@ -110,6 +112,7 @@ int main(int argc, char* argv[]) {
 	double minSize = DEFAULT_MIN_SIZE;
 	double maxSize = DEFAULT_MAX_SIZE;
 	int readLen = DEFAULT_READ_LEN;
+	string readPrefix = DEFAULT_READ_PREFIX;
 	vector<CSLoc> myLoci;
 
 	unsigned seed = time(NULL); // using time as default seed
@@ -181,6 +184,9 @@ int main(int argc, char* argv[]) {
 		regionFn = cmdOpts.getOpt("-R");
 	if(cmdOpts.hasOpt("--region"))
 		regionFn = cmdOpts.getOpt("--region");
+
+	if(cmdOpts.hasOpt("--prefix"))
+		readPrefix = cmdOpts.getOpt("--prefix");
 
 	if(cmdOpts.hasOpt("-S"))
 		seed = ::atoi(cmdOpts.getOptStr("-S"));
@@ -278,18 +284,19 @@ int main(int argc, char* argv[]) {
 
 	/* read restricted regions, if provided */
 	if(regionIn.is_open()) {
-		int start, end;
-		while(regionIn) {
-			regionIn.ignore(MAX_IGNORE, '\t') >> start;
-			regionIn.ignore(MAX_IGNORE, '\t') >> end;
-			regionIn.ignore(MAX_IGNORE, '\n');
+		string line;
+		while(getline(regionIn, line)) {
+			vector<string> fields;
+			boost::split(fields, line, boost::is_any_of("\t"));
+			if(fields.size() < 3)
+				continue;
+			int start = boost::lexical_cast<int>(fields[1]);
+			int end = boost::lexical_cast<int>(fields[2]);
 			if(!(0 <= start && start < end && end <= csLen)) {
-				warningLog << "provided region (" << start << "," << end << "] is not in the consensus sequence range, ignored" << endl;
+				warningLog << "Region (" << start << "," << end << "] is not in the consensus range, ignored" << endl;
 				continue;
 			}
 			myLoci.push_back(CSLoc(start + 1, end));
-			if(regionIn.peek() == EOF)
-				break;
 		}
 		infoLog << "Read in " << myLoci.size() << " restricted regions" << endl;
 	}
@@ -315,8 +322,6 @@ int main(int argc, char* argv[]) {
 	Map<Vector4d> basePrMap(basePr, 4); /* use a map to access basePr indirectly */
 	BaseDistrib base_dist(basePr);
 
-	char rid[22]; // enough to hold all numbers up to 64-bits + a prefix char
-	char desc[4096]; // enough to hold must descriptions
 	const DegenAlphabet* abc = msa.getAbc();
 	const PTUnrooted::ModelPtr& model = ptu.getModel();
 	const Vector4d& pi = model->getPi();
@@ -367,7 +372,11 @@ int main(int argc, char* argv[]) {
 		}
 
 		/* simulate a read at [start, end] */
-		sprintf(rid, "r%d", n);
+		string rid = readPrefix + boost::lexical_cast<string>(n);
+		string taxonID = boost::lexical_cast<string>(cNode->getId()) + "->" + boost::lexical_cast<string>(pNode->getId());
+		string taxonName = rc < 0.5 ? cNode->getTaxon() : pNode->getTaxon();
+		double annoDist = rc < 0.5 ? v * rc : v * (1 - rc);
+
 //		PrimarySeq seq(abc, rid, "", desc);
 		string seq;
 		if(keepGap)
@@ -393,11 +402,10 @@ int main(int argc, char* argv[]) {
 
 		if(keepGap)
 			seq.append(csLen - 1 - end, PAD_SYM);
-		sprintf(desc, "ID=%ld->%ld;Name=\"%s\";AnnoDist=%f;csStart=%d;csEnd=%d;csLen=%d;InsertLen=%d;",
-				cNode->getId(), pNode->getId(),
-				rc < 0.5 ? cNode->getTaxon().c_str() : pNode->getTaxon().c_str(),
-				rc < 0.5 ? v * rc : v * (1 - rc),
-				start, end, end - start + 1, seq.length());
+		string desc = "ID=" + taxonID + ";Name=" + taxonName + ";AnnoDist=" + boost::lexical_cast<string>(annoDist)
+				+ ";csStart=" + boost::lexical_cast<string>(start) + ";csEnd=" + boost::lexical_cast<string>(end)
+				+ ";csLen=" + boost::lexical_cast<string>(end - start + 1)
+				+ ";InsertLen=" + boost::lexical_cast<string>(seq.length()) + ";";
 
 		/* output */
 		PrimarySeq insert(abc, rid, seq, desc);
