@@ -61,6 +61,14 @@ public:
 		return mainOpts.size();
 	}
 
+	int numOpts() const {
+		return opts.size();
+	}
+
+	bool empty() const {
+		return numMainOpts() == 0 && numOpts() == 0;
+	}
+
 	string getMainOpt(int i) const {
 		return mainOpts.at(i);
 	}

@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
-	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
+	if(cmdOpts.empty() || cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
 		printIntro();
 		printUsage(argv[0]);
 		return EXIT_SUCCESS;
