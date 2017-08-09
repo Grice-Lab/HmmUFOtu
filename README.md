@@ -67,26 +67,26 @@ Core programs
 -------------
 Core programs are fundamental tools for taxonomy assignment analysis of 16S and other target-amplicon sequencing data.
 Core programs include:
-* hmmufotu-build        build an HmmUFOtu database with indexed multiple-sequence alignment (MSA), trained HMM profile, and pre-evaluated phylogenetic tree from reference MSA and tree files
-* hmmufotu              perform HMM-alignment, phylogenetic-placement based taxonomy assignment for single or paired-end NGS reads
-* hmmufotu-sum          summarize and generate phylogeny-based OTUs and consensus/prior based OTU representatives by summarizing over multiple assignment results (samples)
-* hmmufotu-inspect      inspect an HmmUFOtu database, and optionally export its contents
+* **hmmufotu-build**		build an HmmUFOtu database with indexed multiple-sequence alignment (MSA), trained HMM profile, and pre-evaluated phylogenetic tree from reference MSA and tree files
+* **hmmufotu**			perform HMM-alignment, phylogenetic-placement based taxonomy assignment for single or paired-end NGS reads
+* **hmmufotu-sum**		summarize and generate phylogeny-based OTUs and consensus/prior based OTU representatives by summarizing over multiple assignment results (samples)
+* **hmmufotu-inspect**		inspect an HmmUFOtu database, and optionally export its contents
 
 Model training programs
 -----------------------
 HmmUFOtu distributions contain pre-trained DNA substitution models and Dirichlet density/mixture models required for buiding HmmUFOtu databases.
 However, the users can train their own models with customized datasets.
 Model training programs include:
-* hmmufotu-train-dm     train an HmmUFOtu prior model using Dirichlet Density/Mixture models with customized data
-* hmmufotu-train-hmm    train a Banded-HMM model with customized data
-* hmmufotu-train-sm     train a DNA Substitution Model with customized data
+* **hmmufotu-train-dm**		train an HmmUFOtu prior model using Dirichlet Density/Mixture models with customized data
+* **hmmufotu-train-hmm**	train a Banded-HMM model with customized data
+* **hmmufotu-train-sm**		train a DNA Substitution Model with customized data
 
 Utility programs
 -------------------------
 Beside its core functionality, HmmUFOtu can perform many additional analysis using the utility programs.
 Utility programs include:
-* hmmufotu-anneal       anneal primer sequences to an HmmUFOtu database and evaluate the primer efficiency
-* hmmufotu-sim          generate simulated single or paired-end NGS reads, aligned or un-aligned, using a pre-built HmmUFOtu database
-* hmmufotu-subset       subset (subsample) an OTUTable so every sample contains the same mimimum required reads, and prune the samples and OTUs if necessary
-* hmmufotu-norm	        normalize an OTUTable so every sample contains the same number of reads, you can generate a relative abundance OTUTable using a constant of 1
+* **hmmufotu-anneal**		anneal primer sequences to an HmmUFOtu database and evaluate the primer efficiency
+* **hmmufotu-sim**		generate simulated single or paired-end NGS reads, aligned or un-aligned, using a pre-built HmmUFOtu database
+* **hmmufotu-subset**		subset (subsample) an OTUTable so every sample contains the same mimimum required reads, and prune the samples and OTUs if necessary
+* **hmmufotu-norm**		normalize an OTUTable so every sample contains the same number of reads, you can generate a relative abundance OTUTable using a constant of 1
 
