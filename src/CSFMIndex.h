@@ -32,7 +32,7 @@
 #include <set>
 #include <algorithm>
 #include "MSA.h"
-#include "BandedHMMCommons.h"
+#include "CSLoc.h"
 #include "divsufsort.h"
 #include "WaveletTreeNoptrs.h"
 #include "BitSequence.h"

@@ -26,6 +26,7 @@ DigitalSeq.cpp \
 SeqIO.cpp \
 SeqUtils.cpp \
 MSA.cpp \
+CSLoc.cpp \
 TSVRecord.cpp \
 TSVScanner.cpp
 

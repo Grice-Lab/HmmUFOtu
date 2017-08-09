@@ -41,11 +41,11 @@
 #include "AlphabetFactory.h"
 #include "BandedHMMP7Bg.h"
 #include "BandedHMMP7Prior.h"
-#include "BandedHMMCommons.h"
 #include "StringUtils.h"
 #include "PrimarySeq.h"
 #include "DigitalSeq.h"
 #include "MSA.h"
+#include "CSLoc.h"
 #include "RootFinder.h"
 
 namespace EGriceLab {

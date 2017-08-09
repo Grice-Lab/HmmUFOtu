@@ -52,7 +52,7 @@ static const string ZLIB_SUPPORT = ", support .gz or .bz2 compressed file";
  * Print introduction of this program
  */
 void printIntro(void) {
-	cerr << "Ultra-fast 16S read OTU assignment using profile-HMM and phylogenetic placement" << endl;
+	cerr << "Ultra-fast 16S read taxonomy assignment using profile-HMM and phylogenetic placement" << endl;
 }
 
 /**

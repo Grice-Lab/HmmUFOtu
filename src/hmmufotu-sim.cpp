@@ -62,21 +62,11 @@ static const string DEFAULT_READ_PREFIX = "r";
 static const char GAP_SYM = '-';
 static const char PAD_SYM = '.';
 
-/* a simple POD for holding a CS locus */
-struct CSLoc {
-	/* constructors */
-	CSLoc() : csStart(), csEnd() { }
-	CSLoc(int csStart, int csEnd) : csStart(csStart), csEnd(csEnd) { }
-
-	int csStart; /* 1-based CS start */
-	int csEnd;   /* 1-based CS end */
-};
-
 /**
  * Print introduction of this program
  */
 void printIntro(void) {
-	cerr << "Generate simulated multiple-aligned sequences (MSA) using a pre-built HmmUFOtu database" << endl;
+	cerr << "Generate simulated single or paired-end NGS reads, aligned or un-aligned, using a pre-built HmmUFOtu database" << endl;
 }
 
 /**
@@ -373,8 +363,8 @@ int main(int argc, char* argv[]) {
 		}
 		else { /* simulate from restricted regions */
 			size_t i = loc_dist(rng);
-			start = myLoci[i].csStart;
-			end = myLoci[i].csEnd;
+			start = myLoci[i].start;
+			end = myLoci[i].end;
 			len = end - start + 1;
 		}
 

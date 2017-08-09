@@ -27,7 +27,6 @@
 #ifndef SRC_HMMUFOTU_HMM_H_
 #define SRC_HMMUFOTU_HMM_H_
 
-#include "BandedHMMCommons.h"
 #include "BandedHMMP7Bg.h"
 #include "BandedHMMP7Prior.h"
 #include "BandedHMMP7.h"

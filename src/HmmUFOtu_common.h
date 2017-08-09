@@ -41,6 +41,7 @@
 #include "SeqUtils.h"
 #include "SeqIO.h"
 #include "MSA.h"
+#include "CSLoc.h"
 #include "StringUtils.h"
 #include "TSVRecord.h"
 #include "TSVScanner.h"

@@ -53,7 +53,7 @@ static const string ANNEAL_HEADER = "id\tdescription\tsequence\tstrand\tCS_start
  * Print introduction of this program
  */
 void printIntro(void) {
-	cerr << "Anneal primer sequences to an HmmUFOtu database and evaluate primer efficiency" << endl;
+	cerr << "Anneal primer sequences to an HmmUFOtu database and evaluate the primer efficiency" << endl;
 }
 
 /**
