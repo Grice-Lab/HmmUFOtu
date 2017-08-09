@@ -32,11 +32,17 @@ using namespace std;
 using namespace EGriceLab;
 
 /**
+ * Print introduction of this program
+ */
+void printIntro(void) {
+	cerr << "Inspect an HmmUFOtu database, and optionally export its contents" << endl;
+}
+
+/**
  * Print the usage information
  */
 void printUsage(const string& progName) {
-	cerr << "Inspect a HmmUFOtu database" << endl
-		 << "Usage:    " << progName << "  <DB-NAME> [options]" << endl
+	cerr << "Usage:    " << progName << "  <DB-NAME> [options]" << endl
 		 << "DB-NAME  STR                    : HmmUFOtu database name (prefix)" << endl
 		 << "Options:    -sm  FLAG           : report the embedded build-in or customized DNA Submission Model in database" << endl
 		 << "            -dg  FLAG           : report the embedded build-in or customized Discrete Gamma Model (if enabled during training) in database" << endl
@@ -62,6 +68,7 @@ int main(int argc, char* argv[]) {
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
 	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
+		printIntro();
 		printUsage(argv[0]);
 		return EXIT_SUCCESS;
 	}

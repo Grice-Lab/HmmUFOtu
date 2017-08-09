@@ -52,11 +52,17 @@ static const int MIN_DG_CATEGORY = 2;
 static const int MAX_DG_CATEGORY = 8;
 
 /**
+ * Print introduction of this program
+ */
+void printIntro(void) {
+	cerr << "Build an HmmUFOtu database from reference MSA and phylogenetic tree files" << endl;
+}
+
+/**
  * Print the usage information
  */
 void printUsage(const string& progName) {
-	cerr << "Build a HmmUFOtu database" << endl
-		 << "Usage:    " << progName << "  <MSA-FILE> <TREE-FILE> [options]" << endl
+	cerr << "Usage:    " << progName << "  <MSA-FILE> <TREE-FILE> [options]" << endl
 		 << "MSA-FILE  FILE                   : multiple-sequence aligned (MSA) input" << endl
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
 		 << "Options:    -n  STR              : database name (prefix), use 'MSA-FILE' by default" << endl
@@ -89,6 +95,7 @@ int main(int argc, char* argv[]) {
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
 	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
+		printIntro();
 		printUsage(argv[0]);
 		return EXIT_SUCCESS;
 	}

@@ -50,11 +50,17 @@ enum TaxonLevel { KINDOM, PHYLUM, CLASS, ORDER, FAMILY, GENUS, SPECIES };
 static const string ANNEAL_HEADER = "id\tdescription\tsequence\tstrand\tCS_start\tCS_end\talignment\ttotal_nodes\ttotal_leaves\thit_nodes\thit_leaves\tefficiency_nodes\tefficiency_leaves";
 
 /**
+ * Print introduction of this program
+ */
+void printIntro(void) {
+	cerr << "Anneal primer sequences to an HmmUFOtu database and evaluate primer efficiency" << endl;
+}
+
+/**
  * Print the usage information
  */
 void printUsage(const string& progName) {
-	cerr << "Anneal primer sequences to an HmmUFOtu database and evaluate its efficienty" << endl
-		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <SEQ-FILE> [options]" << endl
+	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <SEQ-FILE> [options]" << endl
 		 << "SEQ-FILE  FILE                 : primer sequence read file in fasta format, degenerated bases are allowed" << endl
 		 << "Options:    -o  FILE           : write the PLACEMENT output to FILE instead of stdout" << endl
 		 << "            -i|--identity  DBL : minimum identity between aligned primer sequence and an OTU sequence considered as a good hit [" << DEFAULT_MIN_IDENTITY << "]" << endl
@@ -80,6 +86,7 @@ int main(int argc, char* argv[]) {
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
 	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
+		printIntro();
 		printUsage(argv[0]);
 		return EXIT_SUCCESS;
 	}

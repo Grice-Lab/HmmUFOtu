@@ -47,7 +47,7 @@ static const string DEFAULT_METHOD = "constant";
  * Print introduction of this program
  */
 void printIntro(void) {
-	cerr << "Subset (subsample) an OTUTable and prune the samples and OTUs if necessary" << endl;
+	cerr << "Normalize an OTUTable so every sample contains the same number of reads" << endl;
 }
 
 /**

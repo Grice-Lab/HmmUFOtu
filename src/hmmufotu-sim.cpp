@@ -73,11 +73,17 @@ struct CSLoc {
 };
 
 /**
+ * Print introduction of this program
+ */
+void printIntro(void) {
+	cerr << "Generate simulated multiple-aligned sequences (MSA) using a pre-built HmmUFOtu database" << endl;
+}
+
+/**
  * Print the usage information
  */
 void printUsage(const string& progName) {
-	cerr << "Generate simulated multiple-aligned sequences (MSA) using a pre-built HmmUFOtu database" << endl
-		 << "Usage:    " << progName << "  <HmmUFOtu-DB> <SEQ-OUT> [MATE-OUT] <-N NUM-READS> [options]" << endl
+	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <SEQ-OUT> [MATE-OUT] <-N NUM-READS> [options]" << endl
 		 << "Options:    SEQ-OUT  FILE       : OUTPUT file" << endl
 		 << "            MATE-OUT  FILE      : optional OUTPUT file for paired-end mode, this will suppress -k|--keep-gap option" << endl
 		 << "            -N  LONG            : number of reads/pairs to generate" << endl
@@ -129,6 +135,7 @@ int main(int argc, char* argv[]) {
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
 	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
+		printIntro();
 		printUsage(argv[0]);
 		return EXIT_SUCCESS;
 	}

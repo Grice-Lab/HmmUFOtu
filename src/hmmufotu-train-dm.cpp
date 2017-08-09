@@ -49,11 +49,17 @@ static const int DEFAULT_NSEED = 1;
 static const string ALPHABET = "dna";
 
 /**
+ * Print introduction of this program
+ */
+void printIntro(void) {
+	cerr << "Train an HmmUFOtu prior model using Dirichlet Density/Mixture models with customized data" << endl;
+}
+
+/**
  * Print the usage information of this program
  */
 void printUsage(const string& progName) {
-	cerr << "Train a HmmUFOtu prior model using Dirichlet Density/Mixture ML models for " << progName << " analysis" << endl
-		 << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
+	cerr << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
 		 << "MSA-FILE  FILE             : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
 		 << "Options:    -o FILE        : write output to FILE instead of stdout" << endl
 		 << "            -qM INT[>=2]   : number of Dirichlet Mixture model components for match state emissions [" << DEFAULT_QM << "]" << endl
@@ -82,6 +88,7 @@ int main(int argc, char* argv[]) {
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
 	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
+		printIntro();
 		printUsage(argv[0]);
 		return EXIT_SUCCESS;
 	}

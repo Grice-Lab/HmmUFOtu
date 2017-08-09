@@ -41,11 +41,17 @@ static const string DEFAULT_SM_TYPE = "GTR";
 static const string DEFAULT_TRAINING_METHOD = "Gojobori";
 
 /**
+ * Print introduction of this program
+ */
+void printIntro(void) {
+	cerr << "Train a DNA Substitution Model with customized data" << endl;
+}
+
+/**
  * Print the usage information
  */
 void printUsage(const string& progName) {
-	cerr << "Train a customized DNA Substitution Model for " << progName << " analysis" << endl
-		 << "Usage:    " << progName << "  <MSA-FILE> <TREE-FILE> [options]" << endl
+	cerr << "Usage:    " << progName << "  <MSA-FILE> <TREE-FILE> [options]" << endl
 		 << "MSA-FILE  FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
 		 << "Options:    -o FILE              : write output to FILE instead of stdout" << endl
@@ -67,6 +73,7 @@ int main(int argc, char* argv[]) {
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
 	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
+		printIntro();
 		printUsage(argv[0]);
 		return EXIT_SUCCESS;
 	}

@@ -62,7 +62,7 @@ typedef boost::unordered_map<string, vector<string>> OTU2ReadMap;
  * Print introduction of this program
  */
 void printIntro(void) {
-	cerr << "Generate phylogeny-based OTU summary table with taxonomy information, and optional consensus based OTU representative alignments and tree" << endl;
+	cerr << "Generate phylogeny-based OTUTable with taxonomy information, and optional consensus based OTU representatives and tree" << endl;
 }
 
 /**

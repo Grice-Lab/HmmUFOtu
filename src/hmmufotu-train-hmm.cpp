@@ -53,11 +53,17 @@ static const string DEFAULT_DM_FILE = "gg_97_otus.dm";
 static const string ALPHABET = "dna";
 
 /**
+ * Print introduction of this program
+ */
+void printIntro(void) {
+	cerr << "Train a Banded-HMM model with customized data" << endl;
+}
+
+/**
  * Print the usage information of this program
  */
 void printUsage(const string& progName) {
-	cerr << "Train a Banded-HMM model used for HmmUFOtu program" << endl
-		 << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
+	cerr << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
 		 << "MSA-FILE  FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
 		 << "Options:    -o FILE              : write output to FILE instead of stdout" << endl
 		 << "            -f|--symfrac DOUBLE  : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
@@ -78,6 +84,7 @@ int main(int argc, char *argv[]) {
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
 	if(cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
+		printIntro();
 		printUsage(argv[0]);
 		return EXIT_SUCCESS;
 	}
