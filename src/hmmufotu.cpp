@@ -38,15 +38,7 @@ static const int MIN_SEED_LEN = 15;
 static const int DEFAULT_SEED_REGION = 50;
 static const double DEFAULT_MAX_PLACE_ERROR = 20;
 static const int DEFAULT_NUM_THREADS = 1;
-
 static const string ASSIGNMENT_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\tbranch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
-
-#ifndef HAVE_LIBZ
-static const string ZLIB_SUPPORT = "";
-#else
-static const string ZLIB_SUPPORT = ", support .gz or .bz2 compressed file";
-#endif
-
 
 /**
  * Print introduction of this program
@@ -59,6 +51,10 @@ void printIntro(void) {
  * Print the usage information
  */
 void printUsage(const string& progName) {
+	string ZLIB_SUPPORT;
+	#ifdef HAVE_LIBZ
+	ZLIB_SUPPORT = ", support .gz or .bz2 compressed file";
+	#endif
 
 	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <READ-FILE1> [READ-FILE2] [options]" << endl
 		 << "READ-FILE1  FILE               : sequence read file for the assembled/forward read" << ZLIB_SUPPORT << endl
@@ -189,8 +185,10 @@ int main(int argc, char* argv[]) {
 
 	/* guess seq format */
 	string fn = fwdFn;
+#ifdef HAVE_LIBZ
 	StringUtils::removeEnd(fn, GZIP_FILE_SUFFIX);
 	StringUtils::removeEnd(fn, BZIP2_FILE_SUFFIX);
+#endif
 	if(StringUtils::endsWith(fn, ".fasta") || StringUtils::endsWith(fn, ".fas")
 		|| StringUtils::endsWith(fn, ".fa") || StringUtils::endsWith(fn, ".fna"))
 		seqFmt = "fasta";
@@ -320,6 +318,7 @@ int main(int argc, char* argv[]) {
 	const DegenAlphabet* abc = hmm.getNuclAbc();
 
 	/* prepare SeqIO */
+#ifdef HAVE_LIBZ
 	if(StringUtils::endsWith(fwdFn, GZIP_FILE_SUFFIX)) {
 		boost::iostreams::filtering_istream* zipI = new boost::iostreams::filtering_istream();
 		zipI->push(boost::iostreams::gzip_decompressor());
@@ -332,10 +331,13 @@ int main(int argc, char* argv[]) {
 		zipI->push(fwdIn);
 		fwdSeqI.reset(reinterpret_cast<istream*> (zipI), abc, seqFmt);
 	}
-	else {
+	else
+#endif
+	{
 		fwdSeqI.reset(&fwdIn, abc, seqFmt);
 	}
 	if(revIn.is_open()) {
+#ifdef HAVE_LIBZ
 		if(StringUtils::endsWith(revFn, GZIP_FILE_SUFFIX)) {
 			boost::iostreams::filtering_istream* zipI = new boost::iostreams::filtering_istream();
 			zipI->push(boost::iostreams::gzip_decompressor());
@@ -348,7 +350,9 @@ int main(int argc, char* argv[]) {
 			zipI->push(revIn);
 			revSeqI.reset(reinterpret_cast<istream*> (zipI), abc, seqFmt);
 		}
-		else {
+		else
+#endif
+		{
 			revSeqI.reset(&fwdIn, abc, seqFmt);
 		}
 	}
@@ -367,7 +371,6 @@ int main(int argc, char* argv[]) {
 		cerr << "Error: Unmatched CS length between CSFM-index and MSA data" << endl;
 		return EXIT_FAILURE;
 	}
-
 
 	PTUnrooted ptu;
 	if(!alignOnly) {
