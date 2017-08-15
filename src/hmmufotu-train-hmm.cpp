@@ -66,6 +66,7 @@ void printUsage(const string& progName) {
 	cerr << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
 		 << "MSA-FILE  FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
 		 << "Options:    -o FILE              : write output to FILE instead of stdout" << endl
+		 << "            --fmt  STR           : MSA format, supported format: 'fasta', 'msa'" << endl
 		 << "            -f|--symfrac DOUBLE  : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
 		 << "            -dm FILE             : use customized trained Dirichlet Model in FILE instead of the build-in file " << endl
 		 << "            -v  FLAG             : enable verbose information, you may set multiple -v for more details" << endl
@@ -100,6 +101,9 @@ int main(int argc, char *argv[]) {
 	if(cmdOpts.hasOpt("-o"))
 		outFn = cmdOpts.getOpt("-o");
 
+	if(cmdOpts.hasOpt("--fmt"))
+		fmt = cmdOpts.getOpt("--fmt");
+
 	if(cmdOpts.hasOpt("-f"))
 		symfrac = atof(cmdOpts.getOptStr("-f"));
 	if(cmdOpts.hasOpt("-symfrac"))
@@ -125,13 +129,19 @@ int main(int argc, char *argv[]) {
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* guess input format */
-	if(StringUtils::endsWith(inFn, ".fasta") || StringUtils::endsWith(inFn, ".fas")
+	if(fmt.empty()) {
+		if(StringUtils::endsWith(inFn, ".fasta") || StringUtils::endsWith(inFn, ".fas")
 		|| StringUtils::endsWith(inFn, ".fa") || StringUtils::endsWith(inFn, ".fna"))
-		fmt = "fasta";
-	else if(StringUtils::endsWith(inFn, ".msa"))
-		fmt = "msa";
-	else {
-		cerr << "Unrecognized MSA file format" << endl;
+			fmt = "fasta";
+		else if(StringUtils::endsWith(inFn, ".msa"))
+			fmt = "msa";
+		else {
+			cerr << "Unrecognized MSA file format" << endl;
+			return EXIT_FAILURE;
+		}
+	}
+	if(!(fmt == "fasta" || fmt == "msa")) {
+		cerr << "Unsupported sequence format '" << fmt << "'" << endl;
 		return EXIT_FAILURE;
 	}
 

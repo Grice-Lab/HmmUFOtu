@@ -55,6 +55,7 @@ void printUsage(const string& progName) {
 		 << "MSA-FILE  FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
 		 << "Options:    -o FILE              : write output to FILE instead of stdout" << endl
+		 << "            --fmt  STR           : MSA format, supported format: 'fasta', 'msa'" << endl
 		 << "            -s|--sub-model STR   : build a time-reversible DNA Substitution Model type, must be one of GTR, TN93, HKY85, F81, K80 or JC69 [" << DEFAULT_SM_TYPE << "]" << endl
 		 << "            -m|--method  STR     : model training method using known phylogenetic tree data, either 'Gojobori' or 'Goldman' [" << DEFAULT_TRAINING_METHOD << "]" << endl
 		 << "            -v  FLAG             : enable verbose information, you may set multiple -v for more details" << endl
@@ -87,17 +88,6 @@ int main(int argc, char* argv[]) {
 	msaFn = cmdOpts.getMainOpt(0);
 	treeFn = cmdOpts.getMainOpt(1);
 
-	/* check input format */
-	if(StringUtils::endsWith(msaFn, ".fasta") || StringUtils::endsWith(msaFn, ".fas")
-		|| StringUtils::endsWith(msaFn, ".fa") || StringUtils::endsWith(msaFn, ".fna"))
-		fmt = "fasta";
-	else if(StringUtils::endsWith(msaFn, ".msa"))
-		fmt = "msa";
-	else {
-		cerr << "Unrecognized format of MSA file '" << msaFn << "'" << endl;
-		return EXIT_FAILURE;
-	}
-
 	if(!(StringUtils::endsWith(treeFn, ".tree"))) {
 		cerr << "Unrecognized TREE-FILE format, must be in Newick format" << endl;
 		return EXIT_FAILURE;
@@ -105,6 +95,9 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-o"))
 		outFn = cmdOpts.getOpt("-o");
+
+	if(cmdOpts.hasOpt("--fmt"))
+		fmt = cmdOpts.getOpt("--fmt");
 
 	if(cmdOpts.hasOpt("-s"))
 		smType = cmdOpts.getOpt("-s");
@@ -118,6 +111,23 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
+
+	/* guess input format */
+	if(fmt.empty()) {
+		if(StringUtils::endsWith(msaFn, ".fasta") || StringUtils::endsWith(msaFn, ".fas")
+		|| StringUtils::endsWith(msaFn, ".fa") || StringUtils::endsWith(msaFn, ".fna"))
+			fmt = "fasta";
+		else if(StringUtils::endsWith(msaFn, ".msa"))
+			fmt = "msa";
+		else {
+			cerr << "Unrecognized format of MSA file '" << msaFn << "'" << endl;
+			return EXIT_FAILURE;
+		}
+	}
+	if(!(fmt == "fasta" || fmt == "msa")) {
+		cerr << "Unsupported sequence format '" << fmt << "'" << endl;
+		return EXIT_FAILURE;
+	}
 
 	/* open input files */
 	if(fmt != "msa")

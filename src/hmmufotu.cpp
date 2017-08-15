@@ -61,6 +61,7 @@ void printUsage(const string& progName) {
 		 << "READ-FILE2  FILE               : sequence read file for the reverse read" << ZLIB_SUPPORT << endl
 		 << "Options:    -o  FILE           : write the assignment output to FILE instead of stdout" << endl
 		 << "            -a  FILE           : in addition to the assignment output, write the read alignment to FILE" << endl
+		 << "            --fmt  STR         : read file format (applied to all read files), supported format: 'fasta', 'fastq'" << endl
 		 << "            -L|--seed-len  INT : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT            : size of 5'/3' seed region for finding seeds [" << DEFAULT_SEED_REGION << "]" << endl
 		 << "            -s  FLAG           : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
@@ -129,6 +130,9 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-a"))
 		alnFn = cmdOpts.getOpt("-a");
 
+	if(cmdOpts.hasOpt("--fmt"))
+		seqFmt = cmdOpts.getOpt("--fmt");
+
 	if(cmdOpts.hasOpt("-L"))
 		seedLen = ::atoi(cmdOpts.getOptStr("-L"));
 	if(cmdOpts.hasOpt("--seed-len"))
@@ -184,18 +188,24 @@ int main(int argc, char* argv[]) {
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* guess seq format */
-	string fn = fwdFn;
+	if(seqFmt.empty()) {
+		string fn = fwdFn;
 #ifdef HAVE_LIBZ
-	StringUtils::removeEnd(fn, GZIP_FILE_SUFFIX);
-	StringUtils::removeEnd(fn, BZIP2_FILE_SUFFIX);
+		StringUtils::removeEnd(fn, GZIP_FILE_SUFFIX);
+		StringUtils::removeEnd(fn, BZIP2_FILE_SUFFIX);
 #endif
-	if(StringUtils::endsWith(fn, ".fasta") || StringUtils::endsWith(fn, ".fas")
+		if(StringUtils::endsWith(fn, ".fasta") || StringUtils::endsWith(fn, ".fas")
 		|| StringUtils::endsWith(fn, ".fa") || StringUtils::endsWith(fn, ".fna"))
-		seqFmt = "fasta";
-	else if(StringUtils::endsWith(fn, ".fastq") || StringUtils::endsWith(fn, ".fq"))
-		seqFmt = "fastq";
-	else {
-		cerr << "Unrecognized format of MSA file '" << fwdFn << "'" << endl;
+			seqFmt = "fasta";
+		else if(StringUtils::endsWith(fn, ".fastq") || StringUtils::endsWith(fn, ".fq"))
+			seqFmt = "fastq";
+		else {
+			cerr << "Unrecognized format of MSA file '" << fwdFn << "'" << endl;
+			return EXIT_FAILURE;
+		}
+	}
+	if(!(seqFmt == "fasta" || seqFmt == "fastq")) {
+		cerr << "Unsupported sequence format '" << seqFmt << "'" << endl;
 		return EXIT_FAILURE;
 	}
 

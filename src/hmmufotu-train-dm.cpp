@@ -62,6 +62,7 @@ void printUsage(const string& progName) {
 	cerr << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
 		 << "MSA-FILE  FILE             : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
 		 << "Options:    -o FILE        : write output to FILE instead of stdout" << endl
+		 << "            --fmt  STR     : MSA format, supported format: 'fasta', 'msa'" << endl
 		 << "            -qM INT[>=2]   : number of Dirichlet Mixture model components for match state emissions [" << DEFAULT_QM << "]" << endl
 		 << "            -symfrac       : conservation threshold for an MSA site to be considered as a Match state [" << DEFAULT_SYMFRAC << "]" << endl
 		 << "            --max-it INT   : maximum iteration allowed in gradient descent training, 0 for no limit [" << MAX_ITER << "]" << endl
@@ -103,6 +104,8 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-o"))
 		outFn = cmdOpts.getOpt("-o");
 
+	if(cmdOpts.hasOpt("--fmt"))
+		fmt = cmdOpts.getOpt("--fmt");
 
 	if(cmdOpts.hasOpt("-qM"))
 		qM = ::atoi(cmdOpts.getOpt("-qM").c_str());
@@ -144,13 +147,19 @@ int main(int argc, char* argv[]) {
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* guess input format */
-	if(StringUtils::endsWith(inFn, ".fasta") || StringUtils::endsWith(inFn, ".fas")
+	if(fmt.empty()) {
+		if(StringUtils::endsWith(inFn, ".fasta") || StringUtils::endsWith(inFn, ".fas")
 		|| StringUtils::endsWith(inFn, ".fa") || StringUtils::endsWith(inFn, ".fna"))
-		fmt = "fasta";
-	else if(StringUtils::endsWith(inFn, ".msa"))
-		fmt = "msa";
-	else {
-		cerr << "Unrecognized MSA file format" << endl;
+			fmt = "fasta";
+		else if(StringUtils::endsWith(inFn, ".msa"))
+			fmt = "msa";
+		else {
+			cerr << "Unrecognized MSA file format" << endl;
+			return EXIT_FAILURE;
+		}
+	}
+	if(!(fmt == "fasta" || fmt == "msa")) {
+		cerr << "Unsupported sequence format '" << fmt << "'" << endl;
 		return EXIT_FAILURE;
 	}
 

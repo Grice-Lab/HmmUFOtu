@@ -66,6 +66,7 @@ void printUsage(const string& progName) {
 		 << "MSA-FILE  FILE                   : multiple-sequence aligned (MSA) input" << endl
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
 		 << "Options:    -n  STR              : database name (prefix), use 'MSA-FILE' by default" << endl
+		 << "            --fmt  STR           : MSA format, supported format: 'fasta'" << endl
 		 << "            -f|--symfrac  DOUBLE : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
 		 << "            -a|--anno  FILE      : use tab-delimited taxonamy annotation file for the sequences in the MSA and TREE files" << endl
 		 << "            -dm  FILE            : use customized trained Dirichlet Model in FILE instead of the build-in file" << endl
@@ -115,6 +116,9 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-n"))
 		dbName = cmdOpts.getOpt("-n");
 
+	if(cmdOpts.hasOpt("--fmt"))
+		fmt = cmdOpts.getOpt("--fmt");
+
 	if(cmdOpts.hasOpt("-f"))
 		symfrac = atof(cmdOpts.getOptStr("-f"));
 	if(cmdOpts.hasOpt("-symfrac"))
@@ -152,11 +156,17 @@ int main(int argc, char* argv[]) {
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* check options */
-	if(StringUtils::endsWith(seqFn, ".fasta") || StringUtils::endsWith(seqFn, ".fas")
+	if(fmt.empty()) {
+		if(StringUtils::endsWith(seqFn, ".fasta") || StringUtils::endsWith(seqFn, ".fas")
 		|| StringUtils::endsWith(seqFn, ".fa") || StringUtils::endsWith(seqFn, ".fna"))
-		fmt = "fasta";
-	else {
-		cerr << "Unrecognized format of MSA file '" << seqFn << "'" << endl;
+			fmt = "fasta";
+		else {
+			cerr << "Unrecognized format of MSA file '" << seqFn << "'" << endl;
+			return EXIT_FAILURE;
+		}
+	}
+	if(fmt != "fasta") {
+		cerr << "Unsupported sequence format '" << fmt << "'" << endl;
 		return EXIT_FAILURE;
 	}
 
