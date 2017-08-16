@@ -108,23 +108,29 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 
 	int regionLen = seedRegion < read.length() ? seedRegion : read.length(); /* search region */
 	/* find seed in 5' */
-	for(int seedFrom = 0; seedFrom < regionLen - seedLen + 1; ++seedFrom) {
+	for(int seedFrom = 0; seedFrom + seedLen - 1 < regionLen; ++seedFrom) {
+		int seedTo = seedFrom + seedLen - 1;
 		PrimarySeq seed(abc, read.getId(), read.subseq(seedFrom, seedLen));
 		const CSLoc& loc = csfm.locateOne(seed.getSeq());
-		if(loc.start > 0 && loc.end > 0) /* a read seed located */ {
+		if(loc.isValid()) /* a read seed located */ {
+//			cerr << "using 5' seed seedFrom: " << seedFrom << " seedTo: " << seedTo << endl;
+//			cerr << "Using 5' seed: " << seed.getSeq() << endl;
 //					fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedFrom + 1, seedFrom + seedLen, loc.CS.length(), loc.CS.c_str());
-			seqVpaths.push_back(hmm.buildAlignPath(loc, seedFrom + 1, seedFrom + seedLen)); /* seed_from and seed_to are 1-based */
+			seqVpaths.push_back(hmm.buildAlignPath(loc, seedFrom + 1, seedTo + 1)); /* seed_from and seed_to are 1-based */
 			break; /* only one 5'-seed necessary */
 		}
 	}
 	/* find seed in 3', if requested */
-	if(mode == BandedHMMP7::GLOBAL) {
-		for(int seedTo = read.length() - 1; seedTo - seedLen + 1 >= read.length() - regionLen; --seedTo) {
-			PrimarySeq seed(abc, read.getId(), read.subseq(seedTo - seedLen + 1, seedLen));
+	if(mode == BandedHMMP7::GLOBAL && (seqVpaths.empty() || read.length() >= 2 * regionLen)) {
+		for(int seedTo = read.length() - 1; seedTo - seedLen + 1 >= (int) read.length() - regionLen; --seedTo) {
+			int seedFrom = seedTo - seedLen + 1;
+			PrimarySeq seed(abc, read.getId(), read.subseq(seedFrom, seedLen));
 			const CSLoc& loc = csfm.locateOne(seed.getSeq());
-			if(loc.start > 0 && loc.end > 0) /* a read seed located */ {
-//						fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedTo - seedLen + 2, seedTo + 1, loc.CS.length(), loc.CS.c_str());
-				seqVpaths.push_back(hmm.buildAlignPath(loc, seedTo - seedLen + 2, seedTo + 1)); /* seed_from and seed_to are 1-based */
+			if(loc.isValid()) { /* a read seed located */
+//				cerr << "using 3' seed seedFrom: " << seedFrom << " seedTo: " << seedTo << endl;
+//				cerr << "Using 3' seed: " << seed.getSeq() << endl;
+//				fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedTo - seedLen + 2, seedTo + 1, loc.CS.length(), loc.CS.c_str());
+				seqVpaths.push_back(hmm.buildAlignPath(loc, seedFrom + 1, seedTo + 1)); /* seed_from and seed_to are 1-based */
 				break; /* only one 3'-seed necessary */
 			}
 		}

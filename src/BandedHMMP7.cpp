@@ -769,6 +769,8 @@ void BandedHMMP7::calcViterbiScores(const PrimarySeq& seq,
 	for(vector<VPath>::const_iterator vpath = vpaths.begin(); vpath != vpaths.end(); ++vpath) {
 		/* Determine banded boundaries */
 		int upQLen = vpath == vpaths.begin() /* first path ? */ ? vpath->from - 1 : vpath->from - (vpath - 1)->to;
+		if(upQLen < 0)
+			upQLen = 0;
 		int up_start = vpath == vpaths.begin() /* first path ? */ ? vpath->start - upQLen * (1 + kMinGapFrac) : (vpath - 1)->end;
 		if (up_start < 1)
 			up_start = 1;
@@ -867,9 +869,7 @@ void BandedHMMP7::calcViterbiScores(const PrimarySeq& seq,
 BandedHMMP7::ViterbiAlignPath BandedHMMP7::buildAlignPath(const CSLoc& csLoc, int csFrom, int csTo) const {
 //	cerr << "csStart:" << csLoc.start << " csEnd:" << csLoc.end << " csFrom:" << csFrom << " csTo:" << csTo <<
 //			" CSLen:" << csLoc.CS.length() << " CS:" << csLoc.CS << endl;
-	assert(csLoc.start >= 1 && csLoc.start <= csLoc.end
-			&& csFrom >= 1 && csFrom <= csTo
-			&& csLoc.CS.length() > csLoc.end - csLoc.start && csLoc.CS.length() > csTo - csFrom);
+	assert(csLoc.isValid(csFrom, csTo));
 
 	/* calculate profile start, end and path */
 	int start = 0;

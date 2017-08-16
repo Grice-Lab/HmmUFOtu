@@ -170,6 +170,11 @@ public:
 			start(start), end(end), from(from), to(to), nIns(nIns), nDel(nDel)
 		{  }
 
+		/** member methods */
+		bool isValid() const {
+			return start > 0 && start <= end && from > 0 && from <= to && nIns >= 0 && nDel >= 0;
+		}
+
 		/* member fields */
 		int start, end; /* 1-based position on profile */
 		int from, to;   /* 1-based position on seq */

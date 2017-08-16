@@ -30,6 +30,15 @@ struct CSLoc {
 		: start(start), end(end), CS(CS)
 	{  }
 
+	/** member methods */
+	bool isValid() const {
+		return start > 0 && start < end && CS.length() > end - start;
+	}
+
+	bool isValid(int from, int to) const {
+		return isValid() && CS.length() > to - from;
+	}
+
 	int start; // CS start
 	int end;   // CS end
 	string CS; // CS string
