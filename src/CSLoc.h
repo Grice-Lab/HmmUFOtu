@@ -21,7 +21,7 @@ struct CSLoc {
 	/**
 	 * Default constructor, do nothing
 	 */
-	CSLoc() {  }
+	CSLoc() : start(0), end(0) {  }
 
 	/**
 	 * Construct a CSLoc at given loc

@@ -79,7 +79,7 @@ void printUsage(const string& progName) {
 		 << "            -q  DBL            : minimum qTaxon score (negative log10 posterior error rate) required [" << DEFAULT_MIN_Q << "]" << endl
 		 << "            --aln-iden DBL     : minimum alignment identity required for assignment result [" << DEFAULT_MIN_ALN_IDENTITY << "]" << endl
 		 << "            --hmm-iden DBL     : minimum profile-HMM identity required for assignment result [" << DEFAULT_MIN_HMM_IDENTITY << "]" << endl
-		 << "            -e|--effN  DBL     : effective number of sequences (pseudo-count) for inferencing CS of OTUs with Dirichelet Density models, set 0 to disable [" << DEFAULT_EFFN << "]" << endl
+		 << "            -e|--effN  DBL     : effective number of sequences (pseudo-count) for inferring CS of OTUs with Dirichelet Density models, set 0 to disable [" << DEFAULT_EFFN << "]" << endl
 		 << "            -n  INT            : minimum number of observed reads required to define an OTU across all samples, 0 for no filtering [" << DEFAULT_MIN_NREAD << "]" << endl
 		 << "            -s  INT            : minimum number of observed samples required to define an OTU, 0 for no filtering [" << DEFAULT_MIN_NSAMPLE << "]" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
@@ -163,8 +163,8 @@ int main(int argc, char* argv[]) {
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
 	/* validate options */
-	if(!(effN > 0)) {
-		cerr << "-e|--effN must be positive" << endl;
+	if(!(effN >= 0)) {
+		cerr << "-e|--effN must be non-negative" << endl;
 		return EXIT_FAILURE;
 	}
 	if(!(minRead >= 0)) {
@@ -191,7 +191,7 @@ int main(int argc, char* argv[]) {
 		}
 		infoLog << "Read in sample names from " << listFn << endl;
 		inFiles.clear(); /* clear inFiles */
-		sampleFn2Name.clear(); /* clear sample names */
+//		sampleFn2Name.clear(); /* clear sample names */
 		string line;
 		while(std::getline(listIn, line)) {
 			if(line.front() == '#')
@@ -199,9 +199,13 @@ int main(int argc, char* argv[]) {
 			vector<string> fields;
 			boost::split(fields, line, boost::is_any_of("\t"));
 			if(fields.size() >= 2) {
-				inFiles.push_back(fields[1]);
-				sampleFn2Name[fields[1]] = fields[0];
-				nRead++;
+				string name = fields[0];
+				string fn = fields[1];
+				if(sampleFn2Name.count(fn) > 0) { /* this is an input file */
+					inFiles.push_back(fn);
+					sampleFn2Name[fn] = name; /* update the sample name */
+					nRead++;
+				}
 			}
 		}
 		listIn.close();
@@ -303,8 +307,8 @@ int main(int argc, char* argv[]) {
 		infoLog << "Processing sample " << sampleFn2Name[infn] << " ..." << endl;
 		ifstream in(infn.c_str());
 		if(!in.is_open()) {
-			cerr << "Unable to open '" << infn << "': " << ::strerror(errno) << endl;
-			return EXIT_FAILURE;
+			cerr << "Unable to open '" << infn << "': " << ::strerror(errno) << " sampled ignored" << endl;
+			continue;
 		}
 		TSVScanner tsvIn(in, true);
 		sampleNames.push_back(sample);
