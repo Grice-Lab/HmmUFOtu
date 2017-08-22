@@ -74,7 +74,7 @@ void printUsage(const string& progName) {
 		 << "Options:    -o  FILE           : OTU summary output, required" << endl
 		 << "            -r  FILE           : output the read IDs for each OTU" << endl
 		 << "            -l  FILE           : an optional sample list, with 1st field sample-name and 2nd field input filename, only input files in list will be used" << endl
-		 << "            -c  FILE           : OTU Consensus Sequence (CS) alignment output" << endl
+		 << "            -c  FILE           : OTU Consensus Sequence (CS) alignment of each OTU" << endl
 		 << "            -t  FILE           : OTU tree output" << endl
 		 << "            -q  DBL            : minimum qTaxon score (negative log10 posterior error rate) required [" << DEFAULT_MIN_Q << "]" << endl
 		 << "            --aln-iden DBL     : minimum alignment identity required for assignment result [" << DEFAULT_MIN_ALN_IDENTITY << "]" << endl
@@ -82,6 +82,7 @@ void printUsage(const string& progName) {
 		 << "            -e|--effN  DBL     : effective number of sequences (pseudo-count) for inferring CS of OTUs with Dirichelet Density models, set 0 to disable [" << DEFAULT_EFFN << "]" << endl
 		 << "            -n  INT            : minimum number of observed reads required to define an OTU across all samples, 0 for no filtering [" << DEFAULT_MIN_NREAD << "]" << endl
 		 << "            -s  INT            : minimum number of observed samples required to define an OTU, 0 for no filtering [" << DEFAULT_MIN_NSAMPLE << "]" << endl
+		 << "            --no-gap  FLAG     : if -c is set, this will output the non-gapped OTU sequences instead of aligned CS alignment" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
@@ -104,7 +105,7 @@ int main(int argc, char* argv[]) {
 	double minHmmIden = DEFAULT_MIN_HMM_IDENTITY;
 	int minRead = DEFAULT_MIN_NREAD;
 	int minSample = DEFAULT_MIN_NSAMPLE;
-	bool doNorm = false;
+	bool noGap = false;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -158,6 +159,9 @@ int main(int argc, char* argv[]) {
 		minRead = ::atoi(cmdOpts.getOptStr("-n"));
 	if(cmdOpts.hasOpt("-s"))
 		minSample = ::atoi(cmdOpts.getOptStr("-s"));
+
+	if(cmdOpts.hasOpt("--no-gap"))
+		noGap = true;
 
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
@@ -373,7 +377,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	/* write the CS tree */
+	/* write the CS seq */
 	if(csOut.is_open()) {
 		infoLog << "Writing OTU Consensus Sequences" << endl;
 		for(size_t i = 0; i < otuTable.numOTUs(); ++i) {
@@ -382,13 +386,16 @@ int main(int argc, char* argv[]) {
 			int nRead = data.count.sum();
 			int nSample = (data.count.array() > 0).count();
 
-			DigitalSeq seq = ptu.inferPostCS(node, data.freq, data.gap, effN);
+			DigitalSeq csSeq = ptu.inferPostCS(node, data.freq, data.gap, effN);
 			string desc = "DBName="
 					+ dbName + ";Taxonomy=\"" + otuTable.getTaxon(i)
 					+ "\";AnnoDist=" + boost::lexical_cast<string>(node->getAnnoDist())
 					+ ";ReadCount=" + boost::lexical_cast<string>(nRead)
 					+ ";SampleHits=" + boost::lexical_cast<string>(nSample);
-			csO.writeSeq(PrimarySeq(seq.getAbc(), seq.getName(), seq.toString(), desc));
+			PrimarySeq otuSeq(csSeq.getAbc(), csSeq.getName(), csSeq.toString(), desc);
+			if(noGap)
+				otuSeq.removeGaps();
+			csO.writeSeq(otuSeq);
 		}
 	}
 

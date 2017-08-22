@@ -74,7 +74,7 @@ void printUsage(const string& progName) {
 #ifdef _OPENMP
 		 << "            -p|--process INT   : number of threads/cpus used for parallel processing" << endl
 #endif
-		 << "            --align-only  FLAG : only align the read but not try to place it into the tree, this will make " + progName + " behaviors like a HMM aligner" << endl
+		 << "            --align-only  FLAG : only align the read but not try to place it into the tree, this will make " + progName + " behaviors like an HMM aligner" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
