@@ -84,6 +84,7 @@ void printUsage(const string& progName) {
 		 << "            -s  INT            : minimum number of observed samples required to define an OTU, 0 for no filtering [" << DEFAULT_MIN_NSAMPLE << "]" << endl
 		 << "            --no-gap  FLAG     : if -c is set, this will output the non-gapped OTU sequences instead of aligned CS alignment" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
+		 << "            --version          : show program version and exit" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
 
@@ -112,6 +113,11 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.empty() || cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
 		printIntro();
 		printUsage(argv[0]);
+		return EXIT_SUCCESS;
+	}
+
+	if(cmdOpts.hasOpt("--version")) {
+		printVersion(argv[0]);
 		return EXIT_SUCCESS;
 	}
 

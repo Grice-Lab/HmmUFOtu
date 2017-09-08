@@ -70,6 +70,7 @@ void printUsage(const string& progName) {
 		 << "            -f|--symfrac DOUBLE  : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
 		 << "            -dm FILE             : use customized trained Dirichlet Model in FILE instead of the build-in file " << endl
 		 << "            -v  FLAG             : enable verbose information, you may set multiple -v for more details" << endl
+		 << "            --version            : show program version and exit" << endl
 		 << "            -h|--help            : print this message and exit" << endl;
 }
 
@@ -89,6 +90,12 @@ int main(int argc, char *argv[]) {
 		printUsage(argv[0]);
 		return EXIT_SUCCESS;
 	}
+
+	if(cmdOpts.hasOpt("--version")) {
+		printVersion(argv[0]);
+		return EXIT_SUCCESS;
+	}
+
 	if(cmdOpts.numMainOpts() != 1) {
 		cerr << "Error:" << endl;
 		printUsage(argv[0]);

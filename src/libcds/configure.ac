@@ -39,9 +39,10 @@ AC_TYPE_SIZE_T
 AC_TYPE_UINT32_T
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
+#AC_FUNC_MALLOC # ignored to avoid cross-compilation problems
+#AC_FUNC_REALLOC # ignored to avoid cross-compilation problems
 AC_CHECK_FUNCS([select])
+AC_CHECK_FUNCS([malloc realloc])
 
 AC_CONFIG_FILES([Makefile
 									cds.pc

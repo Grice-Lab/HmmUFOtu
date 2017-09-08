@@ -66,6 +66,7 @@ void printUsage(const string& progName) {
 		 << "            -i|--identity  DBL : minimum identity between aligned primer sequence and an OTU sequence considered as a good hit [" << DEFAULT_MIN_IDENTITY << "]" << endl
 		 << "            -s|--strand  INT   : strand orientation for primers, 1 for forward, 2 for reverse, 3 for auto-detect by best alignment [" << DEFAULT_STRAND << "]" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
+		 << "            --version          : show program version and exit" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
 
@@ -88,6 +89,11 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.empty() || cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
 		printIntro();
 		printUsage(argv[0]);
+		return EXIT_SUCCESS;
+	}
+
+	if(cmdOpts.hasOpt("--version")) {
+		printVersion(argv[0]);
 		return EXIT_SUCCESS;
 	}
 

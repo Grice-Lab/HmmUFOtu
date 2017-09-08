@@ -62,6 +62,7 @@ void printUsage(const string& progName) {
 		 << "Options:    --method  STR      : subsetting method, either 'uniform' (wo/ replacement) or 'multinomial' (w/ placement) [" << DEFAULT_METHOD << "]" << endl
 		 << "            -S|--seed  INT     : random seed used for subsetting, for debug purpose" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
+		 << "            --version          : show program version and exit" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
 
@@ -81,6 +82,11 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.empty() || cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
 		printIntro();
 		printUsage(argv[0]);
+		return EXIT_SUCCESS;
+	}
+
+	if(cmdOpts.hasOpt("--version")) {
+		printVersion(argv[0]);
 		return EXIT_SUCCESS;
 	}
 

@@ -79,5 +79,10 @@ ostream& writeProgName(ostream& out, const string& name);
  */
 ostream& writeProgVersion(ostream& out, const string& version);
 
+/**
+ * show program and package version
+ */
+void printVersion(const string& prog);
+
 } /* end namespace EGriceLab */
 #endif /* HMMUFOTUCONST_H_ */

@@ -70,6 +70,7 @@ void printUsage(const string& progName) {
 		 << "            -s|--seed INT  : random seed used in Dirichlet Mixture model training (-qM > 1) for debug purpose" << endl
 		 << "            -n  INT        : number of different random seeds in Dirichlet Mixture model training [" << DEFAULT_NSEED << "]" << endl
 		 << "            -v  FLAG       : enable verbose information, you may set multiple -v for more details" << endl
+		 << "            --version      : show program version and exit" << endl
 		 << "            -h|--help      : print this help and exit" << endl;
 }
 
@@ -93,6 +94,12 @@ int main(int argc, char* argv[]) {
 		printUsage(argv[0]);
 		return EXIT_SUCCESS;
 	}
+
+	if(cmdOpts.hasOpt("--version")) {
+		printVersion(argv[0]);
+		return EXIT_SUCCESS;
+	}
+
 	if(cmdOpts.numMainOpts() != 1) {
 		cerr << "Error:" << endl;
 		printUsage(argv[0]);

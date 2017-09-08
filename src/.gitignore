@@ -17,3 +17,4 @@ Makefile
 /hmmufotu-train-hmm
 hmmufotu-subset
 hmmufotu-norm
+*.exe

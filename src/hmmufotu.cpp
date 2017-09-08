@@ -76,6 +76,7 @@ void printUsage(const string& progName) {
 #endif
 		 << "            --align-only  FLAG : only align the read but not try to place it into the tree, this will make " + progName + " behaviors like an HMM aligner" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
+		 << "            --version          : show program version and exit" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
 }
 
@@ -111,6 +112,11 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.empty() || cmdOpts.hasOpt("-h") || cmdOpts.hasOpt("--help")) {
 		printIntro();
 		printUsage(argv[0]);
+		return EXIT_SUCCESS;
+	}
+
+	if(cmdOpts.hasOpt("--version")) {
+		printVersion(argv[0]);
 		return EXIT_SUCCESS;
 	}
 

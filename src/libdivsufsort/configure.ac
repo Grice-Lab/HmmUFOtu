@@ -18,7 +18,8 @@ AC_TYPE_INT32_T
 AC_TYPE_UINT8_T
 
 # Checks for library functions.
-AC_FUNC_MALLOC
+#AC_FUNC_MALLOC # ignored to avoid cross-compilation problems
+AC_CHECK_FUNCS([malloc])
 AC_PROG_RANLIB
 
 AC_CONFIG_FILES([Makefile lib/Makefile examples/Makefile])

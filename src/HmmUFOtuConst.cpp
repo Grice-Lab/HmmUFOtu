@@ -23,6 +23,7 @@
  *  Created on: Aug 3, 2016
  *      Author: zhengqi
  */
+#include <iostream>
 #include <cstdio>
 #include <cassert>
 #include "HmmUFOtuConst.h"
@@ -55,6 +56,11 @@ ostream& writeProgName(ostream& out, const string& name) {
 
 ostream& writeProgVersion(ostream& out, const string& version) {
 	return out.write(version.c_str(), version.length() + 1);
+}
+
+void printVersion(const string& prog) {
+	cerr << prog << ": " << progVersion << endl;
+	cerr << "Package: " << progName << " " << progVersion << endl;
 }
 
 } /* end namespace EGriceLab */
