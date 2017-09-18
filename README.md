@@ -63,6 +63,13 @@ Output
 The main program 'hmmufotu' generates tab-delimited tables (TSV files), and is self explanatory.
 One other major program 'hmmufotu-sum' generates TSV format OTU tables (Operational Taxonomic Tables), which is compatitable with 3rd party tools such as QIIME.
 
+Pre-built databases
+-------------------
+You need to build an HmmUFOtu database before assigning taxonomies to your 16S or other target-loci sequencing reads. You can build your own database using `hmmufotu-build`, or alternatively download the pre-built databases below.
+* [gg_97_otus_GTR](https://upenn.box.com/s/hhfb5dcm85aiyy3marrrvxnhuvvha5lm "GreenGenes 97% OUT + GTR")    GreenGenes (v13.8) 97% OTU reference + GTR DNA model
+* [gg_97_otus_TN93](https://upenn.box.com/s/tuermjxh57hr100xpbdsv3vrn3njlb08 "GreenGenes 97% OUT + TN93")    GreenGenes (v13.8) 97% OTU reference + TN93 DNA model
+* [gg_97_otus_HKY85](https://upenn.box.com/s/eegfaceur2jc1n8dave6mt5ktokq6jtt "GreenGenes 97% OUT + HKY85")    GreenGenes (v13.8) 97% OTU reference + HKY85 DNA model
+
 Core programs
 -------------
 Core programs are fundamental tools for taxonomy assignment analysis of 16S and other target-amplicon sequencing data.
@@ -80,6 +87,10 @@ Model training programs include:
 * **hmmufotu-train-dm**		train an HmmUFOtu prior model using Dirichlet Density/Mixture models with customized data
 * **hmmufotu-train-hmm**	train a Banded-HMM model with customized data
 * **hmmufotu-train-sm**		train a DNA Substitution Model with customized data
+
+    Supported DNA Substitution models: GTR, TN93, HKY96, F81, K80, JC69
+    
+    Supported variable rate models: fixed rate or discrete-Gamma distribution (dΓ) based variable rate
 
 Utility programs
 -------------------------
