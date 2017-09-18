@@ -66,9 +66,9 @@ One other major program 'hmmufotu-sum' generates TSV format OTU tables (Operatio
 Pre-built databases
 -------------------
 You need to build an HmmUFOtu database before assigning taxonomies to your 16S or other target-loci sequencing reads. You can build your own database using `hmmufotu-build`, or alternatively download the pre-built databases below.
-* [gg_97_otus_GTR](https://upenn.box.com/s/hhfb5dcm85aiyy3marrrvxnhuvvha5lm "GreenGenes 97% OUT + GTR")    GreenGenes (v13.8) 97% OTU reference + GTR DNA model
-* [gg_97_otus_TN93](https://upenn.box.com/s/tuermjxh57hr100xpbdsv3vrn3njlb08 "GreenGenes 97% OUT + TN93")    GreenGenes (v13.8) 97% OTU reference + TN93 DNA model
-* [gg_97_otus_HKY85](https://upenn.box.com/s/eegfaceur2jc1n8dave6mt5ktokq6jtt "GreenGenes 97% OUT + HKY85")    GreenGenes (v13.8) 97% OTU reference + HKY85 DNA model
+* [gg_97_otus_GTR](https://upenn.box.com/shared/static/hhfb5dcm85aiyy3marrrvxnhuvvha5lm.zip "GreenGenes 97% OUT + GTR")    GreenGenes (v13.8) 97% OTU reference + GTR DNA model
+* [gg_97_otus_TN93](https://upenn.box.com/shared/static/tuermjxh57hr100xpbdsv3vrn3njlb08.zip "GreenGenes 97% OUT + TN93")    GreenGenes (v13.8) 97% OTU reference + TN93 DNA model
+* [gg_97_otus_HKY85](https://upenn.box.com/shared/static/eegfaceur2jc1n8dave6mt5ktokq6jtt.zip "GreenGenes 97% OUT + HKY85")    GreenGenes (v13.8) 97% OTU reference + HKY85 DNA model
 
 Core programs
 -------------
