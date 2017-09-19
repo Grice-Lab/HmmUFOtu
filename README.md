@@ -14,7 +14,7 @@ HmmUFOtu supports all major DNA substitution models, including
 * K80
 * JC69
 
-HmmUFOtu supports variable mutation rate phylogenetic evaluation using the Discrete Gamma models (Yang 1994).
+HmmUFOtu supports variable mutation rate phylogenetic evaluation using the Discrete Gamma (dΓ) models (Yang 1994).
 
 Implementation
 --------------
@@ -87,10 +87,6 @@ Model training programs include:
 * **hmmufotu-train-dm**		train an HmmUFOtu prior model using Dirichlet Density/Mixture models with customized data
 * **hmmufotu-train-hmm**	train a Banded-HMM model with customized data
 * **hmmufotu-train-sm**		train a DNA Substitution Model with customized data
-
-    Supported DNA Substitution models: GTR, TN93, HKY96, F81, K80, JC69
-    
-    Supported variable rate models: fixed rate or discrete-Gamma distribution (dΓ) based variable rate
 
 Utility programs
 -------------------------
