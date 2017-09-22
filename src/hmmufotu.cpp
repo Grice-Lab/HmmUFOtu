@@ -369,12 +369,14 @@ int main(int argc, char* argv[]) {
 		else
 #endif
 		{
-			revSeqI.reset(&fwdIn, abc, seqFmt);
+			revSeqI.reset(&revIn, abc, seqFmt);
 		}
 	}
 	if(alnOut.is_open()) {
 		alnSeqO.reset(&alnOut, abc, "fasta");
 	}
+
+	debugLog << "Sequence input and output prepared" << endl;
 
 	CSFMIndex csfm;
 	csfm.load(csfmIn);
