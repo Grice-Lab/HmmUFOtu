@@ -84,6 +84,7 @@ void printUsage(const string& progName) {
 int main(int argc, char* argv[]) {
 	/* variable declarations */
 	string dbName, fwdFn, revFn, msaFn, csfmFn, hmmFn, ptuFn;
+	string fwdPre, revPre;
 	string outFn, alnFn;
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
 	string seqFmt;
@@ -193,17 +194,19 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
+	fwdPre = fwdFn;
+	revPre = revFn;
+	StringUtils::removeEnd(fwdPre, GZIP_FILE_SUFFIX);
+	StringUtils::removeEnd(fwdPre, BZIP2_FILE_SUFFIX);
+	StringUtils::removeEnd(revPre, GZIP_FILE_SUFFIX);
+	StringUtils::removeEnd(revPre, BZIP2_FILE_SUFFIX);
+
 	/* guess seq format */
 	if(seqFmt.empty()) {
-		string fn = fwdFn;
-#ifdef HAVE_LIBZ
-		StringUtils::removeEnd(fn, GZIP_FILE_SUFFIX);
-		StringUtils::removeEnd(fn, BZIP2_FILE_SUFFIX);
-#endif
-		if(StringUtils::endsWith(fn, ".fasta") || StringUtils::endsWith(fn, ".fas")
-		|| StringUtils::endsWith(fn, ".fa") || StringUtils::endsWith(fn, ".fna"))
+		if(StringUtils::endsWith(fwdPre, ".fasta") || StringUtils::endsWith(fwdPre, ".fas")
+		|| StringUtils::endsWith(fwdPre, ".fa") || StringUtils::endsWith(fwdPre, ".fna"))
 			seqFmt = "fasta";
-		else if(StringUtils::endsWith(fn, ".fastq") || StringUtils::endsWith(fn, ".fq"))
+		else if(StringUtils::endsWith(fwdPre, ".fastq") || StringUtils::endsWith(fwdPre, ".fq"))
 			seqFmt = "fastq";
 		else {
 			cerr << "Unrecognized format of MSA file '" << fwdFn << "'" << endl;
@@ -278,14 +281,20 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	fwdIn.open(fwdFn.c_str());
+	if(! StringUtils::endsWith(fwdFn, GZIP_FILE_SUFFIX) && ! StringUtils::endsWith(fwdFn, BZIP2_FILE_SUFFIX))
+		fwdIn.open(fwdFn.c_str());
+	else
+		fwdIn.open(fwdFn.c_str(), ios_base::binary);
 	if(!fwdIn.is_open()) {
 		cerr << "Unable to open seq file '" << fwdFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 
 	if(!revFn.empty()) {
-		revIn.open(revFn.c_str());
+		if(! StringUtils::endsWith(revFn, GZIP_FILE_SUFFIX) && ! StringUtils::endsWith(revFn, BZIP2_FILE_SUFFIX))
+			revIn.open(revFn.c_str());
+		else
+			revIn.open(fwdFn.c_str(), ios_base::binary);
 		if(!revIn.is_open()) {
 			cerr << "Unable to open mate file '" << revFn << "': " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
