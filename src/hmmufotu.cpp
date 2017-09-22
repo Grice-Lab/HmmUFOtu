@@ -14,7 +14,7 @@
 #include <cstring>
 #include <cerrno>
 #include <boost/algorithm/string.hpp> /* for boost string split and join */
-#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/iostreams/filtering_stream.hpp> /* basic boost streams */
 #include <boost/iostreams/filter/gzip.hpp> /* for gzip support */
 #include <boost/iostreams/filter/bzip2.hpp> /* for bzip2 support */
 
