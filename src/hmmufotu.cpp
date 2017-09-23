@@ -15,7 +15,7 @@
 #include <cerrno>
 #include <boost/algorithm/string.hpp> /* for boost string split and join */
 #include <boost/iostreams/filtering_stream.hpp> /* basic boost streams */
-#include <boost/iostreams/filter/gzip.hpp> /* for gzip support */
+#include <boost/iostreams/filter/zlib.hpp> /* for zlib support */
 #include <boost/iostreams/filter/bzip2.hpp> /* for bzip2 support */
 
 #ifdef _OPENMP
@@ -346,7 +346,7 @@ int main(int argc, char* argv[]) {
 	/* prepare SeqIO */
 #ifdef HAVE_LIBZ
 	if(StringUtils::endsWith(fwdFn, GZIP_FILE_SUFFIX)) {
-		fwdZip.push(boost::iostreams::gzip_decompressor());
+		fwdZip.push(boost::iostreams::zlib_decompressor());
 		fwdZip.push(fwdIn);
 		fwdSeqI.reset(reinterpret_cast<istream*> (&fwdZip), abc, seqFmt);
 	}
@@ -363,7 +363,7 @@ int main(int argc, char* argv[]) {
 	if(revIn.is_open()) {
 #ifdef HAVE_LIBZ
 		if(StringUtils::endsWith(revFn, GZIP_FILE_SUFFIX)) {
-			revZip.push(boost::iostreams::gzip_decompressor());
+			revZip.push(boost::iostreams::zlib_decompressor());
 			revZip.push(revIn);
 			revSeqI.reset(reinterpret_cast<istream*> (&revZip), abc, seqFmt);
 		}
