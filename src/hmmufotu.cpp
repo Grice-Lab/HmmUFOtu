@@ -91,6 +91,7 @@ int main(int argc, char* argv[]) {
 	ofstream of;
 	ifstream fwdIn, revIn;
 	ofstream alnOut;
+	boost::iostreams::filtering_istream fwdZip, revZip;
 	SeqIO fwdSeqI, revSeqI, alnSeqO;
 
 	bool isAssembled = true; /* assume assembled seq if not paired-end */
@@ -345,16 +346,14 @@ int main(int argc, char* argv[]) {
 	/* prepare SeqIO */
 #ifdef HAVE_LIBZ
 	if(StringUtils::endsWith(fwdFn, GZIP_FILE_SUFFIX)) {
-		boost::iostreams::filtering_istream* zipI = new boost::iostreams::filtering_istream();
-		zipI->push(boost::iostreams::gzip_decompressor());
-		zipI->push(fwdIn);
-		fwdSeqI.reset(reinterpret_cast<istream*> (zipI), abc, seqFmt);
+		fwdZip.push(boost::iostreams::gzip_decompressor());
+		fwdZip.push(fwdIn);
+		fwdSeqI.reset(reinterpret_cast<istream*> (&fwdZip), abc, seqFmt);
 	}
 	else if(StringUtils::endsWith(fwdFn, BZIP2_FILE_SUFFIX)) {
-		boost::iostreams::filtering_istream* zipI = new boost::iostreams::filtering_istream();
-		zipI->push(boost::iostreams::bzip2_decompressor());
-		zipI->push(fwdIn);
-		fwdSeqI.reset(reinterpret_cast<istream*> (zipI), abc, seqFmt);
+		fwdZip.push(boost::iostreams::bzip2_decompressor());
+		fwdZip.push(fwdIn);
+		fwdSeqI.reset(reinterpret_cast<istream*> (&fwdZip), abc, seqFmt);
 	}
 	else
 #endif
@@ -364,16 +363,14 @@ int main(int argc, char* argv[]) {
 	if(revIn.is_open()) {
 #ifdef HAVE_LIBZ
 		if(StringUtils::endsWith(revFn, GZIP_FILE_SUFFIX)) {
-			boost::iostreams::filtering_istream* zipI = new boost::iostreams::filtering_istream();
-			zipI->push(boost::iostreams::gzip_decompressor());
-			zipI->push(revIn);
-			revSeqI.reset(reinterpret_cast<istream*> (zipI), abc, seqFmt);
+			revZip.push(boost::iostreams::gzip_decompressor());
+			revZip.push(revIn);
+			revSeqI.reset(reinterpret_cast<istream*> (&revZip), abc, seqFmt);
 		}
 		else if(StringUtils::endsWith(revFn, BZIP2_FILE_SUFFIX)) {
-			boost::iostreams::filtering_istream* zipI = new boost::iostreams::filtering_istream();
-			zipI->push(boost::iostreams::bzip2_decompressor());
-			zipI->push(revIn);
-			revSeqI.reset(reinterpret_cast<istream*> (zipI), abc, seqFmt);
+			revZip.push(boost::iostreams::bzip2_decompressor());
+			revZip.push(revIn);
+			revSeqI.reset(reinterpret_cast<istream*> (&revZip), abc, seqFmt);
 		}
 		else
 #endif
