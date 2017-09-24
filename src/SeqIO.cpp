@@ -25,9 +25,6 @@
  */
 #include <fstream>
 #include <cctype>
-#include <boost/iostreams/filter/gzip.hpp> /* for GZIP support */
-#include <boost/iostreams/filter/bzip2.hpp> /* for BZIP2 support */
-#include <boost/iostreams/traits.hpp>
 #include "HmmUFOtuConst.h"
 #include "SeqIO.h"
 #include "StringUtils.h"

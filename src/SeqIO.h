@@ -28,7 +28,6 @@
 #define SEQIO_H_
 
 #include <fstream>
-#include <boost/iostreams/filtering_streambuf.hpp>
 #include "PrimarySeq.h"
 
 namespace EGriceLab {
