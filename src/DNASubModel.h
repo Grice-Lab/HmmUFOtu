@@ -185,7 +185,6 @@ public:
 	static const double MAX_PDIST; /* maximum p-dist between training sequences */
 	static const IOFormat FULL_FORMAT; /* default output format for eigen objects */
 	static const IOFormat STD_FORMAT; /* standard output format for eigen objects */
-	static const int DBL_MAX_DIGITS = std::numeric_limits<double>::max_digits10;
 };
 
 //inline void DNASubModel::trainParams(const PhyloTree& tree, string method) {

@@ -25,6 +25,7 @@
  */
 
 #include <iomanip>
+#include <cfloat>
 #include "TN93.h"
 #include "ProgLog.h"
 
@@ -77,7 +78,7 @@ ostream& TN93::write(ostream& out) const {
 	out << "# DNA Substitution Model" << endl;
 	out << "Type: " << modelType() << endl;
 	out << "pi: " << pi.transpose().format(FULL_FORMAT) << endl;
-	out << std::setprecision(DBL_MAX_DIGITS) << "kr: " << kr << " ky: " << ky << " beta: " << beta << endl;
+	out << std::setprecision(DBL_DIG) << "kr: " << kr << " ky: " << ky << " beta: " << beta << endl;
 
 	return out;
 }

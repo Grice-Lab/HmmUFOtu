@@ -25,6 +25,7 @@
  */
 
 #include <iomanip>
+#include <cfloat>
 #include "HKY85.h"
 #include "ProgLog.h"
 
@@ -75,7 +76,7 @@ ostream& HKY85::write(ostream& out) const {
 	out << "# DNA Substitution Model" << endl;
 	out << "Type: " << modelType() << endl;
 	out << "pi: " << pi.transpose().format(FULL_FORMAT) << endl;
-	out << std::setprecision(DBL_MAX_DIGITS) << "kappa: " << kappa << " beta: " << beta << endl;
+	out << std::setprecision(DBL_DIG) << "kappa: " << kappa << " beta: " << beta << endl;
 
 	return out;
 }

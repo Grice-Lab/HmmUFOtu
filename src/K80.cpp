@@ -25,6 +25,7 @@
  */
 
 #include <iomanip>
+#include <cfloat>
 #include "K80.h"
 #include "ProgLog.h"
 
@@ -70,7 +71,7 @@ istream& K80::read(istream& in) {
 ostream& K80::write(ostream& out) const {
 	out << "# DNA Substitution Model" << endl;
 	out << "Type: " << modelType() << endl;
-	out << std::setprecision(DBL_MAX_DIGITS) << "kappa: " << kappa << endl;
+	out << std::setprecision(DBL_DIG) << "kappa: " << kappa << endl;
 
 	return out;
 }
