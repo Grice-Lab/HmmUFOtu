@@ -424,7 +424,6 @@ int main(int argc, char* argv[]) {
 #pragma omp parallel shared(csfm, hmm, ptu, fwdIn, revIn, fwdZip, revZip, fwdSeqI, revSeqI)
 #pragma omp single
 	{
-		cerr << "omp single started" << endl;
 		while(fwdSeqI.hasNext() && (!revIn.is_open() || revSeqI.hasNext())) {
 			string id;
 			string desc;
