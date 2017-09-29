@@ -336,7 +336,7 @@ int main(int argc, char* argv[]) {
 	DNASubModel* model = NULL;
 	string line, tag, type;
 	while(smIn >> tag) {
-		if(tag.front() == '#') { /* comment or header */
+		if(tag[0] == '#') { /* comment or header */
 			std::getline(smIn, line); /* ignore the entire line */
 			continue;
 		}

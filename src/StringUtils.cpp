@@ -89,7 +89,7 @@ bool StringUtils::startsWith(const string& str, const string& prefix) {
 string StringUtils::basename(string path, string suffix) {
 	if(suffix.empty())
 		return StringUtils::basename(path);
-	if(suffix.front() != '.')
+	if(suffix[0] != '.')
 		suffix.insert(suffix.begin(), '.');
 
 	/* trim directory path */

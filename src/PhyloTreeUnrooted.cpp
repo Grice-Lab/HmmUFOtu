@@ -415,12 +415,9 @@ vector<Matrix4d> PTUnrooted::getModelTraningSetGojobori() const {
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
 		const vector<PTUNodePtr> children = (*node)->getChildren();
 		if(children.size() == 2 &&
-				(children.front()->isTip() || children.back()->isTip()) ) { /* one child is a tip node */
-//			cerr << "Find a candidate node id: " << (*node)->id << endl;
-//			cerr << "Child 1 is tip " << children.front()->isTip() << endl;
-//			cerr << "Child 2 is tip " << children.back()->isTip() << endl;
-			PTUNodePtr tipChild = children.front();
-			PTUNodePtr outerChild = children.back();
+				(children[0]->isTip() || children[1]->isTip()) ) { /* one child is a tip node */
+			PTUNodePtr tipChild = children[0];
+			PTUNodePtr outerChild = children[1];
 			if(!tipChild->isTip())
 				tipChild.swap(outerChild);
 

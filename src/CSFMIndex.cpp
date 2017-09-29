@@ -255,7 +255,7 @@ string CSFMIndex::extractCS(int32_t start, const string& pattern) const {
 
 void CSFMIndex::buildBasic(const MSA& msa) {
 	abc = msa.getAbc();
-	gapCh = abc->getGap().front(); // use the default gap character
+	gapCh = abc->getGap()[0]; // use the default gap character
 	csLen = msa.getCSLen();
 	concatLen = msa.getMSANonGapLen() + msa.getNumSeq(); /* including one seperator per seq */
 	csSeq = ' ' + msa.getCS(); /* dummy position 0 w/ white-space */

@@ -826,8 +826,8 @@ void BandedHMMP7::calcViterbiScores(const PrimarySeq& seq,
 	} /* end of each known path segment */
 //	cerr << "known path aligned" << endl;
 	/* Dynamic programming of the remaining downstream of the known paths, if any */
-	int last_end = vpaths.back().end;
-	int last_to = vpaths.back().to;
+	int last_end = vpaths[vpaths.size() - 1].end;
+	int last_to = vpaths[vpaths.size() - 1].to;
 	int downQLen = L - last_to;
 	int down_end = last_end + downQLen * (1 + kMinGapFrac);
 	int down_to = last_to + downQLen * (1 + kMinGapFrac);
@@ -973,7 +973,7 @@ void BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignTrace& 
 	vtrace.alnStart++; /* 1-based */
 	vtrace.alnFrom++;  /* 1-based */
 
-	if(vtrace.alnTrace.back() != 'B')
+	if(*vtrace.alnTrace.rbegin() != 'B')
 		vtrace.alnTrace.push_back('B');
 	reverse(vtrace.alnTrace.begin(), vtrace.alnTrace.end()); // reverse the alnPath string
 }

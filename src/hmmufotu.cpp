@@ -500,7 +500,7 @@ int main(int argc, char* argv[]) {
 							/* estimate placement */
 							vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs);
 							std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by estimated loglik */
-							double bestEstLoglik = places.front().loglik;
+							double bestEstLoglik = places[0].loglik;
 							vector<PTPlacement>::const_iterator it;
 							for(it = places.begin(); it != places.end(); ++it) {
 								if(::abs(it->loglik - bestEstLoglik) > maxError)
@@ -517,7 +517,7 @@ int main(int argc, char* argv[]) {
 								std::sort(places.rbegin(), places.rend(), EGriceLab::compareByQPlace); /* sort places decently by posterior placement probability */
 							}
 
-							bestPlace = places.front();
+							bestPlace = places[0];
 						}
 					} /* end if bestOnly */
 					/* write main output */

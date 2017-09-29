@@ -34,7 +34,7 @@ void TSVScanner::parseHeader() {
 	string line;
 	while(!hasHeader() && in.peek() != EOF) {
 		std::getline(in, line);
-		if(line.front() == COMMENT_CHAR) // a comment line near the header
+		if(line[0] == COMMENT_CHAR) // a comment line near the header
 			continue;
 		/* construct a new header */
 		header.reset(new TSVRecord::TSVHeader(line, sep)); /* construct a new header from header line */

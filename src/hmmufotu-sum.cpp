@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
 //		sampleFn2Name.clear(); /* clear sample names */
 		string line;
 		while(std::getline(listIn, line)) {
-			if(line.front() == '#')
+			if(line[0] == '#')
 				continue;
 			vector<string> fields;
 			boost::split(fields, line, boost::is_any_of("\t"));
