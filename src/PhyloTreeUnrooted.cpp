@@ -1048,7 +1048,7 @@ ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& node,
 		string format) const {
 	StringUtils::toLower(format);
 	/* expand subset to all their ancestors */
-	for(typename boost::unordered_set<PTUNodePtr>::const_iterator it = subset.begin(); it != subset.end(); ++it)
+	for(boost::unordered_set<PTUNodePtr>::const_iterator it = subset.begin(); it != subset.end(); ++it)
 		for(PTUNodePtr node = *it; node != NULL; node = node->parent)
 			subset.insert(node);
 
