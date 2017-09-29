@@ -228,7 +228,7 @@ PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRo
 	if(newRoot == NULL || newRoot == root) /* no need to set */
 		return root;
 
-	newRoot->parent = NULL; // root has no parent
+	newRoot->parent.reset(); // root has no parent
 //	node2loglik[newRoot][NULL] = Matrix4Xd::Constant(4, csLen, inf); // new cache for dummy branch
 	/* DFS of this tree starting from newRoot */
 	boost::unordered_set<PTUNodePtr> visited;
