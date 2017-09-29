@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	dmFn = PKG_DATADIR + string("/") + DEFAULT_DM_FILE;
-	if(!ifstream(dmFn).good())
+	if(!ifstream(dmFn.c_str()).good())
 		dmFn = SRC_DATADIR + string("/") + DEFAULT_DM_FILE;
 
 	if(cmdOpts.hasOpt("-dm"))
