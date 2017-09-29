@@ -38,6 +38,7 @@
 #include <stdint.h> /* for fixed size integers */
 #include <iostream>
 #include "HmmUFOtuConst.h"
+#include "HmmUFOtuDef.h"
 #include "AlphabetFactory.h"
 #include "BandedHMMP7Bg.h"
 #include "BandedHMMP7Prior.h"
