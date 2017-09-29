@@ -56,7 +56,7 @@ static const double DEFAULT_MIN_Q = 0;
 static const double DEFAULT_MIN_ALN_IDENTITY = 0;
 static const double DEFAULT_MIN_HMM_IDENTITY = 0;
 typedef boost::unordered_map<PTUnrooted::PTUNodePtr, OTUObserved> OTUMap;
-typedef boost::unordered_map<string, vector<string>> OTU2ReadMap;
+typedef boost::unordered_map<string, vector<string> > OTU2ReadMap;
 
 /**
  * Print introduction of this program
