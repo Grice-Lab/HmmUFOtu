@@ -30,8 +30,9 @@
 #include <map>
 #include <string>
 #include <stdexcept>
-#include <stdint.h>
+#include <stdint.h> // C99 types
 #include <limits>
+#include "HmmUFOtuDef.h"
 
 namespace EGriceLab {
 using std::string;
