@@ -1216,6 +1216,7 @@ private:
 	ModelPtr model; /* DNA Model used to evaluate this tree, needed to be stored with this tree */
 	DGammaPtr dG; /* DiscreteGammaModel used to conpensate rate-heterogeinity between alignment sites */
 
+	static const DGammaPtr nulldG; /* internal null dG model */
 	static const PTUNodePtr nullNode; /* internal null node */
 
 public:

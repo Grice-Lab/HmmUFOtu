@@ -297,7 +297,7 @@ Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
 	if(isEvaluated(node, node->parent, j))
 		return getBranchLoglik(node, node->parent, j);
 
-	if(dG == nullNode) {
+	if(dG == nulldG) {
 		const Vector4d& loglikVec = loglik(node, j, 1); // using fixed rate
 		/* cache this conditional loglik */
 		setBranchLoglik(node, node->parent, j, loglikVec);
@@ -665,7 +665,7 @@ istream& PTUnrooted::loadDGModel(istream& in) {
 }
 
 ostream& PTUnrooted::saveDGModel(ostream& out) const {
-	bool modelSet = dG != nullNode;
+	bool modelSet = dG != nulldG;
 	out.write((const char*) &modelSet, sizeof(bool));
 	if(modelSet)
 		dG->save(out);
