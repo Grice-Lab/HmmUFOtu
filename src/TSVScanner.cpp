@@ -7,6 +7,7 @@
 
 #include "TSVScanner.h"
 
+#include <cstdio> /* EOF def */
 #include <cassert>
 
 namespace EGriceLab {
