@@ -150,7 +150,7 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 			visited.insert(v);
 			/* get corresponding PTUNode */
 			const PTUNodePtr& u = nTree2PTree[v];
-			if(root == NULL) // root node of the Newick tree encountered
+			if(root == nullNode) // root node of the Newick tree encountered
 				root = u;
 
 			/* add check each child of u */
@@ -166,7 +166,7 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 			}
 		}
 	}
-	assert(root != NULL);
+	assert(root != nullNode);
 }
 
 unsigned PhyloTreeUnrooted::loadMSA(const MSA& msa) {
@@ -225,11 +225,11 @@ istream& PTUnrooted::loadAnnotation(istream& in) {
 }
 
 PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRoot) {
-	if(newRoot == NULL || newRoot == root) /* no need to set */
+	if(newRoot == nullNode || newRoot == root) /* no need to set */
 		return root;
 
-	newRoot->parent.reset(); // root has no parent
-//	node2loglik[newRoot][NULL] = Matrix4Xd::Constant(4, csLen, inf); // new cache for dummy branch
+	newRoot->parent = nullNode; // root has no parent
+//	node2loglik[newRoot][nullNode] = Matrix4Xd::Constant(4, csLen, inf); // new cache for dummy branch
 	/* DFS of this tree starting from newRoot */
 	boost::unordered_set<PTUNodePtr> visited;
 	stack<PTUNodePtr> S;
@@ -261,7 +261,7 @@ void PhyloTreeUnrooted::calcNodeHeight() {
 			continue;
 		/* trace back this lineage */
 		double h = 0;
-		for(PTUnrooted::PTUNodePtr node = *leaf; node != NULL; node = node->parent) {
+		for(PTUnrooted::PTUNodePtr node = *leaf; node != nullNode; node = node->parent) {
 			if(node2height.find(node) == node2height.end() || h < node2height[node]) /* first time or shorter */
 				node2height[node] = h;
 			if(!node->isRoot())
@@ -297,7 +297,7 @@ Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
 	if(isEvaluated(node, node->parent, j))
 		return getBranchLoglik(node, node->parent, j);
 
-	if(dG == NULL) {
+	if(dG == nullNode) {
 		const Vector4d& loglikVec = loglik(node, j, 1); // using fixed rate
 		/* cache this conditional loglik */
 		setBranchLoglik(node, node->parent, j, loglikVec);
@@ -308,7 +308,7 @@ Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
 		for(int k = 0; k < dG->getK(); ++k)
 			loglikMat.col(k) = loglik(node, j, dG->rate(k));
 		const Vector4d& loglikVec = row_mean_exp_scaled(loglikMat); // use average of DiscreteGammaModel rate
-		/* cache this conditional loglik, parent could be NULL */
+		/* cache this conditional loglik, parent could be nullNode */
 		setBranchLoglik(node, node->parent, j, loglikVec);
 		return loglikVec;
 	}
@@ -619,7 +619,7 @@ istream& PTUnrooted::loadRoot(istream& in) {
 	root = id2node[rootId];
 	/* load current root loglik */
 	in.read((char*) buf, 4 * csLen * sizeof(double));
-	setBranchLoglik(root, NULL, rootMap);
+	setBranchLoglik(root, PTUNodePtr(), rootMap);
 	delete[] buf;
 
 	return in;
@@ -630,7 +630,7 @@ ostream& PTUnrooted::saveRoot(ostream& out) const {
 	out.write((const char*) &(root->id), sizeof(long));
 	double* buf = new double[4 * csLen];
 	Map<Matrix4Xd> inLoglikMap(buf, 4, csLen);
-	inLoglikMap = getBranchLoglik(root, NULL);
+	inLoglikMap = getBranchLoglik(root, nullNode);
 	out.write((const char*) buf, inLoglikMap.size() * sizeof(double));
 	delete[] buf;
 
@@ -665,7 +665,7 @@ istream& PTUnrooted::loadDGModel(istream& in) {
 }
 
 ostream& PTUnrooted::saveDGModel(ostream& out) const {
-	bool modelSet = dG != NULL;
+	bool modelSet = dG != nullNode;
 	out.write((const char*) &modelSet, sizeof(bool));
 	if(modelSet)
 		dG->save(out);
@@ -1049,7 +1049,7 @@ ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& node,
 	StringUtils::toLower(format);
 	/* expand subset to all their ancestors */
 	for(boost::unordered_set<PTUNodePtr>::const_iterator it = subset.begin(); it != subset.end(); ++it)
-		for(PTUNodePtr node = *it; node != NULL; node = node->parent)
+		for(PTUNodePtr node = *it; node != nullNode; node = node->parent)
 			subset.insert(node);
 
 	if(format == "newick")

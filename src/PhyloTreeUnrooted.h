@@ -194,12 +194,12 @@ public:
 
 		/** test whether this is a root node */
 		bool isRoot() const {
-			return parent == NULL;
+			return parent == nullNode;
 		}
 
 		/** test whether this node is parent of another node */
 		bool isParent(const PTUNodePtr& other) const {
-			return other != NULL && this == other->parent.get();
+			return other != nullNode && this == other->parent.get();
 		}
 
 		/** test whether this node is child of another node */
@@ -233,24 +233,24 @@ public:
 
 		/**
 		 * get first child of this node
-		 * return NULL if not exists
+		 * return nullNode if not exists
 		 */
 		PTUNodePtr firstChild() const {
 			for(vector<PTUNodePtr>::const_iterator child = neighbors.begin(); child != neighbors.end(); ++child)
 				if(isParent(*child)) // this is really a child
 					return *child;
-			return NULL;
+			return nullNode;
 		}
 
 		/**
 		 * get last child of this node
-		 * return NULL if not exists
+		 * return nullNode if not exists
 		 */
 		PTUNodePtr lastChild() const {
 			for(vector<PTUNodePtr>::const_reverse_iterator child = neighbors.rbegin(); child != neighbors.rend(); ++child)
 				if(isParent(*child)) // this is really a child
 					return *child;
-			return NULL;
+			return nullNode;
 		}
 
 		/**
@@ -646,7 +646,7 @@ public:
 	 * initiate the cached root loglik
 	 */
 	void initRootLoglik() {
-		node2branch[root][NULL].loglik = Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK);
+		node2branch[root][nullNode].loglik = Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK);
 	}
 
 	/**
@@ -665,7 +665,7 @@ public:
 	 * reset the cached root loglik
 	 */
 	void resetRootLoglik() {
-		node2branch[root][NULL].loglik.setConstant(INVALID_LOGLIK);
+		node2branch[root][nullNode].loglik.setConstant(INVALID_LOGLIK);
 	}
 
 	/**
@@ -1118,7 +1118,7 @@ public:
 	 * test whether p is parent of c
 	 */
 	static bool isParent(const PTUNodePtr& p, const PTUNodePtr& c) {
-		return c != NULL && c->parent == p;
+		return c != nullNode && c->parent == p;
 	}
 
 	static bool isChild(const PTUNodePtr& c, const PTUNodePtr& p) {
@@ -1215,6 +1215,8 @@ private:
 
 	ModelPtr model; /* DNA Model used to evaluate this tree, needed to be stored with this tree */
 	DGammaPtr dG; /* DiscreteGammaModel used to conpensate rate-heterogeinity between alignment sites */
+
+	static const PTUNodePtr nullNode; /* internal null node */
 
 public:
 	/* static fields */
