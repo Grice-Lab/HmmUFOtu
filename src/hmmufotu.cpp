@@ -501,12 +501,12 @@ int main(int argc, char* argv[]) {
 							vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs);
 							std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by estimated loglik */
 							double bestEstLoglik = places[0].loglik;
-							vector<PTPlacement>::const_iterator it;
-							for(it = places.begin(); it != places.end(); ++it) {
-								if(::abs(it->loglik - bestEstLoglik) > maxError)
+							vector<PTPlacement>::iterator goodPlace;
+							for(goodPlace = places.begin(); goodPlace != places.end(); ++goodPlace) {
+								if(::abs(goodPlace->loglik - bestEstLoglik) > maxError)
 									break;
 							}
-							places.erase(it, places.end()); /* remove too bad placements */
+							places.erase(goodPlace, places.end()); /* remove too bad placements */
 							/* accurate placement */
 							placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
 							if(onlyML) { /* don't calculate q-values */
