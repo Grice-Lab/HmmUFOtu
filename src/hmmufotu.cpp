@@ -435,10 +435,8 @@ int main(int argc, char* argv[]) {
 			fwdRead = fwdSeqI.nextSeq();
 			id = fwdRead.getId();
 			desc = fwdRead.getDesc();
-			cerr << "fwd id: " << id << endl;
 			if(revIn.is_open()) { /* paired-ended */
 				revRead = revSeqI.nextSeq().revcom();
-				cerr << "rev id: " << revRead.getId() << endl;
 				if(fwdRead.getId() != revRead.getId())
 					isPaired = false;
 			}
