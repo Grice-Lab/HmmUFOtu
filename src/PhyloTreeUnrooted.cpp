@@ -61,7 +61,7 @@ const string PhyloTreeUnrooted::FAMILY_PREFIX = "f__";
 const string PhyloTreeUnrooted::GENUS_PREFIX = "g__";
 const string PhyloTreeUnrooted::SPECIES_PREFIX = "s__";
 const Matrix4d PhyloTreeUnrooted::leafMat = initLeafMat();
-const PTUnrooted::PTUNodePtr PhyloTreeUnrooted::nulldG;
+const PTUnrooted::DGammaPtr PhyloTreeUnrooted::nulldG;
 const PTUnrooted::PTUNodePtr PhyloTreeUnrooted::nullNode;
 
 static const char* TAXON_SEP = ";: "; /* valid taxon name separator */
