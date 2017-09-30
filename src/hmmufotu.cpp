@@ -330,7 +330,7 @@ int main(int argc, char* argv[]) {
 		}
 		else
 #endif
-			assignOut = &out;
+			assignOut = reinterpret_cast<ostream*> (&out);
 	}
 	else
 		assignOut = &cout;
