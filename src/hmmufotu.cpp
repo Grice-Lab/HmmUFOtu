@@ -528,9 +528,6 @@ int main(int argc, char* argv[]) {
 		} /* end each read/pair */
 #pragma omp taskwait
 	} /* end single */
-	/* close resources */
-	delete fwdZip;
-	delete revZip;
 }
 
 
