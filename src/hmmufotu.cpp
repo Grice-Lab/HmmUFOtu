@@ -60,8 +60,8 @@ void printUsage(const string& progName) {
 	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <READ-FILE1> [READ-FILE2] [options]" << endl
 		 << "READ-FILE1  FILE               : sequence read file for the assembled/forward read" << ZLIB_SUPPORT << endl
 		 << "READ-FILE2  FILE               : sequence read file for the reverse read" << ZLIB_SUPPORT << endl
-		 << "Options:    -o  FILE           : write the assignment output to FILE instead of stdout" << endl
-		 << "            -a  FILE           : in addition to the assignment output, write the read alignment to FILE" << endl
+		 << "Options:    -o  FILE           : write the assignment output to FILE instead of stdout" << ZLIB_SUPPORT << endl
+		 << "            -a  FILE           : in addition to the assignment output, write the read alignment output" << ZLIB_SUPPORT << endl
 		 << "            --fmt  STR         : read file format (applied to all read files), supported format: 'fasta', 'fastq'" << endl
 		 << "            -L|--seed-len  INT : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT            : size of 5'/3' seed region for finding seeds [" << DEFAULT_SEED_REGION << "]" << endl
@@ -89,11 +89,16 @@ int main(int argc, char* argv[]) {
 	string outFn, alnFn;
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
 	string seqFmt;
-	ofstream of;
+	ofstream out;
 	ifstream fwdIn, revIn;
 	ofstream alnOut;
+
 	boost::iostreams::filtering_istream* fwdZip = NULL;
 	boost::iostreams::filtering_istream* revZip = NULL;
+	boost::iostreams::filtering_ostream* outZip = NULL;
+	boost::iostreams::filtering_ostream* alnOutZip = NULL;
+
+	ostream* assignOut = NULL;
 	SeqIO fwdSeqI, revSeqI, alnSeqO;
 
 	bool isAssembled = true; /* assume assembled seq if not paired-end */
@@ -304,15 +309,32 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	/* open outputs */
+	/* prepare outputs */
 	if(!outFn.empty()) {
-		of.open(outFn.c_str());
-		if(!of.is_open()) {
+		out.open(outFn.c_str());
+		if(!out.is_open()) {
 			cerr << "Unable to write to '" << outFn << "': " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
+#ifdef HAVE_LIBZ
+		if(StringUtils::endsWith(outFn, GZIP_FILE_SUFFIX)) {
+			outZip = new boost::iostreams::filtering_ostream();
+			outZip->push(boost::iostreams::gzip_compressor());
+			outZip->push(out);
+			assignOut = outZip;
+		}
+		else if(StringUtils::endsWith(outFn, BZIP2_FILE_SUFFIX)) {
+			outZip = new boost::iostreams::filtering_ostream();
+			outZip->push(boost::iostreams::bzip2_compressor());
+			outZip->push(out);
+			assignOut = outZip;
+		}
+		else
+#endif
+			assignOut = &out;
 	}
-	ostream& out = of.is_open() ? of : cout;
+	else
+		assignOut = &cout;
 
 	if(!alnFn.empty()) {
 		alnOut.open(alnFn.c_str());
@@ -361,9 +383,7 @@ int main(int argc, char* argv[]) {
 	}
 	else
 #endif
-	{
 		fwdSeqI.reset(&fwdIn, abc, seqFmt);
-	}
 	if(revIn.is_open()) {
 #ifdef HAVE_LIBZ
 		if(StringUtils::endsWith(revFn, GZIP_FILE_SUFFIX)) {
@@ -380,12 +400,26 @@ int main(int argc, char* argv[]) {
 		}
 		else
 #endif
-		{
 			revSeqI.reset(&revIn, abc, seqFmt);
-		}
 	}
+
 	if(alnOut.is_open()) {
-		alnSeqO.reset(&alnOut, abc, "fasta");
+#ifdef HAVE_LIBZ
+		if(StringUtils::endsWith(alnFn, GZIP_FILE_SUFFIX)) {
+			alnOutZip = new boost::iostreams::filtering_ostream();
+			alnOutZip->push(boost::iostreams::gzip_compressor());
+			alnOutZip->push(alnOut);
+			alnSeqO.reset(reinterpret_cast<ostream*> (alnOutZip), abc, seqFmt);
+		}
+		else if(StringUtils::endsWith(revFn, BZIP2_FILE_SUFFIX)) {
+			alnOutZip = new boost::iostreams::filtering_ostream();
+			alnOutZip->push(boost::iostreams::bzip2_compressor());
+			alnOutZip->push(alnOut);
+			alnSeqO.reset(reinterpret_cast<ostream*> (alnOutZip), abc, seqFmt);
+		}
+		else
+#endif
+			alnSeqO.reset(&alnOut, abc, "fasta");
 	}
 
 	debugLog << "Sequence input and output prepared" << endl;
@@ -520,7 +554,7 @@ int main(int argc, char* argv[]) {
 					/* write main output */
 					if(isOriented)
 #pragma omp critical(writePlace)
-						out << id << "\t" << desc << "\t"
+						*assignOut << id << "\t" << desc << "\t"
 						<< csStart << "\t" << csEnd << "\t" << aln << "\t"
 						<< bestPlace << endl;
 				} /* end task */
