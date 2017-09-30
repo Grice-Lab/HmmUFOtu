@@ -39,6 +39,7 @@ static const int MIN_SEED_LEN = 15;
 static const int DEFAULT_SEED_REGION = 50;
 static const double DEFAULT_MAX_PLACE_ERROR = 20;
 static const int DEFAULT_NUM_THREADS = 1;
+static const string ALIGN_OUT_FMT = "fasta";
 static const string ASSIGNMENT_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\tbranch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
 
 /**
@@ -61,7 +62,7 @@ void printUsage(const string& progName) {
 		 << "READ-FILE1  FILE               : sequence read file for the assembled/forward read" << ZLIB_SUPPORT << endl
 		 << "READ-FILE2  FILE               : sequence read file for the reverse read" << ZLIB_SUPPORT << endl
 		 << "Options:    -o  FILE           : write the assignment output to FILE instead of stdout" << ZLIB_SUPPORT << endl
-		 << "            -a  FILE           : in addition to the assignment output, write the read alignment output" << ZLIB_SUPPORT << endl
+		 << "            -a  FILE           : in addition to the assignment output, write the read alignment in " << ALIGN_OUT_FMT << " format" << ZLIB_SUPPORT << endl
 		 << "            --fmt  STR         : read file format (applied to all read files), supported format: 'fasta', 'fastq'" << endl
 		 << "            -L|--seed-len  INT : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT            : size of 5'/3' seed region for finding seeds [" << DEFAULT_SEED_REGION << "]" << endl
@@ -419,7 +420,7 @@ int main(int argc, char* argv[]) {
 		}
 		else
 #endif
-			alnSeqO.reset(&alnOut, abc, "fasta");
+			alnSeqO.reset(&alnOut, abc, ALIGN_OUT_FMT);
 	}
 
 	debugLog << "Sequence input and output prepared" << endl;
