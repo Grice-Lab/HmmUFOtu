@@ -94,10 +94,10 @@ int main(int argc, char* argv[]) {
 	ifstream fwdIn, revIn;
 	ofstream alnOut;
 
-	boost::iostreams::filtering_istream* fwdZip = NULL;
-	boost::iostreams::filtering_istream* revZip = NULL;
-	boost::iostreams::filtering_ostream* outZip = NULL;
-	boost::iostreams::filtering_ostream* alnOutZip = NULL;
+	boost::iostreams::filtering_istream fwdZip;
+	boost::iostreams::filtering_istream revZip;
+	boost::iostreams::filtering_ostream outZip;
+	boost::iostreams::filtering_ostream alnOutZip;
 
 	ostream* assignOut = NULL;
 	SeqIO fwdSeqI, revSeqI, alnSeqO;
@@ -319,16 +319,14 @@ int main(int argc, char* argv[]) {
 		}
 #ifdef HAVE_LIBZ
 		if(StringUtils::endsWith(outFn, GZIP_FILE_SUFFIX)) {
-			outZip = new boost::iostreams::filtering_ostream();
-			outZip->push(boost::iostreams::gzip_compressor());
-			outZip->push(out);
-			assignOut = outZip;
+			outZip.push(boost::iostreams::gzip_compressor());
+			outZip.push(out);
+			assignOut = reinterpret_cast<ostream*> (&outZip);
 		}
 		else if(StringUtils::endsWith(outFn, BZIP2_FILE_SUFFIX)) {
-			outZip = new boost::iostreams::filtering_ostream();
-			outZip->push(boost::iostreams::bzip2_compressor());
-			outZip->push(out);
-			assignOut = outZip;
+			outZip.push(boost::iostreams::bzip2_compressor());
+			outZip.push(out);
+			assignOut = reinterpret_cast<ostream*> (&outZip);
 		}
 		else
 #endif
@@ -371,16 +369,14 @@ int main(int argc, char* argv[]) {
 	/* prepare SeqIO */
 #ifdef HAVE_LIBZ
 	if(StringUtils::endsWith(fwdFn, GZIP_FILE_SUFFIX)) {
-		fwdZip = new boost::iostreams::filtering_istream();
-		fwdZip->push(boost::iostreams::gzip_decompressor());
-		fwdZip->push(fwdIn);
-		fwdSeqI.reset(reinterpret_cast<istream*> (fwdZip), abc, seqFmt);
+		fwdZip.push(boost::iostreams::gzip_decompressor());
+		fwdZip.push(fwdIn);
+		fwdSeqI.reset(reinterpret_cast<istream*> (&fwdZip), abc, seqFmt);
 	}
 	else if(StringUtils::endsWith(fwdFn, BZIP2_FILE_SUFFIX)) {
-		fwdZip = new boost::iostreams::filtering_istream();
-		fwdZip->push(boost::iostreams::bzip2_decompressor());
-		fwdZip->push(fwdIn);
-		fwdSeqI.reset(reinterpret_cast<istream*> (fwdZip), abc, seqFmt);
+		fwdZip.push(boost::iostreams::bzip2_decompressor());
+		fwdZip.push(fwdIn);
+		fwdSeqI.reset(reinterpret_cast<istream*> (&fwdZip), abc, seqFmt);
 	}
 	else
 #endif
@@ -388,16 +384,14 @@ int main(int argc, char* argv[]) {
 	if(revIn.is_open()) {
 #ifdef HAVE_LIBZ
 		if(StringUtils::endsWith(revFn, GZIP_FILE_SUFFIX)) {
-			revZip = new boost::iostreams::filtering_istream();
-			revZip->push(boost::iostreams::gzip_decompressor());
-			revZip->push(revIn);
-			revSeqI.reset(reinterpret_cast<istream*> (revZip), abc, seqFmt);
+			revZip.push(boost::iostreams::gzip_decompressor());
+			revZip.push(revIn);
+			revSeqI.reset(reinterpret_cast<istream*> (&revZip), abc, seqFmt);
 		}
 		else if(StringUtils::endsWith(revFn, BZIP2_FILE_SUFFIX)) {
-			revZip = new boost::iostreams::filtering_istream();
-			revZip->push(boost::iostreams::bzip2_decompressor());
-			revZip->push(revIn);
-			revSeqI.reset(reinterpret_cast<istream*> (revZip), abc, seqFmt);
+			revZip.push(boost::iostreams::bzip2_decompressor());
+			revZip.push(revIn);
+			revSeqI.reset(reinterpret_cast<istream*> (&revZip), abc, seqFmt);
 		}
 		else
 #endif
@@ -407,16 +401,14 @@ int main(int argc, char* argv[]) {
 	if(alnOut.is_open()) {
 #ifdef HAVE_LIBZ
 		if(StringUtils::endsWith(alnFn, GZIP_FILE_SUFFIX)) {
-			alnOutZip = new boost::iostreams::filtering_ostream();
-			alnOutZip->push(boost::iostreams::gzip_compressor());
-			alnOutZip->push(alnOut);
-			alnSeqO.reset(reinterpret_cast<ostream*> (alnOutZip), abc, seqFmt);
+			alnOutZip.push(boost::iostreams::gzip_compressor());
+			alnOutZip.push(alnOut);
+			alnSeqO.reset(reinterpret_cast<ostream*> (&alnOutZip), abc, seqFmt);
 		}
 		else if(StringUtils::endsWith(revFn, BZIP2_FILE_SUFFIX)) {
-			alnOutZip = new boost::iostreams::filtering_ostream();
-			alnOutZip->push(boost::iostreams::bzip2_compressor());
-			alnOutZip->push(alnOut);
-			alnSeqO.reset(reinterpret_cast<ostream*> (alnOutZip), abc, seqFmt);
+			alnOutZip.push(boost::iostreams::bzip2_compressor());
+			alnOutZip.push(alnOut);
+			alnSeqO.reset(reinterpret_cast<ostream*> (&alnOutZip), abc, seqFmt);
 		}
 		else
 #endif
