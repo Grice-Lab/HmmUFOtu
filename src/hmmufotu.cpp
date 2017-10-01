@@ -15,6 +15,7 @@
 #include <cerrno>
 #include <boost/algorithm/string.hpp> /* for boost string split and join */
 #include <boost/iostreams/filtering_stream.hpp> /* basic boost streams */
+#include <boost/iostreams/device/file.hpp> /* file sink and source */
 #include <boost/iostreams/filter/zlib.hpp> /* for zlib support */
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filter/bzip2.hpp> /* for bzip2 support */
@@ -85,21 +86,17 @@ void printUsage(const string& progName) {
 
 int main(int argc, char* argv[]) {
 	/* variable declarations */
+	/* filenames */
 	string dbName, fwdFn, revFn, msaFn, csfmFn, hmmFn, ptuFn;
 	string fwdPre, revPre;
 	string outFn, alnFn;
+	/* input */
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
+	boost::iostreams::filtering_istream fwdIn, revIn;
+	/* output */
+	boost::iostreams::filtering_ostream out, alnOut;
+	/* other */
 	string seqFmt;
-	ofstream out;
-	ifstream fwdIn, revIn;
-	ofstream alnOut;
-
-	boost::iostreams::filtering_istream fwdZip;
-	boost::iostreams::filtering_istream revZip;
-	boost::iostreams::filtering_ostream outZip;
-	boost::iostreams::filtering_ostream alnOutZip;
-
-	ostream* assignOut = NULL;
 	SeqIO fwdSeqI, revSeqI, alnSeqO;
 
 	bool isAssembled = true; /* assume assembled seq if not paired-end */
@@ -290,55 +287,65 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	if(! StringUtils::endsWith(fwdFn, GZIP_FILE_SUFFIX) && ! StringUtils::endsWith(fwdFn, BZIP2_FILE_SUFFIX))
-		fwdIn.open(fwdFn.c_str());
-	else
-		fwdIn.open(fwdFn.c_str(), ios_base::binary);
-	if(!fwdIn.is_open()) {
-		cerr << "Unable to open seq file '" << fwdFn << "': " << ::strerror(errno) << endl;
+#ifdef HAVE_LIBZ
+	if(StringUtils::endsWith(fwdFn, GZIP_FILE_SUFFIX))
+		fwdIn.push(boost::iostreams::gzip_decompressor());
+	else if(StringUtils::endsWith(fwdFn, BZIP2_FILE_SUFFIX))
+		fwdIn.push(boost::iostreams::bzip2_decompressor());
+	else { }
+#endif
+	fwdIn.push(boost::iostreams::file_source(fwdFn));
+	if(fwdIn.bad()) {
+		cerr << "Unable to open forward seq file '" << fwdFn << "' " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 
 	if(!revFn.empty()) {
-		if(! StringUtils::endsWith(revFn, GZIP_FILE_SUFFIX) && ! StringUtils::endsWith(revFn, BZIP2_FILE_SUFFIX))
-			revIn.open(revFn.c_str());
-		else
-			revIn.open(fwdFn.c_str(), ios_base::binary);
-		if(!revIn.is_open()) {
-			cerr << "Unable to open mate file '" << revFn << "': " << ::strerror(errno) << endl;
+#ifdef HAVE_LIBZ
+		if(StringUtils::endsWith(revFn, GZIP_FILE_SUFFIX))
+			revIn.push(boost::iostreams::gzip_decompressor());
+		else if(StringUtils::endsWith(revFn, BZIP2_FILE_SUFFIX))
+			revIn.push(boost::iostreams::bzip2_decompressor());
+		else { }
+#endif
+		revIn.push(boost::iostreams::file_source(revFn));
+		if(revIn.bad()) {
+			cerr << "Unable to open reverse seq file '" << revFn << "' " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
 	}
+
 
 	/* prepare outputs */
-	if(!outFn.empty()) {
-		out.open(outFn.c_str());
-		if(!out.is_open()) {
-			cerr << "Unable to write to '" << outFn << "': " << ::strerror(errno) << endl;
-			return EXIT_FAILURE;
-		}
 #ifdef HAVE_LIBZ
-		if(StringUtils::endsWith(outFn, GZIP_FILE_SUFFIX)) {
-			outZip.push(boost::iostreams::gzip_compressor());
-			outZip.push(out);
-			assignOut = reinterpret_cast<ostream*> (&outZip);
-		}
-		else if(StringUtils::endsWith(outFn, BZIP2_FILE_SUFFIX)) {
-			outZip.push(boost::iostreams::bzip2_compressor());
-			outZip.push(out);
-			assignOut = reinterpret_cast<ostream*> (&outZip);
-		}
-		else
+	if(StringUtils::endsWith(outFn, GZIP_FILE_SUFFIX)) /* empty outFn won't match */
+		out.push(boost::iostreams::gzip_compressor());
+	else if(StringUtils::endsWith(outFn, BZIP2_FILE_SUFFIX)) /* empty outFn won't match */
+		out.push(boost::iostreams::bzip2_compressor());
+	else { }
 #endif
-			assignOut = reinterpret_cast<ostream*> (&out);
-	}
+	if(!outFn.empty())
+		out.push(boost::iostreams::file_sink(outFn));
 	else
-		assignOut = &cout;
+		out.push(std::cout);
+	if(out.bad()) {
+		cerr << "Unable to write to "
+				<< (!outFn.empty() ? " out file '" + outFn + "' " : "stdout ")
+				<< ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
 
 	if(!alnFn.empty()) {
-		alnOut.open(alnFn.c_str());
-		if(!alnOut.is_open()) {
-			cerr << "Unable to write to '" << alnFn << "': " << ::strerror(errno) << endl;
+#ifdef HAVE_LIBZ
+		if(StringUtils::endsWith(alnFn, GZIP_FILE_SUFFIX))
+			alnOut.push(boost::iostreams::gzip_compressor());
+		else if(StringUtils::endsWith(alnFn, BZIP2_FILE_SUFFIX))
+			alnOut.push(boost::iostreams::bzip2_compressor());
+		else { }
+#endif
+		alnOut.push(boost::iostreams::file_sink(alnFn));
+		if(alnOut.bad()) {
+			cerr << "Unable to write to align file '" << alnFn << "' " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
 	}
@@ -367,53 +374,12 @@ int main(int argc, char* argv[]) {
 	const DegenAlphabet* abc = hmm.getNuclAbc();
 
 	/* prepare SeqIO */
-#ifdef HAVE_LIBZ
-	if(StringUtils::endsWith(fwdFn, GZIP_FILE_SUFFIX)) {
-		fwdZip.push(boost::iostreams::gzip_decompressor());
-		fwdZip.push(fwdIn);
-		fwdSeqI.reset(reinterpret_cast<istream*> (&fwdZip), abc, seqFmt);
-	}
-	else if(StringUtils::endsWith(fwdFn, BZIP2_FILE_SUFFIX)) {
-		fwdZip.push(boost::iostreams::bzip2_decompressor());
-		fwdZip.push(fwdIn);
-		fwdSeqI.reset(reinterpret_cast<istream*> (&fwdZip), abc, seqFmt);
-	}
-	else
-#endif
-		fwdSeqI.reset(&fwdIn, abc, seqFmt);
-	if(revIn.is_open()) {
-#ifdef HAVE_LIBZ
-		if(StringUtils::endsWith(revFn, GZIP_FILE_SUFFIX)) {
-			revZip.push(boost::iostreams::gzip_decompressor());
-			revZip.push(revIn);
-			revSeqI.reset(reinterpret_cast<istream*> (&revZip), abc, seqFmt);
-		}
-		else if(StringUtils::endsWith(revFn, BZIP2_FILE_SUFFIX)) {
-			revZip.push(boost::iostreams::bzip2_decompressor());
-			revZip.push(revIn);
-			revSeqI.reset(reinterpret_cast<istream*> (&revZip), abc, seqFmt);
-		}
-		else
-#endif
-			revSeqI.reset(&revIn, abc, seqFmt);
-	}
+	fwdSeqI.reset(reinterpret_cast<istream*> (&fwdIn), abc, seqFmt);
+	if(!revFn.empty())
+		revSeqI.reset(reinterpret_cast<istream*> (&revIn), abc, seqFmt);
 
-	if(alnOut.is_open()) {
-#ifdef HAVE_LIBZ
-		if(StringUtils::endsWith(alnFn, GZIP_FILE_SUFFIX)) {
-			alnOutZip.push(boost::iostreams::gzip_compressor());
-			alnOutZip.push(alnOut);
-			alnSeqO.reset(reinterpret_cast<ostream*> (&alnOutZip), abc, seqFmt);
-		}
-		else if(StringUtils::endsWith(revFn, BZIP2_FILE_SUFFIX)) {
-			alnOutZip.push(boost::iostreams::bzip2_compressor());
-			alnOutZip.push(alnOut);
-			alnSeqO.reset(reinterpret_cast<ostream*> (&alnOutZip), abc, seqFmt);
-		}
-		else
-#endif
-			alnSeqO.reset(&alnOut, abc, ALIGN_OUT_FMT);
-	}
+	if(!alnFn.empty())
+		alnSeqO.reset(reinterpret_cast<ostream*> (&alnOut), abc, ALIGN_OUT_FMT);
 
 	debugLog << "Sequence input and output prepared" << endl;
 
@@ -448,10 +414,10 @@ int main(int argc, char* argv[]) {
 	out << "# Taxonomy assignment generated by: " << progName << " " << progVersion << endl;
 	out << "# command: "<< cmdOpts.getCmdStr() << endl;
 	out << ASSIGNMENT_HEADER << endl;
-#pragma omp parallel shared(csfm, hmm, ptu, fwdIn, revIn, fwdZip, revZip, fwdSeqI, revSeqI)
+#pragma omp parallel shared(csfm, hmm, ptu, fwdIn, revIn, out, alnOut, fwdSeqI, revSeqI, alnSeqO)
 #pragma omp single
 	{
-		while(fwdSeqI.hasNext() && (!revIn.is_open() || revSeqI.hasNext())) {
+		while(fwdSeqI.hasNext() && (revFn.empty() || revSeqI.hasNext())) {
 			string id;
 			string desc;
 			PrimarySeq fwdRead, revRead;
@@ -461,11 +427,12 @@ int main(int argc, char* argv[]) {
 			fwdRead = fwdSeqI.nextSeq();
 			id = fwdRead.getId();
 			desc = fwdRead.getDesc();
-			if(revIn.is_open()) { /* paired-ended */
+			if(!revFn.empty()) { /* paired-ended */
 				revRead = revSeqI.nextSeq().revcom();
 				if(fwdRead.getId() != revRead.getId())
 					isPaired = false;
 			}
+
 			if(!isPaired)
 				warningLog << "Warning: Paired-end read doesn't match at " << fwdRead.getId() << " vs. " << revRead.getId() << " , ignored" << endl;
 			else
@@ -479,7 +446,7 @@ int main(int argc, char* argv[]) {
 					/* align fwdRead */
 					aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode, csStart, csEnd);
 					assert(aln.length() == csLen);
-					if(revIn.is_open()) { /* align revRead */
+					if(!revFn.empty()) { /* align revRead */
 						// cerr << "Aligning mate: " << fwdRead.getId() << endl;
 						int revStart = 0;
 						int revEnd = 0;
@@ -498,7 +465,7 @@ int main(int argc, char* argv[]) {
 					}
 					assert(1 <= csStart && csStart <= csEnd && csEnd <= csLen);
 
-					if(alnOut.is_open() && isOriented) { /* write the alignment seq to output */
+					if(!alnFn.empty() && isOriented) { /* write the alignment seq to output */
 						string desc = fwdRead.getDesc();
 						desc += ";csStart=" + boost::lexical_cast<string>(csStart) + ";csEnd=" + boost::lexical_cast<string>(csEnd) + ";";
 #pragma omp critical(writeAln)
@@ -546,8 +513,8 @@ int main(int argc, char* argv[]) {
 					} /* end if bestOnly */
 					/* write main output */
 					if(isOriented)
-#pragma omp critical(writePlace)
-						*assignOut << id << "\t" << desc << "\t"
+#pragma omp critical(writeAssign)
+						out << id << "\t" << desc << "\t"
 						<< csStart << "\t" << csEnd << "\t" << aln << "\t"
 						<< bestPlace << endl;
 				} /* end task */
@@ -555,6 +522,19 @@ int main(int argc, char* argv[]) {
 		} /* end each read/pair */
 #pragma omp taskwait
 	} /* end single */
-}
+	/* release resources */
+	fwdSeqI.reset(&cin, abc, ALIGN_OUT_FMT);
+	revSeqI.reset(&cin, abc, ALIGN_OUT_FMT);
+	alnSeqO.reset(&cout, abc, ALIGN_OUT_FMT);
 
+	cerr << "all task finished" << endl;
+	cerr << "out is_complete(): " << out.is_complete() << endl;
+	cerr << "out auto_close(): " << out.auto_close() << endl;
+	cerr << "alnOut is_complete(): " << alnOut.is_complete() << endl;
+	cerr << "alnOut auto_close(): " << alnOut.auto_close() << endl;
+	cerr << "fwdIn is_complete(): " << fwdIn.is_complete() << endl;
+	cerr << "fwdIn auto_close(): " << fwdIn.auto_close() << endl;
+	cerr << "revIn is_complete(): " << revIn.is_complete() << endl;
+	cerr << "revIn auto_close(): " << revIn.auto_close() << endl;
+}
 
