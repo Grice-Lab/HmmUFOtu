@@ -203,10 +203,6 @@ am_hmmufotu_train_hmm_OBJECTS =  \
 hmmufotu_train_hmm_OBJECTS = $(am_hmmufotu_train_hmm_OBJECTS)
 hmmufotu_train_hmm_DEPENDENCIES = libHmmUFOtu_hmm.a math/libEGMath.a \
 	libHmmUFOtu_common.a
-hmmufotu_train_hmm_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
-	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
-	$(AM_CXXFLAGS) $(CXXFLAGS) $(hmmufotu_train_hmm_LDFLAGS) \
-	$(LDFLAGS) -o $@
 am_hmmufotu_train_sm_OBJECTS = hmmufotu-train-sm.$(OBJEXT)
 hmmufotu_train_sm_OBJECTS = $(am_hmmufotu_train_sm_OBJECTS)
 hmmufotu_train_sm_DEPENDENCIES = libHmmUFOtu_phylo.a \
@@ -517,7 +513,6 @@ hmmufotu_train_sm_SOURCES = hmmufotu-train-sm.cpp
 hmmufotu_train_sm_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a math/libEGMath.a
 hmmufotu_train_hmm_SOURCES = hmmufotu-train-hmm.cpp
 hmmufotu_train_hmm_LDADD = libHmmUFOtu_hmm.a math/libEGMath.a libHmmUFOtu_common.a
-hmmufotu_train_hmm_LDFLAGS = -static 
 hmmufotu_train_hmm_CPPFLAGS = $(AM_CPPFLAGS) -DSRC_DATADIR=\"$(abs_top_srcdir)/data\" -DPKG_DATADIR=\"$(pkgdatadir)\"
 hmmufotu_sim_SOURCES = hmmufotu-sim.cpp
 hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a
@@ -537,7 +532,7 @@ hmmufotu_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a \
 	math/libEGMath.a libHmmUFOtu_common.a \
 	libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
 	$(BOOST_IOSTREAMS_LIB)
-hmmufotu_LDFLAGS = -lz $(BOOST_LDFLAGS)
+hmmufotu_LDFLAGS = $(BOOST_LDFLAGS)
 hmmufotu_sum_SOURCES = hmmufotu-sum.cpp HmmUFOtu_main.cpp
 hmmufotu_sum_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
@@ -694,7 +689,7 @@ hmmufotu-train-dm$(EXEEXT): $(hmmufotu_train_dm_OBJECTS) $(hmmufotu_train_dm_DEP
 
 hmmufotu-train-hmm$(EXEEXT): $(hmmufotu_train_hmm_OBJECTS) $(hmmufotu_train_hmm_DEPENDENCIES) $(EXTRA_hmmufotu_train_hmm_DEPENDENCIES) 
 	@rm -f hmmufotu-train-hmm$(EXEEXT)
-	$(AM_V_CXXLD)$(hmmufotu_train_hmm_LINK) $(hmmufotu_train_hmm_OBJECTS) $(hmmufotu_train_hmm_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(hmmufotu_train_hmm_OBJECTS) $(hmmufotu_train_hmm_LDADD) $(LIBS)
 
 hmmufotu-train-sm$(EXEEXT): $(hmmufotu_train_sm_OBJECTS) $(hmmufotu_train_sm_DEPENDENCIES) $(EXTRA_hmmufotu_train_sm_DEPENDENCIES) 
 	@rm -f hmmufotu-train-sm$(EXEEXT)
