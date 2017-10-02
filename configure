@@ -11842,12 +11842,12 @@ $as_echo "no" >&6; }
   SET_MAKE="MAKE=${MAKE-make}"
 fi
 
-for ac_header in src/HmmUFOtu.h
+for ac_header in stdint.h
 do :
-  ac_fn_c_check_header_mongrel "$LINENO" "src/HmmUFOtu.h" "ac_cv_header_src_HmmUFOtu_h" "$ac_includes_default"
-if test "x$ac_cv_header_src_HmmUFOtu_h" = xyes; then :
+  ac_fn_c_check_header_mongrel "$LINENO" "stdint.h" "ac_cv_header_stdint_h" "$ac_includes_default"
+if test "x$ac_cv_header_stdint_h" = xyes; then :
   cat >>confdefs.h <<_ACEOF
-#define HAVE_SRC_HMMUFOTU_H 1
+#define HAVE_STDINT_H 1
 _ACEOF
 
 fi
@@ -16543,7 +16543,7 @@ fi
 
 
 if test "x$want_boost" = "xyes"; then
-    boost_lib_version_req=1.20.0
+    boost_lib_version_req=1.50.0
     boost_lib_version_req_shorten=`expr $boost_lib_version_req : '\([0-9]*\.[0-9]*\)'`
     boost_lib_version_req_major=`expr $boost_lib_version_req : '\([0-9]*\)'`
     boost_lib_version_req_minor=`expr $boost_lib_version_req : '[0-9]*\.\([0-9]*\)'`
