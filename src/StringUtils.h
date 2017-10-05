@@ -29,6 +29,7 @@
 #define STRINGUTILS_H_
 #include <string>
 #include <iostream>
+#include <sstream>
 
 namespace EGriceLab {
 using std::string;
@@ -169,6 +170,20 @@ public:
 	}
 
 	/**
+	 * load data from a binary input to given string, up-to the given delim character
+	 * @param dest  destination
+	 * @param in  input
+	 * @param delim  delim character to load up to
+	 * @return  whether loading was successful
+	 */
+	static bool loadString(string& dest, istream& in, char delim = '\0') {
+		std::stringbuf buf;
+		in.get(buf, delim);
+		dest = buf.str();
+		return in.good();
+	}
+
+	/**
 	 * save a basic_string to a binary output, upto length of source will be saved
 	 * @param src  source
 	 * @param out  output
@@ -181,9 +196,19 @@ public:
 		return out.good();
 	}
 
+	/**
+	 * save an entire basic_string to a binary output, with an optional null terminator at the end
+	 * @param src  source
+	 * @param out  output
+	 * @param withNull  include a null terminator or not
+	 * @return  whether saving was successful
+	 */
 	template<typename T>
-	static bool saveString(const basic_string<T>& src, ostream& out) {
-		return saveString(src, out, src.length());
+	static bool saveString(const basic_string<T>& src, ostream& out, bool withNull) {
+		if(!withNull)
+			return saveString(src, out, src.length());
+		else
+			return saveString(src, out, src.length() + 1);
 	}
 
 	static string::size_type common(const string& str1, const string& str2);
