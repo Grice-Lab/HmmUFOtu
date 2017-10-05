@@ -160,13 +160,13 @@ public:
 	 * @return  whether loading was successful
 	 */
 	template<typename T>
-	static bool loadString(basic_string<T>& dest, istream& in, size_t length) {
+	static istream& loadString(basic_string<T>& dest, istream& in, size_t length) {
 		T* buf = new T[length]; /* construct a temporary buffer */
 		in.read((char*) buf, length * sizeof(T));
 		dest.assign(buf, length);
 		delete[] buf;
 
-		return in.good();
+		return in;
 	}
 
 	/**
@@ -176,12 +176,7 @@ public:
 	 * @param delim  delim character to load up to
 	 * @return  whether loading was successful
 	 */
-	static bool loadString(string& dest, istream& in, char delim = '\0') {
-		std::stringbuf buf;
-		in.get(buf, delim);
-		dest = buf.str();
-		return in.good();
-	}
+	static istream& loadString(string& dest, istream& in, char delim = '\0');
 
 	/**
 	 * save a basic_string to a binary output, upto length of source will be saved
@@ -191,9 +186,9 @@ public:
 	 * @return  whether saving was successful
 	 */
 	template<typename T>
-	static bool saveString(const basic_string<T>& src, ostream& out, size_t length) {
+	static ostream& saveString(const basic_string<T>& src, ostream& out, size_t length) {
 		out.write((const char*) src.c_str(), length * sizeof(T));
-		return out.good();
+		return out;
 	}
 
 	/**
@@ -204,15 +199,17 @@ public:
 	 * @return  whether saving was successful
 	 */
 	template<typename T>
-	static bool saveString(const basic_string<T>& src, ostream& out, bool withNull) {
+	static ostream& saveString(const basic_string<T>& src, ostream& out, bool withNull) {
 		if(!withNull)
 			return saveString(src, out, src.length());
 		else
 			return saveString(src, out, src.length() + 1);
 	}
 
+	/** get the number of common occuring characters/alphabets used by two strings */
 	static string::size_type common(const string& str1, const string& str2);
 
+	/** get the number of common occuring characters/alphabets used by two C-strs */
 	static size_t common(const char* str1, const char* str2);
 
 }; /* end class StringUtils */
