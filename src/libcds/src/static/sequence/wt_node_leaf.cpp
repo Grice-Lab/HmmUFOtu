@@ -71,7 +71,7 @@ namespace cds_static
         return sizeof(wt_node_leaf);
     }
 
-    void wt_node_leaf::save(ofstream & fp) const
+    void wt_node_leaf::save(ostream & fp) const
     {
         uint wr = WT_NODE_LEAF_HDR;
         saveValue(fp,wr);
@@ -79,7 +79,7 @@ namespace cds_static
         saveValue(fp,symbol);
     }
 
-    wt_node_leaf * wt_node_leaf::load(ifstream & fp) {
+    wt_node_leaf * wt_node_leaf::load(istream & fp) {
         uint rd = loadValue<uint>(fp);
         if(rd!=WT_NODE_LEAF_HDR) return NULL;
         wt_node_leaf * ret = new wt_node_leaf();

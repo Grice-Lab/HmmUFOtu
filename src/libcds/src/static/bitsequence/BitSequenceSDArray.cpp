@@ -95,7 +95,7 @@ namespace cds_static
 		return sizeof(BitSequenceSDArray)+(ones?(sd.size + sd.sd0->size + sd.sd1->size):0);
 	}
 
-	void BitSequenceSDArray::save(ofstream & fp) const
+	void BitSequenceSDArray::save(ostream & fp) const
 	{
 		uint wr = SDARRAY_HDR;
 		saveValue(fp,wr);
@@ -105,7 +105,7 @@ namespace cds_static
 			selects3_save(&sd,fp);
 	}
 
-	BitSequenceSDArray * BitSequenceSDArray::load(ifstream & fp) {
+	BitSequenceSDArray * BitSequenceSDArray::load(istream & fp) {
 		uint id = loadValue<uint>(fp);
 		if(id!=SDARRAY_HDR) return NULL;
 		BitSequenceSDArray * ret = new BitSequenceSDArray();

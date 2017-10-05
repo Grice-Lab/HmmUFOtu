@@ -36,6 +36,7 @@
 #include <boost/algorithm/string.hpp> /* for boost string split */
 #include <boost/lexical_cast.hpp>
 #include "HmmUFOtuConst.h"
+#include "HmmUFOtuVersion.h"
 #include "ProgLog.h"
 #include "StringUtils.h"
 #include "SeqUtils.h"
@@ -447,15 +448,24 @@ istream& PTUnrooted::load(istream& in) {
 	/* Read program info */
 	string pname, pver;
 	readProgName(in, pname);
-	if(pname != progName) {
+	if(!isValidName(pname)) {
 		errorLog << "Not a PTUnrooted object file" << endl;
 		in.setstate(ios_base::failbit);
 		return in;
 	}
 	readProgVersion(in, pver);
-	if(cmpVersion(progVersion, pver) < 0) {
-		errorLog << "You are trying using an older version " << (progName + progVersion) <<
-				" to read a newer PTUnrooted data file that was build by " << (pname + pver) << endl;
+	if(!EGriceLab::isValidVersion(pver)) {
+		errorLog << "Not a valid version " << getProgNameVersion()
+				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
+				<< endl;
+		in.setstate(ios_base::failbit);
+		return in;
+	}
+	if(!isCompatibleVersion(pver)) {
+		errorLog << "You are trying using an older version " << getProgNameVersion()
+				<< " to read a newer HmmUFOtu database file that was build by " << (pname + "-" + pver)
+				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
+				<< endl;
 		in.setstate(ios_base::failbit);
 		return in;
 	}
@@ -502,8 +512,8 @@ istream& PTUnrooted::load(istream& in) {
 
 ostream& PTUnrooted::save(ostream& out) const {
 	/* save program info */
-	writeProgName(out, progName);
-	writeProgVersion(out, progVersion);
+	writeProgName(out);
+	writeProgVersion(out);
 
 	/* write global information */
 	size_t nNodes = numNodes();

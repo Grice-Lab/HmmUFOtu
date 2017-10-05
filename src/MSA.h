@@ -329,12 +329,17 @@ public:
 	 */
 	void sclaleWeight(double r);
 
+protected:
 	/**
-	 * Save this MSA object to a binary file
-	 * @param f  the binary output
-	 * @return  true if everything is good after saved
+	 * Save raw object data to output
 	 */
-	std::ostream& save(std::ostream& out);
+	std::ostream& save(std::ostream& out) const;
+
+public:
+	/**
+	 * Save program info and raw object data to output
+	 */
+	std::ostream& save(std::ostream& out, const string& progName, const VersionSequence& progVer) const;
 
 	/**
 	 * Save this MSA object to a given file
@@ -349,14 +354,15 @@ public:
 	 */
 	bool saveFastaFile(const string& filename);
 
+protected:
 	/**
-	 * Load an MSA file in given format into this object
-	 * @param filename  MSA file name
-	 * @param format  MSA file format
-	 * @return  a newly constructed MSA pointer
-	 * @throws invalid_argument if alphabet or format is not known
+	 * Load raw object data from input
 	 */
 	std::istream& load(std::istream& in);
+
+public:
+	/** Load program info and raw object data from input */
+	std::istream& load(std::istream& in, const string& progName, const VersionSequence& progVer);
 
 	/**
 	 * Load an MSA binary file

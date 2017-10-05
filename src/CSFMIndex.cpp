@@ -29,7 +29,7 @@
 #include <cctype>
 #include <cstdlib>
 #include "CSFMIndex.h"
-//#include "Stats.h"
+#include "HmmUFOtuConst.h"
 #include "BitSequenceBuilder.h"
 #include "BitSequenceBuilderRRR.h"
 #include "Mapper.h"
@@ -143,11 +143,9 @@ set<unsigned> CSFMIndex::locateIndex(const string& pattern) const {
     return idx;
 }
 
-ofstream& CSFMIndex::save(ofstream& out) const {
-	/* write alphabet name */
-	unsigned nAlphabet = abc->getName().length();
-	out.write((char*) &nAlphabet, sizeof(unsigned));
-	out.write(abc->getName().c_str(), nAlphabet + 1); /* write the null terminal */
+ofstream& CSFMIndex::save(ostream& out) const {
+	/* save alphabet name */
+	StringUtils::saveString(abc->getName(), out, true);
 
 	/* write gap char */
 	out.write(&gapCh, sizeof(char));
@@ -158,8 +156,7 @@ ofstream& CSFMIndex::save(ofstream& out) const {
 
 	/* write arrays and objects */
 	out.write((char*) C, (UINT8_MAX + 1) * sizeof(int32_t));
-
-	out.write((char*) csSeq.c_str(), csLen + 2); /* write the null terminal */
+	StringUtils::saveString(csSeq, out, static_cast<size_t> (csLen + 2));
 	out.write((char*) csIdentity, (csLen + 1) * sizeof(double));
 	out.write((char*) concat2CS, (concatLen + 1) * sizeof(uint16_t));
 	out.write((char*) saSampled, (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
@@ -170,8 +167,41 @@ ofstream& CSFMIndex::save(ofstream& out) const {
 	return out;
 }
 
+ostream& CSFMIndex::save(ostream& out, const string& progName, const VersionSequence& progVer) const {
+	/* save program info */
+	StringUtils::saveString(progName, out, true); /* save name with null terminated */
+	progVer.save(out); /* save version with null terminated */
+	return save(out);
+}
+
 ifstream& CSFMIndex::load(ifstream& in) {
 	clear(); /* clear old data, if any */
+
+	/* Read program info */
+	string pname, pver;
+	readProgName(in, pname);
+	if(!isValidName(pname)) {
+		errorLog << "Not a PTUnrooted object file" << endl;
+		in.setstate(ios_base::failbit);
+		return in;
+	}
+	readProgVersion(in, pver);
+	if(!EGriceLab::isValidVersion(pver)) {
+		errorLog << "Not a valid version " << getProgNameVersion()
+				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
+				<< endl;
+		in.setstate(ios_base::failbit);
+		return in;
+	}
+	if(!isCompatibleVersion(pver)) {
+		errorLog << "You are trying using an older version " << getProgNameVersion()
+				<< " to read a newer HmmUFOtu database file that was build by " << (pname + "-" + pver)
+				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
+				<< endl;
+		in.setstate(ios_base::failbit);
+		return in;
+	}
+
 	/* read alphabet by name */
 	char* buf = NULL; /* buf for reading */
 	unsigned nAlphabet;

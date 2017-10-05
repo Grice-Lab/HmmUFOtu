@@ -31,6 +31,7 @@
 #include "HmmUFOtuDef.h"
 #include "HmmUFOtuConst.h"
 #include "HmmUFOtuEnv.h"
+#include "HmmUFOtuVersion.h"
 #include "ProgLog.h"
 #include "CommandOptions.h"
 #include "DegenAlphabet.h"

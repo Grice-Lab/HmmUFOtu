@@ -153,7 +153,7 @@ namespace cds_static
       return sizeof(WaveletTree)+root->getSize()+am->getSize()+c->getSize();
     }
 
-    void WaveletTree::save(ofstream & fp) const
+    void WaveletTree::save(ostream & fp) const
     {
         uint wr = WVTREE_HDR;
         saveValue(fp, wr);
@@ -163,7 +163,7 @@ namespace cds_static
         root->save(fp);
     }
 
-    WaveletTree * WaveletTree::load(ifstream & fp) {
+    WaveletTree * WaveletTree::load(istream & fp) {
         uint rd = loadValue<uint>(fp);
         if(rd!=WVTREE_HDR) return NULL;
         WaveletTree * ret = new WaveletTree();

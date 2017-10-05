@@ -770,13 +770,6 @@ public:
 
 }; /* BandedHMMP7 */
 
-inline BandedHMMP7::BandedHMMP7() :
-		hmmVersion(progName + "-" + progVersion), name("unnamed"), K(0), L(0), abc(NULL),
-		hmmBg(0), nSeq(0), effN(0), wingRetracted(false) {
-	/* Assert IEE559 at construction time */
-	assert(std::numeric_limits<double>::is_iec559);
-}
-
 inline std::string BandedHMMP7::getOptTag(const string& tag) const {
 	map<string, string>::const_iterator it = optTags.find(tag);
 	return it != optTags.end() ? it->second : "";

@@ -290,38 +290,26 @@ void MSA::updateWeightedCounts() {
 		}
 }
 
-ostream& MSA::save(ostream& out) {
-	/* save program info */
-	writeProgName(out, progName);
-	writeProgVersion(out, progVersion);
-	/* get aux length */
-	string::size_type nAlphabet = alphabet.length();
-	string::size_type nCS = CS.length();
-	string::size_type nName = name.length();
-	/* write basic info */
-	out.write((const char*) &nAlphabet, sizeof(string::size_type));
-	out.write(alphabet.c_str(), nAlphabet + 1);
-	out.write((const char*) &nName, sizeof(string::size_type));
-	out.write(name.c_str(), nName + 1);
-//	cerr << "alphabet written" << endl;
+ostream& MSA::save(ostream& out) const {
+	/* save basic info */
+	StringUtils::saveString(alphabet, out, true);
+	StringUtils::saveString(name, out, true);
 	out.write((const char*) &numSeq, sizeof(unsigned));
 	out.write((const char*) &csLen, sizeof(unsigned));
-	out.write((const char*) &nCS, sizeof(string::size_type));
-	out.write(CS.c_str(), nCS + 1); /* write the null terminal */
-	//	cerr << "CS written" << endl;
+	StringUtils::saveString(CS, out, true);
 	out.write((const char*) &isPruned, sizeof(bool));
-	/* write seqNames */
-	for(vector<string>::const_iterator it = seqNames.begin(); it != seqNames.end(); ++it)
-//		f.write((const char*) it->length(), sizeof(string::size_type)); /* write seq length first */
-		out.write(it->c_str(), it->length() + 1); /* write the null terminal */
-	/* write concatMSA */
-	out.write(concatMSA.c_str(), concatMSA.length() + 1);
-//	cerr << "concatMSA written" << endl;
+
+	/* save seqNames */
+	for(vector<string>::const_iterator nameIt = seqNames.begin(); nameIt != seqNames.end(); ++nameIt)
+		StringUtils::saveString(*nameIt, out, true);
+
+	/* save concatMSA */
+	StringUtils::saveString(concatMSA, out, true);
 
 	int* bufi = NULL; /* integer output buffer */
 	double* bufd = NULL; /* double output buffer */
 
-	/* write auxiliary index */
+	/* save auxiliary index */
 	bufi = new int[numSeq];
 	std::copy(startIdx.begin(), startIdx.end(), bufi);
 	out.write((const char*) bufi, sizeof(int) * numSeq);
@@ -333,7 +321,7 @@ ostream& MSA::save(ostream& out) {
 	out.write((const char*) bufi, sizeof(int) * numSeq);
 	delete[] bufi;
 
-	/* write raw counts */
+	/* save raw counts */
 	bufi = new int[resCount.size()];
 	Map<MatrixXi> resCountMap(bufi, resCount.rows(), resCount.cols());
 	resCountMap = resCount; /* copy data */
@@ -346,14 +334,14 @@ ostream& MSA::save(ostream& out) {
 	out.write((const char*) bufi, sizeof(int) * gapCount.rows());
 	delete[] bufi;
 
-	/* write seq weights */
+	/* save seq weights */
 	bufd = new double[seqWeight.rows()];
 	Map<VectorXd> seqWeightMap(bufd, seqWeight.rows());
 	seqWeightMap = seqWeight; /* copy data */
 	out.write((const char*) bufd, sizeof(double) * seqWeight.rows());
 	delete[] bufd;
 
-	/* write weighted counts */
+	/* save weighted counts */
 	bufd = new double[resWCount.size()];
 	Map<MatrixXd> resWCountMap(bufd, resWCount.rows(), resWCount.cols());
 	resWCountMap = resWCount; /* copy data */
@@ -369,63 +357,34 @@ ostream& MSA::save(ostream& out) {
 	return out;
 }
 
+ostream& MSA::save(ostream& out, const string& progName, const VersionSequence& progVer) const {
+	/* save program info */
+	StringUtils::saveString(progName, out, true); /* save name with null terminated */
+	progVer.save(out); /* save version with null terminated */
+	return save(out);
+}
+
 istream& MSA::load(istream& in) {
-	/* Read program info */
-	string pname, pver;
-	readProgName(in, pname);
-	if(pname != progName) {
-		cerr << "Not a MSA object file" << endl;
-		in.setstate(ios_base::failbit);
-		return in;
-	}
-	readProgVersion(in, pver);
-	if(cmpVersion(progVersion, pver) < 0) {
-		cerr << "You are trying using an older version " << (progName + progVersion) <<
-				" to read a newer MSA data file that was build by " << (pname + pver) << endl;
-		in.setstate(ios_base::failbit);
-		return in;
-	}
-	/* read basic info */
 	char* buf = NULL; /* character buf */
 	int* bufi = NULL; /* integer buf */
 	double* bufd = NULL; /* double buf */
-	string::size_type nAlphabet, nCS, nName;
-	in.read((char*) &nAlphabet, sizeof(string::size_type));
-	buf = new char[nAlphabet + 1];
-	in.read(buf, nAlphabet + 1); /* read the null terminal */
-	alphabet.assign(buf, nAlphabet); // override the original alphabet
-	delete[] buf;
-	abc = AlphabetFactory::getAlphabetByName(alphabet);
-	in.read((char*) &nName, sizeof(string::size_type));
-	buf = new char[nName + 1];
-	in.read(buf, nName + 1); /* read the null terminal */
-	name.assign(buf, nName);
-	delete[] buf;
 
+	/* load basic info */
+	StringUtils::loadString(alphabet, in);
+	abc = AlphabetFactory::getAlphabetByName(alphabet);
+	StringUtils::loadString(name, in);
 	in.read((char*) &numSeq, sizeof(unsigned));
 	in.read((char*) &csLen, sizeof(unsigned));
-	in.read((char*) &nCS, sizeof(string::size_type));
-	buf = new char[nCS + 1];
-	in.read(buf, nCS + 1);
-	CS.assign(buf, nCS); /* read the null terminal */
-	delete[] buf;
+	StringUtils::loadString(CS, in);
 	in.read((char*) &isPruned, sizeof(bool));
 
-	/* read seqNames */
+	/* load seqNames */
 	seqNames.resize(numSeq); /* set all names to empty */
-	for(vector<string>::iterator it = seqNames.begin(); it != seqNames.end();) {
-		char c = in.get();
-		if(c != '\0')
-			it->push_back(c);
-		else
-			it++;
-	}
+	for(unsigned i = 0; i < numSeq; ++i)
+		StringUtils::loadString(seqNames[i], in);
 
-	/* read concatMSA */
-	buf = new char[numSeq * csLen + 1];
-	in.read(buf, numSeq * csLen + 1);
-	concatMSA.assign(buf, numSeq * csLen);
-	delete[] buf;
+	/* load concatMSA */
+	StringUtils::loadString(concatMSA, in, static_cast<size_t> (numSeq) * csLen);
 
 	/* initiate all maticies and indices */
 	resetRawCount();
@@ -473,6 +432,40 @@ istream& MSA::load(istream& in) {
 	delete[] bufd;
 
 	return in;
+}
+
+istream& MSA::load(istream& in, const string& progName, const VersionSequence& progVer) {
+	/* load program info */
+	string pname;
+	VersionSequence pver;
+	StringUtils::loadString(pname, in);
+
+	/* load name */
+	if(!in.good()) {
+		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
+		return in;
+	}
+	if(progName != pname) {
+		errorLog << "Not an MSA data file" << endl;
+		in.setstate(ios_base::badbit);
+		return in;
+	}
+
+	/* load version */
+	pver.load(in);
+	if(!in.good()) {
+		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
+		return in;
+	}
+	if(!(progName >= pver)) {
+		errorLog << "You are using an old version of " << getProgFullName(progName, progVer)
+				<< " to read a newer MSA object file that is build by " << getProgFullName(pname, pver)
+				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
+				<< endl;
+		in.setstate(ios_base::failbit);
+		return in;
+	}
+	return load(in);
 }
 
 } /* namespace EGriceLab */

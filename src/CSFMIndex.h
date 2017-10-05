@@ -40,6 +40,8 @@
 
 namespace EGriceLab {
 using std::vector;
+using std::istream;
+using std::ostream;
 
 /**
  * A Consensus-Sequence FM-index for ultra-fast indexing the consensus positions of a multiple-sequence alignment
@@ -83,24 +85,33 @@ public:
 
 	virtual void clear();
 
+protected:
 	/**
-	 * Save this object to ofstream
-	 * @param f  ofstream to save to
-	 * @return true if saved successfully
+	 * save raw object data to output
 	 */
-	std::ofstream& save(std::ofstream& out) const;
+	ostream& save(ostream& out) const;
+
+public:
+	/**
+	 * save program info and raw object data to output
+	 */
+	ostream& save(ostream& out, const string& progName, const VersionSequence& progVer) const;
+
+protected:
+	/**
+	 * load raw object data from input
+	 */
+	istream& load(istream& in);
+
+public:
+	/**
+	 * load program info and raw object data from input
+	 */
+	istream& load(istream& in, const string& progName, const VersionSequence& progVer);
+
 
 	/**
-	 * Create and load an CSFMIndex from a stream
-	 * @param f  ifstream to load from
-	 * @return pointer to fresh created CSFMIndex
-	 */
-	std::ifstream& load(std::ifstream& in);
-
-	/**
-	 * Count how many times a given pattern occurs
-	 * @param pattern  the un-coded pattern
-	 * @return  number of matches found
+	 * load program info and raw object data from input
 	 */
 	int32_t count(const string& pattern) const;
 

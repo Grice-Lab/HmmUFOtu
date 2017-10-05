@@ -290,7 +290,7 @@ namespace cds_static
 		return mem;
 	}
 
-	void BitSequenceDArray::save(ofstream & fp) const
+	void BitSequenceDArray::save(ostream & fp) const
 	{
 		uint wr = DARRAY_HDR;
 		saveValue(fp, wr);
@@ -311,7 +311,7 @@ namespace cds_static
 		saveValue(fp, rs, (length/RRR+2));
 	}
 
-	BitSequenceDArray *  BitSequenceDArray::load(ifstream & fp) {
+	BitSequenceDArray *  BitSequenceDArray::load(istream & fp) {
 		uint id = loadValue<uint>(fp);
 		if(id!=DARRAY_HDR) return NULL;
 		BitSequenceDArray * ret = new BitSequenceDArray();

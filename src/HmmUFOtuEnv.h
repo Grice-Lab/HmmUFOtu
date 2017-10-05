@@ -50,6 +50,13 @@ enum LOG_LEVEL {
  */
 void printVersion(const string& app, ostream& out = std::cerr);
 
+/**
+ * get full program name
+ */
+inline string getProgFullName(const string& name, const VersionSequence& ver) {
+	return progName + "-" + progVer.toString();
+}
+
 }
 
 #endif /* SRC_HMMUFOTUENV_H_ */

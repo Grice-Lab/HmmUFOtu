@@ -198,7 +198,6 @@ inline bool compareByQTaxon(const PTPlacement& lhs, const PTPlacement& rhs) {
 	return lhs.qTaxon < rhs.qTaxon;
 }
 
-
 } /* End namespace EGriceLab */
 
 #endif /* SRC_HMMUFOTU_MAIN_H_ */

@@ -165,7 +165,7 @@ namespace cds_static
 		return size;
 	}
 
-	void BitmapsSequence::save(ofstream & fp) const
+	void BitmapsSequence::save(ostream & fp) const
 	{
 		uint wr = BS_HDR;
 		saveValue(fp,wr);
@@ -180,7 +180,7 @@ namespace cds_static
 		am->save(fp);
 	}
 
-	BitmapsSequence * BitmapsSequence::load(ifstream & fp) {
+	BitmapsSequence * BitmapsSequence::load(istream & fp) {
 		uint __attribute__((unused)) type = loadValue<uint>(fp);
 		if(type!=BS_HDR) {
 			abort();

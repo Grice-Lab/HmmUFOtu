@@ -37,7 +37,7 @@ class ssa
 {
   public:
     ssa(uchar * seq, uint n, bool free_text=false);
-    ssa(ifstream & fp);
+    ssa(istream & fp);
     ~ssa();
 
     bool set_samplepos(uint sample);
@@ -57,7 +57,7 @@ class ssa
     void print_bwt();
 
     uchar * rebuild();
-    void save(ofstream & fp);
+    void save(ostream & fp);
 
 
   protected:

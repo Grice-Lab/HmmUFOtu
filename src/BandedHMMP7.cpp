@@ -36,7 +36,9 @@
 #include <sstream>
 #include <algorithm>
 #include "BandedHMMP7.h"
+#include "HmmUFOtuVersion.h"
 #include "LinearAlgebraBasic.h"
+#include "HmmUFOtuVersion.h"
 
 namespace EGriceLab {
 using namespace std;
@@ -50,10 +52,17 @@ const double BandedHMMP7::kMinGapFrac = 0.2;
 const double BandedHMMP7::CONS_THRESHOLD = 0.9;
 const double BandedHMMP7::DEFAULT_ERE = 1;
 const IOFormat tabFmt(StreamPrecision, DontAlignCols, "\t", "\n", "", "", "", "");
-static const int8_t GAP_BASE = DegenAlphabet::GAP_BASE;
-static const int8_t PAD_BASE = DegenAlphabet::GAP_BASE;
+//static const int8_t GAP_BASE = DegenAlphabet::GAP_BASE;
+//static const int8_t PAD_BASE = DegenAlphabet::GAP_BASE;
 static const char GAP_SYM = '-';
 static const char PAD_SYM = '.';
+
+BandedHMMP7::BandedHMMP7() :
+		hmmVersion(progName + "-" + DEFAULT_PROG_VERSION), name("unnamed"), K(0), L(0), abc(NULL),
+		hmmBg(0), nSeq(0), effN(0), wingRetracted(false) {
+	/* Assert IEE559 at construction time */
+	assert(std::numeric_limits<double>::is_iec559);
+}
 
 BandedHMMP7::BandedHMMP7(const string& name, int K, const DegenAlphabet* abc) :
 		hmmVersion(progName + "-" + progVersion), name(name), K(K), L(0), abc(abc),

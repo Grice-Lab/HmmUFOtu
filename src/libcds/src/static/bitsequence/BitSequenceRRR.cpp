@@ -376,7 +376,7 @@ namespace cds_static
 		E = E->unuse();
 	}
 
-	void BitSequenceRRR::save(ofstream & f) const
+	void BitSequenceRRR::save(ostream & f) const
 	{
 		/*cout << "===================" << endl;
 		cout << "length = " << length << endl;
@@ -401,7 +401,7 @@ namespace cds_static
 		saveValue(f,O,O_len);
 	}
 
-	BitSequenceRRR * BitSequenceRRR::load(ifstream & f) {
+	BitSequenceRRR * BitSequenceRRR::load(istream & f) {
 		BitSequenceRRR * ret = NULL;
 		try
 		{

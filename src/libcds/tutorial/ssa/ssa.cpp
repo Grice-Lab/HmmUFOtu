@@ -70,7 +70,7 @@ ssa::~ssa() {
 #include <cppUtils.h>
 using namespace cds_utils;
 
-void ssa::save(ofstream & fp) {
+void ssa::save(ostream & fp) {
   saveValue(fp,n);
   saveValue(fp,sigma);
   saveValue(fp,maxV);
@@ -96,7 +96,7 @@ uint ssa::length() {
 }
 
 
-ssa::ssa(ifstream & fp) {
+ssa::ssa(istream & fp) {
   built = true;
   _sa = NULL;
   bwt = NULL;

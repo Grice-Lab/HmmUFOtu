@@ -199,7 +199,7 @@ public:
 	 * @return  whether saving was successful
 	 */
 	template<typename T>
-	static ostream& saveString(const basic_string<T>& src, ostream& out, bool withNull) {
+	static ostream& saveString(const basic_string<T>& src, ostream& out, bool withNull = false) {
 		if(!withNull)
 			return saveString(src, out, src.length());
 		else

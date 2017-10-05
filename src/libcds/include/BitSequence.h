@@ -108,10 +108,10 @@ namespace cds_static
 			virtual size_t getSize() const=0;
 
 			/** Stores the bitmap given a file pointer*/
-			virtual void save(ofstream & fp) const=0;
+			virtual void save(ostream & fp) const=0;
 
 			/** Reads a bitmap determining the type */
-			static BitSequence * load(ifstream & fp);
+			static BitSequence * load(istream & fp);
 
 		protected:
 			/** Length of the bitstring */
