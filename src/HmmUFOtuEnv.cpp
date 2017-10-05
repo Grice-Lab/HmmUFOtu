@@ -25,9 +25,16 @@
  */
 
 #include "HmmUFOtuEnv.h"
+#include "HmmUFOtuConst.h"
 
 namespace EGriceLab {
 
 int VERBOSE_LEVEL = LOG_WARNING; /* DEFAULT VERBOSE LEVEL */
+const VersionSequence progVer("v1.2.1");
+
+void printVersion(const string& app, ostream& out) {
+	out << app << ": " << progVer << std::endl;
+	out << "Package: " << progName << " " << progVer << std::endl;
+}
 
 }
