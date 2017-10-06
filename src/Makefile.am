@@ -53,11 +53,6 @@ libHmmUFOtu_OTU_a_SOURCES = \
 OTUObserved.cpp \
 OTUTable.cpp
 
-#libHmmUFOtu_phylo_CPPFLAGS = $(AM_CFLAGS)
-#libHmmUFOtu_phylo_CPPFLAGS += $(OPENM_CFLAGS)
-#libHmmUFOtu_phylo_CXXFLAGS = $(AM_CXXFLAGS)
-#libHmmUFOtu_phylo_CXXFLAGS += $(OPENMP_CXXFLAGS)
-
 # Build the executables
 bin_PROGRAMS = \
 hmmufotu \
@@ -96,7 +91,7 @@ hmmufotu_inspect_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_commo
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 
 hmmufotu_SOURCES = hmmufotu.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
-hmmufotu_CPPFLAGS = $(OPENMP_CFLAGS)
+hmmufotu_CPPFLAGS = $(OPENMP_CFLAGS) $(BOOST_CPPFLAGS)
 hmmufotu_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CFLAGS)
 hmmufotu_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a math/libEGMath.a libHmmUFOtu_common.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
