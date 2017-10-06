@@ -125,13 +125,6 @@ ostream& DigitalSeq::save(ostream& out) const {
 
 	/* save sizes */
 	string alphabet = abc->getName();
-	string::size_type nAlphabet = alphabet.length();
-	string::size_type nName = name.length();
-	DigitalSeq::size_type len = length();
-
-	out.write((const char*) &nAlphabet, sizeof(string::size_type));
-	out.write((const char*) &nName, sizeof(string::size_type));
-	out.write((const char*) &len, sizeof(DigitalSeq::size_type));
 
 	/* save basic info */
 	StringUtils::saveString(alphabet, out);
@@ -149,22 +142,15 @@ istream& DigitalSeq::load(istream& in) {
 	if(!initiated)
 		return in;
 
-	string::size_type nAlphabet, nName;
-	DigitalSeq::size_type len;
 	string alphabet;
 
-	/* load sizes */
-	in.read((char*) &nAlphabet, sizeof(string::size_type));
-	in.read((char*) &nName, sizeof(string::size_type));
-	in.read((char*) &len, sizeof(DigitalSeq::size_type));
-
 	/* load basic info */
-	StringUtils::loadString(alphabet, in, nAlphabet);
+	StringUtils::loadString(alphabet, in);
 	abc = AlphabetFactory::getAlphabetByName(alphabet); /* set alphabet by name */
-	StringUtils::loadString(name, in, nName);
+	StringUtils::loadString(name, in);
 
 	/* load seq */
-	StringUtils::loadString(*this, in, len);
+	StringUtils::loadString(*this, in);
 
 	return in;
 }

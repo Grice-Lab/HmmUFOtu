@@ -170,13 +170,17 @@ public:
 	}
 
 	/**
-	 * load data from a binary input to given string, up-to the given delim character
+	 * load data from a binary input to given string, using prepend length
 	 * @param dest  destination
 	 * @param in  input
-	 * @param delim  delim character to load up to
 	 * @return  whether loading was successful
 	 */
-	static istream& loadString(string& dest, istream& in, char delim = '\0');
+	template<typename T>
+	static istream& loadString(basic_string<T>& dest, istream& in) {
+		size_t len;
+		in.read((char*) &len, sizeof(size_t));
+		return loadString(dest, in, len);
+	}
 
 	/**
 	 * save a basic_string to a binary output, upto length of source will be saved
@@ -192,18 +196,16 @@ public:
 	}
 
 	/**
-	 * save an entire basic_string to a binary output, with an optional null terminator at the end
+	 * save an entire basic_string to a binary output, with prepend string length
 	 * @param src  source
 	 * @param out  output
-	 * @param withNull  include a null terminator or not
 	 * @return  whether saving was successful
 	 */
 	template<typename T>
-	static ostream& saveString(const basic_string<T>& src, ostream& out, bool withNull = false) {
-		if(!withNull)
-			return saveString(src, out, src.length());
-		else
-			return saveString(src, out, src.length() + 1);
+	static ostream& saveString(const basic_string<T>& src, ostream& out) {
+		size_t len = src.length();
+		out.write((const char*) &len, sizeof(size_t));
+		return saveString(src, out, len);
 	}
 
 	/** get the number of common occuring characters/alphabets used by two strings */

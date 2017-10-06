@@ -7,7 +7,9 @@
 
 #include <iostream>
 #include <fstream>
-#include "HmmUFOtu.h"
+#include "HmmUFOtu_common.h"
+#include "HmmUFOtu_phylo.h"
+#include "HmmUFOtuEnv.h"
 
 using namespace std;
 using namespace EGriceLab;
@@ -15,7 +17,7 @@ using namespace EGriceLab;
 int main(int argc, char *argv[]) {
 	if(argc < 3) {
 		cerr << "Usage:  " << argv[0] << " DNA-SM-INFILE DNA-SM-OUTFILE [MODEL-TYPE]" << endl;
-		return 0;
+		return EXIT_FAILURE;
 	}
 
 	ifstream in(argv[1]);

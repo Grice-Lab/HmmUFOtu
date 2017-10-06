@@ -15,7 +15,7 @@ namespace EGriceLab {
 using namespace std;
 
 ostream& VersionSequence::save(ostream& out) const {
-	return StringUtils::saveString(toString(), out, true);
+	return StringUtils::saveString(toString(), out);
 }
 
 istream& VersionSequence::load(istream& in) {

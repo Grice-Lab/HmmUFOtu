@@ -292,19 +292,19 @@ void MSA::updateWeightedCounts() {
 
 ostream& MSA::save(ostream& out) const {
 	/* save basic info */
-	StringUtils::saveString(alphabet, out, true);
-	StringUtils::saveString(name, out, true);
+	StringUtils::saveString(alphabet, out);
+	StringUtils::saveString(name, out);
 	out.write((const char*) &numSeq, sizeof(unsigned));
 	out.write((const char*) &csLen, sizeof(unsigned));
-	StringUtils::saveString(CS, out, true);
+	StringUtils::saveString(CS, out);
 	out.write((const char*) &isPruned, sizeof(bool));
 
 	/* save seqNames */
 	for(vector<string>::const_iterator nameIt = seqNames.begin(); nameIt != seqNames.end(); ++nameIt)
-		StringUtils::saveString(*nameIt, out, true);
+		StringUtils::saveString(*nameIt, out);
 
 	/* save concatMSA */
-	StringUtils::saveString(concatMSA, out, true);
+	StringUtils::saveString(concatMSA, out);
 
 	int* bufi = NULL; /* integer output buffer */
 	double* bufd = NULL; /* double output buffer */
@@ -359,7 +359,7 @@ ostream& MSA::save(ostream& out) const {
 
 ostream& MSA::save(ostream& out, const string& progName, const VersionSequence& progVer) const {
 	/* save program info */
-	StringUtils::saveString(progName, out, true); /* save name with null terminated */
+	StringUtils::saveString(progName, out); /* save name with null terminated */
 	progVer.save(out); /* save version with null terminated */
 	return save(out);
 }
@@ -384,7 +384,7 @@ istream& MSA::load(istream& in) {
 		StringUtils::loadString(seqNames[i], in);
 
 	/* load concatMSA */
-	StringUtils::loadString(concatMSA, in, static_cast<size_t> (numSeq) * csLen);
+	StringUtils::loadString(concatMSA, in);
 
 	/* initiate all maticies and indices */
 	resetRawCount();
@@ -441,7 +441,7 @@ istream& MSA::load(istream& in, const string& progName, const VersionSequence& p
 	StringUtils::loadString(pname, in);
 
 	/* load name */
-	if(!in.good()) {
+	if(in.bad()) {
 		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
 		return in;
 	}
@@ -453,7 +453,7 @@ istream& MSA::load(istream& in, const string& progName, const VersionSequence& p
 
 	/* load version */
 	pver.load(in);
-	if(!in.good()) {
+	if(in.bad()) {
 		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
 		return in;
 	}

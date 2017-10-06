@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include "HmmUFOtuConst.h"
 #include "HmmUFOtuEnv.h"
 #include "ProgLog.h"
 #include "CSFMIndex.h"
@@ -27,7 +28,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	CSFMIndex csfm;
-	csfm.load(in);
+	csfm.load(in, progName, progVer);
 
 	if(in.bad()) {
 		cerr << "Unable to load CSFM file: " << argv[1] << endl;
@@ -35,7 +36,8 @@ int main(int argc, char *argv[]) {
 	else
 		cerr << "CSFM index loaded" << endl;
 
-	if(!csfm.save(out)) {
+	csfm.save(out, progName, progVer);
+	if(!out.good()) {
 		cerr << "Unable to save CSFM index file: " << argv[2] << endl;
 		return EXIT_FAILURE;
 	}

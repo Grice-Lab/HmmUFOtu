@@ -93,13 +93,13 @@ istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
 ostream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::save(ostream& out) const {
 	/* write basic info */
 	out.write((const char*) &id, sizeof(long));
-	StringUtils::saveString(name, out, true);
+	StringUtils::saveString(name, out);
 
 	/* write seq */
 	seq.save(out);
 
 	/* write annotation */
-	StringUtils::saveString(anno, out, true);
+	StringUtils::saveString(anno, out);
 	out.write((const char*) &annoDist, sizeof(double));
 
 	return out;
@@ -480,7 +480,7 @@ istream& PhyloTreeUnrooted::load(istream& in, const string& progName, const Vers
 	StringUtils::loadString(pname, in);
 
 	/* load name */
-	if(!in.good()) {
+	if(in.bad()) {
 		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
 		return in;
 	}
@@ -492,7 +492,7 @@ istream& PhyloTreeUnrooted::load(istream& in, const string& progName, const Vers
 
 	/* load version */
 	pver.load(in);
-	if(!in.good()) {
+	if(in.bad()) {
 		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
 		return in;
 	}
@@ -543,7 +543,7 @@ ostream& PTUnrooted::save(ostream& out) const {
 
 ostream& PTUnrooted::save(ostream& out, const string& progName, const VersionSequence& progVer) const {
 	/* save program info */
-	StringUtils::saveString(progName, out, true); /* save name with null terminated */
+	StringUtils::saveString(progName, out); /* save name with null terminated */
 	progVer.save(out); /* save version with null terminated */
 	return save(out);
 }

@@ -145,7 +145,7 @@ set<unsigned> CSFMIndex::locateIndex(const string& pattern) const {
 
 ostream& CSFMIndex::save(ostream& out) const {
 	/* save alphabet name */
-	StringUtils::saveString(abc->getName(), out, true);
+	StringUtils::saveString(abc->getName(), out);
 
 	/* write gap char */
 	out.write(&gapCh, sizeof(char));
@@ -156,7 +156,7 @@ ostream& CSFMIndex::save(ostream& out) const {
 
 	/* write arrays and objects */
 	out.write((char*) C, (UINT8_MAX + 1) * sizeof(int32_t));
-	StringUtils::saveString(csSeq, out, static_cast<size_t> (csLen + 2));
+	StringUtils::saveString(csSeq, out);
 	out.write((char*) csIdentity, (csLen + 1) * sizeof(double));
 	out.write((char*) concat2CS, (concatLen + 1) * sizeof(uint16_t));
 	out.write((char*) saSampled, (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
@@ -169,7 +169,7 @@ ostream& CSFMIndex::save(ostream& out) const {
 
 ostream& CSFMIndex::save(ostream& out, const string& progName, const VersionSequence& progVer) const {
 	/* save program info */
-	StringUtils::saveString(progName, out, true); /* save name with null terminated */
+	StringUtils::saveString(progName, out); /* save name with null terminated */
 	progVer.save(out); /* save version with null terminated */
 	return save(out);
 }
@@ -190,7 +190,7 @@ istream& CSFMIndex::load(istream& in) {
 
 	/* read arrays and objects */
 	in.read((char*) C, (UINT8_MAX + 1) * sizeof(int32_t));
-	StringUtils::loadString(csSeq, in, static_cast<size_t>(csLen + 1));
+	StringUtils::loadString(csSeq, in);
 
 	csIdentity = new double[csLen + 1];
 	in.read((char*) csIdentity, (csLen + 1) * sizeof(double));
@@ -213,7 +213,7 @@ istream& CSFMIndex::load(istream& in, const string& progName, const VersionSeque
 	StringUtils::loadString(pname, in);
 
 	/* load name */
-	if(!in.good()) {
+	if(in.bad()) {
 		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
 		return in;
 	}
@@ -225,7 +225,7 @@ istream& CSFMIndex::load(istream& in, const string& progName, const VersionSeque
 
 	/* load version */
 	pver.load(in);
-	if(!in.good()) {
+	if(in.bad()) {
 		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
 		return in;
 	}
