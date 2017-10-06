@@ -14,31 +14,34 @@ FMIO_test \
 PTU_IO_test
 
 MSAIO_test_SOURCES = MSAIO_test.cpp
-MSAIO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a
+MSAIO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a \
+$(top_srcdir)/src/HmmUFOtuEnv.o
 
 bHmmPrior_IO_test_SOURCES = bHmmPrior_IO_test.cpp
 bHmmPrior_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a
+$(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a \
+$(top_srcdir)/src/HmmUFOtuEnv.o
 
 bHmm_IO_test_SOURCES = bHmm_IO_test.cpp
 bHmm_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a
+$(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a \
+$(top_srcdir)/src/HmmUFOtuEnv.o
 
 dna_model_IO_test_SOURCES = dna_model_IO_test.cpp
 dna_model_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a
-dna_model_IO_test_LDFLAGS = -static
+$(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/math/libEGMath.a \
+$(top_srcdir)/src/HmmUFOtuEnv.o
 
 FMIO_test_SOURCES = FMIO_test.cpp
 FMIO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
 $(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
-$(top_srcdir)/src/libcds/src/libcds.la
-FMIO_test_LDFLAGS = -static
+$(top_srcdir)/src/libcds/src/libcds.la \
+$(top_srcdir)/src/HmmUFOtuEnv.o
 
 PTU_IO_test_SOURCES = PTU_IO_test.cpp
 PTU_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
-$(top_srcdir)/src/libHmmUFOtu_common.a
-PTU_IO_test_LDFLAGS = -static
+$(top_srcdir)/src/libHmmUFOtu_common.a \
+$(top_srcdir)/src/HmmUFOtuEnv.o
 
 TESTS = GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh

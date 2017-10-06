@@ -27,7 +27,7 @@ if [ $? == 0 ]
 		echo "MSA IO passed"
 	else
 		echo "MSA IO failed"
-		rm -f ${DB}.*
+	#	rm -f ${DB}.*
 		exit 1
 fi
 
