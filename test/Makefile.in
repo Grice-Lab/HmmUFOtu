@@ -549,7 +549,8 @@ AUTOMAKE_OPTIONS = subdir-objects
 AM_CXXFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/math \
 -I$(top_srcdir)/src/libdivsufsort/include \
--I$(top_srcdir)/src/libcds/include
+-I$(top_srcdir)/src/libcds/include \
+$(BOOST_CPPFLAGS)
 
 MSAIO_test_SOURCES = MSAIO_test.cpp
 MSAIO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a \
