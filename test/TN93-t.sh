@@ -1,7 +1,7 @@
 #!/bin/bash
 
-INPUT="79_otus"
-DBNAME="gg_79_otus"
+INPUT="70_otus"
+DBNAME="gg_70_otus"
 SMTYPE="TN93"
 DB="${DBNAME}_${SMTYPE}"
 SRCPATH="../src"

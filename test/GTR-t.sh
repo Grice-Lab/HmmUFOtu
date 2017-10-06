@@ -1,7 +1,7 @@
 #!/bin/bash
 
-INPUT="79_otus"
-DBNAME="gg_79_otus"
+INPUT="70_otus"
+DBNAME="gg_70_otus"
 SMTYPE="GTR"
 DB="${DBNAME}_${SMTYPE}"
 SRCPATH="../src"
@@ -27,7 +27,7 @@ if [ $? == 0 ]
 		echo "MSA IO passed"
 	else
 		echo "MSA IO failed"
-	#	rm -f ${DB}.*
+		rm -f ${DB}.*
 		exit 1
 fi
 
