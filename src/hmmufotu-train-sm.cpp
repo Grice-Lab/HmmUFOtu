@@ -164,9 +164,16 @@ int main(int argc, char* argv[]) {
 	/* Load data */
 	MSA msa;
 	if(fmt == "msa") { /* binary file provided */
-		msa.load(msaIn, progName, progVer);
+		if(loadProgInfo(msaIn).bad())
+			return EXIT_FAILURE;
+		msa.load(msaIn);
 	}
-	else if(msa.loadMSA(ALPHABET, msaIn, fmt) >= 0)
+	else {
+		msa.loadMSA(ALPHABET, msaIn, fmt);
+		msa.setName(msaFn);
+	}
+
+	if(!msaIn.bad()) /* load sequence format */
 		infoLog << "MSA loaded" << endl;
 	else {
 		cerr << "Unable to load MSA seq from '" << msaFn << "': " << ::strerror(errno) << endl;

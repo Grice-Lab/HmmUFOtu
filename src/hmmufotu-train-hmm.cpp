@@ -24,7 +24,6 @@
  *      Author: zhengqi
  */
 
-
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -179,12 +178,16 @@ int main(int argc, char *argv[]) {
 
 	/* Load data */
 	MSA msa;
-	long nLoad;
-	if(fmt == "msa") /* binary file provided */
-		msa.load(in, progName, progVer);
-	else
-		nLoad = msa.loadMSA(ALPHABET, in, fmt);
-	if(!in.bad() && nLoad >= 0) /* load sequence format */
+	if(fmt == "msa") /* binary file provided */ {
+		if(loadProgInfo(in).bad())
+			return EXIT_FAILURE;
+		msa.load(in);
+	}
+	else {
+		msa.loadMSA(ALPHABET, in, fmt);
+		msa.setName(inFn);
+	}
+	if(!in.bad()) /* load sequence format */
 		infoLog << "MSA loaded" << endl;
 	else {
 		cerr << "Unable to load MSA seq from '" << inFn << "': " << ::strerror(errno) << endl;
@@ -200,6 +203,7 @@ int main(int argc, char *argv[]) {
 
 	BandedHMMP7 hmm; /* construct an empty profile */
 	hmm.build(msa, symfrac, hmmPrior);
+	hmm.setHmmVersion(getProgFullName(progName, progVer));
 	infoLog << "Banded HMM profile trained" << endl;
 
 	out << hmm;

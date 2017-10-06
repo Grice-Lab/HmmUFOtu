@@ -173,7 +173,6 @@ double alignIdentity(const DegenAlphabet* abc, const string& align, int start, i
 /** get profile-HMM identity, as fraction of non-gap characters in HMM profile sites */
 double hmmIdentity(const BandedHMMP7& hmm, const string& align, int start, int end);
 
-
 inline bool operator<(const PTLoc& lhs, const PTLoc& rhs) {
 	return lhs.dist < rhs.dist;
 }

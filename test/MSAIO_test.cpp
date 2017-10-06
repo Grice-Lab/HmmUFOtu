@@ -26,8 +26,10 @@ int main(int argc, char *argv[]) {
 	}
 	cerr << "File opened" << endl;
 
+	if(loadProgInfo(in).bad())
+		return EXIT_FAILURE;
 	MSA msa;
-	msa.load(in, progName, progVer);
+	msa.load(in);
 	if(!in.bad())
 		cerr << "MSA database loaded" << endl;
 	else {
@@ -37,7 +39,8 @@ int main(int argc, char *argv[]) {
 
 	cerr << "Total seqNum:" << msa.getNumSeq() << endl;
 
-	msa.save(out, progName, progVer);
+	saveProgInfo(out);
+	msa.save(out);
 	if(out.bad()) {
 		cerr << "Unable to save MSA database: " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;

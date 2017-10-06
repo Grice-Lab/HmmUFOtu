@@ -195,12 +195,17 @@ int main(int argc, char* argv[]) {
 
 	/* Load data */
 	MSA msa;
-	long nLoad;
-	if(fmt == "msa") /* binary file provided */
-		msa.load(in, progName, progVer);
-	else
-		nLoad = msa.loadMSA(ALPHABET, in, fmt);
-	if(!in.bad() && nLoad >= 0) /* load sequence format */
+	if(fmt == "msa") { /* binary file provided */
+		if(loadProgInfo(in).bad())
+			return EXIT_FAILURE;
+		msa.load(in);
+	}
+	else {
+		msa.loadMSA(ALPHABET, in, fmt);
+		msa.setName(inFn);
+	}
+
+	if(!in.bad()) /* load sequence format */
 		infoLog << "MSA loaded" << endl;
 	else {
 		cerr << "Unable to load MSA seq from '" << inFn << "': " << ::strerror(errno) << endl;

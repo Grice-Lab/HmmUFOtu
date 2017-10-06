@@ -357,13 +357,6 @@ ostream& MSA::save(ostream& out) const {
 	return out;
 }
 
-ostream& MSA::save(ostream& out, const string& progName, const VersionSequence& progVer) const {
-	/* save program info */
-	StringUtils::saveString(progName, out); /* save name with null terminated */
-	progVer.save(out); /* save version with null terminated */
-	return save(out);
-}
-
 istream& MSA::load(istream& in) {
 	char* buf = NULL; /* character buf */
 	int* bufi = NULL; /* integer buf */
@@ -432,42 +425,6 @@ istream& MSA::load(istream& in) {
 	delete[] bufd;
 
 	return in;
-}
-
-istream& MSA::load(istream& in, const string& progName, const VersionSequence& progVer) {
-	/* load program info */
-	string pname;
-	VersionSequence pver;
-	StringUtils::loadString(pname, in);
-
-	/* load name */
-	if(in.bad()) {
-		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
-		return in;
-	}
-	if(progName != pname) {
-		errorLog << "Not an MSA data file" << endl;
-		in.setstate(ios_base::badbit);
-		return in;
-	}
-
-	/* load version */
-	pver.load(in);
-	if(in.bad()) {
-		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
-		return in;
-	}
-	if(!(progVer >= pver)) {
-		errorLog << "You are using an old version of " << getProgFullName(progName, progVer)
-				<< " to read a newer MSA object file that is build by " << getProgFullName(pname, pver)
-				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
-				<< endl;
-		in.setstate(ios_base::failbit);
-		return in;
-	}
-
-	/* load object data */
-	return load(in);
 }
 
 } /* namespace EGriceLab */

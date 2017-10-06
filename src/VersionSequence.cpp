@@ -6,7 +6,6 @@
  */
 
 #include "VersionSequence.h"
-#include "StringUtils.h"
 
 #include <cassert>
 
@@ -15,13 +14,16 @@ namespace EGriceLab {
 using namespace std;
 
 ostream& VersionSequence::save(ostream& out) const {
-	return StringUtils::saveString(toString(), out);
+	out.write((const char*) &majorVer, sizeof(int));
+	out.write((const char*) &minorVer, sizeof(int));
+	out.write((const char*) &buildVer, sizeof(int));
+	return out;
 }
 
 istream& VersionSequence::load(istream& in) {
-	string verStr;
-	StringUtils::loadString(verStr, in);
-	parseString(verStr, *this);
+	in.read((char*) &majorVer, sizeof(int));
+	in.read((char*) &minorVer, sizeof(int));
+	in.read((char*) &buildVer, sizeof(int));
 	return in;
 }
 

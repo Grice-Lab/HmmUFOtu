@@ -27,8 +27,10 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
+	if(loadProgInfo(in).bad())
+		return EXIT_FAILURE;
 	CSFMIndex csfm;
-	csfm.load(in, progName, progVer);
+	csfm.load(in);
 
 	if(in.bad()) {
 		cerr << "Unable to load CSFM file: " << argv[1] << endl;
@@ -36,7 +38,8 @@ int main(int argc, char *argv[]) {
 	else
 		cerr << "CSFM index loaded" << endl;
 
-	csfm.save(out, progName, progVer);
+	saveProgInfo(out);
+	csfm.save(out);
 	if(!out.good()) {
 		cerr << "Unable to save CSFM index file: " << argv[2] << endl;
 		return EXIT_FAILURE;

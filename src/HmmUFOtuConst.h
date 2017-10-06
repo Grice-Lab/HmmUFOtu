@@ -49,7 +49,7 @@ const string PHYLOTREE_FILE_SUFFIX = ".ptu";
 const string GZIP_FILE_SUFFIX = ".gz";
 const string BZIP2_FILE_SUFFIX = ".bz2";
 
-const std::string progName = "hmmufotu";
+const std::string progName = "HmmUFOtu";
 
 const int MAX_NAME_LENGTH = 4096;
 

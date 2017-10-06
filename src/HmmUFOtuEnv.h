@@ -57,6 +57,18 @@ inline string getProgFullName(const string& name, const VersionSequence& ver) {
 	return name + "-" + ver.toString();
 }
 
+/** save program info to a binary output */
+ostream& saveProgInfo(ostream& out);
+
+/** load program info from a binary input and check agains known values */
+istream& loadProgInfo(istream& in);
+
+/** write progInfo and additional information to a text output */
+ostream& writeProgInfo(ostream& out, const string& info = "");
+
+/** read progInfo and additional information from a text input */
+istream& readProgInfo(istream& in);
+
 }
 
 #endif /* SRC_HMMUFOTUENV_H_ */

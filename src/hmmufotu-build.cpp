@@ -260,6 +260,7 @@ int main(int argc, char* argv[]) {
 		cerr << "Unable to load MSA from '" << seqFn << "'" << endl;
 		return EXIT_FAILURE;
 	}
+	msa.setName(dbName);
 	msa.prune();
 	infoLog << "MSA pruned" << endl;
 	infoLog << "MSA database created for " << msa.getNumSeq() << " X " << msa.getCSLen() << " aligned sequences" << endl;
@@ -283,6 +284,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 	BandedHMMP7 hmm; /* construct an empty profile */
+	hmm.setName(dbName);
 	hmm.setHmmVersion(getProgFullName(progName, progVer));
 	if(!noHmm) {
 		hmm.build(msa, symfrac, hmmPrior);
@@ -411,15 +413,17 @@ int main(int argc, char* argv[]) {
 	infoLog << "Ancestor sequence of all intermediate nodes inferred" << endl;
 
 	infoLog << "Saving database files ..." << endl;
-	/* write database files */
-	msa.save(msaOut, progName, progVer);
+	/* write database files, all with prepend program info */
+	saveProgInfo(msaOut);
+	msa.save(msaOut);
 	if(msaOut.bad()) {
 		cerr << "Unable to save MSA: " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 	infoLog << "MSA saved" << endl;
 
-	csfm.save(csfmOut, progName, progVer);
+	saveProgInfo(csfmOut);
+	csfm.save(csfmOut);
 	if(csfmOut.bad()) {
 		cerr << "Unable to save CSFM index: " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
@@ -435,7 +439,8 @@ int main(int argc, char* argv[]) {
 		infoLog << "Banded HMM profile saved" << endl;
 	}
 
-	tree.save(ptuOut, progName, progVer);
+	saveProgInfo(ptuOut);
+	tree.save(ptuOut);
 	if(ptuOut.bad()) {
 		cerr << "Unable to save Phylogenetic Tree index: " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;

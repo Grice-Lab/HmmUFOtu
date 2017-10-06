@@ -35,8 +35,10 @@ int main(int argc, const char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
+	if(loadProgInfo(in).bad())
+		return EXIT_FAILURE;
 	PTUnrooted tree;
-	tree.load(in, progName, progVer);
+	tree.load(in);
 	if(!in.bad()){
 		cerr << "PTUnrooted loaded successfully, total " << tree.numNodes() << " nodes loaded" << endl;
 		cerr << "Root id: " << tree.getRoot()->getId() << endl;
@@ -46,7 +48,8 @@ int main(int argc, const char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	tree.save(out, progName, progVer);
+	saveProgInfo(out);
+	tree.save(out);
 
 	if(!out.bad())
 		cerr << "PTUnrooted saved successfully" << endl;

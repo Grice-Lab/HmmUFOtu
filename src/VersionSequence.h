@@ -71,6 +71,7 @@ public:
 	static const int MAX_LENGTH = 4096;
 
 	/* static methods */
+	/* parse Version string into an object */
 	static void parseString(const string& str, VersionSequence& ver);
 
 };

@@ -44,4 +44,4 @@ PTU_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
 $(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/HmmUFOtuEnv.o
 
-TESTS = GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh
+TESTS = GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh sim-run-SE-t.sh

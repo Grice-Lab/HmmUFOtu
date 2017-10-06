@@ -173,8 +173,10 @@ int main(int argc, char* argv[]) {
 	int csLen;
 
 	infoLog << "Inspecting MSA data ..." << endl;
+	if(loadProgInfo(msaIn).bad())
+		return EXIT_FAILURE;
 	MSA msa;
-	msa.load(msaIn, progName, progVer);
+	msa.load(msaIn);
 	if(msaIn.bad()) {
 		cerr << "Failed to load MSA data '" << msaFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
@@ -183,8 +185,10 @@ int main(int argc, char* argv[]) {
 	cout << "MSA loaded. Number of seq: " << msa.getNumSeq() << " CS length: " << csLen << endl;
 
 	infoLog << "Inspecting CSFM-index ..." << endl;
+	if(loadProgInfo(csfmIn).bad())
+		return EXIT_FAILURE;
 	CSFMIndex csfm;
-	csfm.load(csfmIn, progName, progVer);
+	csfm.load(csfmIn);
 	if(csfmIn.bad()) {
 		cerr << "Failed to load CSFM-index '" << csfmFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
@@ -210,8 +214,10 @@ int main(int argc, char* argv[]) {
 	}
 
 	infoLog << "Inspecting Phylogenetic tree data ..." << endl;
+	if(loadProgInfo(ptuIn).bad())
+		return EXIT_FAILURE;
 	PTUnrooted ptu;
-	ptu.load(ptuIn, progName, progVer);
+	ptu.load(ptuIn);
 	if(ptuIn.bad()) {
 		cerr << "Unable to load Phylogenetic tree data '" << ptuFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;

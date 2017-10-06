@@ -27,6 +27,8 @@
 #include <Eigen/Dense>
 #include <cassert>
 #include "HmmUFOtu_main.h"
+#include "StringUtils.h"
+
 using namespace std;
 using namespace Eigen;
 
