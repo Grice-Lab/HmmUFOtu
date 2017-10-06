@@ -582,7 +582,7 @@ PTU_IO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_phylo.a \
 $(top_srcdir)/src/libHmmUFOtu_common.a \
 $(top_srcdir)/src/HmmUFOtuEnv.o
 
-TESTS = GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh
+TESTS = GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh sim-run-SE-t.sh
 all: all-am
 
 .SUFFIXES:
@@ -910,6 +910,13 @@ HKY85-t.sh.log: HKY85-t.sh
 GTR-dG-t.sh.log: GTR-dG-t.sh
 	@p='GTR-dG-t.sh'; \
 	b='GTR-dG-t.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+sim-run-SE-t.sh.log: sim-run-SE-t.sh
+	@p='sim-run-SE-t.sh'; \
+	b='sim-run-SE-t.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
