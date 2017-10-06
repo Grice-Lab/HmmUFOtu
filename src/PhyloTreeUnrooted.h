@@ -604,13 +604,27 @@ public:
 		return dG;
 	}
 
+protected:
 	/**
-	 * save this object to an output in binary format
+	 * save raw object data to output
 	 */
 	ostream& save(ostream& out) const;
 
-	/** load a binary file into this object */
+public:
+	/**
+	 * save program info and raw object data to output
+	 */
+	ostream& save(ostream& out, const string& progName, const VersionSequence& progVer) const;
+
+protected:
+	/** load raw object data from input */
 	istream& load(istream& in);
+
+public:
+	/**
+	 * load program info and raw object data from input
+	 */
+	 istream& load(istream& in, const string& progName, const VersionSequence& progVer);
 
 	/**
 	 * set tree root at given node, return the old node

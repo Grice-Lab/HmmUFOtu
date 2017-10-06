@@ -317,25 +317,47 @@ public:
 	 */
 	void subsetMultinom(size_t min);
 
+protected:
 	/**
-	 * load a table from an input stream
+	 * load raw table object from input in given format
 	 */
 	istream& load(istream& in, const string& format = "table");
 
 	/**
-	 * save this table to an output stream
+	 * save this table to an output stream in given format
 	 */
 	ostream& save(ostream& out, const string& format = "table") const;
 
 	/**
-	 * load a table from an input stream in OTU table format
+	 * load raw table object from input in table format
 	 */
 	istream& loadTable(istream& in);
 
 	/**
-	 * save this table to an output stream in OTU table format
+	 * save this table to an output stream in table format
 	 */
 	ostream& saveTable(ostream& out) const;
+
+public:
+	/**
+	 * load program info and raw table object from input in given format
+	 */
+	istream& load(istream& in, const string& progName, const VersionSequence& progVer, const string& format = "table");
+
+	/**
+	 * save program info and raw table object to output in given format
+	 */
+	ostream& save(ostream& out, const string& progName, const VersionSequence& progVer, const string& format = "table") const;
+
+	/**
+	 * load program info and raw table object from input in table format
+	 */
+	istream& loadTable(istream& in, const string& progName, const VersionSequence& progVer);
+
+	/**
+	 * save program info and raw table object to output in table format
+	 */
+	ostream& saveTable(ostream& out, const string& progName, const VersionSequence& progVer) const;
 
 	/**
 	 * load a table from an input stream in BIOM hdf5 format
@@ -346,13 +368,6 @@ public:
 	 * save this table to an output stream in BIOM hdf5 format
 	 */
 	ostream& saveHdf5(ostream& out) const;
-
-	/** non-member functions */
-	/** formatted input, equivalent to the default behavior of load() */
-	friend istream& operator>>(istream& in, OTUTable& otu);
-
-	/** formatted output, equivalent to the default behavior of save() */
-	friend ostream& operator<<(ostream& out, const OTUTable& otu);
 
 private:
 	/** member fields */
@@ -384,14 +399,6 @@ inline double OTUTable::numOTUReads(const string& otuID) const {
 	return i != -1 ? numOTUReads(i) : 0;
 }
 
-inline std::istream& operator>>(std::istream& in, OTUTable& otu) {
-	return otu.load(in);
-}
-
-inline std::ostream& operator<<(std::ostream& out, OTUTable& otu) {
-	return otu.save(out);
-}
-
 inline std::istream& OTUTable::load(istream& in, const string& format) {
 	if(format == "table")
 		return loadTable(in);
@@ -402,9 +409,29 @@ inline std::istream& OTUTable::load(istream& in, const string& format) {
 	}
 }
 
+inline istream& OTUTable::load(istream& in, const string& progName, const VersionSequence& progVer, const string& format) {
+	if(format == "table")
+		return loadTable(in, progName, progVer);
+	else {
+		errorLog << "Cannot load OTUTable, unsupported format '" << format << "'" << endl;
+		in.setstate(std::ios_base::failbit);
+		return in;
+	}
+}
+
 inline std::ostream& OTUTable::save(ostream& out, const string& format) const {
 	if(format == "table")
 		return saveTable(out);
+	else {
+		errorLog << "Cannot save OTUTable, unsupported format '" << format << "'" << endl;
+		out.setstate(std::ios_base::failbit);
+		return out;
+	}
+}
+
+inline std::ostream& OTUTable::save(ostream& out, const string& progName, const VersionSequence& progVer, const string& format) const {
+	if(format == "table")
+		return saveTable(out, progName, progVer);
 	else {
 		errorLog << "Cannot save OTUTable, unsupported format '" << format << "'" << endl;
 		out.setstate(std::ios_base::failbit);

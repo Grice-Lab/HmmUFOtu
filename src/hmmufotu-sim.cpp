@@ -261,7 +261,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* load input database */
-	msa.load(msaIn);
+	msa.load(msaIn, progName, progVer);
 	if(msaIn.bad()) {
 		cerr << "Failed to load MSA data from " << msaFn << endl;
 		return EXIT_FAILURE;
@@ -269,7 +269,7 @@ int main(int argc, char* argv[]) {
 	else
 		infoLog << "MSA data loaded, numSeq: " << msa.getNumSeq() << " csLen:" << msa.getCSLen() << endl;
 
-	ptu.load(ptuIn);
+	ptu.load(ptuIn, progName, progVer);
 	if(ptuIn.bad()) {
 		cerr << "Failed to load PTU data from " << ptuFn << endl;
 		return EXIT_FAILURE;

@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
 
 	infoLog << "Inspecting MSA data ..." << endl;
 	MSA msa;
-	msa.load(msaIn);
+	msa.load(msaIn, progName, progVer);
 	if(msaIn.bad()) {
 		cerr << "Failed to load MSA data '" << msaFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
 
 	infoLog << "Inspecting CSFM-index ..." << endl;
 	CSFMIndex csfm;
-	csfm.load(csfmIn);
+	csfm.load(csfmIn, progName, progVer);
 	if(csfmIn.bad()) {
 		cerr << "Failed to load CSFM-index '" << csfmFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
 
 	infoLog << "Inspecting Phylogenetic tree data ..." << endl;
 	PTUnrooted ptu;
-	ptu.load(ptuIn);
+	ptu.load(ptuIn, progName, progVer);
 	if(ptuIn.bad()) {
 		cerr << "Unable to load Phylogenetic tree data '" << ptuFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;

@@ -49,6 +49,7 @@ using namespace Eigen;
 
 /* default values */
 static const string ALIGN_FORMAT = "fasta";
+static const string TABLE_FORMAT = "table";
 static const double DEFAULT_EFFN = 2;
 static const int DEFAULT_MIN_NREAD = 0;
 static const int DEFAULT_MIN_NSAMPLE = 0;
@@ -274,7 +275,7 @@ int main(int argc, char* argv[]) {
 
 	/* loading database files */
 	MSA msa;
-	msa.load(msaIn);
+	msa.load(msaIn, progName, progVer);
 	if(msaIn.bad()) {
 		cerr << "Failed to load MSA data '" << msaFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
@@ -295,7 +296,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	PTUnrooted ptu;
-	ptu.load(ptuIn);
+	ptu.load(ptuIn, progName, progVer);
 	if(ptuIn.bad()) {
 		cerr << "Unable to load Phylogenetic tree data '" << ptuFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
@@ -372,7 +373,7 @@ int main(int argc, char* argv[]) {
 
 	/* write the OTU table */
 	infoLog << "Writing OTUTable" << endl;
-	otuOut << otuTable;
+	otuTable.save(otuOut, progName, progVer, TABLE_FORMAT);
 
 	/* write read list */
 	if(readOut.is_open()) {

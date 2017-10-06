@@ -36,7 +36,6 @@
 #include <boost/algorithm/string.hpp> /* for boost string split */
 #include <boost/lexical_cast.hpp>
 #include "HmmUFOtuConst.h"
-#include "HmmUFOtuVersion.h"
 #include "ProgLog.h"
 #include "StringUtils.h"
 #include "SeqUtils.h"
@@ -77,41 +76,30 @@ bool PTUnrooted::isTip(const PTUNodePtr& node) {
 }
 
 istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
-	/* read length */
-	size_t nName, nAnno;
-	in.read((char*) &nName, sizeof(string::size_type));
-	in.read((char*) &nAnno, sizeof(string::size_type));
-
 	/* read basic info */
 	in.read((char*) &id, sizeof(long));
-	StringUtils::loadString(name, in, nName);
+	StringUtils::loadString(name, in);
 
 	/* read seq */
 	seq.load(in);
 
 	/* read annotation */
-	StringUtils::loadString(anno, in, nAnno);
+	StringUtils::loadString(anno, in);
 	in.read((char*) &annoDist, sizeof(double));
 
 	return in;
 }
 
 ostream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::save(ostream& out) const {
-	/* write length */
-	size_t nName = name.length();
-	size_t nAnno = anno.length();
-	out.write((const char*) &nName, sizeof(size_t));
-	out.write((const char*) &nAnno, sizeof(size_t));
-
 	/* write basic info */
 	out.write((const char*) &id, sizeof(long));
-	StringUtils::saveString(name, out);
+	StringUtils::saveString(name, out, true);
 
 	/* write seq */
 	seq.save(out);
 
 	/* write annotation */
-	StringUtils::saveString(anno, out);
+	StringUtils::saveString(anno, out, true);
 	out.write((const char*) &annoDist, sizeof(double));
 
 	return out;
@@ -445,31 +433,6 @@ Vector4d PTUnrooted::getModelFreqEst() const {
 }
 
 istream& PTUnrooted::load(istream& in) {
-	/* Read program info */
-	string pname, pver;
-	readProgName(in, pname);
-	if(!isValidName(pname)) {
-		errorLog << "Not a PTUnrooted object file" << endl;
-		in.setstate(ios_base::failbit);
-		return in;
-	}
-	readProgVersion(in, pver);
-	if(!EGriceLab::isValidVersion(pver)) {
-		errorLog << "Not a valid version " << getProgNameVersion()
-				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
-				<< endl;
-		in.setstate(ios_base::failbit);
-		return in;
-	}
-	if(!isCompatibleVersion(pver)) {
-		errorLog << "You are trying using an older version " << getProgNameVersion()
-				<< " to read a newer HmmUFOtu database file that was build by " << (pname + "-" + pver)
-				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
-				<< endl;
-		in.setstate(ios_base::failbit);
-		return in;
-	}
-
 	/* init leaf matrix that does not depend on anything */
 	initLeafMat();
 
@@ -510,11 +473,43 @@ istream& PTUnrooted::load(istream& in) {
 	return in;
 }
 
-ostream& PTUnrooted::save(ostream& out) const {
-	/* save program info */
-	writeProgName(out);
-	writeProgVersion(out);
+istream& PhyloTreeUnrooted::load(istream& in, const string& progName, const VersionSequence& progVer) {
+	/* load program info */
+	string pname;
+	VersionSequence pver;
+	StringUtils::loadString(pname, in);
 
+	/* load name */
+	if(!in.good()) {
+		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
+		return in;
+	}
+	if(progName != pname) {
+		errorLog << "Not an MSA data file" << endl;
+		in.setstate(ios_base::badbit);
+		return in;
+	}
+
+	/* load version */
+	pver.load(in);
+	if(!in.good()) {
+		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
+		return in;
+	}
+	if(!(progVer >= pver)) {
+		errorLog << "You are using an old version of " << getProgFullName(progName, progVer)
+				<< " to read a newer MSA object file that is build by " << getProgFullName(pname, pver)
+				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
+				<< endl;
+		in.setstate(ios_base::failbit);
+		return in;
+	}
+
+	/* load object data */
+	return load(in);
+}
+
+ostream& PTUnrooted::save(ostream& out) const {
 	/* write global information */
 	size_t nNodes = numNodes();
 	out.write((const char*) &nNodes, sizeof(size_t));
@@ -545,6 +540,14 @@ ostream& PTUnrooted::save(ostream& out) const {
 
 	return out;
 }
+
+ostream& PTUnrooted::save(ostream& out, const string& progName, const VersionSequence& progVer) const {
+	/* save program info */
+	StringUtils::saveString(progName, out, true); /* save name with null terminated */
+	progVer.save(out); /* save version with null terminated */
+	return save(out);
+}
+
 
 ostream& PTUnrooted::saveMSAIndex(ostream& out) const {
 	unsigned N = msaId2node.size();

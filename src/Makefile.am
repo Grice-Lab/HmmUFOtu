@@ -11,9 +11,9 @@ AM_CPPFLAGS = $(BOOST_CPPFLAGS)
 noinst_LIBRARIES = libHmmUFOtu_common.a libHmmUFOtu_hmm.a libHmmUFOtu_phylo.a libHmmUFOtu_OTU.a
 
 libHmmUFOtu_common_a_SOURCES = \
-HmmUFOtuVersion.cpp \
 ProgLog.cpp \
 CommandOptions.cpp \
+VersionSequence.cpp \
 DegenAlphabet.cpp \
 StringUtils.cpp \
 IUPACNucl.cpp \
@@ -30,14 +30,12 @@ TSVRecord.cpp \
 TSVScanner.cpp
 
 libHmmUFOtu_hmm_a_SOURCES = \
-HmmUFOtuVersion.cpp \
 BandedHMMP7Bg.cpp \
 BandedHMMP7Prior.cpp \
 BandedHMMP7.cpp \
 CSFMIndex.cpp
 
 libHmmUFOtu_phylo_a_SOURCES = \
-HmmUFOtuVersion.cpp \
 NewickTree.cpp \
 PhyloTreeUnrooted.cpp \
 DNASubModel.cpp \

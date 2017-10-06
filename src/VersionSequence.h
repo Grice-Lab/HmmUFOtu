@@ -24,11 +24,11 @@ public:
 	/* constructors */
 
 	/** default constructor */
-	VersionSequence() : major(0), minor(0), build(0) {  }
+	VersionSequence() : majorVer(0), minorVer(0), buildVer(0) {  }
 
 	/** construct from a given version string, if failed, using default values */
 	VersionSequence(const string& str)
-		: major(0), minor(0), build(0)
+		: majorVer(0), minorVer(0), buildVer(0)
 	{
 		parseString(str, *this);
 	}
@@ -38,7 +38,9 @@ public:
 
 	/* member methods */
 	string toString() const {
-		return string("v") + major + "." + minor + "." + build;
+		char str[MAX_LENGTH];
+		sprintf(str, "v%d.%d.%d", majorVer, minorVer, buildVer);
+		return str;
 	}
 
 	/** load ProgVer from input, with null termination */
@@ -60,9 +62,9 @@ public:
 
 	/* member fields */
 private:
-	int major;
-	int minor;
-	int build;
+	int majorVer;
+	int minorVer;
+	int buildVer;
 
 	/* static fields */
 public:
@@ -78,13 +80,13 @@ inline ostream& operator<<(ostream& out, const VersionSequence& ver) {
 }
 
 inline bool operator==(const VersionSequence& lhs, const VersionSequence& rhs) {
-	return lhs.major == rhs.major && lhs.minor == rhs.minor && lhs.build == rhs.build;
+	return lhs.majorVer == rhs.majorVer && lhs.minorVer == rhs.minorVer && lhs.buildVer == rhs.buildVer;
 }
 
 inline bool operator<(const VersionSequence& lhs, const VersionSequence& rhs) {
-	return lhs.major < rhs.major ||
-			lhs.major == rhs.major && lhs.minor < rhs.minor ||
-			lhs.major == rhs.major && lhs.minor == rhs.minor && lhs.build < rhs.build;
+	return lhs.majorVer < rhs.majorVer ||
+			lhs.majorVer == rhs.majorVer && lhs.minorVer < rhs.minorVer ||
+			lhs.majorVer == rhs.majorVer && lhs.minorVer == rhs.minorVer && lhs.buildVer < rhs.buildVer;
 }
 
 inline bool operator!=(const VersionSequence& lhs, const VersionSequence& rhs) {

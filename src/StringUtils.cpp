@@ -188,7 +188,7 @@ size_t StringUtils::common(const char* str1, const char* str2) {
 	return N;
 }
 
-istream& StringUtils::loadString(string& dest, istream& in, char delim = '\0') {
+istream& StringUtils::loadString(string& dest, istream& in, char delim) {
 	std::stringbuf buf;
 	in.get(buf, delim);
 	dest = buf.str();

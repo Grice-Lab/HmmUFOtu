@@ -143,7 +143,7 @@ set<unsigned> CSFMIndex::locateIndex(const string& pattern) const {
     return idx;
 }
 
-ofstream& CSFMIndex::save(ostream& out) const {
+ostream& CSFMIndex::save(ostream& out) const {
 	/* save alphabet name */
 	StringUtils::saveString(abc->getName(), out, true);
 
@@ -174,42 +174,12 @@ ostream& CSFMIndex::save(ostream& out, const string& progName, const VersionSequ
 	return save(out);
 }
 
-ifstream& CSFMIndex::load(ifstream& in) {
+istream& CSFMIndex::load(istream& in) {
 	clear(); /* clear old data, if any */
-
-	/* Read program info */
-	string pname, pver;
-	readProgName(in, pname);
-	if(!isValidName(pname)) {
-		errorLog << "Not a PTUnrooted object file" << endl;
-		in.setstate(ios_base::failbit);
-		return in;
-	}
-	readProgVersion(in, pver);
-	if(!EGriceLab::isValidVersion(pver)) {
-		errorLog << "Not a valid version " << getProgNameVersion()
-				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
-				<< endl;
-		in.setstate(ios_base::failbit);
-		return in;
-	}
-	if(!isCompatibleVersion(pver)) {
-		errorLog << "You are trying using an older version " << getProgNameVersion()
-				<< " to read a newer HmmUFOtu database file that was build by " << (pname + "-" + pver)
-				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
-				<< endl;
-		in.setstate(ios_base::failbit);
-		return in;
-	}
-
 	/* read alphabet by name */
-	char* buf = NULL; /* buf for reading */
-	unsigned nAlphabet;
-	in.read((char *) &nAlphabet, sizeof(unsigned));
-	buf = new char[nAlphabet + 1]; /* include the null terminal */
-	in.read(buf, nAlphabet + 1);
-	abc = AlphabetFactory::getAlphabetByName(buf);
-	delete[] buf;
+	string alphabet;
+	StringUtils::loadString(alphabet, in);
+	abc = AlphabetFactory::getAlphabetByName(alphabet);
 
 	/* read gap char */
 	in.read(&gapCh, sizeof(char));
@@ -220,11 +190,7 @@ ifstream& CSFMIndex::load(ifstream& in) {
 
 	/* read arrays and objects */
 	in.read((char*) C, (UINT8_MAX + 1) * sizeof(int32_t));
-
-	buf = new char[csLen + 2];
-	in.read((char*) buf, csLen + 2); /* read the null terminal */
-	csSeq.assign(buf, csLen + 1); /* use assign to prevent memory leak */
-	delete[] buf;
+	StringUtils::loadString(csSeq, in, static_cast<size_t>(csLen + 1));
 
 	csIdentity = new double[csLen + 1];
 	in.read((char*) csIdentity, (csLen + 1) * sizeof(double));
@@ -238,6 +204,42 @@ ifstream& CSFMIndex::load(ifstream& in) {
 	saIdx = BitSequenceRRR::load(in); /* use RRR implementation */
 	bwt = WaveletTreeNoptrs::load(in);
 	return in;
+}
+
+istream& CSFMIndex::load(istream& in, const string& progName, const VersionSequence& progVer) {
+	/* load program info */
+	string pname;
+	VersionSequence pver;
+	StringUtils::loadString(pname, in);
+
+	/* load name */
+	if(!in.good()) {
+		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
+		return in;
+	}
+	if(progName != pname) {
+		errorLog << "Not an MSA data file" << endl;
+		in.setstate(ios_base::badbit);
+		return in;
+	}
+
+	/* load version */
+	pver.load(in);
+	if(!in.good()) {
+		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
+		return in;
+	}
+	if(!(progVer >= pver)) {
+		errorLog << "You are using an old version of " << getProgFullName(progName, progVer)
+				<< " to read a newer MSA object file that is build by " << getProgFullName(pname, pver)
+				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
+				<< endl;
+		in.setstate(ios_base::failbit);
+		return in;
+	}
+
+	/* load object data */
+	return load(in);
 }
 
 CSFMIndex& CSFMIndex::build(const MSA& msa) {

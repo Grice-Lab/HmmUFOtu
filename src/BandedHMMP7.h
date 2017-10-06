@@ -78,6 +78,11 @@ public:
 	 */
 	BandedHMMP7(const string& name, int K, const DegenAlphabet* abc);
 
+	/**
+	 * Construct a BandedHMMP7 with given version, length and alphabet
+	 */
+	BandedHMMP7(const string& name, const string& version, int K, const DegenAlphabet* abc);
+
 	/* nested enums and types */
 	/* enum members of all P7 states
 	 * M: match
@@ -765,6 +770,14 @@ public:
 	 * Write a BandedHMMP7 profile into a file in hmm format
 	 */
 	friend ostream& operator<<(ostream& out, const BandedHMMP7& hmm);
+
+	const string& getHmmVersion() const {
+		return hmmVersion;
+	}
+
+	void setHmmVersion(const string& hmmVersion) {
+		this->hmmVersion = hmmVersion;
+	}
 
 	friend class RelativeEntropyTargetFunc;
 

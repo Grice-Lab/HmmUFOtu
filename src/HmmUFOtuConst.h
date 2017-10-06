@@ -51,5 +51,7 @@ const string BZIP2_FILE_SUFFIX = ".bz2";
 
 const std::string progName = "hmmufotu";
 
+const int MAX_NAME_LENGTH = 4096;
+
 } /* end namespace EGriceLab */
 #endif /* HMMUFOTUCONST_H_ */

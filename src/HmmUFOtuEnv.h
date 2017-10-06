@@ -54,7 +54,7 @@ void printVersion(const string& app, ostream& out = std::cerr);
  * get full program name
  */
 inline string getProgFullName(const string& name, const VersionSequence& ver) {
-	return progName + "-" + progVer.toString();
+	return name + "-" + ver.toString();
 }
 
 }

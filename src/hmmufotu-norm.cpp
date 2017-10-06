@@ -127,12 +127,12 @@ int main(int argc, char* argv[]) {
 	/* load input OTUTable */
 	infoLog << "Loading OTUTable" << endl;
 	OTUTable otuTable;
-	otuTable.load(in, TABLE_FORMAT);
+	otuTable.load(in, progName, progVer, TABLE_FORMAT);
 
 	infoLog << "Normalizing OTUTable" << endl;
 	otuTable.normalize(normZ, method);
 
 	/* write the OTU table */
 	infoLog << "Writing OTUTable" << endl;
-	out << otuTable;
+	otuTable.save(out, progName, progVer, TABLE_FORMAT);
 }

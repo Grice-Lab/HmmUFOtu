@@ -36,9 +36,8 @@
 #include <sstream>
 #include <algorithm>
 #include "BandedHMMP7.h"
-#include "HmmUFOtuVersion.h"
+#include "HmmUFOtuConst.h"
 #include "LinearAlgebraBasic.h"
-#include "HmmUFOtuVersion.h"
 
 namespace EGriceLab {
 using namespace std;
@@ -58,14 +57,31 @@ static const char GAP_SYM = '-';
 static const char PAD_SYM = '.';
 
 BandedHMMP7::BandedHMMP7() :
-		hmmVersion(progName + "-" + DEFAULT_PROG_VERSION), name("unnamed"), K(0), L(0), abc(NULL),
+		name("unnamed"), K(0), L(0), abc(NULL),
 		hmmBg(0), nSeq(0), effN(0), wingRetracted(false) {
 	/* Assert IEE559 at construction time */
 	assert(std::numeric_limits<double>::is_iec559);
 }
 
 BandedHMMP7::BandedHMMP7(const string& name, int K, const DegenAlphabet* abc) :
-		hmmVersion(progName + "-" + progVersion), name(name), K(K), L(0), abc(abc),
+		name(name), K(K), L(0), abc(abc),
+		hmmBg(K), nSeq(0), effN(0),
+		cs2ProfileIdx() /* zero initiation */, profile2CSIdx() /* zero initiation */,
+		wingRetracted(false) {
+	if(!(abc->getAlias() == "DNA" && abc->getSize() == 4))
+		throw invalid_argument("BandedHMMP7 only supports DNA alphabet");
+	/* Assert IEE559 at construction time */
+	assert(numeric_limits<double>::is_iec559);
+	init_transition_params();
+	init_emission_params();
+	init_special_params();
+	init_limits();
+	enableProfileLocalMode(); // always in profile local alignment mode
+	setSpEmissionFreq(); // set special emissions by default method
+}
+
+BandedHMMP7::BandedHMMP7(const string& name, const string& hmmVersion, int K, const DegenAlphabet* abc) :
+		name(name), hmmVersion(hmmVersion), K(K), L(0), abc(abc),
 		hmmBg(K), nSeq(0), effN(0),
 		cs2ProfileIdx() /* zero initiation */, profile2CSIdx() /* zero initiation */,
 		wingRetracted(false) {

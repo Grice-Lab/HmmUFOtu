@@ -181,13 +181,13 @@ int main(int argc, char *argv[]) {
 	MSA msa;
 	long nLoad;
 	if(fmt == "msa") /* binary file provided */
-		msa.load(in);
+		msa.load(in, progName, progVer);
 	else
 		nLoad = msa.loadMSA(ALPHABET, in, fmt);
 	if(!in.bad() && nLoad >= 0) /* load sequence format */
 		infoLog << "MSA loaded" << endl;
 	else {
-		cerr << "Unable to load MSA seq from '" << inFn << "'" << endl;
+		cerr << "Unable to load MSA seq from '" << inFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 	if(!msa.pruned()) {

@@ -457,7 +457,7 @@ istream& MSA::load(istream& in, const string& progName, const VersionSequence& p
 		errorLog << "Unable to load MSA data file: " << ::strerror(errno) << endl;
 		return in;
 	}
-	if(!(progName >= pver)) {
+	if(!(progVer >= pver)) {
 		errorLog << "You are using an old version of " << getProgFullName(progName, progVer)
 				<< " to read a newer MSA object file that is build by " << getProgFullName(pname, pver)
 				<< " please update your HmmUFOtu database by downloading the latest pre-built files or running 'hmmufotu-build'"
@@ -465,6 +465,8 @@ istream& MSA::load(istream& in, const string& progName, const VersionSequence& p
 		in.setstate(ios_base::failbit);
 		return in;
 	}
+
+	/* load object data */
 	return load(in);
 }
 
