@@ -1,9 +1,16 @@
 SUBDIRS = libdivsufsort  libcds  math
 
+AM_CFLAGS = -I$(top_srcdir)/src \
+-I$(top_srcdir)/src/math \
+-I$(top_srcdir)/src/libdivsufsort/include \
+-I$(top_srcdir)/src/libcds/include \
+$(BOOST_CPPFLAGS)
+
 AM_CXXFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/math \
 -I$(top_srcdir)/src/libdivsufsort/include \
--I$(top_srcdir)/src/libcds/include
+-I$(top_srcdir)/src/libcds/include \
+$(BOOST_CPPFLAGS)
 
 AM_CPPFLAGS = $(BOOST_CPPFLAGS)
 AM_LDFLAGS = $(BOOST_LDFLAGS)
