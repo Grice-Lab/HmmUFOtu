@@ -35,6 +35,7 @@ namespace EGriceLab {
 /* per-application variables */
 extern int VERBOSE_LEVEL; /* DEFAULT VERBOSE LEVEL */
 extern const VersionSequence progVer;
+extern const string projectURL;
 
 enum LOG_LEVEL {
 	LOG_NOTHING,
@@ -43,7 +44,6 @@ enum LOG_LEVEL {
 	LOG_INFO,
 	LOG_DEBUG
 };
-
 
 /**
  * show program and package version

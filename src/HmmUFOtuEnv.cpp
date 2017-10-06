@@ -30,7 +30,8 @@
 namespace EGriceLab {
 
 int VERBOSE_LEVEL = LOG_WARNING; /* DEFAULT VERBOSE LEVEL */
-const VersionSequence progVer("v1.2.1");
+const VersionSequence progVer("v1.2.2");
+const string projectURL = "https://github.com/Grice-Lab/HmmUFOtu";
 
 void printVersion(const string& app, ostream& out) {
 	out << app << ": " << progVer << std::endl;
