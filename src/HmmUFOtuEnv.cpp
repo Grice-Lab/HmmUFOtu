@@ -27,6 +27,7 @@
 #include <string>
 #include <iostream>
 #include <cstring>
+#include <cerrno>
 #include "HmmUFOtuEnv.h"
 #include "HmmUFOtuConst.h"
 #include "StringUtils.h"
