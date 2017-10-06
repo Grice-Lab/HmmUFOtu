@@ -11,6 +11,7 @@
 #include <string>
 #include <iostream>
 #include <strstream>
+#include <cstdio>
 #include <stdexcept>
 
 namespace EGriceLab {

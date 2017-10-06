@@ -116,42 +116,36 @@ ostream& operator<<(ostream& os, const DigitalSeq& dSeq) {
 	return os;
 }
 
-ostream& DigitalSeq::save(ostream& out) const {
-	/* empty flag */
-	bool initiated = abc != NULL;
-	out.write((const char*) &initiated, sizeof(bool));
-	if(!initiated)
-		return out;
+ostream& DigitalSeq::save(ostream& out, bool withAbc) const {
+	/* save flag */
+	bool flag = abc != NULL && withAbc;
+	out.write((const char*) &flag, sizeof(bool));
 
-	/* save sizes */
-	string alphabet = abc->getName();
+	/* save alphabet, if requested */
+	if(flag)
+		StringUtils::saveString(abc->getName(), out);
 
-	/* save basic info */
-	StringUtils::saveString(alphabet, out);
+	/* save data */
 	StringUtils::saveString(name, out);
-
-	/* save seq */
 	StringUtils::saveString(*this, out);
 	return out;
 }
 
 istream& DigitalSeq::load(istream& in) {
-	/* read flag */
-	bool initiated;
-	in.read((char*) &initiated, sizeof(bool));
-	if(!initiated)
-		return in;
+	/* load flag */
+	bool flag;
+	in.read((char*) &flag, sizeof(bool));
 
-	string alphabet;
+	/* load alphabet, if requested */
+	if(flag) {
+		string alphabet;
+		StringUtils::loadString(alphabet, in);
+		abc = AlphabetFactory::getAlphabetByName(alphabet);
+	}
 
-	/* load basic info */
-	StringUtils::loadString(alphabet, in);
-	abc = AlphabetFactory::getAlphabetByName(alphabet); /* set alphabet by name */
+	/* load data */
 	StringUtils::loadString(name, in);
-
-	/* load seq */
 	StringUtils::loadString(*this, in);
-
 	return in;
 }
 

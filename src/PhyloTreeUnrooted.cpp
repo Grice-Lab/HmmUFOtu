@@ -82,6 +82,8 @@ istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
 
 	/* read seq */
 	seq.load(in);
+	if(seq.getAbc() == NULL)
+		seq.setAbc(AlphabetFactory::nuclAbc);
 
 	/* read annotation */
 	StringUtils::loadString(anno, in);

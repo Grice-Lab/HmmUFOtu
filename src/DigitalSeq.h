@@ -155,14 +155,14 @@ public:
 	using basic_string<int8_t>::append;
 
 	/**
-	 * load data from input
+	 * load data from input, with optional alphabet loading
 	 */
 	istream& load(istream& in);
 
 	/**
-	 * save this seq to output in binary format
+	 * save this seq to output in binary format, with optional alphabet name written
 	 */
-	ostream& save(ostream& out) const;
+	ostream& save(ostream& out, bool withAbc = false) const;
 
 	/**
 	 * test whether this DigitalSeq represent the same sequence as a given character string
