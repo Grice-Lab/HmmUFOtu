@@ -107,7 +107,9 @@ hmmufotu_LDFLAGS = $(BOOST_LDFLAGS)
 
 hmmufotu_sum_SOURCES = hmmufotu-sum.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
 hmmufotu_sum_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
-libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
+libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
+$(BOOST_IOSTREAMS_LIB)
+hmmufotu_sum_LDFLAGS = $(BOOST_LDFLAGS)
 
 hmmufotu_anneal_SOURCES = hmmufotu-anneal.cpp HmmUFOtuEnv.cpp
 hmmufotu_anneal_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \

@@ -199,7 +199,11 @@ am_hmmufotu_sum_OBJECTS = hmmufotu-sum.$(OBJEXT) \
 hmmufotu_sum_OBJECTS = $(am_hmmufotu_sum_OBJECTS)
 hmmufotu_sum_DEPENDENCIES = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a \
 	libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
-	libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
+	libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
+	$(am__DEPENDENCIES_1)
+hmmufotu_sum_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
+	$(CXXFLAGS) $(hmmufotu_sum_LDFLAGS) $(LDFLAGS) -o $@
 am_hmmufotu_train_dm_OBJECTS = hmmufotu-train-dm.$(OBJEXT) \
 	HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_train_dm_OBJECTS = $(am_hmmufotu_train_dm_OBJECTS)
@@ -551,8 +555,10 @@ $(BOOST_IOSTREAMS_LIB)
 hmmufotu_LDFLAGS = $(BOOST_LDFLAGS)
 hmmufotu_sum_SOURCES = hmmufotu-sum.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
 hmmufotu_sum_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
-libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
+libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
+$(BOOST_IOSTREAMS_LIB)
 
+hmmufotu_sum_LDFLAGS = $(BOOST_LDFLAGS)
 hmmufotu_anneal_SOURCES = hmmufotu-anneal.cpp HmmUFOtuEnv.cpp
 hmmufotu_anneal_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
@@ -697,7 +703,7 @@ hmmufotu-subset$(EXEEXT): $(hmmufotu_subset_OBJECTS) $(hmmufotu_subset_DEPENDENC
 
 hmmufotu-sum$(EXEEXT): $(hmmufotu_sum_OBJECTS) $(hmmufotu_sum_DEPENDENCIES) $(EXTRA_hmmufotu_sum_DEPENDENCIES) 
 	@rm -f hmmufotu-sum$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(hmmufotu_sum_OBJECTS) $(hmmufotu_sum_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(hmmufotu_sum_LINK) $(hmmufotu_sum_OBJECTS) $(hmmufotu_sum_LDADD) $(LIBS)
 
 hmmufotu-train-dm$(EXEEXT): $(hmmufotu_train_dm_OBJECTS) $(hmmufotu_train_dm_DEPENDENCIES) $(EXTRA_hmmufotu_train_dm_DEPENDENCIES) 
 	@rm -f hmmufotu-train-dm$(EXEEXT)
