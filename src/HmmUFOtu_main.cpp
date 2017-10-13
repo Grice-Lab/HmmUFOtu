@@ -163,7 +163,7 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 }
 
 vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
-		int start, int end, double maxDist) {
+		int start, int end, double maxDiff) {
 	vector<PTLoc> locs; /* candidate locations */
 	/* get potential placement locations based on pDist to observed or inferred sequences */
 	for(vector<PTUnrooted::PTUNodePtr>::size_type i = 0; i < ptu.numNodes(); ++i) {
@@ -171,8 +171,19 @@ vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 		if(node->isRoot())
 			continue;
 		double pDist = SeqUtils::pDist(node->getSeq(), seq, start, end);
-		if(pDist <= maxDist)
-			locs.push_back(PTLoc(node, pDist));
+		locs.push_back(PTLoc(node, pDist));
+	}
+	std::sort(locs.begin(), locs.end()); /* sort by dist */
+	/* remove bad seed, if necessary */
+	double bestDist = locs[0].dist;
+	double worstDist = locs[locs.size() - 1].dist;
+	if(worstDist < bestDist + maxDiff) {
+		vector<PTLoc>::iterator goodSeed;
+		for(goodSeed = locs.begin(); goodSeed != locs.end(); ++goodSeed) {
+			if(goodSeed->dist - bestDist > maxDiff)
+				break;
+		}
+		locs.erase(goodSeed, locs.end()); /* remove too bad placements */
 	}
 	return locs;
 }

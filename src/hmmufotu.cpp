@@ -32,8 +32,8 @@ using namespace EGriceLab;
 using namespace Eigen;
 
 /* default values */
-static const double DEFAULT_MAX_PDIST = inf;
-static const size_t DEFAULT_MAX_LOCATION = 50;
+static const double DEFAULT_MAX_DIFF = inf;
+static const size_t DEFAULT_MAX_LOCATION = 20;
 static const int DEFAULT_SEED_LEN = 20;
 static const int MAX_SEED_LEN = 25;
 static const int MIN_SEED_LEN = 15;
@@ -68,8 +68,8 @@ void printUsage(const string& progName) {
 		 << "            -L|--seed-len  INT : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT            : size of 5'/3' seed region for finding seeds [" << DEFAULT_SEED_REGION << "]" << endl
 		 << "            -s  FLAG           : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
-		 << "            -d|--pdist  DBL    : maximum p-dist between read and tree nodes during the seed search stage [" << DEFAULT_MAX_PDIST << "]" << endl
 		 << "            -N  INT            : max number of most potential locations (based on p-dist) to try initial estimation [" << DEFAULT_MAX_LOCATION << "]" << endl
+		 << "            -d  DBL            : maximum read/node p-dist difference allowed to check below the best matching seed during the seed search stage [" << DEFAULT_MAX_DIFF << "]" << endl
 		 << "            -e  DBL            : max placement error between fast estimation and accurate placement [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
 		 << "            --ML  FLAG         : use maximum likelihood in phylogenetic placement, do not calculate posterior p-values, this will ignore -q and --prior options" << endl
 		 << "            --prior  STR       : method for calculating prior probability of a placement, either 'uniform' (uniform prior) or 'height' (rooted distance to leaves)" << endl
@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
 
 	int seedLen = DEFAULT_SEED_LEN;
 	int seedRegion = DEFAULT_SEED_REGION;
-	double maxDist = DEFAULT_MAX_PDIST;
+	double maxDiff = DEFAULT_MAX_DIFF;
 	int maxLocs = DEFAULT_MAX_LOCATION;
 	double maxError = DEFAULT_MAX_PLACE_ERROR;
 	bool onlyML = false;
@@ -158,9 +158,7 @@ int main(int argc, char* argv[]) {
 		isAssembled = false;
 
 	if(cmdOpts.hasOpt("-d"))
-		maxDist = ::atof(cmdOpts.getOptStr("-d"));
-	if(cmdOpts.hasOpt("--pdist"))
-		maxDist = ::atof(cmdOpts.getOptStr("--pdist"));
+		maxDiff = ::atof(cmdOpts.getOptStr("-d"));
 
 	if(cmdOpts.hasOpt("-N"))
 		maxLocs = ::atoi(cmdOpts.getOptStr("-N"));
@@ -233,8 +231,8 @@ int main(int argc, char* argv[]) {
 		cerr << "-R cannot be smaller than -L" << endl;
 		return EXIT_FAILURE;
 	}
-	if(!(maxDist > 0)) {
-		cerr << "-d must be positive" << endl;
+	if(!(maxDiff >= 0)) {
+		cerr << "-d must be non-negative" << endl;
 		return EXIT_FAILURE;
 	}
 	if(!(maxLocs > 0)) {
@@ -483,39 +481,32 @@ int main(int argc, char* argv[]) {
 							DigitalSeq seq(abc, id, aln);
 							/* place seq with seed-estimate-place (SEP) algorithm */
 							/* get potential locs */
-							vector<PTLoc> locs = getSeed(ptu, seq, csStart - 1, csEnd - 1, maxDist);
-							if(locs.empty()) {
-#pragma omp critical(warning)
-								warningLog << "Warning: No seed loci found at " << id << endl;
-							}
-							else {
-								std::sort(locs.begin(), locs.end()); /* sort by dist */
-								if(locs.size() > maxLocs)
-									locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
-								//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
+							vector<PTLoc> locs = getSeed(ptu, seq, csStart - 1, csEnd - 1, maxDiff);
+							if(locs.size() > maxLocs)
+								locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
+							//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
 
-								/* estimate placement */
-								vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs);
-								std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by estimated loglik */
-								double bestEstLoglik = places[0].loglik;
-								vector<PTPlacement>::iterator goodPlace;
-								for(goodPlace = places.begin(); goodPlace != places.end(); ++goodPlace) {
-									if(::abs(goodPlace->loglik - bestEstLoglik) > maxError)
-										break;
-								}
-								places.erase(goodPlace, places.end()); /* remove too bad placements */
-								/* accurate placement */
-								placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
-								if(onlyML) { /* don't calculate q-values */
-									std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by real loglik */
-								}
-								else { /* calculate q-values */
-									PTPlacement::calcQValues(places, myPrior);
-									std::sort(places.rbegin(), places.rend(), EGriceLab::compareByQPlace); /* sort places decently by posterior placement probability */
-								}
-
-								bestPlace = places[0];
+							/* estimate placement */
+							vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs);
+							std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by estimated loglik */
+							double bestEstLoglik = places[0].loglik;
+							vector<PTPlacement>::iterator goodPlace;
+							for(goodPlace = places.begin(); goodPlace != places.end(); ++goodPlace) {
+								if(::abs(goodPlace->loglik - bestEstLoglik) > maxError)
+									break;
 							}
+							places.erase(goodPlace, places.end()); /* remove too bad placements */
+							/* accurate placement */
+							placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
+							if(onlyML) { /* don't calculate q-values */
+								std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by real loglik */
+							}
+							else { /* calculate q-values */
+								PTPlacement::calcQValues(places, myPrior);
+								std::sort(places.rbegin(), places.rend(), EGriceLab::compareByQPlace); /* sort places decently by posterior placement probability */
+							}
+
+							bestPlace = places[0];
 						} /* end if bestOnly */
 						/* write main output */
 						if(isOriented)

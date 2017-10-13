@@ -154,10 +154,11 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
  * @param seq  sequence to be placed
  * @param start  0-based start
  * @param end  0-based end
- * @param maxDist  maximum p-Distance
+ * @param maxDiff  maximum allowed p-Distance difference
+ * @return  a vector of PTLoc sorted by the p-dist
  * */
 vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
-		int start, int end, double maxDist);
+		int start, int end, double maxDiff);
 
 /** Get estimated placement for a seq at given locations */
 vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
