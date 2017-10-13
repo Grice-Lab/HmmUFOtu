@@ -16,6 +16,7 @@
 #include <cassert>
 #include <cmath>
 #include <cfloat>
+#include <Eigen/Dense>
 
 namespace EGriceLab {
 
@@ -23,6 +24,8 @@ namespace Math {
 
 using std::map;
 using std::vector;
+using Eigen::VectorXd;
+using Eigen::Vector4d;
 
 /**
  * A template method to found the associated key of the maximum value in a std::map
@@ -241,6 +244,25 @@ inline double p2q(double p, double b = 10) {
 inline double q2p(double q, double b = 10) {
 	return ::exp(- q / b * ::log(b));
 }
+
+/** calculate Eucledian distance between two vectors */
+inline double euclideanDist(const VectorXd& p, const VectorXd& q) {
+	assert(p.rows() == q.rows());
+	return (p - q).norm();
+}
+
+/** calculate Eucledian distance between two vectors */
+inline double euclideanDist(const Vector4d& p, const Vector4d& q) {
+	return (p - q).norm();
+}
+
+/** calculate Bhattacharyya distance between two vectors */
+inline double bhattacharyyaDist(const VectorXd& p, const VectorXd& q) {
+	assert(p.rows() == q.rows());
+	return - ::log(p.cwiseProduct(q).cwiseSqrt().sum());
+}
+
+/** calculate
 
 } /* namespace Math */
 
