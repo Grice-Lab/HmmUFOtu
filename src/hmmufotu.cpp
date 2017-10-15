@@ -450,12 +450,14 @@ int main(int argc, char* argv[]) {
 						/* align fwdRead */
 						aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode, csStart, csEnd);
 						assert(aln.length() == csLen);
+//						infoLog << "fwd seq aligned: csStart: " << csStart << " csEnd: " << csEnd << " aln: " << aln << endl;
 						if(!revFn.empty()) { /* align revRead */
-							// cerr << "Aligning mate: " << fwdRead.getId() << endl;
+//							cerr << "Aligning mate: " << revRead.getId() << endl;
 							int revStart = 0;
 							int revEnd = 0;
 							string revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode, revStart, revEnd);
 							assert(revAln.length() == csLen);
+//							infoLog << "rev seq aligned: revStart: " << revStart << " revEnd: " << revEnd << " aln: " << revAln << endl;
 							if(!(csStart <= revStart && csEnd <= revEnd)) {
 								isOriented = false;
 #pragma omp critical(warning)

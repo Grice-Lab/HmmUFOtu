@@ -803,8 +803,8 @@ void BandedHMMP7::calcViterbiScores(const PrimarySeq& seq,
 		if (up_from < 1)
 			up_from = 1;
 //		cerr << "upQLen:" << upQLen << endl;
-//		cerr << "up_start:" << up_start << " up_end:" << vpath.start[n] << endl;
-//		cerr << "up_from:" << up_from << " up_to:" << vpath.from[n] << endl;
+//		cerr << "up_start:" << up_start << " up_end:" << vpath->start << endl;
+//		cerr << "up_from:" << up_from << " up_to:" << vpath->from << endl;
 
 		/* Dynamic programming of upstream of this known path at row-first order */
 		for (int j = up_start; j <= vpath->start; ++j) {
@@ -847,7 +847,7 @@ void BandedHMMP7::calcViterbiScores(const PrimarySeq& seq,
 							static_cast<double>(vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D))); // from Di,j-1
 			}
 		}
-		// assert(i == vpath.to + 1 && j == vpath.end + 1);
+//		 assert(i == vpath->to + 1 && j == vpath->end + 1);
 	} /* end of each known path segment */
 //	cerr << "known path aligned" << endl;
 	/* Dynamic programming of the remaining downstream of the known paths, if any */
@@ -933,6 +933,7 @@ BandedHMMP7::ViterbiAlignPath BandedHMMP7::buildAlignPath(const CSLoc& csLoc, in
 			i++; // update i
 	}
 //	cerr << "vpath.path:" << vpath.alnPath << endl;
+//	cerr << "start: " << start << " end: " << end << endl;
 //	cerr << "i:" << i << " j:" << j << " csTo:" << csTo << " csEnd:" << csLoc.end << endl;
 	assert(i == csTo + 1 && j == csLoc.end + 1);
 

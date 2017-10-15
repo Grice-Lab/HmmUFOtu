@@ -117,9 +117,12 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 		if(loc.isValid()) /* a read seed located */ {
 //			cerr << "using 5' seed seedFrom: " << seedFrom << " seedTo: " << seedTo << endl;
 //			cerr << "Using 5' seed: " << seed.getSeq() << endl;
-//					fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedFrom + 1, seedFrom + seedLen, loc.CS.length(), loc.CS.c_str());
-			seqVpaths.push_back(hmm.buildAlignPath(loc, seedFrom + 1, seedTo + 1)); /* seed_from and seed_to are 1-based */
-			break; /* only one 5'-seed necessary */
+//			fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedFrom + 1, seedFrom + seedLen, loc.CS.length(), loc.CS.c_str());
+			const BandedHMMP7::ViterbiAlignPath& vpath = hmm.buildAlignPath(loc, seedFrom + 1, seedTo + 1);
+			if(vpath.isValid()) {
+				seqVpaths.push_back(vpath); /* seed_from and seed_to are 1-based */
+				break; /* only one 5'-seed necessary */
+			}
 		}
 	}
 	/* find seed in 3', if requested */
@@ -132,8 +135,11 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 //				cerr << "using 3' seed seedFrom: " << seedFrom << " seedTo: " << seedTo << endl;
 //				cerr << "Using 3' seed: " << seed.getSeq() << endl;
 //				fprintf(stderr, "start:%d end:%d from:%d to:%d  CSLen:%d CS:%s\n", loc.start, loc.end, seedTo - seedLen + 2, seedTo + 1, loc.CS.length(), loc.CS.c_str());
-				seqVpaths.push_back(hmm.buildAlignPath(loc, seedFrom + 1, seedTo + 1)); /* seed_from and seed_to are 1-based */
-				break; /* only one 3'-seed necessary */
+				const BandedHMMP7::ViterbiAlignPath& vpath = hmm.buildAlignPath(loc, seedFrom + 1, seedTo + 1);
+				if(vpath.isValid()) {
+					seqVpaths.push_back(vpath); /* seed_from and seed_to are 1-based */
+					break; /* only one 3'-seed necessary */
+				}
 			}
 		}
 	}
