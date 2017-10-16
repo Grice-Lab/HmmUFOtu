@@ -162,7 +162,7 @@ vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 
 /** Get estimated placement for a seq at given locations */
 vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
-		int start, int end, const vector<PTLoc>& locs);
+		int start, int end, const vector<PTLoc>& locs, const string& method);
 
 /** Get accurate placement for a seq given the estimated placements */
 vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,

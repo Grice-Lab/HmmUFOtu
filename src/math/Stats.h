@@ -262,7 +262,15 @@ inline double bhattacharyyaDist(const VectorXd& p, const VectorXd& q) {
 	return - ::log(p.cwiseProduct(q).cwiseSqrt().sum());
 }
 
-/** calculate
+/** calculate the Kullback–Leibler KL divergence */
+inline double KLDivergence(const Vector4d& p, const Vector4d& q) {
+	return (p.array() * (p.array() / q.array()).log()).sum();
+}
+
+/** calculate the Kullback–Leibler KL divergence */
+inline double KLDivergence(const VectorXd& p, const VectorXd& q) {
+	return (p.array() * (p.array() / q.array()).log()).sum();
+}
 
 } /* namespace Math */
 

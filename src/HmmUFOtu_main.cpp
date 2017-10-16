@@ -195,7 +195,7 @@ vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 }
 
 vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
-		int start, int end, const vector<PTLoc>& locs) {
+		int start, int end, const vector<PTLoc>& locs, const string& method) {
 	vector<PTPlacement> places;
 	for(vector<PTLoc>::const_iterator loc = locs.begin(); loc < locs.end(); ++loc) {
 		const PTUnrooted::PTUNodePtr& cNode = loc->node;
@@ -208,7 +208,7 @@ vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
 //		cerr << "Estimating at " << cNode->getId() << " cDist: " << cDist << " pDist: " << pDist << " ratio: " << ratio << endl;
 		/* estimate the placement */
 		double wnr;
-		double loglik = ptu.estimateSeq(seq, cNode, pNode, start, end, ratio, wnr);
+		double loglik = ptu.estimateSeq(seq, cNode, pNode, start, end, ratio, wnr, method);
 		places.push_back(PTPlacement(cNode, pNode, ratio, wnr, loglik));
 	}
 	return places;

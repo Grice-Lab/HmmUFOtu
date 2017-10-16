@@ -33,7 +33,7 @@ using namespace Eigen;
 
 /* default values */
 static const double DEFAULT_MAX_DIFF = inf;
-static const size_t DEFAULT_MAX_LOCATION = 20;
+static const size_t DEFAULT_MAX_LOCATION = 50;
 static const int DEFAULT_SEED_LEN = 20;
 static const int MAX_SEED_LEN = 25;
 static const int MIN_SEED_LEN = 15;
@@ -41,6 +41,7 @@ static const int DEFAULT_SEED_REGION = 50;
 static const double DEFAULT_MAX_PLACE_ERROR = 20;
 static const int DEFAULT_NUM_THREADS = 1;
 static const string ALIGN_OUT_FMT = "fasta";
+static const string DEFAULT_BRANCH_EST_METHOD = "unweighted";
 static const string ASSIGNMENT_HEADER = "id\tdescription\tCS_start\tCS_end\talignment\tbranch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
 
 /**
@@ -71,6 +72,7 @@ void printUsage(const string& progName) {
 		 << "            -N  INT            : max number of most potential locations (based on p-dist) to try initial estimation [" << DEFAULT_MAX_LOCATION << "]" << endl
 		 << "            -d  DBL            : maximum read/node p-dist difference allowed to check below the best matching seed during the seed search stage [" << DEFAULT_MAX_DIFF << "]" << endl
 		 << "            -e  DBL            : max placement error between fast estimation and accurate placement [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
+		 << "            -m|--method  STR   : branch length estimating method during the estimated-placement stage, must be one of 'unweighted' or 'weighted' [" << DEFAULT_BRANCH_EST_METHOD << "]" << endl
 		 << "            --ML  FLAG         : use maximum likelihood in phylogenetic placement, do not calculate posterior p-values, this will ignore -q and --prior options" << endl
 		 << "            --prior  STR       : method for calculating prior probability of a placement, either 'uniform' (uniform prior) or 'height' (rooted distance to leaves)" << endl
 		 << "            -S|--seed  INT     : random seed used for banded HMM seed searches, for debug purpose" << endl
@@ -97,6 +99,7 @@ int main(int argc, char* argv[]) {
 	boost::iostreams::filtering_ostream out, alnOut;
 	/* other */
 	string seqFmt;
+	string estMethod = DEFAULT_BRANCH_EST_METHOD;
 	SeqIO fwdSeqI, revSeqI, alnSeqO;
 
 	bool isAssembled = true; /* assume assembled seq if not paired-end */
@@ -165,6 +168,11 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-e"))
 		maxError = ::atof(cmdOpts.getOptStr("-e"));
+
+	if(cmdOpts.hasOpt("-m"))
+		estMethod = cmdOpts.getOpt("-m");
+	if(cmdOpts.hasOpt("--method"))
+		estMethod = cmdOpts.getOpt("--method");
 
 	if(cmdOpts.hasOpt("--ML"))
 		onlyML = true;
@@ -312,7 +320,6 @@ int main(int argc, char* argv[]) {
 			return EXIT_FAILURE;
 		}
 	}
-
 
 	/* prepare outputs */
 #ifdef HAVE_LIBZ
@@ -489,7 +496,7 @@ int main(int argc, char* argv[]) {
 							//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
 
 							/* estimate placement */
-							vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs);
+							vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs, estMethod);
 							std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by estimated loglik */
 							double bestEstLoglik = places[0].loglik;
 							vector<PTPlacement>::iterator goodPlace;

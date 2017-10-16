@@ -771,7 +771,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 }
 
 double PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-		int start, int end, double ratio, double& wnr) const {
+		int start, int end, double ratio, double& wnr, const string& method) const {
 	assert(seq.length() == csLen);
 	assert(isParent(v, u));
 
@@ -784,7 +784,7 @@ double PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const
 	double wvr = w0 * (1 - ratio);
 	const Matrix4Xd& UPr = dot_product_scaled(model->Pr(wur), U, start, end); /* U*P(wur) */
 	const Matrix4Xd& VPr = dot_product_scaled(model->Pr(wvr), V, start, end); /* V*P(wvr) */
-	wnr = estimateBranchLength(UPr + VPr /* R */, N, start, end);
+	wnr = estimateBranchLength(UPr + VPr /* R */, N, start, end, method);
 
 	return treeLoglik(model->getPi(), UPr + VPr + dot_product_scaled(model->Pr(wnr), N), /* N*P(wnr) */
 				start, end);
@@ -900,7 +900,7 @@ size_t PhyloTreeUnrooted::estimateNumMutations(int j) const {
 	return N;
 }
 
-double PTUnrooted::estimateBranchLength(const Matrix4Xd& U, const Matrix4Xd& V, int start, int end) {
+double PTUnrooted::estimateBranchLengthUnweighted(const Matrix4Xd& U, const Matrix4Xd& V, int start, int end) {
 	assert(U.cols() == V.cols());
 	assert(0 <= start && start <= end && end < U.cols());
 
@@ -910,37 +910,30 @@ double PTUnrooted::estimateBranchLength(const Matrix4Xd& U, const Matrix4Xd& V, 
 		const Vector4d& logV = V.col(j);
 		int8_t b1 = inferState(logU);
 		int8_t b2 = inferState(logV);
-		if(b1 != b2) {
-//			d++; /* unweighted count */
-			d += inferWeight(logU)(b1) * inferWeight(logV)(b2); /* weighted count */
-		}
+		if(b1 != b2)
+			d++;
 	}
 	return d / (end - start + 1);
 }
 
-double PTUnrooted::estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, const DigitalSeq& seq,
-		int start, int end) const {
-	assert(isParent(v, u));
-	assert(seq.length() == csLen);
-	assert(0 <= start && start <= end && end < csLen);
+double PTUnrooted::estimateBranchLengthWeighted(const Matrix4Xd& U, const Matrix4Xd& V, int start, int end) {
+	assert(U.cols() == V.cols());
+	assert(0 <= start && start <= end && end < U.cols());
 
-	double w = getBranchLength(u, v);
 	double d = 0;
-	const Matrix4Xd& U = getBranchLoglik(u, v);
-	const Matrix4Xd& V = getBranchLoglik(v, u);
-	const Matrix4Xd& N = getLeafLoglik(seq, start, end);
-	const Matrix4Xd& R = dot_product_scaled(model->Pr(w / 2), U, start, end) /* u->v convoluting to w/2 */
-			           + dot_product_scaled(model->Pr(w / 2), V, start, end);
-
+	double N = 0;
 	for(int j = start; j <= end; ++j) {
-		const Vector4d& logR = R.col(j);
-		const Vector4d& logN = N.col(j);
-		int8_t b1 = inferState(logR);
-		int8_t b2 = inferState(logN);
+		const Vector4d& logU = U.col(j);
+		const Vector4d& logV = V.col(j);
+		int8_t b1 = inferState(logU);
+		int8_t b2 = inferState(logV);
+		double w1 = inferWeight(logU)(b1);
+		double w2 = inferWeight(logV)(b2);
 		if(b1 != b2)
-			d += inferWeight(logR)(b1) * inferWeight(logN)(b2); /* weighted count */
+			d += w1 * w2;
+		N += w1 * w2;
 	}
-	return d / (end - start + 1);
+	return d / N;
 }
 
 ostream& PTUnrooted::PTUBranch::save(ostream& out) const {

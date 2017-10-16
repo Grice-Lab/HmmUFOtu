@@ -913,13 +913,10 @@ public:
 	 */
 	PTUnrooted copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const;
 
-	/**
-	 * estimate branch length using the estimated pDist between two the (potentially) inferred seq
-	 * in given region [start-end]
-	 * return the estimated branch length
-	 */
-	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end) const {
-		return estimateBranchLength(getBranchLoglik(u, v), getBranchLoglik(v, u), start, end);
+	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v,
+			int start, int end, const string& method = "weighted") const
+	{
+		return estimateBranchLength(getBranchLoglik(u, v), getBranchLoglik(v, u), start, end, method);
 	}
 
 	/**
@@ -929,14 +926,8 @@ public:
 	 *
 	 * return the estimated branch length
 	 */
-	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v) const {
-		return estimateBranchLength(u, v, 0, csLen - 1);
-	}
-
-	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, const DigitalSeq& seq, int start, int end) const;
-
-	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, const DigitalSeq& seq) const {
-		return estimateBranchLength(u, v, seq, 0, csLen - 1);
+	double estimateBranchLength(const PTUNodePtr& u, const PTUNodePtr& v, const string& method = "weighted") const {
+		return estimateBranchLength(u, v, 0, csLen - 1, method);
 	}
 
 	/**
@@ -987,7 +978,7 @@ public:
 	 * @return  the estimated treeLoglik if seq is placed here
 	 */
 	double estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-			int start, int end, double ratio, double& wnr) const;
+			int start, int end, double ratio, double& wnr, const string& method = "weighted") const;
 
 	/**
 	 * estimate the potential treeLoglik, if we place an additional seq (n) at given branch in the entire seq region
@@ -998,8 +989,8 @@ public:
 	 * @return  the estimated treeLoglik if seq is placed here
 	 */
 	double estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-			double& ratio, double& wnr) const {
-		return estimateSeq(seq, u, v, 0, csLen - 1, ratio, wnr);
+			double& ratio, double& wnr, const string& method = "weighted") const {
+		return estimateSeq(seq, u, v, 0, csLen - 1, ratio, wnr, method);
 	}
 
 	/**
@@ -1190,7 +1181,16 @@ public:
 	static Vector4d inferWeight(const Vector4d& loglik);
 
 	/** Estimate branch length using two incoming loglik Matrix in given region [start, end] */
-	static double estimateBranchLength(const Matrix4Xd& U, const Matrix4Xd& V, int start, int end);
+	static double estimateBranchLength(const Matrix4Xd& U, const Matrix4Xd& V,
+			int start, int end, const string& method = "weighted");
+
+	/** Estimate branch length using two incoming loglik Matrix, using unweighted difference by ML infeerring */
+	static double estimateBranchLengthUnweighted(const Matrix4Xd& U, const Matrix4Xd& V,
+			int start, int end);
+
+	/** Estimate branch length using two incoming loglik Matrix, using unweighted difference by ML infeerring */
+	static double estimateBranchLengthWeighted(const Matrix4Xd& U, const Matrix4Xd& V,
+			int start, int end);
 
 	static double treeLoglik(const Vector4d& pi, const Matrix4Xd& X, int start, int end);
 
@@ -1477,6 +1477,16 @@ inline Matrix4d PTUnrooted::initLeafMat() {
 	Matrix4d leafMat = Matrix4d::Constant(infV);
 	leafMat.diagonal().setConstant(0);
 	return leafMat;
+}
+
+inline double PTUnrooted::estimateBranchLength(const Matrix4Xd& U, const Matrix4Xd& V,
+		int start, int end, const string& method) {
+	if(method == "unweighted")
+		return estimateBranchLengthUnweighted(U, V, start, end);
+	else if(method == "weighted")
+		return estimateBranchLengthWeighted(U, V, start, end);
+	else
+		throw std::invalid_argument("Unknown branch length estimating method '" + method + "'");
 }
 
 } /* namespace EGriceLab */
