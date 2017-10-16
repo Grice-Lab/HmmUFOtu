@@ -28,7 +28,6 @@
 
 #include <iostream>
 #include <fstream>
-#include <strstream>
 #include <cctype>
 #include <cfloat>
 #include <cstdlib>
