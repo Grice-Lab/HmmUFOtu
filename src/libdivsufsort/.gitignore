@@ -21,3 +21,4 @@ examples/suftest
 CPackSourceConfig.cmake
 CPackConfig.cmake
 CMakeModules/cmake_uninstall.cmake
+config.status
