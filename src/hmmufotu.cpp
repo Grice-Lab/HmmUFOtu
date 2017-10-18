@@ -505,7 +505,6 @@ int main(int argc, char* argv[]) {
 									break;
 							}
 							places.erase(goodPlace, places.end()); /* remove too bad placements */
-#pragma omp critical(warning)
 							/* accurate placement */
 							placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
 							if(onlyML) { /* don't calculate q-values */
