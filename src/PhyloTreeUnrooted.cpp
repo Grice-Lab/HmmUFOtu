@@ -1010,7 +1010,7 @@ DigitalSeq PTUnrooted::inferPostCS(const PTUNodePtr& node, const Matrix4Xd& coun
 }
 
 ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& node,
-		boost::unordered_set<PTUNodePtr> subset,
+		boost::unordered_set<PTUNodePtr>& subset,
 		string format) const {
 	StringUtils::toLower(format);
 	/* expand subset to all their ancestors */

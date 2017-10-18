@@ -836,14 +836,14 @@ public:
 	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
 	 */
 	ostream& exportTree(ostream& out, const PTUNodePtr& node,
-			boost::unordered_set<PTUNodePtr> subset,
+			boost::unordered_set<PTUNodePtr>& subset,
 			string format) const;
 
 	/**
 	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
 	 */
 	ostream& exportTree(ostream& out,
-			const boost::unordered_set<PTUNodePtr>& subset,
+			boost::unordered_set<PTUNodePtr>& subset,
 			string format = "newick") const {
 		return exportTree(out, root, subset, format);
 	}
