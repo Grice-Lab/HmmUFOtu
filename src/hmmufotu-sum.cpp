@@ -54,6 +54,7 @@ using namespace Eigen;
 /* default values */
 static const string ALIGN_FORMAT = "fasta";
 static const string TABLE_FORMAT = "table";
+static const string TREE_FORMAT = "newick";
 static const double DEFAULT_EFFN = 2;
 static const int DEFAULT_MIN_NREAD = 0;
 static const int DEFAULT_MIN_NSAMPLE = 0;
@@ -440,6 +441,6 @@ int main(int argc, char* argv[]) {
 		for(size_t i = 0; i < otuTable.numOTUs(); ++i)
 			otuSet.insert(ptu.getNode(boost::lexical_cast<long> (otuTable.getOTU(i))));
 
-		ptu.exportTree(treeOut, otuSet, "newick");
+		ptu.exportTree(treeOut, otuSet, TREE_FORMAT);
 	}
 }

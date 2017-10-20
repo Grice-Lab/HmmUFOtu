@@ -31,6 +31,8 @@
 using namespace std;
 using namespace EGriceLab;
 
+static const string TREE_FORMAT = "newick";
+
 /**
  * Print introduction of this program
  */
@@ -241,7 +243,7 @@ int main(int argc, char* argv[]) {
 
 	if(treeOut.is_open()) {
 		infoLog << "Writing phylogenetic tree ..." << endl;
-		ptu.exportTree(treeOut);
+		ptu.exportTree(treeOut, TREE_FORMAT);
 	}
 
 	if(annoOut.is_open()) {

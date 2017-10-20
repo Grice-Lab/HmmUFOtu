@@ -820,44 +820,39 @@ public:
 	/** Infer all non-leaf node in a tree */
 	void inferSeq();
 
+	/** convert this PTUnrooted subtree into NewickTree */
+	NewickTree convertToNewickTree(const PTUNodePtr& subtree, const string& prefix = "") const;
+
+	/** convert this PTUUnrooted subtree into NewickTree, only for a subset of nodes */
+	NewickTree convertToNewickTree(const PTUNodePtr& subtree,
+			const boost::unordered_set<PTUNodePtr>& subset, const string& prefix = "") const;
+
 	/**
 	 * write this PTUnrooted subtree structure into output in given format
 	 */
-	ostream& exportTree(ostream& out, const PTUNodePtr& node, string format) const;
+	ostream& exportTree(ostream& out, const PTUNodePtr& node,
+			const string& format, const string& prefix = "") const;
+
+	/**
+	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
+	 */
+	ostream& exportTree(ostream& out, const PTUNodePtr& node, boost::unordered_set<PTUNodePtr>& subset,
+			const string& format, const string& prefix = "") const;
 
 	/**
 	 * write this PTUnrooted tree structure into output in given format
 	 */
-	ostream& exportTree(ostream& out, string format = "newick") const {
-		return exportTree(out, root, format);
+	ostream& exportTree(ostream& out, const string& format, const string& prefix = "") const {
+		return exportTree(out, root, format, prefix);
 	}
 
 	/**
 	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
 	 */
-	ostream& exportTree(ostream& out, const PTUNodePtr& node,
-			boost::unordered_set<PTUNodePtr>& subset,
-			string format) const;
-
-	/**
-	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
-	 */
-	ostream& exportTree(ostream& out,
-			boost::unordered_set<PTUNodePtr>& subset,
-			string format = "newick") const {
-		return exportTree(out, root, subset, format);
+	ostream& exportTree(ostream& out, boost::unordered_set<PTUNodePtr>& subset,
+			const string& format, const string& prefix = "") const {
+		return exportTree(out, root, subset, format, prefix);
 	}
-
-private:
-	/**
-	 * write this PTUnrooted tree structure with given root recursively into output in newick format
-	 */
-	ostream& exportTreeNewick(ostream& out, const PTUNodePtr& node) const;
-
-	/**
-	 * write this PTUnrooted tree structure with given root recursively into output in newick format, only write a subset of nodes
-	 */
-	ostream& exportTreeNewick(ostream& out, const PTUNodePtr& node, const boost::unordered_set<PTUNodePtr>& subset) const;
 
 public:
 	/**
@@ -1255,17 +1250,17 @@ inline size_t PTUnrooted::numLeaves() const {
 	return N;
 }
 
-inline ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& subtree, string format) const {
+inline ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& subtree,
+		const string& format, const string& prefix) const {
 	StringUtils::toLower(format);
 	if(format == "newick")
-		return exportTreeNewick(out, subtree) << ";";
+		return out << convertToNewickTree(subtree, prefix);
 	else {
 		errorLog << "Cannot write PTUnrooted tree, unknown tree format " << format << std::endl;
 		out.setstate(std::ios_base::failbit);
 		return out;
 	}
 }
-
 
 inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v) const {
 	BranchMap::const_iterator outerResult = node2branch.find(u);

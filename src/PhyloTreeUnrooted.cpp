@@ -328,61 +328,40 @@ void PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j) {
 	}
 }
 
-ostream& PTUnrooted::exportTreeNewick(ostream& out, const PTUNodePtr& node) const {
-	/* recursive write children */
-	bool first = true;
-	if(node->isRoot() || node->isInternal()) {
-		out << '(';
-		for(std::vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
-			if(!isChild(*child, node)) /* not a child */
-				continue;
-			out << (first ? "" : ",");
-			exportTreeNewick(out, *child);
-			first = false;
-		}
-		out << ')';
+NewickTree PTUnrooted::convertToNewickTree(const PTUNodePtr& node, const string& prefix) const {
+	/* recursive generate NewickTree */
+	NewickTree NTree(prefix + boost::lexical_cast<string>(node->getId()),
+			node->isRoot() ? 0 : getBranchLength(node, node->getParent()));
+	for(std::vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
+		if(isChild(*child, node)) /* is a child */
+			NTree.addChild(convertToNewickTree(*child, prefix));
 	}
-	/* write self */
-	out << node->id;
-	double length = getBranchLength(node, node->parent);
-	if(length > 0)
-		out << ':' << length;
 
-	return out;
+	return NTree;
 }
 
-ostream& PTUnrooted::exportTreeNewick(ostream& out, const PTUNodePtr& node, const unordered_set<PTUNodePtr>& subset) const {
-	/* test whether any child is flagged */
-	bool flag = false;
+NewickTree PTUnrooted::convertToNewickTree(const PTUNodePtr& node,
+		const unordered_set<PTUNodePtr>& subset, const string& prefix) const {
+	/* recursive generate NewickTree */
+	NewickTree NTree(prefix + boost::lexical_cast<string>(node->getId()),
+			node->isRoot() ? 0 : getBranchLength(node, node->getParent()));
+	bool flag = false; /* test whether ANY of the children is flagged */
 	for(std::vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
-		if(isChild(*child, node) && subset.find(*child) != subset.end()) {
+		if(isChild(*child, node) && subset.count(*child) > 0) { /* is a child and flagged */
 			flag = true;
 			break;
 		}
 	}
-	if(flag) {
-		bool first = true;
-		if(node->isRoot() || node->isInternal()) {
-			out << '(';
-		}
+	if(flag) { /* there is flagged child */
 		for(std::vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
-			if(!isChild(*child, node)) /* not a child */
-				continue;
-			out << (first ? "" : ",");
-			exportTreeNewick(out, *child, subset);
-			first = false;
+			if(isChild(*child, node)) { /* is a child and flagged */
+				NTree.addChild(convertToNewickTree(*child, subset, prefix));
+			}
 		}
-		out << ')';
 	}
-	/* write self */
-	out << node->id;
-	double length = getBranchLength(node, node->parent);
-	if(length > 0)
-		out << ':' << length;
 
-	return out;
+	return NTree;
 }
-
 
 vector<Matrix4d> PTUnrooted::getModelTraningSetGoldman() const {
 	debugLog << "Training data using Gojobori method" << endl;
@@ -1009,9 +988,8 @@ DigitalSeq PTUnrooted::inferPostCS(const PTUNodePtr& node, const Matrix4Xd& coun
 	return seq;
 }
 
-ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& node,
-		boost::unordered_set<PTUNodePtr>& subset,
-		string format) const {
+ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& node, boost::unordered_set<PTUNodePtr>& subset,
+		const string& format, const string& prefix) const {
 	StringUtils::toLower(format);
 	/* expand subset to all their ancestors */
 	for(boost::unordered_set<PTUNodePtr>::const_iterator it = subset.begin(); it != subset.end(); ++it)
@@ -1019,7 +997,7 @@ ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& node,
 			subset.insert(node);
 
 	if(format == "newick")
-		return exportTreeNewick(out, node, subset) << ";";
+		return out << convertToNewickTree(node, subset, prefix);
 	else {
 		errorLog << "Cannot write PTUnrooted tree, unknown tree format '" << format << "'" << std::endl;
 		out.setstate(std::ios_base::failbit);
