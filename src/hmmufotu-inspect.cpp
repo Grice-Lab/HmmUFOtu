@@ -51,6 +51,7 @@ void printUsage(const string& progName) {
 		 << "            -t|--tree  FILE     : write the phylogenetic tree of this database to FILE in Newick format" << endl
 		 << "            -a|--anno  FILE     : write the tree node taxonomy annoation of this database to FILE" << endl
 		 << "            -s|--seq  FILE      : write the multiple-sequence alignment of this database to FILE in fasta format" << endl
+		 << "            --use-dbname  FLAG  : use DBNAME as prefix for all tree nodes" << endl
 		 << "            -n|--node  FLAG     : write sequence alignment of all nodes instead of just leaves, ignored if -s is not set" << endl
 		 << "            -v  FLAG            : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            --version          : show program version and exit" << endl
@@ -67,6 +68,7 @@ int main(int argc, char* argv[]) {
 	bool showSm = false;
 	bool showDg = false;
 	bool leafOnly = true;
+	bool useDBName = false;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -111,6 +113,9 @@ int main(int argc, char* argv[]) {
 		seqFn = cmdOpts.getOpt("-s");
 	if(cmdOpts.hasOpt("--seq"))
 		seqFn = cmdOpts.getOpt("--seq");
+
+	if(cmdOpts.hasOpt("--use-dbname"))
+		useDBName = true;
 
 	if(cmdOpts.hasOpt("-n") || cmdOpts.hasOpt("--node"))
 		leafOnly = false;
@@ -243,13 +248,21 @@ int main(int argc, char* argv[]) {
 
 	if(treeOut.is_open()) {
 		infoLog << "Writing phylogenetic tree ..." << endl;
-		ptu.exportTree(treeOut, TREE_FORMAT);
+		if(!useDBName)
+			ptu.exportTree(treeOut, TREE_FORMAT);
+		else
+			ptu.exportTree(treeOut, TREE_FORMAT, dbName + "_");
 	}
 
 	if(annoOut.is_open()) {
 		infoLog << "Writing tree node taxonomy annotation ..." << endl;
-		for(size_t i = 0; i < ptu.numNodes(); ++i)
-			annoOut << ptu.getNode(i)->getId() << "\t" << ptu.getNode(i)->getTaxon() << endl;
+		for(size_t i = 0; i < ptu.numNodes(); ++i) {
+			const EGriceLab::PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
+			string name = boost::lexical_cast<string>(node->getId());
+			if(useDBName)
+				name = dbName + "_" + name;
+			annoOut << name << "\t" << node->getTaxon() << endl;
+		}
 	}
 
 	if(seqOut.is_open()) {
@@ -257,8 +270,10 @@ int main(int argc, char* argv[]) {
 		for(size_t i = 0; i < ptu.numNodes(); ++i) {
 			const EGriceLab::PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
 			if(!leafOnly || node->isLeaf()) {
-				seqO.writeSeq(PrimarySeq(abc, boost::lexical_cast<string>(node->getId()),
-						node->getSeq().toString(), node->getTaxon()));
+				string name = boost::lexical_cast<string>(node->getId());
+				if(useDBName)
+					name = dbName + "_" + name;
+				seqO.writeSeq(PrimarySeq(abc, name, node->getSeq().toString(), node->getTaxon()));
 			}
 		}
 	}
