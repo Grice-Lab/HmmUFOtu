@@ -28,7 +28,7 @@ NORMFILE="${DB}_sim_OTU_norm.txt"
 echo "Using database $DB"
 
 echo "Generating simulated reads ..."
-$SRCPATH/hmmufotu-sim $DB $SIMFILE -N $SIMNUM -S $SIMSEED
+$SRCPATH/hmmufotu-sim $DB $SIMFILE -N $SIMNUM -S $SIMSEED -v
 if [ $? == 0 ]
 	then
 		echo "simulated reads generated"
@@ -38,7 +38,7 @@ if [ $? == 0 ]
 fi
 
 echo "Running taxonomy assignment ..."
-$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE
+$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE -v
 if [ $? == 0 ]
 	then
 		echo "taxonomy assignment file generated"
@@ -48,7 +48,7 @@ if [ $? == 0 ]
 fi 
 
 echo "Summarizing OTU table ..."
-$SRCPATH/hmmufotu-sum $DB $ASSIGNFILE -o $OTUFILE -r $OTULIST -c $OTUALIGN -t $OTUTREE
+$SRCPATH/hmmufotu-sum $DB $ASSIGNFILE -o $OTUFILE -r $OTULIST -c $OTUALIGN -t $OTUTREE -v
 if [ $? == 0 ]
 	then
 		echo "OTU table generated"
@@ -58,7 +58,7 @@ if [ $? == 0 ]
 fi 
 
 echo "Subsetting OTU table ..."
-$SRCPATH/hmmufotu-subset $OTUFILE $SUBSETFILE -s $SUBSETN
+$SRCPATH/hmmufotu-subset $OTUFILE $SUBSETFILE -s $SUBSETN -v
 if [ $? == 0 ]
 	then
 		echo "OTU table subset"
@@ -68,7 +68,7 @@ if [ $? == 0 ]
 fi 
 
 echo "Normalizing OTU table ..."
-$SRCPATH/hmmufotu-norm $OTUFILE $NORMFILE
+$SRCPATH/hmmufotu-norm $OTUFILE $NORMFILE -v
 if [ $? == 0 ]
 	then
 		echo "OTU table normalized"

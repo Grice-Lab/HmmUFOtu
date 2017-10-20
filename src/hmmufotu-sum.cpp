@@ -62,6 +62,7 @@ static const double DEFAULT_MIN_Q = 0;
 static const double DEFAULT_MIN_ALN_IDENTITY = 0;
 static const double DEFAULT_MIN_HMM_IDENTITY = 0;
 typedef boost::unordered_map<PTUnrooted::PTUNodePtr, OTUObserved> OTUMap;
+typedef boost::unordered_set<PTUnrooted::PTUNodePtr> OTUSet;
 typedef boost::unordered_map<string, vector<string> > OTU2ReadMap;
 
 /**
@@ -86,6 +87,7 @@ void printUsage(const string& progName) {
 		 << "            -l  FILE           : sample name list, with 1st field sample-name and 2nd field assignment filename" << endl
 		 << "            -c  FILE           : OTU Consensus Sequence (CS) alignment of each OTU" << endl
 		 << "            -t  FILE           : OTU tree output" << endl
+		 << "            --use-dbname  FLAG : use DBNAME as prefix for OTUs" << endl
 		 << "            -q  DBL            : minimum qTaxon score (negative log10 posterior error rate) required [" << DEFAULT_MIN_Q << "]" << endl
 		 << "            --aln-iden DBL     : minimum alignment identity required for assignment result [" << DEFAULT_MIN_ALN_IDENTITY << "]" << endl
 		 << "            --hmm-iden DBL     : minimum profile-HMM identity required for assignment result [" << DEFAULT_MIN_HMM_IDENTITY << "]" << endl
@@ -117,6 +119,7 @@ int main(int argc, char* argv[]) {
 	int minRead = DEFAULT_MIN_NREAD;
 	int minSample = DEFAULT_MIN_NSAMPLE;
 	bool noGap = false;
+	bool useDBName = false;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -163,6 +166,9 @@ int main(int argc, char* argv[]) {
 		effN = ::atof(cmdOpts.getOptStr("-e"));
 	if(cmdOpts.hasOpt("--effN"))
 		effN = ::atof(cmdOpts.getOptStr("--effN"));
+
+	if(cmdOpts.hasOpt("--use-dbname"))
+		useDBName = true;
 
 	if(cmdOpts.hasOpt("-q"))
 		minQ = ::atof(cmdOpts.getOptStr("-q"));
@@ -362,8 +368,11 @@ int main(int argc, char* argv[]) {
 					&& EGriceLab::hmmIdentity(hmm, aln, csStart - 1, csEnd - 1)) { /* a valid assignment */
 				const PTUnrooted::PTUNodePtr& node = ptu.getNode(taxon_id);
 				string otuID = boost::lexical_cast<string>(node->getId());
-				if(otuData.count(node) == 0) /* not initiated */
+				if(useDBName)
+					otuID = dbName + "_" + otuID;
+				if(otuData.count(node) == 0) /* not initiated */ {
 					otuData.insert(std::make_pair(node, OTUObserved(otuID, node->getTaxon(), L, S)));
+				}
 				OTUObserved& otu = otuData.find(node)->second;
 				otu.count(s)++;
 				if(readOut.is_open())
@@ -382,14 +391,16 @@ int main(int argc, char* argv[]) {
 	/* construct an OTU table and output alignment */
 	infoLog << "Computing OTUTable" << endl;
 	OTUTable otuTable(sampleNames);
-
-	for(int i = 0; i < N; ++i) {
+	OTUSet otuSeen;
+	for(size_t i = 0; i < N; ++i) {
 		const PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
 		if(otuData.count(node) == 0) // not an observed OTU
 			continue;
 		OTUObserved& otu = otuData.find(node)->second;
-		if(otu.numReads() >= minRead && otu.numSamples() >= minSample) /* filter OTUs */
+		if(otu.numReads() >= minRead && otu.numSamples() >= minSample) { /* filter OTUs */
 			otuTable.addOTU(otu);
+			otuSeen.insert(node);
+		}
 		else {/* remove unnessesary otu2Read elements */
 			if(readOut.is_open())
 				otu2Read.erase(otu.id);
@@ -414,19 +425,21 @@ int main(int argc, char* argv[]) {
 	/* write the CS seq */
 	if(csOut.is_open()) {
 		infoLog << "Writing OTU Consensus Sequences" << endl;
-		for(size_t i = 0; i < otuTable.numOTUs(); ++i) {
-			PTUnrooted::PTUNodePtr node = ptu.getNode(::atol(otuTable.getOTU(i).c_str()));
+		for(size_t i = 0; i < N; ++i) {
+			PTUnrooted::PTUNodePtr node = ptu.getNode(i);
+			if(!(otuData.count(node) > 0 && otuSeen.count(node) > 0)) // not an observed OTU
+				continue;
 			OTUObserved& data = otuData.find(node)->second;
 			int nRead = data.count.sum();
 			int nSample = (data.count.array() > 0).count();
 
 			DigitalSeq csSeq = ptu.inferPostCS(node, data.freq, data.gap, effN);
 			string desc = "DBName="
-					+ dbName + ";Taxonomy=\"" + otuTable.getTaxon(i)
+					+ dbName + ";Taxonomy=\"" + node->getTaxon() +
 					+ "\";AnnoDist=" + boost::lexical_cast<string>(node->getAnnoDist())
 					+ ";ReadCount=" + boost::lexical_cast<string>(nRead)
 					+ ";SampleHits=" + boost::lexical_cast<string>(nSample);
-			PrimarySeq otuSeq(csSeq.getAbc(), csSeq.getName(), csSeq.toString(), desc);
+			PrimarySeq otuSeq(csSeq.getAbc(), data.id, csSeq.toString(), desc);
 			if(noGap)
 				otuSeq.removeGaps();
 			csO.writeSeq(otuSeq);
@@ -436,11 +449,6 @@ int main(int argc, char* argv[]) {
 	/* write the tree */
 	if(treeOut.is_open()) {
 		infoLog << "Writing OTU tree" << endl;
-
-		boost::unordered_set<PTUnrooted::PTUNodePtr> otuSet;
-		for(size_t i = 0; i < otuTable.numOTUs(); ++i)
-			otuSet.insert(ptu.getNode(boost::lexical_cast<long> (otuTable.getOTU(i))));
-
-		ptu.exportTree(treeOut, otuSet, TREE_FORMAT);
+		ptu.exportTree(treeOut, otuSeen, TREE_FORMAT, dbName + "_");
 	}
 }
