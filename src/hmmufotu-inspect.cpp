@@ -124,6 +124,7 @@ int main(int argc, char* argv[]) {
 	csfmFn = dbName + CSFM_FILE_SUFFIX;
 	hmmFn = dbName + HMM_FILE_SUFFIX;
 	ptuFn = dbName + PHYLOTREE_FILE_SUFFIX;
+	string nodePrefix = !useDBName ? "" : dbName + "_";
 
 	/* open inputs */
 	msaIn.open(msaFn.c_str(), ios_base::in | ios_base::binary);
@@ -248,20 +249,15 @@ int main(int argc, char* argv[]) {
 
 	if(treeOut.is_open()) {
 		infoLog << "Writing phylogenetic tree ..." << endl;
-		if(!useDBName)
-			ptu.exportTree(treeOut, TREE_FORMAT);
-		else
-			ptu.exportTree(treeOut, TREE_FORMAT, dbName + "_");
+		treeOut << ptu.convertToNewickTree(nodePrefix);
 	}
 
 	if(annoOut.is_open()) {
 		infoLog << "Writing tree node taxonomy annotation ..." << endl;
 		for(size_t i = 0; i < ptu.numNodes(); ++i) {
 			const EGriceLab::PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
-			string name = boost::lexical_cast<string>(node->getId());
-			if(useDBName)
-				name = dbName + "_" + name;
-			annoOut << name << "\t" << node->getTaxon() << endl;
+			annoOut << (nodePrefix + boost::lexical_cast<string>(node->getId()))
+					<< "\t" << node->getTaxon() << endl;
 		}
 	}
 
@@ -269,12 +265,8 @@ int main(int argc, char* argv[]) {
 		infoLog << "Writing sequence alignment ..." << endl;
 		for(size_t i = 0; i < ptu.numNodes(); ++i) {
 			const EGriceLab::PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
-			if(!leafOnly || node->isLeaf()) {
-				string name = boost::lexical_cast<string>(node->getId());
-				if(useDBName)
-					name = dbName + "_" + name;
-				seqO.writeSeq(PrimarySeq(abc, name, node->getSeq().toString(), node->getTaxon()));
-			}
+			if(!leafOnly || node->isLeaf())
+				seqO.writeSeq(PrimarySeq(abc, nodePrefix + boost::lexical_cast<string>(node->getId()), node->getSeq().toString(), node->getTaxon()));
 		}
 	}
 

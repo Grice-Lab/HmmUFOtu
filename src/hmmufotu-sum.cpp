@@ -54,7 +54,6 @@ using namespace Eigen;
 /* default values */
 static const string ALIGN_FORMAT = "fasta";
 static const string TABLE_FORMAT = "table";
-static const string TREE_FORMAT = "newick";
 static const double DEFAULT_EFFN = 2;
 static const int DEFAULT_MIN_NREAD = 0;
 static const int DEFAULT_MIN_NSAMPLE = 0;
@@ -206,6 +205,7 @@ int main(int argc, char* argv[]) {
 	msaFn = dbName + MSA_FILE_SUFFIX;
 	hmmFn = dbName + HMM_FILE_SUFFIX;
 	ptuFn = dbName + PHYLOTREE_FILE_SUFFIX;
+	string otuPrefix = !useDBName ? "" : dbName + "_";
 
 	/* open inputs */
 	if(!listFn.empty()) {
@@ -367,9 +367,7 @@ int main(int argc, char* argv[]) {
 					&& EGriceLab::alignIdentity(abc, aln, csStart - 1, csEnd -1)
 					&& EGriceLab::hmmIdentity(hmm, aln, csStart - 1, csEnd - 1)) { /* a valid assignment */
 				const PTUnrooted::PTUNodePtr& node = ptu.getNode(taxon_id);
-				string otuID = boost::lexical_cast<string>(node->getId());
-				if(useDBName)
-					otuID = dbName + "_" + otuID;
+				string otuID = otuPrefix + boost::lexical_cast<string>(node->getId());
 				if(otuData.count(node) == 0) /* not initiated */ {
 					otuData.insert(std::make_pair(node, OTUObserved(otuID, node->getTaxon(), L, S)));
 				}
@@ -449,6 +447,6 @@ int main(int argc, char* argv[]) {
 	/* write the tree */
 	if(treeOut.is_open()) {
 		infoLog << "Writing OTU tree" << endl;
-		ptu.exportTree(treeOut, otuSeen, TREE_FORMAT, dbName + "_");
+		treeOut << ptu.convertToNewickTree(PTUnrooted::getAncestors(otuSeen), otuPrefix);
 	}
 }

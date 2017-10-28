@@ -827,31 +827,14 @@ public:
 	NewickTree convertToNewickTree(const PTUNodePtr& subtree,
 			const boost::unordered_set<PTUNodePtr>& subset, const string& prefix = "") const;
 
-	/**
-	 * write this PTUnrooted subtree structure into output in given format
-	 */
-	ostream& exportTree(ostream& out, const PTUNodePtr& node,
-			const string& format, const string& prefix = "") const;
-
-	/**
-	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
-	 */
-	ostream& exportTree(ostream& out, const PTUNodePtr& node, boost::unordered_set<PTUNodePtr>& subset,
-			const string& format, const string& prefix = "") const;
-
-	/**
-	 * write this PTUnrooted tree structure into output in given format
-	 */
-	ostream& exportTree(ostream& out, const string& format, const string& prefix = "") const {
-		return exportTree(out, root, format, prefix);
+	/** convert this PTUnrooted tree into NewickTree */
+	NewickTree convertToNewickTree(const string& prefix = "") const {
+		return convertToNewickTree(root, prefix);
 	}
 
-	/**
-	 * write this PTUnrooted subtree structure into output in given format, only write a subset of nodes
-	 */
-	ostream& exportTree(ostream& out, boost::unordered_set<PTUNodePtr>& subset,
-			const string& format, const string& prefix = "") const {
-		return exportTree(out, root, subset, format, prefix);
+	/** convert this PTUUnrooted tree into NewickTree, only for a subset of nodes */
+	NewickTree convertToNewickTree(const boost::unordered_set<PTUNodePtr>& subset, const string& prefix = "") const {
+		return convertToNewickTree(root, subset, prefix);
 	}
 
 public:
@@ -1196,6 +1179,8 @@ public:
 	/** initiate the leaf loglik matrix */
 	static Matrix4d initLeafMat();
 
+	static boost::unordered_set<PTUNodePtr> getAncestors(const boost::unordered_set<PTUNodePtr>& subset);
+
 	/* member fields */
 private:
 	int csLen; /* number of aligned sites */
@@ -1248,18 +1233,6 @@ inline size_t PTUnrooted::numLeaves() const {
 		if((*nodeIt)->isLeaf())
 			N++;
 	return N;
-}
-
-inline ostream& PTUnrooted::exportTree(ostream& out, const PTUNodePtr& subtree,
-		const string& format, const string& prefix) const {
-	StringUtils::toLower(format);
-	if(format == "newick")
-		return out << convertToNewickTree(subtree, prefix);
-	else {
-		errorLog << "Cannot write PTUnrooted tree, unknown tree format " << format << std::endl;
-		out.setstate(std::ios_base::failbit);
-		return out;
-	}
 }
 
 inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v) const {
