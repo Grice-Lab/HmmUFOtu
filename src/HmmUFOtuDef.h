@@ -26,9 +26,17 @@
 
 #ifndef HMMUFOTUDEF_H_
 #define HMMUFOTUDEF_H_
+#ifndef INT8_MAX
 #define INT8_MAX (127)
+#endif
+
+#ifndef UINT16_MAX
 #define UINT16_MAX (65535)
+#endif
+
+#ifndef UINT8_MAX
 #define UINT8_MAX (255)
+#endif
 
 namespace EGriceLab {
 
