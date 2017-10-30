@@ -100,7 +100,7 @@ libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 hmmufotu_SOURCES = hmmufotu.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
 hmmufotu_CPPFLAGS = $(OPENMP_CFLAGS) $(BOOST_CPPFLAGS)
 hmmufotu_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CFLAGS)
-hmmufotu_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a math/libEGMath.a libHmmUFOtu_common.a \
+hmmufotu_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
 $(BOOST_IOSTREAMS_LIB)
 hmmufotu_LDFLAGS = $(BOOST_LDFLAGS)
