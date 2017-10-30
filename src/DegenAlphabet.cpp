@@ -35,6 +35,9 @@
 namespace EGriceLab {
 using namespace std;
 
+const int8_t DegenAlphabet::INVALID_BASE = -1;
+const int8_t DegenAlphabet::GAP_BASE = -2; /* encoded gap symbol */
+
 DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const string& synon_str,
 			const map<char, string>& my_map, const string& gap) :
 				name(name), symbol(StringUtils::remove_dup_chars(sym_str)),

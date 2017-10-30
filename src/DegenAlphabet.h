@@ -171,8 +171,8 @@ private:
 	map<char, string> degen_map; // map for degenerative synonymous
 
 public:
-	static const int8_t INVALID_BASE = -1;
-	static const int8_t GAP_BASE = -2; /* encoded gap symbol */
+	static const int8_t INVALID_BASE;
+	static const int8_t GAP_BASE; /* encoded gap symbol */
 	static const char DEFAULT_GAP_CHAR = '-';
 
 	/* friend operators */
