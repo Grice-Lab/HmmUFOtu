@@ -1,1 +1,2 @@
-Api.elm linguist-generated=true
+# turn on vendor check
+* linguist-vendored
