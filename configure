@@ -17930,7 +17930,7 @@ fi
 	fi
 
 
-ac_config_files="$ac_config_files Makefile data/Makefile src/Makefile src/math/Makefile test/Makefile"
+ac_config_files="$ac_config_files Makefile data/Makefile src/Makefile src/util/Makefile src/math/Makefile test/Makefile"
 
 
 
@@ -19135,6 +19135,7 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "data/Makefile") CONFIG_FILES="$CONFIG_FILES data/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+    "src/util/Makefile") CONFIG_FILES="$CONFIG_FILES src/util/Makefile" ;;
     "src/math/Makefile") CONFIG_FILES="$CONFIG_FILES src/math/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
 

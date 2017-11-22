@@ -46,6 +46,7 @@ AX_BOOST_IOSTREAMS()
 AC_CONFIG_FILES([Makefile
 				 data/Makefile
 				 src/Makefile
+				 src/util/Makefile
 				 src/math/Makefile
 				 test/Makefile])
 

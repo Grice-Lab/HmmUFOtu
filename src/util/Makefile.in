@@ -89,7 +89,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = src/math
+subdir = src/util
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
@@ -138,12 +138,12 @@ AM_V_AR = $(am__v_AR_@AM_V@)
 am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
-libEGMath_a_AR = $(AR) $(ARFLAGS)
-libEGMath_a_LIBADD =
-am_libEGMath_a_OBJECTS = Stats.$(OBJEXT) LinearAlgebraBasic.$(OBJEXT) \
-	DirichletModel.$(OBJEXT) DirichletDensity.$(OBJEXT) \
-	DirichletMixture.$(OBJEXT) RootFinder.$(OBJEXT)
-libEGMath_a_OBJECTS = $(am_libEGMath_a_OBJECTS)
+libEGUtil_a_AR = $(AR) $(ARFLAGS)
+libEGUtil_a_LIBADD =
+am_libEGUtil_a_OBJECTS = CommandOptions.$(OBJEXT) ProgLog.$(OBJEXT) \
+	StringUtils.$(OBJEXT) TSVRecord.$(OBJEXT) TSVScanner.$(OBJEXT) \
+	VersionSequence.$(OBJEXT)
+libEGUtil_a_OBJECTS = $(am_libEGUtil_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -182,8 +182,8 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libEGMath_a_SOURCES)
-DIST_SOURCES = $(libEGMath_a_SOURCES)
+SOURCES = $(libEGUtil_a_SOURCES)
+DIST_SOURCES = $(libEGUtil_a_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -340,17 +340,19 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
-# This is the Makefile for the EGriceLab::Math library
+# This is the Makefile for the EGriceLab::Util library
 AUTOMAKE_OPTIONS = subdir-objects
-AM_CXXFLAGS = -I$(top_srcdir)/util -I$(top_srcdir)/math $(BOOST_CPPFLAGS)
+AM_CXXFLAGS = -I$(top_srcdir)/util
 
 # Build a static/shared library
-lib_LIBRARIES = libEGMath.a
-libEGMath_a_SOURCES = Stats.cpp  LinearAlgebraBasic.cpp \
-DirichletModel.cpp \
-DirichletDensity.cpp \
-DirichletMixture.cpp \
-RootFinder.cpp
+lib_LIBRARIES = libEGUtil.a
+libEGUtil_a_SOURCES = \
+CommandOptions.cpp \
+ProgLog.cpp \
+StringUtils.cpp \
+TSVRecord.cpp \
+TSVScanner.cpp \
+VersionSequence.cpp
 
 all: all-am
 
@@ -365,9 +367,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/math/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/util/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src/math/Makefile
+	  $(AUTOMAKE) --gnu src/util/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -417,10 +419,10 @@ uninstall-libLIBRARIES:
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
 
-libEGMath.a: $(libEGMath_a_OBJECTS) $(libEGMath_a_DEPENDENCIES) $(EXTRA_libEGMath_a_DEPENDENCIES) 
-	$(AM_V_at)-rm -f libEGMath.a
-	$(AM_V_AR)$(libEGMath_a_AR) libEGMath.a $(libEGMath_a_OBJECTS) $(libEGMath_a_LIBADD)
-	$(AM_V_at)$(RANLIB) libEGMath.a
+libEGUtil.a: $(libEGUtil_a_OBJECTS) $(libEGUtil_a_DEPENDENCIES) $(EXTRA_libEGUtil_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libEGUtil.a
+	$(AM_V_AR)$(libEGUtil_a_AR) libEGUtil.a $(libEGUtil_a_OBJECTS) $(libEGUtil_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libEGUtil.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -428,12 +430,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DirichletDensity.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DirichletMixture.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DirichletModel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearAlgebraBasic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RootFinder.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stats.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CommandOptions.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ProgLog.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StringUtils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TSVRecord.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TSVScanner.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VersionSequence.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
