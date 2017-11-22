@@ -30,20 +30,13 @@
 #include <iostream>
 
 #include "VersionSequence.h"
+#include "ProgLog.h"
 
 namespace EGriceLab {
 /* per-application variables */
 extern int VERBOSE_LEVEL; /* DEFAULT VERBOSE LEVEL */
 extern const VersionSequence progVer;
 extern const string projectURL;
-
-enum LOG_LEVEL {
-	LOG_NOTHING,
-	LOG_ERROR,
-	LOG_WARNING,
-	LOG_INFO,
-	LOG_DEBUG
-};
 
 /**
  * show program and package version

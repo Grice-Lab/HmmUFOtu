@@ -28,7 +28,6 @@
 #define SRC_PROGLOG_H_
 
 #include <iostream>
-#include "HmmUFOtuEnv.h"
 
 namespace EGriceLab {
 using std::ostream;
@@ -36,6 +35,17 @@ using std::streambuf;
 using std::cerr;
 using std::cout;
 using std::endl;
+
+extern int VERBOSE_LEVEL; /* Global variable defined elsewhere */
+
+/* log level constants */
+enum LOG_LEVEL {
+	LOG_NOTHING,
+	LOG_ERROR,
+	LOG_WARNING,
+	LOG_INFO,
+	LOG_DEBUG
+};
 
 void UPDATE_LOGS();
 

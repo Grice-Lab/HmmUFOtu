@@ -40,8 +40,8 @@ using std::vector;
 
 class CommandOptions {
 public:
-	/** constructors */
-	/* construct a CommandOptions from a C main args */
+	/* constructors */
+	/** construct a CommandOptions from a C main args */
 	CommandOptions(int argc, char** argv);
 
 	/** member methods */
