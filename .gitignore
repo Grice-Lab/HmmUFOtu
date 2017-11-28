@@ -20,4 +20,3 @@ config.status
 # Ignore test temporaries
 **/*.trs
 **/*.swp
-build/

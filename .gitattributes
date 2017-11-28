@@ -11,3 +11,4 @@
 **/missing linguist-vendored
 **/config.status linguist-vendored
 **/configure linguist-vendored
+**/Makefile linguist-vendored
