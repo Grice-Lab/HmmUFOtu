@@ -1,0 +1,25 @@
+# Ignore all logs
+*.log
+
+# Ignore any Eclipse metadata recursively
+**/.autotools
+**/.cproject
+**/.project
+**/.settings
+# Ignore Autotools genereated Makefiles
+**/Makefile
+**/autom4te.cache/**
+config.log
+config.status
+**/.deps/**
+**/.libs/**
+**/*.lo
+**/*.la
+**/*~
+**/*.o
+**/*.a
+**/configure.scan
+# Ignore test temporaries
+**/*.trs
+**/*.swp
+**/config.h
