@@ -17,6 +17,7 @@ AC_TYPE_SIZE_T
 AC_TYPE_INT32_T
 AC_TYPE_UINT8_T
 AC_TYPE_INT64_T
+AC_C_INLINE
 
 # Checks for library functions.
 #AC_FUNC_MALLOC # ignored to avoid cross-compilation problems
