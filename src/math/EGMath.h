@@ -12,5 +12,6 @@
 #include "DirichletModel.h"
 #include "DirichletDensity.h"
 #include "DirichletMixture.h"
+#include "RootFinder.h"
 
 #endif /* SRC_MATH_EGMATH_H_ */
