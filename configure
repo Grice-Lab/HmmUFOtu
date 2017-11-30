@@ -795,7 +795,10 @@ CXX
 CXXFLAGS
 CCC
 CXXCPP'
-ac_subdirs_all='src/libcds
+ac_subdirs_all='
+                   src/util
+                   src/math
+                   src/libcds
                    src/libdivsufsort'
 
 # Initialize some variables set by options.
@@ -17930,12 +17933,12 @@ fi
 	fi
 
 
-ac_config_files="$ac_config_files Makefile data/Makefile src/Makefile src/util/Makefile src/math/Makefile test/Makefile"
+ac_config_files="$ac_config_files Makefile data/Makefile src/Makefile test/Makefile"
 
 
 
 
-subdirs="$subdirs src/libcds src/libdivsufsort"
+subdirs="$subdirs src/util src/math src/libcds src/libdivsufsort"
 
 
   OPENMP_CFLAGS=
@@ -19135,8 +19138,6 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "data/Makefile") CONFIG_FILES="$CONFIG_FILES data/Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-    "src/util/Makefile") CONFIG_FILES="$CONFIG_FILES src/util/Makefile" ;;
-    "src/math/Makefile") CONFIG_FILES="$CONFIG_FILES src/math/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;

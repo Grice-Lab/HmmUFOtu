@@ -46,11 +46,12 @@ AX_BOOST_IOSTREAMS()
 AC_CONFIG_FILES([Makefile
 				 data/Makefile
 				 src/Makefile
-				 src/util/Makefile
-				 src/math/Makefile
 				 test/Makefile])
 
-AC_CONFIG_SUBDIRS([src/libcds
+AC_CONFIG_SUBDIRS([
+                   src/util
+                   src/math
+                   src/libcds
                    src/libdivsufsort])
 AC_OPENMP
 
