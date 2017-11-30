@@ -22,7 +22,6 @@ AC_C_INLINE
 # Checks for library functions.
 #AC_FUNC_MALLOC # ignored to avoid cross-compilation problems
 AC_CHECK_FUNCS([malloc])
-AC_FUNC_MALLOC
 AC_PROG_RANLIB
 
 # customized macros
