@@ -1,0 +1,7 @@
+# ignore test executables
+*.exe
+bwt
+mksary
+sasearch
+suftest
+unbwt
