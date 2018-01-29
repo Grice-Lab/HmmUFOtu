@@ -79,5 +79,10 @@ ostream& NewickTree::write(ostream& out) const {
 	return out;
 }
 
+bool NewickTree::isNewickFileExt(const string& fn) {
+	return StringUtils::endsWith(fn, ".tree") || StringUtils::endsWith(fn, ".tre");
+}
+
+
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

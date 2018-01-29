@@ -122,6 +122,10 @@ public:
 
 	/* static fields */
 	static const string& INVALID_CHARS;
+
+	/* static methods */
+	static bool isNewickFileExt(const string& fn);
+
 }; /* struct NewickTree */
 
 inline istream& operator>>(istream& in, NT& tree) {

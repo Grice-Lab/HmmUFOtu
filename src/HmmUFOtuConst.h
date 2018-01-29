@@ -24,6 +24,7 @@
  *      Author: zhengqi
  */
 #include<string>
+#include<set>
 #include<iostream>
 #include<limits>
 #include<cassert>
@@ -35,6 +36,7 @@ namespace EGriceLab {
 namespace HmmUFOtu {
 
 using std::string;
+using std::set;
 using std::istream;
 using std::ostream;
 

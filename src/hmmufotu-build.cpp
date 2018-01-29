@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	if(!(StringUtils::endsWith(treeFn, ".tree"))) {
+	if(!NewickTree::isNewickFileExt(treeFn)) {
 		cerr << "Unrecognized TREE-FILE format, must be in Newick format" << endl;
 		return EXIT_FAILURE;
 	}
