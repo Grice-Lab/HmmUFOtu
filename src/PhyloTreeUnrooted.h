@@ -80,7 +80,7 @@ class PhyloTreeUnrooted {
 public:
 	/* nested types and enums */
 	enum TaxonLevel {
-		KINDOM, PHYLUM, CLASS, ORDER, FAMILY, GENUS, SPECIS
+		Domain, Kindom, Phylum, Class, Order, Family, Genus, Species
 	};
 
 	class PhyloTreeUnrootedNode;
@@ -741,10 +741,7 @@ public:
 	/**
 	 * evaluate the given node in region [start, end]
 	 */
-	void evaluate(const PTUNodePtr& node, int start, int end) {
-		for(int j = start; j <= end; ++j)
-			evaluate(node, j);
-	}
+	void evaluate(const PTUNodePtr& node, int start, int end);
 
 	/**
 	 * evaluate the subtree at given node
@@ -1210,6 +1207,7 @@ public:
 	static const double BRANCH_EPS;
 	static const int MAX_ITER = 100;
 	static const char ANNO_FIELD_SEP = '\t';
+	static const string DOMAIN_PREFIX;
 	static const string KINDOM_PREFIX;
 	static const string PHYLUM_PREFIX;
 	static const string CLASS_PREFIX;
@@ -1377,19 +1375,21 @@ inline Vector4d PTUnrooted::row_mean_exp_scaled(const Matrix4Xd& X) {
 
 inline string PTUnrooted::taxonLevel2prefix(TaxonLevel level) {
 	switch(level) {
-	case KINDOM:
+	case Domain:
+		return DOMAIN_PREFIX;
+	case Kindom:
 		return KINDOM_PREFIX;
-	case PHYLUM:
+	case Phylum:
 		return PHYLUM_PREFIX;
-	case CLASS:
+	case Class:
 		return CLASS_PREFIX;
-	case ORDER:
+	case Order:
 		return ORDER_PREFIX;
-	case FAMILY:
+	case Family:
 		return FAMILY_PREFIX;
-	case GENUS:
+	case Genus:
 		return GENUS_PREFIX;
-	case SPECIS:
+	case Species:
 		return SPECIES_PREFIX;
 	default:
 		return "";
@@ -1408,7 +1408,8 @@ inline void PTUnrooted::formatAnnotation() {
 
 inline bool PTUnrooted::isCanonicalName(const string& taxon) {
 	return  taxon.length() > 3 &&
-			(StringUtils::startsWith(taxon, KINDOM_PREFIX) ||
+			(StringUtils::startsWith(taxon, DOMAIN_PREFIX) ||
+			StringUtils::startsWith(taxon, KINDOM_PREFIX) ||
 			StringUtils::startsWith(taxon, PHYLUM_PREFIX) ||
 			StringUtils::startsWith(taxon, CLASS_PREFIX) ||
 			StringUtils::startsWith(taxon, ORDER_PREFIX) ||

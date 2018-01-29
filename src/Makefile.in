@@ -146,9 +146,8 @@ am_libHmmUFOtu_phylo_a_OBJECTS = NewickTree.$(OBJEXT) \
 libHmmUFOtu_phylo_a_OBJECTS = $(am_libHmmUFOtu_phylo_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_hmmufotu_OBJECTS = hmmufotu-hmmufotu.$(OBJEXT) \
-	hmmufotu-HmmUFOtu_main.$(OBJEXT) \
-	hmmufotu-HmmUFOtuEnv.$(OBJEXT)
+am_hmmufotu_OBJECTS = hmmufotu.$(OBJEXT) HmmUFOtu_main.$(OBJEXT) \
+	HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_OBJECTS = $(am_hmmufotu_OBJECTS)
 am__DEPENDENCIES_1 =
 hmmufotu_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a \
@@ -160,7 +159,7 @@ am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
 hmmufotu_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(hmmufotu_CXXFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(hmmufotu_LDFLAGS) $(LDFLAGS) -o $@
 am_hmmufotu_anneal_OBJECTS = hmmufotu-anneal.$(OBJEXT) \
 	HmmUFOtuEnv.$(OBJEXT)
@@ -473,17 +472,19 @@ AM_CFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/math \
 -I$(top_srcdir)/src/libdivsufsort/include \
 -I$(top_srcdir)/src/libcds/include \
-$(BOOST_CPPFLAGS)
+$(BOOST_CPPFLAGS) \
+$(OPENMP_CFLAGS)
 
 AM_CXXFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/util \
 -I$(top_srcdir)/src/math \
 -I$(top_srcdir)/src/libdivsufsort/include \
 -I$(top_srcdir)/src/libcds/include \
-$(BOOST_CPPFLAGS)
+$(BOOST_CPPFLAGS) \
+$(OPENMP_CFLAGS)
 
-AM_CPPFLAGS = $(BOOST_CPPFLAGS)
-AM_LDFLAGS = $(BOOST_LDFLAGS)
+AM_CPPFLAGS = $(BOOST_CPPFLAGS) $(OPENMP_CFLAGS)
+AM_LDFLAGS = $(BOOST_LDFLAGS) $(OPENMP_CFLAGS)
 
 # Build convenient libraries
 noinst_LIBRARIES = libHmmUFOtu_common.a libHmmUFOtu_hmm.a libHmmUFOtu_phylo.a libHmmUFOtu_OTU.a
@@ -542,8 +543,6 @@ hmmufotu_inspect_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_commo
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 
 hmmufotu_SOURCES = hmmufotu.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
-hmmufotu_CPPFLAGS = $(OPENMP_CFLAGS) $(BOOST_CPPFLAGS)
-hmmufotu_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CFLAGS)
 hmmufotu_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
 $(BOOST_IOSTREAMS_LIB)
@@ -751,10 +750,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqIO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TN93.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-HmmUFOtuEnv.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-HmmUFOtu_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-anneal.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-hmmufotu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-inspect.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-norm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-sim.Po@am__quote@
@@ -762,6 +758,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-sum.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-train-dm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-train-sm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_build-HmmUFOtuEnv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_build-hmmufotu-build.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_train_hmm-HmmUFOtuEnv.Po@am__quote@
@@ -787,48 +784,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
-
-hmmufotu-hmmufotu.o: hmmufotu.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu-hmmufotu.o -MD -MP -MF $(DEPDIR)/hmmufotu-hmmufotu.Tpo -c -o hmmufotu-hmmufotu.o `test -f 'hmmufotu.cpp' || echo '$(srcdir)/'`hmmufotu.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu-hmmufotu.Tpo $(DEPDIR)/hmmufotu-hmmufotu.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='hmmufotu.cpp' object='hmmufotu-hmmufotu.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu-hmmufotu.o `test -f 'hmmufotu.cpp' || echo '$(srcdir)/'`hmmufotu.cpp
-
-hmmufotu-hmmufotu.obj: hmmufotu.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu-hmmufotu.obj -MD -MP -MF $(DEPDIR)/hmmufotu-hmmufotu.Tpo -c -o hmmufotu-hmmufotu.obj `if test -f 'hmmufotu.cpp'; then $(CYGPATH_W) 'hmmufotu.cpp'; else $(CYGPATH_W) '$(srcdir)/hmmufotu.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu-hmmufotu.Tpo $(DEPDIR)/hmmufotu-hmmufotu.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='hmmufotu.cpp' object='hmmufotu-hmmufotu.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu-hmmufotu.obj `if test -f 'hmmufotu.cpp'; then $(CYGPATH_W) 'hmmufotu.cpp'; else $(CYGPATH_W) '$(srcdir)/hmmufotu.cpp'; fi`
-
-hmmufotu-HmmUFOtu_main.o: HmmUFOtu_main.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu-HmmUFOtu_main.o -MD -MP -MF $(DEPDIR)/hmmufotu-HmmUFOtu_main.Tpo -c -o hmmufotu-HmmUFOtu_main.o `test -f 'HmmUFOtu_main.cpp' || echo '$(srcdir)/'`HmmUFOtu_main.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu-HmmUFOtu_main.Tpo $(DEPDIR)/hmmufotu-HmmUFOtu_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='HmmUFOtu_main.cpp' object='hmmufotu-HmmUFOtu_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu-HmmUFOtu_main.o `test -f 'HmmUFOtu_main.cpp' || echo '$(srcdir)/'`HmmUFOtu_main.cpp
-
-hmmufotu-HmmUFOtu_main.obj: HmmUFOtu_main.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu-HmmUFOtu_main.obj -MD -MP -MF $(DEPDIR)/hmmufotu-HmmUFOtu_main.Tpo -c -o hmmufotu-HmmUFOtu_main.obj `if test -f 'HmmUFOtu_main.cpp'; then $(CYGPATH_W) 'HmmUFOtu_main.cpp'; else $(CYGPATH_W) '$(srcdir)/HmmUFOtu_main.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu-HmmUFOtu_main.Tpo $(DEPDIR)/hmmufotu-HmmUFOtu_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='HmmUFOtu_main.cpp' object='hmmufotu-HmmUFOtu_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu-HmmUFOtu_main.obj `if test -f 'HmmUFOtu_main.cpp'; then $(CYGPATH_W) 'HmmUFOtu_main.cpp'; else $(CYGPATH_W) '$(srcdir)/HmmUFOtu_main.cpp'; fi`
-
-hmmufotu-HmmUFOtuEnv.o: HmmUFOtuEnv.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu-HmmUFOtuEnv.o -MD -MP -MF $(DEPDIR)/hmmufotu-HmmUFOtuEnv.Tpo -c -o hmmufotu-HmmUFOtuEnv.o `test -f 'HmmUFOtuEnv.cpp' || echo '$(srcdir)/'`HmmUFOtuEnv.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu-HmmUFOtuEnv.Tpo $(DEPDIR)/hmmufotu-HmmUFOtuEnv.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='HmmUFOtuEnv.cpp' object='hmmufotu-HmmUFOtuEnv.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu-HmmUFOtuEnv.o `test -f 'HmmUFOtuEnv.cpp' || echo '$(srcdir)/'`HmmUFOtuEnv.cpp
-
-hmmufotu-HmmUFOtuEnv.obj: HmmUFOtuEnv.cpp
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu-HmmUFOtuEnv.obj -MD -MP -MF $(DEPDIR)/hmmufotu-HmmUFOtuEnv.Tpo -c -o hmmufotu-HmmUFOtuEnv.obj `if test -f 'HmmUFOtuEnv.cpp'; then $(CYGPATH_W) 'HmmUFOtuEnv.cpp'; else $(CYGPATH_W) '$(srcdir)/HmmUFOtuEnv.cpp'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu-HmmUFOtuEnv.Tpo $(DEPDIR)/hmmufotu-HmmUFOtuEnv.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='HmmUFOtuEnv.cpp' object='hmmufotu-HmmUFOtuEnv.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu-HmmUFOtuEnv.obj `if test -f 'HmmUFOtuEnv.cpp'; then $(CYGPATH_W) 'HmmUFOtuEnv.cpp'; else $(CYGPATH_W) '$(srcdir)/HmmUFOtuEnv.cpp'; fi`
 
 hmmufotu_build-hmmufotu-build.o: hmmufotu-build.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_build_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu_build-hmmufotu-build.o -MD -MP -MF $(DEPDIR)/hmmufotu_build-hmmufotu-build.Tpo -c -o hmmufotu_build-hmmufotu-build.o `test -f 'hmmufotu-build.cpp' || echo '$(srcdir)/'`hmmufotu-build.cpp

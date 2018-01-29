@@ -375,6 +375,13 @@ public:
 	}
 
 	/**
+	 * Load an MSA binary file in DNA alphabet
+	 */
+	long loadMSA(istream& in, const string& format) {
+		return loadMSA(AlphabetFactory::nuclAbc, in, format);
+	}
+
+	/**
 	 * Load an MSA file in fasta format
 	 * @param filename  MSA file name
 	 * @return  a newly constructed MSA pointer

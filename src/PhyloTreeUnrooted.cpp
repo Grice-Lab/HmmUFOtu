@@ -35,6 +35,11 @@
 #include <cassert>
 #include <boost/algorithm/string.hpp> /* for boost string split */
 #include <boost/lexical_cast.hpp>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #include "HmmUFOtuConst.h"
 #include "ProgLog.h"
 #include "StringUtils.h"
@@ -55,6 +60,7 @@ const double PhyloTreeUnrooted::INVALID_LOGLIK = 1;
 const double PhyloTreeUnrooted::LOGLIK_REL_EPS = 1e-6;
 const double PhyloTreeUnrooted::BRANCH_EPS = 1e-5;
 
+const string PhyloTreeUnrooted::DOMAIN_PREFIX = "d__";
 const string PhyloTreeUnrooted::KINDOM_PREFIX = "k__";
 const string PhyloTreeUnrooted::PHYLUM_PREFIX = "p__";
 const string PhyloTreeUnrooted::CLASS_PREFIX = "c__";
@@ -108,7 +114,6 @@ ostream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::save(ostream& out) const {
 
 	return out;
 }
-
 
 PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 	/* construct PTUNode by DFS of the NewickTree */
@@ -322,6 +327,11 @@ Matrix4Xd PTUnrooted::loglik(const PTUNodePtr& node) {
 	return loglikMat;
 }
 
+void PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int start, int end) {
+#pragma omp parallel for
+	for(int j = start; j <= end; ++j)
+		evaluate(node, j);
+}
 
 void PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j) {
 	if(isEvaluated(node, node->parent, j)) /* already evaluated */

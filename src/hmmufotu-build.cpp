@@ -30,6 +30,10 @@
 #include <string>
 #include "HmmUFOtu.h"
 
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
 #ifndef SRC_DATADIR
 #define SRC_DATADIR "."
 #endif
@@ -47,10 +51,10 @@ static const double DEFAULT_SYMFRAC = 0.5;
 static const string DEFAULT_DM_FILE = "gg_97_otus.dm";
 static const string DEFAULT_SM_TYPE = "GTR";
 static const string DEFAULT_SM_NAME = "gg_97_otus";
-static const string ALPHABET = "dna";
 static const int DEFAULT_DG_CATEGORY = 4;
 static const int MIN_DG_CATEGORY = 2;
 static const int MAX_DG_CATEGORY = 8;
+static const int DEFAULT_NUM_THREADS = 1;
 
 /**
  * Print introduction of this program
@@ -76,6 +80,9 @@ void printUsage(const string& progName) {
 		 << "            --no-hmm FLAG        : do not build the Hmm profile. Users should build the Hmm profile by 3rd party programs, i.e. HMMER3" << endl
 		 << "            -V|--var FLAG        : enable among-site rate varation evaluation of the tree, using a Discrete Gamma Distribution based model" << endl
 		 << "            -k INT               : number of Discrete Gamma Distribution categories to evaluate the tree, ignored if -V not set [" << DEFAULT_DG_CATEGORY << "]" << endl
+#ifdef _OPENMP
+		 << "            -p|--process INT     : number of threads/cpus used for parallel processing" << endl
+#endif
 		 << "            -v  FLAG             : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            --version            : show program version and exit" << endl
 		 << "            -h|--help            : print this message and exit" << endl;
@@ -94,6 +101,7 @@ int main(int argc, char* argv[]) {
 	bool noHmm = false;
 	bool isVar = false;
 	int K = DEFAULT_DG_CATEGORY;
+	int nThreads = DEFAULT_NUM_THREADS;
 
 	/* parse options */
 	CommandOptions cmdOpts(argc, argv);
@@ -159,6 +167,13 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-k"))
 		K = atoi(cmdOpts.getOptStr("-k"));
 
+#ifdef _OPENMP
+	if(cmdOpts.hasOpt("-p"))
+		nThreads = ::atoi(cmdOpts.getOptStr("-p"));
+	if(cmdOpts.hasOpt("--process"))
+		nThreads = ::atoi(cmdOpts.getOptStr("--process"));
+#endif
+
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
@@ -191,6 +206,14 @@ int main(int argc, char* argv[]) {
 		cerr << "-f|--symfrac must between 0 and 1" << endl;
 		return EXIT_FAILURE;
 	}
+
+#ifdef _OPENMP
+	if(!(nThreads > 0)) {
+		cerr << "-p|--process must be positive" << endl;
+		return EXIT_FAILURE;
+	}
+	omp_set_num_threads(nThreads);
+#endif
 
 	/* open inputs */
 	seqIn.open(seqFn.c_str());
@@ -255,7 +278,7 @@ int main(int argc, char* argv[]) {
 
 	/* build msa */
 	MSA msa;
-	if(msa.loadMSA(ALPHABET, seqIn, fmt) >= 0)
+	if(msa.loadMSA(seqIn, fmt) >= 0)
 		infoLog << "MSA loaded" << endl;
 	else {
 		cerr << "Unable to load MSA from '" << seqFn << "'" << endl;
