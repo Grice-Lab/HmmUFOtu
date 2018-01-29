@@ -185,9 +185,11 @@ unsigned PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 			name2msaId[name] = i;
 	}
 
-	/* assign seq to each nodes of the tree, ignore nodes cannot be found (unnamed, etc) */
+	/* assign seq to each leaf of the tree, ignore nodes cannot be found (unnamed, etc) */
 	for(vector<PTUNodePtr>::iterator node = id2node.begin(); node != id2node.end(); ++node) {
 		assert(node - id2node.begin() == (*node)->id);
+		if(!(*node)->isLeaf()) /* only read in leaf sequences */
+			continue;
 
 		unordered_map<string, unsigned>::const_iterator result = name2msaId.find((*node)->name);
 		if(result == name2msaId.end()) /* this name cannot be found in the msa */

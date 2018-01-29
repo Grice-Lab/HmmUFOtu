@@ -311,7 +311,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 	else if(nRead != nLeaves) {
-		cerr << "Unmatched MSA and Tree. Found " << nRead << " sequences from MSA but expecting " << nLeaves << " leaves in the Phylogenetic Tree " << endl;
+		cerr << "Unmatched MSA and Tree. Found " << nRead << " leaf sequences from MSA but expecting " << nLeaves << " leaves in the Phylogenetic Tree " << endl;
 		return EXIT_FAILURE;
 	}
 	else
