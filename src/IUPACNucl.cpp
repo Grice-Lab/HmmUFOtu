@@ -28,6 +28,7 @@
 #include "IUPACNucl.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 map<char, string> IUPACNucl::init_IUPAC_map() {
 	map<char, string> IUPAC_map;
@@ -46,7 +47,7 @@ map<char, string> IUPACNucl::init_IUPAC_map() {
 	return IUPAC_map;
 }
 
-IUPACNucl::IUPACNucl() : EGriceLab::DegenAlphabet("IUPACNucl", "ACGT", "UMRWSYKVHDBN", init_IUPAC_map()) {
+IUPACNucl::IUPACNucl() : DegenAlphabet("IUPACNucl", "ACGT", "UMRWSYKVHDBN", init_IUPAC_map()) {
 	/* init compl_map with self complementary */
 	for(int8_t i = 0; i != INT8_MAX; ++i)
 		compl_map[i] = i;
@@ -69,5 +70,6 @@ IUPACNucl::IUPACNucl() : EGriceLab::DegenAlphabet("IUPACNucl", "ACGT", "UMRWSYKV
 	compl_map['N'] = 'N';
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 

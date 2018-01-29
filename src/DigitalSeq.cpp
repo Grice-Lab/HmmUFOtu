@@ -36,6 +36,7 @@
 using namespace std;
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 DigitalSeq::DigitalSeq(const DegenAlphabet* abc, const string& name, const string& str) :
 				abc(abc), name(name) {
@@ -77,7 +78,7 @@ string DigitalSeq::join(const string& sep) {
 	return ostr.str();
 }
 
-DigitalSeq& EGriceLab::DigitalSeq::append(const string& str) {
+DigitalSeq& DigitalSeq::append(const string& str) {
 	for(string::const_iterator it = str.begin(); it != str.end(); ++it) {
 		char c = ::toupper(*it);
 		if(abc->isValid(c))
@@ -155,5 +156,6 @@ bool DigitalSeq::seqEquals(const string& seq, bool allowDegen) const {
 	return allowDegen ? seq == toString() : DigitalSeq(abc, name, seq) == *this;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 

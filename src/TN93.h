@@ -31,6 +31,7 @@
 #include "DNASubModel.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 class TN93: public DNASubModel {
 public:
@@ -170,6 +171,7 @@ inline double TN93::subDist(const Matrix4d& D, double N) const {
 	       - 2 * (r * y - a * g * y / r - t * c * r / y) * ::log(1 - 1 / (2 * r * y) * q);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_TN93_H_ */

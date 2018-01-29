@@ -30,6 +30,7 @@
 #include "DegenAlphabet.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 class DNA: public DegenAlphabet {
 public:
@@ -64,6 +65,8 @@ private:
 	char compl_map[INT8_MAX + 1];
 };
 
+
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* DNA_H_ */

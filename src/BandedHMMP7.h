@@ -50,6 +50,8 @@
 #include "RootFinder.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::string;
 using std::istream;
 using std::ostream;
@@ -858,7 +860,7 @@ inline double BandedHMMP7::hmmValueOf(const string& s) {
 }
 
 inline ostream& hmmPrintValue(ostream& out, double val) {
-	return val != EGriceLab::inf ? out << val : out << "*";
+	return val != inf ? out << val : out << "*";
 }
 
 /**
@@ -888,6 +890,7 @@ struct RelativeEntropyTargetFunc : RootFinder::R2RFunc {
 	BandedHMMP7Prior prior;
 };
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* BANDEDHMMP7_H_ */

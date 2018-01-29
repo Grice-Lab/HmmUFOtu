@@ -42,6 +42,7 @@
 #include "OTUObserved.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 using std::string;
 using std::vector;
@@ -405,6 +406,7 @@ inline bool OTUTable::removeOTU(const string& otuID) {
 	return removeOTU(std::find(otus.begin(), otus.end(), otuID) - otus.begin());
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_OTUTABLE_H_ */

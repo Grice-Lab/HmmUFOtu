@@ -46,13 +46,14 @@
 
 using namespace std;
 using namespace EGriceLab;
+using namespace EGriceLab::HmmUFOtu;
 
 /**
  * default options
  */
 static const string DEFAULT_FMT = "fasta";
 
-static const double DEFAULT_MAX_DIST = EGriceLab::inf;
+static const double DEFAULT_MAX_DIST = inf;
 static const double DEFAULT_MEAN_SIZE = 500;
 static const double DEFAULT_SD_SIZE = 30;
 static const double DEFAULT_MIN_SIZE = 0;
@@ -333,7 +334,7 @@ int main(int argc, char* argv[]) {
 	const PTUnrooted::ModelPtr& model = ptu.getModel();
 	const Vector4d& pi = model->getPi();
 
-	if(maxDist != EGriceLab::inf) { /* if -d specified */
+	if(maxDist != inf) { /* if -d specified */
 		/* alter the node_dist weight */
 		for(size_t i = 0; i < numNodes; ++i)
 			if(ptu.getHeight(i) > maxDist)

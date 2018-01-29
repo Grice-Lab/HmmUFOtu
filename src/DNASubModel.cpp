@@ -31,6 +31,8 @@
 #include "DNASubModel.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 using namespace Eigen;
 
@@ -161,4 +163,5 @@ Matrix4d DNASubModel::constrainedQfromP(Matrix4d P, bool reversible) {
 	return Q;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

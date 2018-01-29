@@ -29,6 +29,8 @@
 #include "PrimarySeq.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 
 bool PrimarySeq::isValidate() const {
@@ -71,4 +73,5 @@ string::size_type PrimarySeq::numGap() const {
 	return n;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

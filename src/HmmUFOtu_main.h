@@ -38,8 +38,9 @@
 #include <boost/lexical_cast.hpp>
 #include "HmmUFOtu.h"
 
-namespace EGriceLab
-{
+namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::string;
 using std::vector;
 using std::ostream;
@@ -68,8 +69,8 @@ struct PTLoc {
 /** A candidate Phylogenetic Tree Placement to store (partially) placement information */
 struct PTPlacement {
 //	/** default constructor */
-	PTPlacement() : ratio(EGriceLab::nan), wnr(EGriceLab::nan), loglik(EGriceLab::nan),
-			height(EGriceLab::nan), annoDist(EGriceLab::nan), qPlace(EGriceLab::nan), qTaxon(EGriceLab::nan)
+	PTPlacement() : ratio(nan), wnr(nan), loglik(nan),
+			height(nan), annoDist(nan), qPlace(nan), qTaxon(nan)
 	{ }
 
 	/** construct a placement with basic info and optionally auxilary info */
@@ -198,6 +199,7 @@ inline bool compareByQTaxon(const PTPlacement& lhs, const PTPlacement& rhs) {
 	return lhs.qTaxon < rhs.qTaxon;
 }
 
-} /* End namespace EGriceLab */
+} /* namespace HmmUFOtu */
+} /* namespace EGriceLab */
 
 #endif /* SRC_HMMUFOTU_MAIN_H_ */

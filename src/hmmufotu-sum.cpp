@@ -49,6 +49,7 @@
 
 using namespace std;
 using namespace EGriceLab;
+using namespace EGriceLab::HmmUFOtu;
 using namespace Eigen;
 
 /* default values */
@@ -364,8 +365,8 @@ int main(int argc, char* argv[]) {
 			double qTaxon = ::atof(record.getFieldByName("Q_taxon").c_str());
 
 			if(taxon_id >= 0 && qTaxon >= minQ
-					&& EGriceLab::alignIdentity(abc, aln, csStart - 1, csEnd -1)
-					&& EGriceLab::hmmIdentity(hmm, aln, csStart - 1, csEnd - 1)) { /* a valid assignment */
+					&& alignIdentity(abc, aln, csStart - 1, csEnd -1)
+					&& hmmIdentity(hmm, aln, csStart - 1, csEnd - 1)) { /* a valid assignment */
 				const PTUnrooted::PTUNodePtr& node = ptu.getNode(taxon_id);
 				string otuID = otuPrefix + boost::lexical_cast<string>(node->getId());
 				if(otuData.count(node) == 0) /* not initiated */ {

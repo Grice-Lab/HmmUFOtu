@@ -34,6 +34,7 @@
 
 using namespace std;
 using namespace EGriceLab;
+using namespace EGriceLab::HmmUFOtu;
 
 /** default values */
 static const string ALPHABET = "dna";
@@ -187,7 +188,7 @@ int main(int argc, char* argv[]) {
 	infoLog << "MSA database created for " << msa.getNumSeq() << " X " << msa.getCSLen() << " aligned sequences" << endl;
 
 	/* build ptu */
-	EGriceLab::NewickTree NTree;
+	NewickTree NTree;
 	treeIn >> NTree;
 	if(treeIn.bad()) {
 		cerr << "Unable to read Newick tree in '" << treeFn << "'" << ::strerror(errno) << endl;

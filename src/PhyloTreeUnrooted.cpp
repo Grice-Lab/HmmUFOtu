@@ -43,6 +43,8 @@
 #include "DNASubModelFactory.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 using namespace EGriceLab;
 using Eigen::Map;
@@ -996,6 +998,7 @@ boost::unordered_set<PTUnrooted::PTUNodePtr> PTUnrooted::getAncestors(const boos
 	return ancestors;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 

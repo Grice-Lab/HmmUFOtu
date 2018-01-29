@@ -6,6 +6,8 @@
 
 using namespace std;
 using namespace EGriceLab;
+using namespace EGriceLab::HmmUFOtu;
+
 int main(int argc, char *argv[]) {
 	if(argc != 3) {
 		cerr << "Usage:  " << argv[0] << " DB-INFILE DB-OUTFILE" << endl;

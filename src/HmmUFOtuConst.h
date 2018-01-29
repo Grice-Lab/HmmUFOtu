@@ -32,6 +32,8 @@
 #define HMMUFOTUCONST_H_
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::string;
 using std::istream;
 using std::ostream;
@@ -49,9 +51,9 @@ const string PHYLOTREE_FILE_SUFFIX = ".ptu";
 const string GZIP_FILE_SUFFIX = ".gz";
 const string BZIP2_FILE_SUFFIX = ".bz2";
 
-const std::string progName = "HmmUFOtu";
-
 const int MAX_NAME_LENGTH = 4096;
 
-} /* end namespace EGriceLab */
+} /* namespace HmmUFOtu */
+} /* namespace EGriceLab */
+
 #endif /* HMMUFOTUCONST_H_ */

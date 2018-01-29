@@ -31,6 +31,8 @@
 #include <Eigen/Dense>
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::string;
 using Eigen::Matrix4Xd;
 using Eigen::RowVectorXd;
@@ -87,6 +89,7 @@ struct OTUObserved {
 	RowVectorXd count;  /* observed sequence count for each sample separately */
 };
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_OTUOBSERVED_H_ */

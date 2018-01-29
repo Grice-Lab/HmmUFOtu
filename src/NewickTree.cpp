@@ -28,6 +28,8 @@
 #include "NewickTree.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 
 const string& NewickTree::INVALID_CHARS = "()[]':;,";
@@ -37,7 +39,7 @@ istream& NewickTree::read(istream& in) {
 
 	string content; /* store entire newick file in a string */
 
-	EGriceLab::newick_grammar<std::string::const_iterator> grammar;
+	newick_grammar<std::string::const_iterator> grammar;
 
 	/* copy the whole content in input */
 	in.unsetf(std::ios::skipws); /* do not skip whitespaces */
@@ -77,5 +79,5 @@ ostream& NewickTree::write(ostream& out) const {
 	return out;
 }
 
-
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

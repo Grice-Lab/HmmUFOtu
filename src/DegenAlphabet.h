@@ -35,6 +35,8 @@
 #include "HmmUFOtuDef.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::string;
 using std::map;
 
@@ -184,6 +186,7 @@ inline bool operator!=(const DegenAlphabet& lhs, const DegenAlphabet& rhs) {
 	return operator==(lhs, rhs);
 }
 
+} /* namespace HmHmmUFOtu */
 } /* namespace EGriceLab */
 
 

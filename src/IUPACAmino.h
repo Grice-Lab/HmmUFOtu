@@ -33,6 +33,8 @@
 #include "DegenAlphabet.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::string;
 using std::map;
 
@@ -77,6 +79,7 @@ private:
 	static map<char, string> init_IUPAC_map();
 };
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* IUPACAMINO_H_ */

@@ -37,6 +37,8 @@
 #include "StringUtils.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 using namespace Math;
 
@@ -427,4 +429,5 @@ istream& MSA::load(istream& in) {
 	return in;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

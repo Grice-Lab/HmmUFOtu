@@ -31,6 +31,7 @@
 #include "DNASubModel.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 class F81: public DNASubModel {
 public:
@@ -124,6 +125,7 @@ inline double F81::subDist(const Matrix4d& D, double N) const {
 	return - E * ::log(1 - p / E);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_F81_H_ */

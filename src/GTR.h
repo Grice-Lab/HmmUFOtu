@@ -33,6 +33,7 @@
 #include "DNASubModel.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 using std::string;
 using Eigen::Vector4d;
@@ -119,7 +120,7 @@ inline Matrix4d GTR::Pr(double v) const {
 	return U * (lambda * v).array().exp().matrix().asDiagonal() * U_1;
 }
 
-
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* GTR_H_ */

@@ -15,6 +15,8 @@
 #include "OTUTable.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 using namespace Eigen;
 
@@ -210,4 +212,5 @@ void OTUTable::subsetMultinom(size_t min) {
 	delete[] otuPr;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

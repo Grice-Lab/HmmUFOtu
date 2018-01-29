@@ -31,6 +31,8 @@
 #include "StringUtils.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 
 const DegenAlphabet* AlphabetFactory::nuclAbc = new IUPACNucl();
@@ -46,5 +48,6 @@ const DegenAlphabet* AlphabetFactory::getAlphabetByName(const string& alphabet) 
 		throw invalid_argument("Unknown alphabet name found: " + alphabet);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 

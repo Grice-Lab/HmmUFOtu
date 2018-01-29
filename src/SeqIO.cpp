@@ -30,6 +30,8 @@
 #include "StringUtils.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 
 SeqIO::SeqIO(istream* in, const DegenAlphabet* abc, const string& format, int maxLine) :
@@ -135,5 +137,6 @@ void SeqIO::writeFastqSeq(const PrimarySeq& seq) {
 	*out << fastqSep << endl << seq.getQual() << endl;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 

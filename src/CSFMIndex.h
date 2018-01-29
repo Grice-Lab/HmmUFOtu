@@ -39,6 +39,8 @@
 //#include "Array.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::vector;
 using std::istream;
 using std::ostream;
@@ -194,6 +196,7 @@ inline void CSFMIndex::clear() {
 	delete bwt;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* CSFMINDEX_H_ */

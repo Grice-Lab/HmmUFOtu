@@ -32,6 +32,7 @@
 #include "IUPACAmino.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 /**
  * A class for storing common static objects for BioSeq related classes
@@ -45,6 +46,7 @@ public:
 	static const DegenAlphabet* aminoAbc;
 };
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SEQCOMMONS_H_ */

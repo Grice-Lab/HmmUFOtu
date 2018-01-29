@@ -28,6 +28,8 @@
 #include "ProgLog.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 using namespace Eigen;
 
@@ -69,4 +71,5 @@ ostream& JC69::write(ostream& out) const {
 	return out;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

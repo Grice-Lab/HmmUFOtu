@@ -31,6 +31,7 @@
 #include "DNASubModel.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 class K80: public DNASubModel {
 public:
@@ -124,6 +125,7 @@ inline double K80::subDist(const Matrix4d& D, double N) const {
 	return - 1.0 / 2 * ::log(1 - 2 * p - q) - 1.0 / 4 * ::log(1 - 2 * q);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_K80_H_ */

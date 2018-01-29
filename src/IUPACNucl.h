@@ -34,6 +34,8 @@
 #include "DegenAlphabet.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::string;
 using std::map;
 
@@ -78,6 +80,7 @@ private:
 	int8_t compl_map[INT8_MAX + 1];
 };
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* IUPACNUCL_H_ */

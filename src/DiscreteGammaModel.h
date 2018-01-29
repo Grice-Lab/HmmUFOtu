@@ -36,6 +36,7 @@
 using Eigen::VectorXd;
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 class DiscreteGammaModel {
 public:
@@ -143,6 +144,7 @@ inline double DiscreteGammaModel::estimateShape(const VectorXd& X, const string&
 		return 0;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_DISCRETEGAMMAMODEL_H_ */

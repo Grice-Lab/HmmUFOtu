@@ -28,6 +28,7 @@
 #include "BandedHMMP7Bg.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 void BandedHMMP7Bg::init_transPr() {
 	p1 = K >= MIN_BG_K ? K / (K + 1.0) : MIN_BG_K / (MIN_BG_K + 1.0);
@@ -50,4 +51,5 @@ void BandedHMMP7Bg::setBgFreq(const Vector4d& q) {
 		bgFreq = Eigen::Vector4d::Ones() / 4.0; /* use all equal frequencies */
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

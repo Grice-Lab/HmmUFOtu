@@ -30,6 +30,8 @@
 #include "ProgLog.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 using namespace Eigen;
 
@@ -86,4 +88,5 @@ void K80::trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) {
 	kappa = Ti / Tv;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

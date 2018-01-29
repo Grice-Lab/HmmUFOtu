@@ -38,6 +38,7 @@
 using namespace std;
 using namespace cds_static;
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 int32_t CSFMIndex::count(const string& pattern) const {
 	int32_t m = pattern.length();
@@ -337,6 +338,6 @@ void CSFMIndex::buildBWT(const uint8_t* concatSeq) {
     delete[] SA;
 }
 
-
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 

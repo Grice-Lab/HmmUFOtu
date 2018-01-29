@@ -39,6 +39,7 @@ using namespace std;
 using namespace Eigen;
 using namespace EGriceLab;
 using namespace EGriceLab::Math;
+using namespace EGriceLab::HmmUFOtu;
 
 static const int DEFAULT_QM = 5;
 static const double DEFAULT_SYMFRAC = 0.5;

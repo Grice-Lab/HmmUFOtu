@@ -33,8 +33,10 @@
 #include "ProgLog.h"
 
 namespace EGriceLab {
+
 /* per-application variables */
 extern int VERBOSE_LEVEL; /* DEFAULT VERBOSE LEVEL */
+extern const std::string progName;
 extern const VersionSequence progVer;
 extern const string projectURL;
 
@@ -62,6 +64,6 @@ ostream& writeProgInfo(ostream& out, const string& info = "");
 /** read progInfo and additional information from a text input */
 istream& readProgInfo(istream& in);
 
-}
+} /* namespace EGriceLab */
 
 #endif /* SRC_HMMUFOTUENV_H_ */

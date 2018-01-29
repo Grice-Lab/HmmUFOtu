@@ -31,6 +31,7 @@
 #include "PrimarySeq.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 using std::string;
 using std::istream;
@@ -190,6 +191,7 @@ inline void SeqIO::writeSeq(const PrimarySeq& seq) {
 	else { } /* do nothing */
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SEQIO_H_ */

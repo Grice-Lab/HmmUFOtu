@@ -35,6 +35,7 @@ using boost::unordered_map;
 using Eigen::Map;
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 void DiscreteGammaModel::setBreaks() {
 	gamma_distribution<double> gammaDist(alpha, alpha);
@@ -90,10 +91,11 @@ ostream& DiscreteGammaModel::save(ostream& out) const {
 
 double DiscreteGammaModel::estimateShapeMoment(const VectorXd& X) {
 	if(X.rows() < 2)
-		return EGriceLab::inf; // cannot estimate alpha, use inf
+		return inf; // cannot estimate alpha, use inf
 	double m = X.mean();
 	double s = (X.array() - m).matrix().squaredNorm() / (X.rows() - 1);
 	return m * m / (s - m);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

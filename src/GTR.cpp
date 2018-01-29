@@ -33,6 +33,8 @@
 #include "ProgLog.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 using namespace Eigen;
 
@@ -165,4 +167,5 @@ double GTR::subDist(const Matrix4d& D, double N) const {
 	return - (U * PSI.array().log().matrix().asDiagonal() * U_1).trace();
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

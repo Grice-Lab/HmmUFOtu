@@ -40,6 +40,8 @@
 #include "LinearAlgebraBasic.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 using namespace Eigen;
 
@@ -755,7 +757,7 @@ void BandedHMMP7::calcViterbiScores(const PrimarySeq& seq, ViterbiScores& vs) co
 	/* Full Dynamic-Programming at row-first order */
 	for (int j = 1; j <= K; ++j) {
 		for (int i = 1; i <= L; ++i) {
-			vs.DP_M(i, j) = E_M_cost(seq.encodeAt(i-1), j) + EGriceLab::BandedHMMP7::min(
+			vs.DP_M(i, j) = E_M_cost(seq.encodeAt(i-1), j) + BandedHMMP7::min(
 					static_cast<double> (vs.DP_M(i, 0) + entryPr_cost(j)), // from the B state
 					static_cast<double> (vs.DP_M(i - 1, j - 1) + Tmat_cost[j-1](M, M)), // from Mi-1,j-1
 					static_cast<double> (vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), // from Ii-1,j-1
@@ -810,7 +812,7 @@ void BandedHMMP7::calcViterbiScores(const PrimarySeq& seq,
 		for (int j = up_start; j <= vpath->start; ++j) {
 			for (int i = up_from; i <= vpath->from; ++i) {
 				vs.DP_M(i, j) = E_M_cost(seq.encodeAt(i - 1), j)
-						+ EGriceLab::BandedHMMP7::min(
+						+ BandedHMMP7::min(
 								static_cast<double>(vs.DP_M(i, 0) + entryPr_cost(j)), // from B state
 								static_cast<double>(vs.DP_M(i - 1, j - 1) + Tmat_cost[j-1](M, M)), // from Mi-1,j-1
 								static_cast<double>(vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), // from Ii-1,j-1
@@ -832,7 +834,7 @@ void BandedHMMP7::calcViterbiScores(const PrimarySeq& seq,
 				if(!(dist <= vpath->nIns && dist >= -vpath->nDel))
 					continue;
 				vs.DP_M(i, j) = E_M_cost(seq.encodeAt(i - 1), j)
-						+ EGriceLab::BandedHMMP7::min(
+						+ BandedHMMP7::min(
 								static_cast<double>(vs.DP_M(i, 0) + entryPr_cost(j)), // from B state
 								static_cast<double>(vs.DP_M(i - 1, j - 1) + Tmat_cost[j-1](M, M)), // from Mi-1,j-1
 								static_cast<double>(vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), // from Ii-1,j-1
@@ -864,7 +866,7 @@ void BandedHMMP7::calcViterbiScores(const PrimarySeq& seq,
 	for (int j = last_end; j <= down_end; ++j) {
 		for (int i = last_to; i <= down_to; ++i) {
 			vs.DP_M(i, j) = E_M_cost(seq.encodeAt(i - 1), j) +
-					EGriceLab::BandedHMMP7::min(
+					BandedHMMP7::min(
 							// from Mi,0, the B state is not possible
 							static_cast<double>(vs.DP_M(i - 1, j - 1) + Tmat_cost[j-1](M, M)), // from Mi-1,j-1
 							static_cast<double>(vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), // from Ii-1,j-1
@@ -1192,4 +1194,5 @@ string& BandedHMMP7::mergeWith(string& fwdAln, const string& revAln) {
 	return fwdAln;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

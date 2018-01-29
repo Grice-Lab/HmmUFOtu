@@ -29,6 +29,7 @@
 
 using namespace std;
 using namespace EGriceLab;
+using namespace EGriceLab::HmmUFOtu;
 using namespace Eigen;
 
 /* default values */
@@ -497,7 +498,7 @@ int main(int argc, char* argv[]) {
 
 							/* estimate placement */
 							vector<PTPlacement> places = estimateSeq(ptu, seq, csStart - 1, csEnd - 1, locs, estMethod);
-							std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by estimated loglik */
+							std::sort(places.rbegin(), places.rend(), compareByLoglik); /* sort places decently by estimated loglik */
 							double bestEstLoglik = places[0].loglik;
 							vector<PTPlacement>::iterator goodPlace;
 							for(goodPlace = places.begin(); goodPlace != places.end(); ++goodPlace) {
@@ -508,11 +509,11 @@ int main(int argc, char* argv[]) {
 							/* accurate placement */
 							placeSeq(ptu, seq, csStart - 1, csEnd - 1, places);
 							if(onlyML) { /* don't calculate q-values */
-								std::sort(places.rbegin(), places.rend(), EGriceLab::compareByLoglik); /* sort places decently by real loglik */
+								std::sort(places.rbegin(), places.rend(), compareByLoglik); /* sort places decently by real loglik */
 							}
 							else { /* calculate q-values */
 								PTPlacement::calcQValues(places, myPrior);
-								std::sort(places.rbegin(), places.rend(), EGriceLab::compareByQPlace); /* sort places decently by posterior placement probability */
+								std::sort(places.rbegin(), places.rend(), compareByQPlace); /* sort places decently by posterior placement probability */
 							}
 
 							bestPlace = places[0];

@@ -33,6 +33,7 @@
 
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 using std::string;
 
@@ -41,6 +42,7 @@ public:
 	static DNASubModel* createModel(const string& type);
 };
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_DNASUBMODELFACTORY_H_ */

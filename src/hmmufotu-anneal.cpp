@@ -37,6 +37,7 @@
 
 using namespace std;
 using namespace EGriceLab;
+using namespace EGriceLab::HmmUFOtu;
 using namespace Eigen;
 
 /* default values */

@@ -29,6 +29,8 @@
 #include "IUPACAmino.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 map<char, string> IUPACAmino::init_IUPAC_map() {
 	map<char, string> IUPAC_map;
 	//IUPAC_map['A'] = string("A");
@@ -57,5 +59,6 @@ map<char, string> IUPACAmino::init_IUPAC_map() {
 	return IUPAC_map;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 

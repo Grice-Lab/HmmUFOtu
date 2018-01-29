@@ -58,6 +58,8 @@
 #include "DiscreteGammaModel.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::string;
 using std::vector;
 using std::set;
@@ -1457,6 +1459,7 @@ inline double PTUnrooted::estimateBranchLength(const Matrix4Xd& U, const Matrix4
 		throw std::invalid_argument("Unknown branch length estimating method '" + method + "'");
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_PHYLOTREEUNROOTED_H_ */

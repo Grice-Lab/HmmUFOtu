@@ -12,6 +12,8 @@
 #include <string>
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::string;
 /**
  * A public class for describing a region on the consensus seq (CS)
@@ -44,6 +46,7 @@ struct CSLoc {
 	string CS; // CS string
 };
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_CSLOC_H_ */

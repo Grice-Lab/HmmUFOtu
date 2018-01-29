@@ -30,6 +30,7 @@
 #include "DigitalSeq.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 class SeqUtils {
 public:
@@ -74,6 +75,7 @@ public:
 
 };
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_SEQUTILS_H_ */

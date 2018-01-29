@@ -8,5 +8,7 @@
 #include "CSLoc.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

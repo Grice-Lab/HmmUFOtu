@@ -40,6 +40,8 @@
 #include "ProgLog.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::string;
 using std::vector;
 using std::ifstream;
@@ -526,6 +528,7 @@ inline bool MSA::saveMSAFile(const string& filename, const string& format) {
 	else throw invalid_argument("Cannot save MSA to file, unsupported MSA file format " + format);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* MSA_H_ */

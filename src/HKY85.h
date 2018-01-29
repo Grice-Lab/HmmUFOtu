@@ -31,6 +31,7 @@
 #include "DNASubModel.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 class HKY85: public DNASubModel {
 public:
@@ -166,6 +167,7 @@ inline double HKY85::subDist(const Matrix4d& D, double N) const {
 	return - 2 * A * ::log(1 - p / (2 * A) - (A - B) * q / (2 * A * C));
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_HKY85_H_ */

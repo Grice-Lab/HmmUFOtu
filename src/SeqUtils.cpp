@@ -28,6 +28,8 @@
 #include "SeqUtils.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 double SeqUtils::pDist(const DigitalSeq& seq1, const DigitalSeq& seq2,
 		DigitalSeq::size_type start, DigitalSeq::size_type end) {
 	assert(seq1.getAbc() == seq2.getAbc());
@@ -79,4 +81,5 @@ double SeqUtils::pDist(const string& seq1, const DigitalSeq& seq2, size_t start,
 	return static_cast<double>(d) / (end - start + 1);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

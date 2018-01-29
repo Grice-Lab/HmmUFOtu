@@ -36,6 +36,8 @@
 #include "StringUtils.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::string;
 using std::invalid_argument;
 /**
@@ -296,6 +298,7 @@ inline PrimarySeq PrimarySeq::trunc(string::size_type pos, string::size_type len
 	return PrimarySeq(abc, id, seq.substr(pos, len), desc, qual);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* PRIMARYSEQ_H_ */

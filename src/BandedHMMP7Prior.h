@@ -37,6 +37,8 @@
 #include "DirichletMixture.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::istream;
 using std::ostream;
 using std::endl;
@@ -135,6 +137,7 @@ inline void BandedHMMP7Prior::setRelEpsParams(double eps) {
 	dmDT.setRelEpsParams(eps);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_BANDEDHMMP7PRIOR_H_ */

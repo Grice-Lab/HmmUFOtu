@@ -33,6 +33,7 @@
 #include "JC69.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 DNASubModel* DNASubModelFactory::createModel(const string& type) {
 	if(type == "GTR")
@@ -51,6 +52,7 @@ DNASubModel* DNASubModelFactory::createModel(const string& type) {
 		throw std::invalid_argument("Unknown DNA Substitution Model type: " + type);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 

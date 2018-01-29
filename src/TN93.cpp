@@ -30,6 +30,8 @@
 #include "ProgLog.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 using namespace Eigen;
 
@@ -99,4 +101,5 @@ void TN93::trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) {
 	setBeta();
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

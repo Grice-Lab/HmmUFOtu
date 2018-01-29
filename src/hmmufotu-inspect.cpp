@@ -30,6 +30,7 @@
 
 using namespace std;
 using namespace EGriceLab;
+using namespace EGriceLab::HmmUFOtu;
 
 static const string TREE_FORMAT = "newick";
 
@@ -255,7 +256,7 @@ int main(int argc, char* argv[]) {
 	if(annoOut.is_open()) {
 		infoLog << "Writing tree node taxonomy annotation ..." << endl;
 		for(size_t i = 0; i < ptu.numNodes(); ++i) {
-			const EGriceLab::PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
+			const PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
 			annoOut << (nodePrefix + boost::lexical_cast<string>(node->getId()))
 					<< "\t" << node->getTaxon() << endl;
 		}
@@ -264,7 +265,7 @@ int main(int argc, char* argv[]) {
 	if(seqOut.is_open()) {
 		infoLog << "Writing sequence alignment ..." << endl;
 		for(size_t i = 0; i < ptu.numNodes(); ++i) {
-			const EGriceLab::PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
+			const PTUnrooted::PTUNodePtr& node = ptu.getNode(i);
 			if(!leafOnly || node->isLeaf())
 				seqO.writeSeq(PrimarySeq(abc, nodePrefix + boost::lexical_cast<string>(node->getId()), node->getSeq().toString(), node->getTaxon()));
 		}

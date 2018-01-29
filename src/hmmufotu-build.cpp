@@ -40,6 +40,7 @@
 
 using namespace std;
 using namespace EGriceLab;
+using namespace EGriceLab::HmmUFOtu;
 
 /** default values */
 static const double DEFAULT_SYMFRAC = 0.5;
@@ -292,7 +293,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* build ptu */
-	EGriceLab::NewickTree NTree;
+	NewickTree NTree;
 	treeIn >> NTree;
 	if(treeIn.bad()) {
 		cerr << "Unable to read Newick tree in '" << treeFn << "'" << ::strerror(errno) << endl;

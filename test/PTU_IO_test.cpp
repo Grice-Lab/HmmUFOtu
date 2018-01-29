@@ -15,6 +15,7 @@
 
 using namespace std;
 using namespace EGriceLab;
+using namespace EGriceLab::HmmUFOtu;
 
 int main(int argc, const char* argv[]) {
 	if(argc != 3) {

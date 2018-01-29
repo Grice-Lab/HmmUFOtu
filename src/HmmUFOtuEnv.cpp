@@ -33,9 +33,11 @@
 #include "StringUtils.h"
 
 namespace EGriceLab {
+
 using namespace std;
 
 int VERBOSE_LEVEL = LOG_WARNING; /* DEFAULT VERBOSE LEVEL */
+const std::string progName = "HmmUFOtu";
 const VersionSequence progVer("v1.2.5");
 const string projectURL = "https://github.com/Grice-Lab/HmmUFOtu";
 
@@ -95,7 +97,7 @@ istream& readProgInfo(istream& in) {
 	string header;
 	std::getline(in, header);
 	/* check program info */
-	char pname[MAX_NAME_LENGTH], ver[MAX_NAME_LENGTH];
+	char pname[HmmUFOtu::MAX_NAME_LENGTH], ver[HmmUFOtu::MAX_NAME_LENGTH];
 	if(sscanf(header.c_str(), "# %s %s", pname, ver) != 2) {
 		cerr << "Unrecognized input file for " << progName << endl;
 		in.setstate(ios_base::badbit);
@@ -121,4 +123,4 @@ istream& readProgInfo(istream& in) {
 	return in;
 }
 
-}
+} /* namespace EGriceLab */

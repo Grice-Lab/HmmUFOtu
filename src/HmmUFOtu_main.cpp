@@ -32,14 +32,15 @@
 using namespace std;
 using namespace Eigen;
 
-namespace EGriceLab
-{
+namespace EGriceLab {
+namespace HmmUFOtu {
+
 const string PTPlacement::UNASSIGNED_TAXONNAME = "UNASSIGNED";
-const double PTPlacement::UNASSIGNED_LOGLIK = EGriceLab::nan;
+const double PTPlacement::UNASSIGNED_LOGLIK = nan;
 const string PTPlacement::UNASSIGNED_ID = "NULL";
-const double PTPlacement::UNASSIGNED_POSTQ = EGriceLab::nan;
-const double PTPlacement::UNASSIGNED_DIST = EGriceLab::nan;
-const double PTPlacement::UNASSIGNED_RATIO = EGriceLab::nan;
+const double PTPlacement::UNASSIGNED_POSTQ = nan;
+const double PTPlacement::UNASSIGNED_DIST = nan;
+const double PTPlacement::UNASSIGNED_RATIO = nan;
 
 void PTPlacement::calcQValues(vector<PTPlacement>& places, PRIOR_TYPE type) {
 	if(places.empty())
@@ -272,4 +273,6 @@ double hmmIdentity(const BandedHMMP7& hmm, const string& align, int start, int e
 	return static_cast<double> (identity) / nSite;
 }
 
-} /* End namespace EGriceLab */
+
+} /* namespace HmmUFOtu */
+} /* namespace EGriceLab */

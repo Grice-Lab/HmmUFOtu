@@ -31,6 +31,7 @@
 #include "DNASubModel.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 class JC69: public DNASubModel {
 public:
@@ -106,6 +107,7 @@ inline double JC69::subDist(const Matrix4d& D, double N) const {
 	return - 3.0 / 4.0 * ::log(1.0 - 4.0 / 3.0 * p);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_JC69_H_ */

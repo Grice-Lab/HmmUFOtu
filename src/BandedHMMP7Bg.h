@@ -35,6 +35,8 @@
 #include "IUPACNucl.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using Eigen::Vector4d;
 /*
  * A class to represent the background transition and emission distributions of a null banded p7 model,
@@ -116,6 +118,7 @@ private:
 	static const int MIN_BG_K = 350; /* min profile length used to set bg transition probability */
 };
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* BANDEDHMMP7BG_H_ */

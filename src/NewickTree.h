@@ -44,6 +44,7 @@
 #include <boost/spirit/include/phoenix_object.hpp>
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 using std::string;
 using std::vector;
@@ -133,17 +134,20 @@ inline ostream& operator<<(ostream& out, const NT& tree) {
 	return out << ';';
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 // adapt the structure to fusion phoenix
 BOOST_FUSION_ADAPT_STRUCT(
-	EGriceLab::NewickTree,
+	EGriceLab::HmmUFOtu::NewickTree,
 	(std::string, name)
 	(double, length)
-	(std::vector<EGriceLab::NT>, children)
+	(std::vector<EGriceLab::HmmUFOtu::NT>, children)
 )
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 /* namespace aliasing */
 namespace qi = boost::spirit::qi;
 namespace phoenix = boost::phoenix;
@@ -223,6 +227,7 @@ struct newick_grammar :
 	qi::rule<Iterator, std::string()> unquoted_label, quoted_label, label;
 };
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* SRC_NEWICKTREE_H_ */

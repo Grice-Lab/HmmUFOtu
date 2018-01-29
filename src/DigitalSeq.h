@@ -36,6 +36,8 @@
 #include "PrimarySeq.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using std::string;
 using std::istream;
 using std::ostream;
@@ -218,6 +220,7 @@ inline bool operator>=(const DigitalSeq& lhs, const DigitalSeq& rhs) {
 	return !(lhs < rhs);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* DIGITALSEQ_H_ */

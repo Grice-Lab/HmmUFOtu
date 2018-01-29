@@ -27,6 +27,7 @@
 #include "DNA.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 map<char, string> DNA::init_DNA_map() {
 	map<char, string> dna_map;
@@ -35,7 +36,7 @@ map<char, string> DNA::init_DNA_map() {
 	return dna_map;
 }
 
-DNA::DNA() : EGriceLab::DegenAlphabet("DNA", "ACGT", "UN", init_DNA_map()), compl_map() /* zero-initiazation */ {
+DNA::DNA() : DegenAlphabet("DNA", "ACGT", "UN", init_DNA_map()), compl_map() /* zero-initiazation */ {
 	// std::cerr << "Constructing IUPACNucl" << std::endl;
 	compl_map['A'] = 'T';
 	compl_map['T'] = 'A';
@@ -45,4 +46,5 @@ DNA::DNA() : EGriceLab::DegenAlphabet("DNA", "ACGT", "UN", init_DNA_map()), comp
 	compl_map['N'] = 'N';
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

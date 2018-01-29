@@ -40,6 +40,7 @@
 #include "HmmUFOtuConst.h"
 
 namespace EGriceLab {
+namespace HmmUFOtu {
 
 using std::string;
 using std::istream;
@@ -216,6 +217,7 @@ inline ostream& operator<<(ostream& out, const DNASubModel& model) {
 	return model.write(out);
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
 #endif /* DNASUBMODEL_H_ */

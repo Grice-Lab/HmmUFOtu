@@ -33,6 +33,8 @@
 #include <iostream>
 
 namespace EGriceLab {
+namespace HmmUFOtu {
+
 using namespace std;
 
 const int8_t DegenAlphabet::INVALID_BASE = -1;
@@ -78,5 +80,6 @@ bool operator==(const DegenAlphabet& lhs, const DegenAlphabet& rhs) {
 			lhs.degen_map == rhs.degen_map && lhs.gap == rhs.gap;
 }
 
+} /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 
