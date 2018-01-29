@@ -557,12 +557,12 @@ public:
 	/**
 	 * annotate every node of this tree
 	 */
-	void annotate();
+	void annotate(const string& rootName = DEFAULT_ROOT_NAME);
 
 	/**
 	 * annotate a node, either by itself or by a named nearest neighbor
 	 */
-	void annotate(const PTUNodePtr& node);
+	void annotate(const PTUNodePtr& node, const string& rootName = DEFAULT_ROOT_NAME);
 
 	/**
 	 * Set the underlying DNA Sub Model as a copy of given model
@@ -1215,6 +1215,8 @@ public:
 	static const string FAMILY_PREFIX;
 	static const string GENUS_PREFIX;
 	static const string SPECIES_PREFIX;
+
+	static const string DEFAULT_ROOT_NAME;
 
 	static const Matrix4d leafMat; /* cached 4 X  leaf loglik matrix,
 						with each column the pre-computed loglik of observing A, C, G, T at any given site */

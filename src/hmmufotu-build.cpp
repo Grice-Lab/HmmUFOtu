@@ -74,6 +74,7 @@ void printUsage(const string& progName) {
 		 << "            --fmt  STR           : MSA format, supported format: 'fasta'" << endl
 		 << "            -f|--symfrac  DOUBLE : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
 		 << "            -a|--anno  FILE      : use tab-delimited taxonamy annotation file for the sequences in the MSA and TREE files" << endl
+		 << "            -r|--root  STR       : root name if the original tree root is not named [" << PhyloTreeUnrooted::DEFAULT_ROOT_NAME << "]" << endl
 		 << "            -dm  FILE            : use customized trained Dirichlet Model in FILE instead of the build-in file" << endl
 		 << "            -s|--sub-model STR   : use built-in DNA Substitution Model of this type, must be one of GTR, TN93, HKY85, F81, K80 or JC69 [" << DEFAULT_SM_TYPE << "]" << endl
 		 << "            -sm  FILE            : use customized trained DNA Substitution Model in FILE instead of the build-in model, will override -s if specified" << endl
@@ -94,6 +95,7 @@ int main(int argc, char* argv[]) {
 	ifstream dmIn, smIn, seqIn, treeIn, annoIn;
 	ofstream msaOut, csfmOut, hmmOut, ptuOut;
 	string fmt;
+	string rootName = PhyloTreeUnrooted::DEFAULT_ROOT_NAME;
 	string smType = DEFAULT_SM_TYPE;
 	double symfrac = DEFAULT_SYMFRAC;
 	string dmFn;
@@ -143,6 +145,11 @@ int main(int argc, char* argv[]) {
 		annoFn = cmdOpts.getOpt("-a");
 	if(cmdOpts.hasOpt("--anno"))
 		annoFn = cmdOpts.getOpt("--anno");
+
+	if(cmdOpts.hasOpt("-r"))
+		rootName = cmdOpts.getOpt("-r");
+	if(cmdOpts.hasOpt("--root"))
+		rootName = cmdOpts.getOpt("--root");
 
 	dmFn = PKG_DATADIR + string("/") + DEFAULT_DM_FILE;
 	if(!ifstream(dmFn.c_str()).good())
@@ -351,7 +358,7 @@ int main(int argc, char* argv[]) {
 	tree.formatName();
 	infoLog << "Taxon names formatted" << endl;
 
-	tree.annotate();
+	tree.annotate(rootName);
 	infoLog << "Unnamed tree nodes annotated" << endl;
 //	for(int i = 0; i < tree.numNodes(); ++i)
 //		cerr << "ID: " << tree.getNode(i)->getId() << " annotation: " << tree.getNode(i)->getTaxon() << endl;

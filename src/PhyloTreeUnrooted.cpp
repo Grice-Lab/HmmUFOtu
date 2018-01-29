@@ -68,6 +68,9 @@ const string PhyloTreeUnrooted::ORDER_PREFIX = "o__";
 const string PhyloTreeUnrooted::FAMILY_PREFIX = "f__";
 const string PhyloTreeUnrooted::GENUS_PREFIX = "g__";
 const string PhyloTreeUnrooted::SPECIES_PREFIX = "s__";
+
+const string PhyloTreeUnrooted::DEFAULT_ROOT_NAME = "cellular_organisms";
+
 const Matrix4d PhyloTreeUnrooted::leafMat = initLeafMat();
 const PTUnrooted::DGammaPtr PhyloTreeUnrooted::nulldG;
 const PTUnrooted::PTUNodePtr PhyloTreeUnrooted::nullNode;
@@ -863,12 +866,12 @@ string PhyloTreeUnrooted::formatTaxonName(const string& taxon) {
 	return boost::join(formatedTaxon, ";");
 }
 
-void PhyloTreeUnrooted::annotate() {
+void PhyloTreeUnrooted::annotate(const string& rootName) {
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
-		annotate(*node);
+		annotate(*node, rootName);
 }
 
-void PhyloTreeUnrooted::annotate(const PTUNodePtr& node) {
+void PhyloTreeUnrooted::annotate(const PTUNodePtr& node, const string& rootName) {
 	vector<string> annoPath;
 	PTUNodePtr p(node); /* pointer to current node */
 	while(!isFullCanonicalName(p->name) && !p->isRoot()) { /* a non-full canonical named node */
@@ -880,7 +883,7 @@ void PhyloTreeUnrooted::annotate(const PTUNodePtr& node) {
 	if(isFullCanonicalName(p->name))
 		annoPath.push_back(p->name); /* push last name */
 	std::reverse(annoPath.begin(), annoPath.end()); /* reverse the annoPath */
-	node->anno = !annoPath.empty() ? boost::join(annoPath, ";") : "Other";
+	node->anno = !annoPath.empty() ? boost::join(annoPath, ";") : rootName;
 }
 
 size_t PhyloTreeUnrooted::estimateNumMutations(int j) const {
