@@ -5,17 +5,19 @@ AM_CFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/math \
 -I$(top_srcdir)/src/libdivsufsort/include \
 -I$(top_srcdir)/src/libcds/include \
-$(BOOST_CPPFLAGS)
+$(BOOST_CPPFLAGS) \
+$(OPENMP_CFLAGS)
 
 AM_CXXFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/util \
 -I$(top_srcdir)/src/math \
 -I$(top_srcdir)/src/libdivsufsort/include \
 -I$(top_srcdir)/src/libcds/include \
-$(BOOST_CPPFLAGS)
+$(BOOST_CPPFLAGS) \
+$(OPENMP_CFLAGS)
 
-AM_CPPFLAGS = $(BOOST_CPPFLAGS)
-AM_LDFLAGS = $(BOOST_LDFLAGS)
+AM_CPPFLAGS = $(BOOST_CPPFLAGS) $(OPENMP_CFLAGS)
+AM_LDFLAGS = $(BOOST_LDFLAGS) $(OPENMP_CFLAGS)
 
 # Build convenient libraries
 noinst_LIBRARIES = libHmmUFOtu_common.a libHmmUFOtu_hmm.a libHmmUFOtu_phylo.a libHmmUFOtu_OTU.a
@@ -94,8 +96,6 @@ hmmufotu_inspect_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_commo
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 
 hmmufotu_SOURCES = hmmufotu.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
-hmmufotu_CPPFLAGS = $(OPENMP_CFLAGS) $(BOOST_CPPFLAGS)
-hmmufotu_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CFLAGS)
 hmmufotu_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
 $(BOOST_IOSTREAMS_LIB)
