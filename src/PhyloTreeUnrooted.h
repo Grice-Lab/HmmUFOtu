@@ -352,10 +352,10 @@ public:
 
 	public:
 		/** default constructor */
-		PhyloTreeUnrootedBranch() : length(0) { }
+		PhyloTreeUnrootedBranch() {  }
 
 		/** construct a branch with given length */
-		PhyloTreeUnrootedBranch(double length) : length(length) { }
+		explicit PhyloTreeUnrootedBranch(double length) : length(length) {  }
 
 		/** construct a branch with given length and loglik */
 		PhyloTreeUnrootedBranch(double length, const Matrix4Xd& loglik) :
@@ -449,6 +449,19 @@ public:
 	void removeEdge(const PTUNodePtr& u, const PTUNodePtr& v) {
 		u->neighbors.erase(std::find(u->neighbors.begin(), u->neighbors.end(), v));
 		v->neighbors.erase(std::find(v->neighbors.begin(), v->neighbors.end(), u));
+	}
+
+	/**
+	 * add edgeID from given pair of branches
+	 * @return  the childId if they are parent/child, or -1 if not
+	 */
+	long getEdgeID(const PTUNodePtr& u, const PTUNodePtr& v) const {
+		if(isChild(u, v))
+			return u->id;
+		else if(isChild(v, u))
+			return v->id;
+		else
+			return -1;
 	}
 
 	/**
@@ -586,6 +599,13 @@ public:
 	}
 
 	/**
+	 * test whether among-site varation is enabled
+	 */
+	bool isVar() const {
+		return dG != nulldG;
+	}
+
+	/**
 	 * Set the underlying DG Model as a copy of given model
 	 */
 	void setDGModel(const DiscreteGammaModel& dG) {
@@ -607,11 +627,11 @@ public:
 	}
 
 	/**
-	 * save raw object data to output
+	 * save PTUnrooted to binary output
 	 */
 	ostream& save(ostream& out) const;
 
-	/** load raw object data from input */
+	/** load PTUnrooted from a binary input */
 	istream& load(istream& in);
 
 	/**
@@ -835,6 +855,11 @@ public:
 	NewickTree convertToNewickTree(const boost::unordered_set<PTUNodePtr>& subset, const string& prefix = "") const {
 		return convertToNewickTree(root, subset, prefix);
 	}
+
+	/**
+	 * convert this subtree to JPlace tree string, which has additional edge number information and violate the Newick grammar
+	 */
+	string toJPlaceTreeStr(const PTUNodePtr& node) const;
 
 public:
 	/**

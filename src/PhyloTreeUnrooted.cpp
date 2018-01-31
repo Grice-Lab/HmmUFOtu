@@ -1013,6 +1013,30 @@ boost::unordered_set<PTUnrooted::PTUNodePtr> PTUnrooted::getAncestors(const boos
 	return ancestors;
 }
 
+string PTUnrooted::toJPlaceTreeStr(const PTUnrooted::PTUNodePtr& node) const {
+	string str;
+	bool first = true;
+	if(!node->isLeaf()) {
+		str += "(";
+		for(std::vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
+			if((*child)->isChild(node)) {
+				str += first ? "" : ",";
+				str += toJPlaceTreeStr(*child);
+				first = false;
+			}
+		}
+		str += ")";
+	}
+	str += boost::lexical_cast<string>(node->id);
+	double length = getBranchLength(node, node->parent);
+	if(length > 0)
+		str += ":" + boost::lexical_cast<string>(length);
+	long edgeID = getEdgeID(node, node->parent);
+	if(edgeID >= 0)
+		str += "{" + boost::lexical_cast<string>(edgeID) + "}";
+	return str;
+}
+
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 

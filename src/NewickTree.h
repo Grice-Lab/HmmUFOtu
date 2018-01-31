@@ -19,11 +19,7 @@
  *******************************************************************************/
 /*
  * NewickTree.h
- *  A NewickTree class
- *  A NewickTree is a rooted, bi/multi-furcating phylogenetic tree
- *  A NewickTree only stores the basic relationship between tree nodes and their children, and branch length to parent
- *  but not their parent directly
- *  Tree nodes can be unnamed or even duplicated
+
  *  Created on: Dec 2, 2016
  *      Author: zhengqi
  */
@@ -55,8 +51,14 @@ struct NewickTree;
 
 typedef NewickTree NT;
 
+/**
+ *  A NewickTree type
+ *  A NewickTree is a rooted, bi/multi-furcating phylogenetic tree
+ *  A NewickTree only stores the basic relationship between tree nodes and their children, and branch length to parent
+ *  but not their parent directly
+ *  Tree nodes can be unnamed or even duplicated
+ */
 struct NewickTree {
-public:
 	/* constructors */
 	/** Default constructor */
 	NewickTree() : length(0) { }
@@ -64,6 +66,9 @@ public:
 	/** Construct a Newick tree node with given name and an optional parent distance */
 	explicit NewickTree(const string& name, double length = 0) : name(name), length(length)
 	{ }
+
+	/** destructor */
+	virtual ~NewickTree() {  }
 
 	/* Member methods */
 	/** test whether this node is named */
@@ -101,14 +106,14 @@ public:
 	 * @param in  input stream
 	 * @return  the modified input
 	 */
-	istream& read(istream& in);
+	virtual istream& read(istream& in);
 
 	/**
 	 * Write the tree structure to a output in Newick format
 	 * @param out  output stream
 	 * @return  the modified output
 	 */
-	ostream& write(ostream& out) const;
+	virtual ostream& write(ostream& out) const;
 
 	/* non-member functions */
 	friend istream& operator>>(istream& in, NT& tree);
@@ -125,6 +130,12 @@ public:
 
 	/* static methods */
 	static bool isNewickFileExt(const string& fn);
+
+	/** generate quoted node name, if it is neccesary */
+	static string quoteName(const string& name) {
+		return StringUtils::containsWhiteSpace(name) || StringUtils::containsAny(name, INVALID_CHARS) ?
+				"'" + name + "'" : name;
+	}
 
 }; /* struct NewickTree */
 
@@ -230,6 +241,7 @@ struct newick_grammar :
 	qi::rule<Iterator, double()> branch_length;
 	qi::rule<Iterator, std::string()> unquoted_label, quoted_label, label;
 };
+
 
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

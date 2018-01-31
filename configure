@@ -17273,7 +17273,7 @@ done
 
 
 #AC_FUNC_MALLOC
-
+# auxinary features
 #
 # Handle user hints
 #

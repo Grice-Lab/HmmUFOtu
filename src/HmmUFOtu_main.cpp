@@ -273,6 +273,13 @@ double hmmIdentity(const BandedHMMP7& hmm, const string& align, int start, int e
 	return static_cast<double> (identity) / nSite;
 }
 
+JPlace::JPlace(int edgeID, string readName, double edgeLen, double ratio,
+		double loglik, double annoDist, double q)
+: edgeID(edgeID), readName(readName), likelihood(loglik), distal_length(edgeLen * ratio), proximal_length(edgeLen * (1.0 - ratio))
+{
+	pendant_length = ratio <= 0.5 ? annoDist - distal_length : annoDist - proximal_length;
+	like_ratio = q >= MAX_Q ? 1 : Math::q2p(q);
+}
 
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

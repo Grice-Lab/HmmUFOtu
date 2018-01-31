@@ -144,6 +144,32 @@ struct PTPlacement {
 	static const double UNASSIGNED_RATIO;
 };
 
+/**
+ * A JSON Placement type for holding an HmmUFOtu placement result
+ */
+struct JPlace {
+	/* constructors */
+	/** default constructor */
+	JPlace() {  }
+
+	/** construct a JPlacement from PTPlacment info */
+	JPlace(int edgeID, string readName, double edgeLen, double ratio,
+			double loglik, double annoDist, double q);
+
+	/* member fields */
+	int edgeID;
+	string readName;
+	double likelihood;
+	double like_ratio;
+	double distal_length;
+	double proximal_length;
+	double pendant_length;
+
+	/* static member fields */
+	static const int MAX_Q = 250; /* maximum allowed Q value */
+
+};
+
 /** Align seq with hmm and csfm, returns the alignment and update csStart and csEnd */
 string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
 		int seedLen, int seedRegion, BandedHMMP7::align_mode mode,

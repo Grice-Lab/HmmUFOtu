@@ -49,6 +49,7 @@ const string CSFM_FILE_SUFFIX = ".csfm";
 const string HMM_FILE_SUFFIX = ".hmm";
 const string SUB_MODEL_FILE_SUFFIX = ".sm";
 const string PHYLOTREE_FILE_SUFFIX = ".ptu";
+const string JPLACE_FILE_SUFFIX = ".jplace";
 
 const string GZIP_FILE_SUFFIX = ".gz";
 const string BZIP2_FILE_SUFFIX = ".bz2";

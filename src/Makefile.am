@@ -71,7 +71,8 @@ hmmufotu \
 hmmufotu-sum \
 hmmufotu-anneal \
 hmmufotu-subset \
-hmmufotu-norm
+hmmufotu-norm \
+hmmufotu-jplace
 
 hmmufotu_train_dm_SOURCES=hmmufotu-train-dm.cpp HmmUFOtuEnv.cpp
 hmmufotu_train_dm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a util/libEGUtil.a math/libEGMath.a
@@ -106,7 +107,6 @@ hmmufotu_sum_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a lib
 util/libEGUtil.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
 $(BOOST_IOSTREAMS_LIB)
-hmmufotu_sum_LDFLAGS = $(BOOST_LDFLAGS)
 
 hmmufotu_anneal_SOURCES = hmmufotu-anneal.cpp HmmUFOtuEnv.cpp
 hmmufotu_anneal_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a \
@@ -118,3 +118,9 @@ hmmufotu_subset_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_common.a util/libEGUtil.a
 
 hmmufotu_norm_SOURCES = hmmufotu-norm.cpp HmmUFOtuEnv.cpp
 hmmufotu_norm_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_common.a util/libEGUtil.a
+
+hmmufotu_jplace_SOURCES = hmmufotu-jplace.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
+hmmufotu_jplace_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a \
+util/libEGUtil.a math/libEGMath.a \
+libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
+$(BOOST_IOSTREAMS_LIB)

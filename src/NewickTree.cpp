@@ -69,10 +69,7 @@ ostream& NewickTree::write(ostream& out) const {
 		}
 		out << ')';
 	}
-	if(StringUtils::containsWhiteSpace(name) || StringUtils::containsAny(name, INVALID_CHARS)) // name contains INVALID CHARS
-		out << "'" << name << "'";
-	else
-		out << name;
+	out << quoteName(name);
 	if(length > 0)
 		out << ':' << length;
 

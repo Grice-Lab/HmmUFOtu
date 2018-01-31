@@ -47,7 +47,7 @@ void printIntro(void) {
 void printUsage(const string& progName) {
 	cerr << "Usage:    " << progName << "  <DB-NAME> [options]" << endl
 		 << "DB-NAME  STR                    : HmmUFOtu database name (prefix)" << endl
-		 << "Options:    -sm  FLAG           : report the embedded build-in or customized DNA Submission Model in database" << endl
+		 << "Options:    -sm  FLAG           : report the embedded build-in or customized DNA Substitution Model in database" << endl
 		 << "            -dg  FLAG           : report the embedded build-in or customized Discrete Gamma Model (if enabled during training) in database" << endl
 		 << "            -t|--tree  FILE     : write the phylogenetic tree of this database to FILE in Newick format" << endl
 		 << "            -a|--anno  FILE     : write the tree node taxonomy annoation of this database to FILE" << endl
