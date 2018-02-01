@@ -43,6 +43,25 @@ AX_CHECK_ZLIB()
 AX_BOOST_BASE([1.50.0])
 AX_BOOST_IOSTREAMS()
 
+# conditional packages
+AC_ARG_WITH([libjsoncpp],
+            [AS_HELP_STRING([--with-libjsoncpp],
+                            [support generating .jplace and other JSON files @<:@default=check@:>@]
+                            )],
+            [],
+  	        [with_libjsoncpp=check]
+  	        )
+  	        
+AS_CASE(["$with_libjsoncpp"],
+        [yes],
+        #[AC_CHECK_LIB([jsoncpp], [main], [HAVE_LIBJSONCPP=1], [HAVE_LIBJSONCPP=0])], # yes check
+        [AC_CHECK_LIB([jsoncpp], [main])], # yes check
+        [no], [], # no, not check
+        #[AC_CHECK_LIB([jsoncpp], [main], [HAVE_LIBJSONCPP=1], [HAVE_LIBJSONCPP=0])] # default check
+        [AC_CHECK_LIB([jsoncpp], [main])] # default check
+       )
+AM_CONDITIONAL([USE_JSONCPP], [test "$with_libjsoncpp" != no -a "$ac_cv_lib_jsoncpp_main" = yes])
+
 AC_CONFIG_FILES([Makefile
 				 data/Makefile
 				 src/Makefile
