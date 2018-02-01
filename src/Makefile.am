@@ -124,7 +124,7 @@ if USE_JSONCPP
 hmmufotu_jplace_SOURCES = hmmufotu-jplace.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
 hmmufotu_jplace_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
-$(BOOST_IOSTREAMS_LIB) \ $(jsoncpp_LIBS)
+$(BOOST_IOSTREAMS_LIB) $(jsoncpp_LIBS)
 hmmufotu_jplace_CFLAGS = $(AM_CFLAGS) $(jsoncpp_CFLAGS)
 hmmufotu_jplace_CXXFLAGS = $(AM_CXXFLAGS) $(jsoncpp_CFLAGS)
 endif

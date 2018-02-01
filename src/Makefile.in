@@ -96,7 +96,8 @@ bin_PROGRAMS = hmmufotu$(EXEEXT) hmmufotu-train-dm$(EXEEXT) \
 	hmmufotu-inspect$(EXEEXT) hmmufotu$(EXEEXT) \
 	hmmufotu-sum$(EXEEXT) hmmufotu-anneal$(EXEEXT) \
 	hmmufotu-subset$(EXEEXT) hmmufotu-norm$(EXEEXT) \
-	hmmufotu-jplace$(EXEEXT)
+	$(am__EXEEXT_1)
+@USE_JSONCPP_TRUE@am__append_1 = hmmufotu-jplace
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -145,6 +146,7 @@ am_libHmmUFOtu_phylo_a_OBJECTS = NewickTree.$(OBJEXT) \
 	K80.$(OBJEXT) JC69.$(OBJEXT) DiscreteGammaModel.$(OBJEXT) \
 	DNASubModelFactory.$(OBJEXT)
 libHmmUFOtu_phylo_a_OBJECTS = $(am_libHmmUFOtu_phylo_a_OBJECTS)
+@USE_JSONCPP_TRUE@am__EXEEXT_1 = hmmufotu-jplace$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_hmmufotu_OBJECTS = hmmufotu.$(OBJEXT) HmmUFOtu_main.$(OBJEXT) \
@@ -159,9 +161,6 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-hmmufotu_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
-	$(CXXFLAGS) $(hmmufotu_LDFLAGS) $(LDFLAGS) -o $@
 am_hmmufotu_anneal_OBJECTS = hmmufotu-anneal.$(OBJEXT) \
 	HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_anneal_OBJECTS = $(am_hmmufotu_anneal_OBJECTS)
@@ -180,13 +179,22 @@ hmmufotu_inspect_OBJECTS = $(am_hmmufotu_inspect_OBJECTS)
 hmmufotu_inspect_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a \
 	libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
 	libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
-am_hmmufotu_jplace_OBJECTS = hmmufotu-jplace.$(OBJEXT) \
-	HmmUFOtu_main.$(OBJEXT) HmmUFOtuEnv.$(OBJEXT)
+am__hmmufotu_jplace_SOURCES_DIST = hmmufotu-jplace.cpp \
+	HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
+@USE_JSONCPP_TRUE@am_hmmufotu_jplace_OBJECTS =  \
+@USE_JSONCPP_TRUE@	hmmufotu_jplace-hmmufotu-jplace.$(OBJEXT) \
+@USE_JSONCPP_TRUE@	hmmufotu_jplace-HmmUFOtu_main.$(OBJEXT) \
+@USE_JSONCPP_TRUE@	hmmufotu_jplace-HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_jplace_OBJECTS = $(am_hmmufotu_jplace_OBJECTS)
-hmmufotu_jplace_DEPENDENCIES = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a \
-	libHmmUFOtu_hmm.a libHmmUFOtu_common.a util/libEGUtil.a \
-	math/libEGMath.a libdivsufsort/lib/libdivsufsort.a \
-	libcds/src/libcds.la $(am__DEPENDENCIES_1)
+@USE_JSONCPP_TRUE@hmmufotu_jplace_DEPENDENCIES = libHmmUFOtu_phylo.a \
+@USE_JSONCPP_TRUE@	libHmmUFOtu_hmm.a libHmmUFOtu_common.a \
+@USE_JSONCPP_TRUE@	util/libEGUtil.a math/libEGMath.a \
+@USE_JSONCPP_TRUE@	libdivsufsort/lib/libdivsufsort.a \
+@USE_JSONCPP_TRUE@	libcds/src/libcds.la $(am__DEPENDENCIES_1)
+hmmufotu_jplace_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
+	$(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_hmmufotu_norm_OBJECTS = hmmufotu-norm.$(OBJEXT) \
 	HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_norm_OBJECTS = $(am_hmmufotu_norm_OBJECTS)
@@ -270,11 +278,11 @@ DIST_SOURCES = $(libHmmUFOtu_OTU_a_SOURCES) \
 	$(libHmmUFOtu_common_a_SOURCES) $(libHmmUFOtu_hmm_a_SOURCES) \
 	$(libHmmUFOtu_phylo_a_SOURCES) $(hmmufotu_SOURCES) \
 	$(hmmufotu_anneal_SOURCES) $(hmmufotu_build_SOURCES) \
-	$(hmmufotu_inspect_SOURCES) $(hmmufotu_jplace_SOURCES) \
-	$(hmmufotu_norm_SOURCES) $(hmmufotu_sim_SOURCES) \
-	$(hmmufotu_subset_SOURCES) $(hmmufotu_sum_SOURCES) \
-	$(hmmufotu_train_dm_SOURCES) $(hmmufotu_train_hmm_SOURCES) \
-	$(hmmufotu_train_sm_SOURCES)
+	$(hmmufotu_inspect_SOURCES) \
+	$(am__hmmufotu_jplace_SOURCES_DIST) $(hmmufotu_norm_SOURCES) \
+	$(hmmufotu_sim_SOURCES) $(hmmufotu_subset_SOURCES) \
+	$(hmmufotu_sum_SOURCES) $(hmmufotu_train_dm_SOURCES) \
+	$(hmmufotu_train_hmm_SOURCES) $(hmmufotu_train_sm_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -553,7 +561,6 @@ hmmufotu_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a util
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
 $(BOOST_IOSTREAMS_LIB)
 
-hmmufotu_LDFLAGS = $(BOOST_LDFLAGS)
 hmmufotu_sum_SOURCES = hmmufotu-sum.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
 hmmufotu_sum_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a \
 util/libEGUtil.a math/libEGMath.a \
@@ -569,12 +576,13 @@ hmmufotu_subset_SOURCES = hmmufotu-subset.cpp HmmUFOtuEnv.cpp
 hmmufotu_subset_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_common.a util/libEGUtil.a 
 hmmufotu_norm_SOURCES = hmmufotu-norm.cpp HmmUFOtuEnv.cpp
 hmmufotu_norm_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_common.a util/libEGUtil.a
-hmmufotu_jplace_SOURCES = hmmufotu-jplace.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
-hmmufotu_jplace_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a \
-util/libEGUtil.a math/libEGMath.a \
-libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
-$(BOOST_IOSTREAMS_LIB)
+@USE_JSONCPP_TRUE@hmmufotu_jplace_SOURCES = hmmufotu-jplace.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
+@USE_JSONCPP_TRUE@hmmufotu_jplace_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
+@USE_JSONCPP_TRUE@libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
+@USE_JSONCPP_TRUE@$(BOOST_IOSTREAMS_LIB) $(jsoncpp_LIBS)
 
+@USE_JSONCPP_TRUE@hmmufotu_jplace_CFLAGS = $(AM_CFLAGS) $(jsoncpp_CFLAGS)
+@USE_JSONCPP_TRUE@hmmufotu_jplace_CXXFLAGS = $(AM_CXXFLAGS) $(jsoncpp_CFLAGS)
 all: all-recursive
 
 .SUFFIXES:
@@ -683,7 +691,7 @@ clean-binPROGRAMS:
 
 hmmufotu$(EXEEXT): $(hmmufotu_OBJECTS) $(hmmufotu_DEPENDENCIES) $(EXTRA_hmmufotu_DEPENDENCIES) 
 	@rm -f hmmufotu$(EXEEXT)
-	$(AM_V_CXXLD)$(hmmufotu_LINK) $(hmmufotu_OBJECTS) $(hmmufotu_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(CXXLINK) $(hmmufotu_OBJECTS) $(hmmufotu_LDADD) $(LIBS)
 
 hmmufotu-anneal$(EXEEXT): $(hmmufotu_anneal_OBJECTS) $(hmmufotu_anneal_DEPENDENCIES) $(EXTRA_hmmufotu_anneal_DEPENDENCIES) 
 	@rm -f hmmufotu-anneal$(EXEEXT)
@@ -699,7 +707,7 @@ hmmufotu-inspect$(EXEEXT): $(hmmufotu_inspect_OBJECTS) $(hmmufotu_inspect_DEPEND
 
 hmmufotu-jplace$(EXEEXT): $(hmmufotu_jplace_OBJECTS) $(hmmufotu_jplace_DEPENDENCIES) $(EXTRA_hmmufotu_jplace_DEPENDENCIES) 
 	@rm -f hmmufotu-jplace$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(hmmufotu_jplace_OBJECTS) $(hmmufotu_jplace_LDADD) $(LIBS)
+	$(AM_V_CXXLD)$(hmmufotu_jplace_LINK) $(hmmufotu_jplace_OBJECTS) $(hmmufotu_jplace_LDADD) $(LIBS)
 
 hmmufotu-norm$(EXEEXT): $(hmmufotu_norm_OBJECTS) $(hmmufotu_norm_DEPENDENCIES) $(EXTRA_hmmufotu_norm_DEPENDENCIES) 
 	@rm -f hmmufotu-norm$(EXEEXT)
@@ -767,7 +775,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TN93.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-anneal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-inspect.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-jplace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-norm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-sim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-subset.Po@am__quote@
@@ -777,6 +784,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_build-HmmUFOtuEnv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_build-hmmufotu-build.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_jplace-HmmUFOtuEnv.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_jplace-HmmUFOtu_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_jplace-hmmufotu-jplace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_train_hmm-HmmUFOtuEnv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu_train_hmm-hmmufotu-train-hmm.Po@am__quote@
 
@@ -828,6 +838,48 @@ hmmufotu_build-HmmUFOtuEnv.obj: HmmUFOtuEnv.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='HmmUFOtuEnv.cpp' object='hmmufotu_build-HmmUFOtuEnv.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_build_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu_build-HmmUFOtuEnv.obj `if test -f 'HmmUFOtuEnv.cpp'; then $(CYGPATH_W) 'HmmUFOtuEnv.cpp'; else $(CYGPATH_W) '$(srcdir)/HmmUFOtuEnv.cpp'; fi`
+
+hmmufotu_jplace-hmmufotu-jplace.o: hmmufotu-jplace.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu_jplace-hmmufotu-jplace.o -MD -MP -MF $(DEPDIR)/hmmufotu_jplace-hmmufotu-jplace.Tpo -c -o hmmufotu_jplace-hmmufotu-jplace.o `test -f 'hmmufotu-jplace.cpp' || echo '$(srcdir)/'`hmmufotu-jplace.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu_jplace-hmmufotu-jplace.Tpo $(DEPDIR)/hmmufotu_jplace-hmmufotu-jplace.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='hmmufotu-jplace.cpp' object='hmmufotu_jplace-hmmufotu-jplace.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu_jplace-hmmufotu-jplace.o `test -f 'hmmufotu-jplace.cpp' || echo '$(srcdir)/'`hmmufotu-jplace.cpp
+
+hmmufotu_jplace-hmmufotu-jplace.obj: hmmufotu-jplace.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu_jplace-hmmufotu-jplace.obj -MD -MP -MF $(DEPDIR)/hmmufotu_jplace-hmmufotu-jplace.Tpo -c -o hmmufotu_jplace-hmmufotu-jplace.obj `if test -f 'hmmufotu-jplace.cpp'; then $(CYGPATH_W) 'hmmufotu-jplace.cpp'; else $(CYGPATH_W) '$(srcdir)/hmmufotu-jplace.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu_jplace-hmmufotu-jplace.Tpo $(DEPDIR)/hmmufotu_jplace-hmmufotu-jplace.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='hmmufotu-jplace.cpp' object='hmmufotu_jplace-hmmufotu-jplace.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu_jplace-hmmufotu-jplace.obj `if test -f 'hmmufotu-jplace.cpp'; then $(CYGPATH_W) 'hmmufotu-jplace.cpp'; else $(CYGPATH_W) '$(srcdir)/hmmufotu-jplace.cpp'; fi`
+
+hmmufotu_jplace-HmmUFOtu_main.o: HmmUFOtu_main.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu_jplace-HmmUFOtu_main.o -MD -MP -MF $(DEPDIR)/hmmufotu_jplace-HmmUFOtu_main.Tpo -c -o hmmufotu_jplace-HmmUFOtu_main.o `test -f 'HmmUFOtu_main.cpp' || echo '$(srcdir)/'`HmmUFOtu_main.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu_jplace-HmmUFOtu_main.Tpo $(DEPDIR)/hmmufotu_jplace-HmmUFOtu_main.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='HmmUFOtu_main.cpp' object='hmmufotu_jplace-HmmUFOtu_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu_jplace-HmmUFOtu_main.o `test -f 'HmmUFOtu_main.cpp' || echo '$(srcdir)/'`HmmUFOtu_main.cpp
+
+hmmufotu_jplace-HmmUFOtu_main.obj: HmmUFOtu_main.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu_jplace-HmmUFOtu_main.obj -MD -MP -MF $(DEPDIR)/hmmufotu_jplace-HmmUFOtu_main.Tpo -c -o hmmufotu_jplace-HmmUFOtu_main.obj `if test -f 'HmmUFOtu_main.cpp'; then $(CYGPATH_W) 'HmmUFOtu_main.cpp'; else $(CYGPATH_W) '$(srcdir)/HmmUFOtu_main.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu_jplace-HmmUFOtu_main.Tpo $(DEPDIR)/hmmufotu_jplace-HmmUFOtu_main.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='HmmUFOtu_main.cpp' object='hmmufotu_jplace-HmmUFOtu_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu_jplace-HmmUFOtu_main.obj `if test -f 'HmmUFOtu_main.cpp'; then $(CYGPATH_W) 'HmmUFOtu_main.cpp'; else $(CYGPATH_W) '$(srcdir)/HmmUFOtu_main.cpp'; fi`
+
+hmmufotu_jplace-HmmUFOtuEnv.o: HmmUFOtuEnv.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu_jplace-HmmUFOtuEnv.o -MD -MP -MF $(DEPDIR)/hmmufotu_jplace-HmmUFOtuEnv.Tpo -c -o hmmufotu_jplace-HmmUFOtuEnv.o `test -f 'HmmUFOtuEnv.cpp' || echo '$(srcdir)/'`HmmUFOtuEnv.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu_jplace-HmmUFOtuEnv.Tpo $(DEPDIR)/hmmufotu_jplace-HmmUFOtuEnv.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='HmmUFOtuEnv.cpp' object='hmmufotu_jplace-HmmUFOtuEnv.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu_jplace-HmmUFOtuEnv.o `test -f 'HmmUFOtuEnv.cpp' || echo '$(srcdir)/'`HmmUFOtuEnv.cpp
+
+hmmufotu_jplace-HmmUFOtuEnv.obj: HmmUFOtuEnv.cpp
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu_jplace-HmmUFOtuEnv.obj -MD -MP -MF $(DEPDIR)/hmmufotu_jplace-HmmUFOtuEnv.Tpo -c -o hmmufotu_jplace-HmmUFOtuEnv.obj `if test -f 'HmmUFOtuEnv.cpp'; then $(CYGPATH_W) 'HmmUFOtuEnv.cpp'; else $(CYGPATH_W) '$(srcdir)/HmmUFOtuEnv.cpp'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hmmufotu_jplace-HmmUFOtuEnv.Tpo $(DEPDIR)/hmmufotu_jplace-HmmUFOtuEnv.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='HmmUFOtuEnv.cpp' object='hmmufotu_jplace-HmmUFOtuEnv.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) -c -o hmmufotu_jplace-HmmUFOtuEnv.obj `if test -f 'HmmUFOtuEnv.cpp'; then $(CYGPATH_W) 'HmmUFOtuEnv.cpp'; else $(CYGPATH_W) '$(srcdir)/HmmUFOtuEnv.cpp'; fi`
 
 hmmufotu_train_hmm-hmmufotu-train-hmm.o: hmmufotu-train-hmm.cpp
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hmmufotu_train_hmm_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT hmmufotu_train_hmm-hmmufotu-train-hmm.o -MD -MP -MF $(DEPDIR)/hmmufotu_train_hmm-hmmufotu-train-hmm.Tpo -c -o hmmufotu_train_hmm-hmmufotu-train-hmm.o `test -f 'hmmufotu-train-hmm.cpp' || echo '$(srcdir)/'`hmmufotu-train-hmm.cpp

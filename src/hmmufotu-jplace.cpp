@@ -26,10 +26,7 @@
 #include <boost/iostreams/filter/zlib.hpp> /* for zlib support */
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filter/bzip2.hpp> /* for bzip2 support */
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-#include <boost/foreach.hpp>
-#include <exception>
+#include <json/json.h> /* jsoncpp support */
 #include "HmmUFOtu.h"
 #include "HmmUFOtu_main.h"
 
@@ -44,15 +41,17 @@ static const double DEFAULT_MIN_ALN_IDENTITY = 0;
 static const double DEFAULT_MIN_HMM_IDENTITY = 0;
 static const int JPLACE_VERSION = 3;
 static const char *field_names[] = { "edge_num", "likelihood", "like_weight_ratio", "distal_length", "proximal_length", "pendant_length" };
+static const string TREE_NODE_NAME = "tree";
 static const string PLACEMENT_LIST_NODE_NAME = "placements";
 static const string PLACEMENT_NODE_NAME = "p";
 static const string READNAME_NODE_NAME = "n";
+static const string VERSION_NODE_NAME = "version";
+static const string FIELD_NODE_NAME = "fields";
 static const string INVOCATION_NODE_NAME = "invocation";
+static const string METADATA_NODE_NAME = "metadata";
 static const string SM_NODE_NAME = "substitution_model";
 static const string VAR_NODE_NAME = "among_site_rate_variation";
 static const string ANNO_NODE_NAME = "node_taxonomy_annotations";
-
-namespace pt = boost::property_tree;
 
 /**
  * Print introduction of this program
@@ -92,8 +91,7 @@ int main(int argc, char* argv[]) {
 	ifstream hmmIn, ptuIn;
 	ofstream of;
 
-	pt::ptree jptree; /* create the root */
-	pt::id_translator<long> long_translator;
+	Json::Value jptree; /* create the root */
 
 	double minQ = DEFAULT_MIN_Q;
 	double minAlnIden = DEFAULT_MIN_ALN_IDENTITY;
@@ -201,8 +199,8 @@ int main(int argc, char* argv[]) {
 	infoLog << "Phylogenetic tree loaded" << endl;
 
 	/* add tree structure */
-	jptree.put("tree", ptu.toJPlaceTreeStr(ptu.getRoot()) + ";");
-	pt::ptree placements_list;
+	jptree[TREE_NODE_NAME] = ptu.toJPlaceTreeStr(ptu.getRoot()) + ";";
+	Json::Value placements_list;
 
 	/* process input files */
 	for(vector<string>::const_iterator infn = inFiles.begin(); infn != inFiles.end(); ++infn) {
@@ -253,70 +251,58 @@ int main(int argc, char* argv[]) {
 				JPlace place(ptu.getEdgeID(cNode, pNode), rid, ptu.getBranchLength(cNode, pNode),
 						branch_ratio, loglik, annoDist, q);
 
-				pt::ptree place_node;
+				Json::Value place_node;
 
 				/* add a one-row placement matrix */
-				pt::ptree prow, pcell;
-				pcell.put_value(place.edgeID);
-				prow.push_back(std::make_pair("", pcell));
-				pcell.put_value(place.likelihood);
-				prow.push_back(std::make_pair("", pcell));
-				pcell.put_value(place.like_ratio);
-				prow.push_back(std::make_pair("", pcell));
-				pcell.put_value(place.distal_length);
-				prow.push_back(std::make_pair("", pcell));
-				pcell.put_value(place.proximal_length);
-				prow.push_back(std::make_pair("", pcell));
-				pcell.put_value(place.pendant_length);
-				prow.push_back(std::make_pair("", pcell));
-				pt::ptree pmatrix;
-				pmatrix.push_back(std::make_pair("", prow));
-				place_node.add_child(PLACEMENT_NODE_NAME, pmatrix);
+				Json::Value pmatrix;
+				pmatrix[0].append(place.edgeID);
+				pmatrix[0].append(place.likelihood);
+				pmatrix[0].append(place.like_ratio);
+				pmatrix[0].append(place.distal_length);
+				pmatrix[0].append(place.proximal_length);
+				pmatrix[0].append(place.pendant_length);
+
+				place_node[PLACEMENT_NODE_NAME] = pmatrix;
 
 				/* add a one-element read name list */
-				pt::ptree read_node;
-				read_node.push_back(std::make_pair("", pt::ptree(place.readName)));
-				place_node.add_child(READNAME_NODE_NAME, read_node);
+				Json::Value read_node;
+				read_node.append(place.readName);
+				place_node[READNAME_NODE_NAME] = read_node;
 
 				/* add this place_node to place_list */
-				placements_list.push_back(std::make_pair("", place_node));
+				placements_list.append(place_node);
 			} /* end if */
 		} /* end each record */
 	} /* end eachi file */
 	/* add placements_list */
-	jptree.push_back(std::make_pair(PLACEMENT_LIST_NODE_NAME, placements_list));
+	jptree[PLACEMENT_LIST_NODE_NAME] = placements_list;
 
 	/* add mendatory metadata */
-	jptree.add("version", JPLACE_VERSION);
-	pt::ptree fields_node;
-	for(const char** name = field_names; name != field_names + sizeof(field_names) / sizeof(*field_names); ++name)
-		fields_node.push_back(std::make_pair("", pt::ptree(*name))); /* add an unamed field node */
-	jptree.add_child("fields", fields_node);
+	jptree[VERSION_NODE_NAME] = JPLACE_VERSION;
+	for(const char** name = field_names; name != field_names + sizeof(field_names)/sizeof(*field_names); ++name)
+		jptree[FIELD_NODE_NAME].append(*name);
 
 	/* add optional metadata */
-	pt::ptree metadata;
-	metadata.add(INVOCATION_NODE_NAME, cmdOpts.getCmdStr());
+	Json::Value metadata;
+	metadata[INVOCATION_NODE_NAME] = cmdOpts.getCmdStr();
 	if(showSm)
-		metadata.add(SM_NODE_NAME, ptu.getModel()->modelType());
+		metadata[SM_NODE_NAME] = ptu.getModel()->modelType();
 
 	if(showSm)
-		metadata.add(VAR_NODE_NAME, ptu.isVar() ? "Discrete Gamma model" : "none");
+		metadata[VAR_NODE_NAME] = ptu.isVar() ? "Discrete Gamma model" : "none";
 
 	if(showAnno) {
 		const vector<PTUnrooted::PTUNodePtr>& allNodes = ptu.getNodes();
-		pt::ptree anno_list;
+		Json::Value anno_list;
 		for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = allNodes.begin(); node != allNodes.end(); ++node)
-			anno_list.push_back(std::make_pair(boost::lexical_cast<string>((*node)->getId()), pt::ptree((*node)->getAnno())));
-		metadata.add_child(ANNO_NODE_NAME, anno_list);
+			anno_list[boost::lexical_cast<string>((*node)->getId())] = (*node)->getAnno();
+		metadata[ANNO_NODE_NAME] = anno_list;
 	}
-	jptree.add_child("metadata", metadata);
+	jptree[METADATA_NODE_NAME] = metadata;
 
 
 	/* write jptree */
-//	infoLog << "Writing output" << endl;
-
-	/* write read list */
-    pt::write_json(out, jptree);
+    out << jptree << endl;
 }
 
 

@@ -635,6 +635,8 @@ LTLIBOBJS
 LIBOBJS
 OPENMP_CFLAGS
 subdirs
+USE_JSONCPP_FALSE
+USE_JSONCPP_TRUE
 BOOST_IOSTREAMS_LIB
 BOOST_LDFLAGS
 BOOST_CPPFLAGS
@@ -779,6 +781,7 @@ with_zlib
 with_boost
 with_boost_libdir
 with_boost_iostreams
+with_libjsoncpp
 enable_openmp
 '
       ac_precious_vars='build_alias
@@ -1459,6 +1462,8 @@ Optional Packages:
                           possible to specify a certain library for the linker
                           e.g.
                           --with-boost-iostreams=boost_iostreams-gcc-mt-d-1_33_1
+  --with-libjsoncpp       support generating .jplace and other JSON files
+                          [default=check]
 
 Some influential environment variables:
   CC          C compiler command
@@ -17933,6 +17938,115 @@ fi
 	fi
 
 
+# conditional packages
+
+# Check whether --with-libjsoncpp was given.
+if test "${with_libjsoncpp+set}" = set; then :
+  withval=$with_libjsoncpp;
+else
+  with_libjsoncpp=check
+
+fi
+
+
+case "$with_libjsoncpp" in #(
+  yes) :
+    #[AC_CHECK_LIB([jsoncpp], [main], [HAVE_LIBJSONCPP=1], [HAVE_LIBJSONCPP=0])], # yes check
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -ljsoncpp" >&5
+$as_echo_n "checking for main in -ljsoncpp... " >&6; }
+if ${ac_cv_lib_jsoncpp_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ljsoncpp  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_jsoncpp_main=yes
+else
+  ac_cv_lib_jsoncpp_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jsoncpp_main" >&5
+$as_echo "$ac_cv_lib_jsoncpp_main" >&6; }
+if test "x$ac_cv_lib_jsoncpp_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBJSONCPP 1
+_ACEOF
+
+  LIBS="-ljsoncpp $LIBS"
+
+fi
+ ;; #(
+  # yes check
+        no) :
+     ;; #(
+  *) :
+    # no, not check
+        #[AC_CHECK_LIB([jsoncpp], [main], [HAVE_LIBJSONCPP=1], [HAVE_LIBJSONCPP=0])] # default check
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -ljsoncpp" >&5
+$as_echo_n "checking for main in -ljsoncpp... " >&6; }
+if ${ac_cv_lib_jsoncpp_main+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ljsoncpp  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+return main ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_jsoncpp_main=yes
+else
+  ac_cv_lib_jsoncpp_main=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jsoncpp_main" >&5
+$as_echo "$ac_cv_lib_jsoncpp_main" >&6; }
+if test "x$ac_cv_lib_jsoncpp_main" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBJSONCPP 1
+_ACEOF
+
+  LIBS="-ljsoncpp $LIBS"
+
+fi
+ # default check
+        ;;
+esac
+ if test "$with_libjsoncpp" != no -a "$ac_cv_lib_jsoncpp_main" = yes; then
+  USE_JSONCPP_TRUE=
+  USE_JSONCPP_FALSE='#'
+else
+  USE_JSONCPP_TRUE='#'
+  USE_JSONCPP_FALSE=
+fi
+
+
 ac_config_files="$ac_config_files Makefile data/Makefile src/Makefile test/Makefile"
 
 
@@ -18178,6 +18292,10 @@ fi
 
 if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${USE_JSONCPP_TRUE}" && test -z "${USE_JSONCPP_FALSE}"; then
+  as_fn_error $? "conditional \"USE_JSONCPP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
