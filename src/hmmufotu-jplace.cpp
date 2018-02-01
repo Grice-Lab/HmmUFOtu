@@ -52,20 +52,7 @@ static const string SM_NODE_NAME = "substitution_model";
 static const string VAR_NODE_NAME = "among_site_rate_variation";
 static const string ANNO_NODE_NAME = "node_taxonomy_annotations";
 
-/**
- * customized id_translator for boost::basic_tree to comply with the JSON data type requirement
- */
-//template <typename T>
-//struct jplace_id_translator : public boost::property_tree::id_translator<T> {
-//	/** customized translate method for long */
-//	template <KeyType, long>
-//	struct translator_between<KeyType, long> {
-//		typedef KeyType internal_type;
-//		boost::optional<long> get_value(const internal_type& str) {
-//			return boost::lexical_cast<long>(str);
-//		}
-//	};
-//};
+namespace pt = boost::property_tree;
 
 /**
  * Print introduction of this program
@@ -105,8 +92,8 @@ int main(int argc, char* argv[]) {
 	ifstream hmmIn, ptuIn;
 	ofstream of;
 
-	namespace pt = boost::property_tree;
 	pt::ptree jptree; /* create the root */
+	pt::id_translator<long> long_translator;
 
 	double minQ = DEFAULT_MIN_Q;
 	double minAlnIden = DEFAULT_MIN_ALN_IDENTITY;
@@ -211,7 +198,7 @@ int main(int argc, char* argv[]) {
 		cerr << "Unable to load Phylogenetic tree data '" << ptuFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
-	infoLog << "Phylogenetic tree topology loaded" << endl;
+	infoLog << "Phylogenetic tree loaded" << endl;
 
 	/* add tree structure */
 	jptree.put("tree", ptu.toJPlaceTreeStr(ptu.getRoot()) + ";");

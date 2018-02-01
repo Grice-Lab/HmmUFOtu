@@ -15,6 +15,7 @@ Makefile
 /hmmufotu-train-dm
 /hmmufotu-train-sm
 /hmmufotu-train-hmm
-hmmufotu-subset
-hmmufotu-norm
+/hmmufotu-subset
+/hmmufotu-norm
+/hmmufotu-jplace
 *.exe
