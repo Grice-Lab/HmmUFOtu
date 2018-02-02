@@ -32,6 +32,8 @@
 namespace EGriceLab {
 namespace HmmUFOtu {
 
+using std::string;
+
 class SeqUtils {
 public:
 	/* static methods */
@@ -73,6 +75,14 @@ public:
 		return pDist(seq1, seq2, 0, seq1.length() - 1);
 	}
 
+	static bool isFastaFileExt(const string& fn);
+
+	static bool isFastqFileExt(const string& fn);
+
+public:
+	/** static fields */
+	static const char *FASTA_FILE_EXTENSIONS[];
+	static const char *FASTQ_FILE_EXTENSIONS[];
 };
 
 } /* namespace HmmUFOtu */

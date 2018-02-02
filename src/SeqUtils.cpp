@@ -26,9 +26,13 @@
 
 #include <cassert>
 #include "SeqUtils.h"
+#include <StringUtils.h>
 
 namespace EGriceLab {
 namespace HmmUFOtu {
+
+const char *SeqUtils::FASTA_FILE_EXTENSIONS[] = { "fasta", "fas", "fa", "fna" };
+const char *SeqUtils::FASTQ_FILE_EXTENSIONS[] = { "fastq", "fq" };
 
 double SeqUtils::pDist(const DigitalSeq& seq1, const DigitalSeq& seq2,
 		DigitalSeq::size_type start, DigitalSeq::size_type end) {
@@ -79,6 +83,22 @@ double SeqUtils::pDist(const string& seq1, const DigitalSeq& seq2, size_t start,
 		if(!abc->isMatch(seq1[i], seq2[i]))
 			d++;
 	return static_cast<double>(d) / (end - start + 1);
+}
+
+bool SeqUtils::isFastaFileExt(const string& fn) {
+	for(const char **ext = FASTA_FILE_EXTENSIONS;
+			ext != FASTA_FILE_EXTENSIONS + sizeof(FASTA_FILE_EXTENSIONS) / sizeof(*FASTA_FILE_EXTENSIONS); ++ext)
+		if(StringUtils::endsWith(fn, *ext))
+			return true;
+	return false;
+}
+
+bool SeqUtils::isFastqFileExt(const string& fn) {
+	for(const char **ext = FASTQ_FILE_EXTENSIONS;
+			ext != FASTQ_FILE_EXTENSIONS + sizeof(FASTQ_FILE_EXTENSIONS) / sizeof(*FASTQ_FILE_EXTENSIONS); ++ext)
+		if(StringUtils::endsWith(fn, *ext))
+			return true;
+	return false;
 }
 
 } /* namespace HmmUFOtu */
