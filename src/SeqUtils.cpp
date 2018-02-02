@@ -101,5 +101,14 @@ bool SeqUtils::isFastqFileExt(const string& fn) {
 	return false;
 }
 
+string SeqUtils::guessSeqFileFormat(const string& fn) {
+	if(isFastaFileExt(fn))
+		return "fasta";
+	else if(isFastqFileExt(fn))
+		return "fastq";
+	else
+		return "";
+}
+
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

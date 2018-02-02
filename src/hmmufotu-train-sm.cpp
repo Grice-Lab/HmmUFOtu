@@ -28,6 +28,11 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <boost/iostreams/filtering_stream.hpp> /* basic boost streams */
+#include <boost/iostreams/device/file.hpp> /* file sink and source */
+#include <boost/iostreams/filter/zlib.hpp> /* for zlib support */
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/bzip2.hpp> /* for bzip2 support */
 #include "HmmUFOtu_common.h"
 #include "HmmUFOtu_phylo.h"
 #include "EGMath.h"
@@ -52,8 +57,13 @@ void printIntro(void) {
  * Print the usage information
  */
 void printUsage(const string& progName) {
+	string ZLIB_SUPPORT;
+	#ifdef HAVE_LIBZ
+	ZLIB_SUPPORT = ", support .gz or .bz2 compressed file";
+	#endif
+
 	cerr << "Usage:    " << progName << "  <MSA-FILE> <TREE-FILE> [options]" << endl
-		 << "MSA-FILE  FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
+		 << "MSA-FILE  FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << ZLIB_SUPPORT << endl
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
 		 << "Options:    -o FILE              : write output to FILE instead of stdout" << endl
 		 << "            --fmt  STR           : MSA format, supported format: 'fasta', 'msa'" << endl
@@ -67,7 +77,8 @@ void printUsage(const string& progName) {
 int main(int argc, char* argv[]) {
 	/* variable declarations */
 	string msaFn, treeFn, outFn;
-	ifstream msaIn, treeIn;
+	boost::iostreams::filtering_istream msaIn;
+	ifstream treeIn;
 	ofstream of;
 	string fmt;
 	string smType = DEFAULT_SM_TYPE;
@@ -121,14 +132,13 @@ int main(int argc, char* argv[]) {
 
 	/* guess input format */
 	if(fmt.empty()) {
-		if(StringUtils::endsWith(msaFn, ".fasta") || StringUtils::endsWith(msaFn, ".fas")
-		|| StringUtils::endsWith(msaFn, ".fa") || StringUtils::endsWith(msaFn, ".fna"))
-			fmt = "fasta";
-		else if(StringUtils::endsWith(msaFn, ".msa"))
+		if(StringUtils::endsWith(msaFn, ".msa"))
 			fmt = "msa";
 		else {
-			cerr << "Unrecognized format of MSA file '" << msaFn << "'" << endl;
-			return EXIT_FAILURE;
+			string msaPre = msaFn;
+			StringUtils::removeEnd(msaPre, GZIP_FILE_SUFFIX);
+			StringUtils::removeEnd(msaPre, BZIP2_FILE_SUFFIX);
+			fmt = SeqUtils::guessSeqFileFormat(msaPre);
 		}
 	}
 	if(!(fmt == "fasta" || fmt == "msa")) {
@@ -137,12 +147,19 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* open input files */
-	if(fmt != "msa")
-		msaIn.open(msaFn.c_str());
+#ifdef HAVE_LIBZ
+	if(StringUtils::endsWith(msaFn, GZIP_FILE_SUFFIX))
+		msaIn.push(boost::iostreams::gzip_decompressor());
+	else if(StringUtils::endsWith(msaFn, BZIP2_FILE_SUFFIX))
+		msaIn.push(boost::iostreams::bzip2_decompressor());
+	else { }
+#endif
+	if(fmt == "msa" || !msaIn.empty()) /* binary format */
+		msaIn.push(boost::iostreams::file_source(msaFn, std::ios_base::in | std::ios_base::binary));
 	else
-		msaIn.open(msaFn.c_str(), ios_base::binary);
-	if(!msaIn.is_open()) {
-		cerr << "Unable to open '" << msaFn << "': " << ::strerror(errno) << endl;
+		msaIn.push(boost::iostreams::file_source(msaFn));
+	if(msaIn.bad()) {
+		cerr << "Unable to open forward seq file '" << msaFn << "' " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 

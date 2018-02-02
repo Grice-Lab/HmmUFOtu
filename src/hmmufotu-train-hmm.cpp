@@ -30,6 +30,11 @@
 #include <cstring>
 #include <cerrno>
 #include <ctime>
+#include <boost/iostreams/filtering_stream.hpp> /* basic boost streams */
+#include <boost/iostreams/device/file.hpp> /* file sink and source */
+#include <boost/iostreams/filter/zlib.hpp> /* for zlib support */
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/bzip2.hpp> /* for bzip2 support */
 #include "HmmUFOtu_common.h"
 #include "HmmUFOtu_hmm.h"
 #include "EGMath.h"
@@ -63,8 +68,13 @@ void printIntro(void) {
  * Print the usage information of this program
  */
 void printUsage(const string& progName) {
+	string ZLIB_SUPPORT;
+	#ifdef HAVE_LIBZ
+	ZLIB_SUPPORT = ", support .gz or .bz2 compressed file";
+	#endif
+
 	cerr << "Usage:    " << progName << "  <MSA-FILE> [options]" << endl
-		 << "MSA-FILE  FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << endl
+		 << "MSA-FILE  FILE                   : a multiple-alignment sequence file or pre-build MSA DB FILE" << ZLIB_SUPPORT << endl
 		 << "Options:    -o FILE              : write output to FILE instead of stdout" << endl
 		 << "            --fmt  STR           : MSA format, supported format: 'fasta', 'msa'" << endl
 		 << "            -f|--symfrac DOUBLE  : conservation threshold for considering a site as a Match state in HMM [" << DEFAULT_SYMFRAC << "]" << endl
@@ -75,7 +85,8 @@ void printUsage(const string& progName) {
 }
 
 int main(int argc, char *argv[]) {
-	ifstream in, dmIn;
+	boost::iostreams::filtering_istream in;
+	ifstream dmIn;
 	ofstream of;
 	double symfrac = DEFAULT_SYMFRAC;
 	string inFn;
@@ -137,14 +148,13 @@ int main(int argc, char *argv[]) {
 
 	/* guess input format */
 	if(fmt.empty()) {
-		if(StringUtils::endsWith(inFn, ".fasta") || StringUtils::endsWith(inFn, ".fas")
-		|| StringUtils::endsWith(inFn, ".fa") || StringUtils::endsWith(inFn, ".fna"))
-			fmt = "fasta";
-		else if(StringUtils::endsWith(inFn, ".msa"))
+		if(StringUtils::endsWith(inFn, ".msa"))
 			fmt = "msa";
 		else {
-			cerr << "Unrecognized MSA file format" << endl;
-			return EXIT_FAILURE;
+			string inPre = inFn;
+			StringUtils::removeEnd(inPre, GZIP_FILE_SUFFIX);
+			StringUtils::removeEnd(inPre, BZIP2_FILE_SUFFIX);
+			fmt = SeqUtils::guessSeqFileFormat(inPre);
 		}
 	}
 	if(!(fmt == "fasta" || fmt == "msa")) {
@@ -153,12 +163,19 @@ int main(int argc, char *argv[]) {
 	}
 
 	/* open input and output */
-	if(fmt != "msa")
-		in.open(inFn.c_str());
+#ifdef HAVE_LIBZ
+	if(StringUtils::endsWith(inFn, GZIP_FILE_SUFFIX))
+		in.push(boost::iostreams::gzip_decompressor());
+	else if(StringUtils::endsWith(inFn, BZIP2_FILE_SUFFIX))
+		in.push(boost::iostreams::bzip2_decompressor());
+	else { }
+#endif
+	if(fmt == "msa" || !in.empty()) /* binary format */
+		in.push(boost::iostreams::file_source(inFn, std::ios_base::in | std::ios_base::binary));
 	else
-		in.open(inFn.c_str(), ios_base::binary);
-	if(!in.is_open()) {
-		cerr << "Unable to open " << inFn << " : " << ::strerror(errno)<< endl;
+		in.push(boost::iostreams::file_source(inFn));
+	if(in.bad()) {
+		cerr << "Unable to open forward seq file '" << inFn << "' " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 

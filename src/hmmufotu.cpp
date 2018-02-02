@@ -90,7 +90,6 @@ int main(int argc, char* argv[]) {
 	/* variable declarations */
 	/* filenames */
 	string dbName, fwdFn, revFn, msaFn, csfmFn, hmmFn, ptuFn;
-	string fwdPre, revPre;
 	string outFn, alnFn;
 	/* input */
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
@@ -98,7 +97,7 @@ int main(int argc, char* argv[]) {
 	/* output */
 	boost::iostreams::filtering_ostream out, alnOut;
 	/* other */
-	string seqFmt;
+	string seqFmt; /* seq file format */
 	string estMethod = DEFAULT_BRANCH_EST_METHOD;
 	SeqIO fwdSeqI, revSeqI, alnSeqO;
 
@@ -206,24 +205,12 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
-	fwdPre = fwdFn;
-	revPre = revFn;
-	StringUtils::removeEnd(fwdPre, GZIP_FILE_SUFFIX);
-	StringUtils::removeEnd(fwdPre, BZIP2_FILE_SUFFIX);
-	StringUtils::removeEnd(revPre, GZIP_FILE_SUFFIX);
-	StringUtils::removeEnd(revPre, BZIP2_FILE_SUFFIX);
-
-	/* guess seq format */
+	/* guess fwdSeq format */
 	if(seqFmt.empty()) {
-		if(StringUtils::endsWith(fwdPre, ".fasta") || StringUtils::endsWith(fwdPre, ".fas")
-		|| StringUtils::endsWith(fwdPre, ".fa") || StringUtils::endsWith(fwdPre, ".fna"))
-			seqFmt = "fasta";
-		else if(StringUtils::endsWith(fwdPre, ".fastq") || StringUtils::endsWith(fwdPre, ".fq"))
-			seqFmt = "fastq";
-		else {
-			cerr << "Unrecognized format of MSA file '" << fwdFn << "'" << endl;
-			return EXIT_FAILURE;
-		}
+		string seqPre = fwdFn;
+		StringUtils::removeEnd(seqPre, GZIP_FILE_SUFFIX);
+		StringUtils::removeEnd(seqPre, BZIP2_FILE_SUFFIX);
+		seqFmt = SeqUtils::guessSeqFileFormat(seqPre);
 	}
 	if(!(seqFmt == "fasta" || seqFmt == "fastq")) {
 		cerr << "Unsupported sequence format '" << seqFmt << "'" << endl;
@@ -300,7 +287,10 @@ int main(int argc, char* argv[]) {
 		fwdIn.push(boost::iostreams::bzip2_decompressor());
 	else { }
 #endif
-	fwdIn.push(boost::iostreams::file_source(fwdFn));
+	if(fwdIn.empty()) /* not zipped */
+		fwdIn.push(boost::iostreams::file_source(fwdFn));
+	else
+		fwdIn.push(boost::iostreams::file_source(fwdFn, std::ios_base::in | std::ios_base::binary));
 	if(fwdIn.bad()) {
 		cerr << "Unable to open forward seq file '" << fwdFn << "' " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;

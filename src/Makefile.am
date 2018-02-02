@@ -78,13 +78,16 @@ bin_PROGRAMS += hmmufotu-jplace
 endif
 
 hmmufotu_train_dm_SOURCES=hmmufotu-train-dm.cpp HmmUFOtuEnv.cpp
-hmmufotu_train_dm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a util/libEGUtil.a math/libEGMath.a
+hmmufotu_train_dm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a util/libEGUtil.a math/libEGMath.a \
+$(BOOST_IOSTREAMS_LIB)
 
 hmmufotu_train_sm_SOURCES=hmmufotu-train-sm.cpp HmmUFOtuEnv.cpp
-hmmufotu_train_sm_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a
+hmmufotu_train_sm_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
+$(BOOST_IOSTREAMS_LIB)
 
 hmmufotu_train_hmm_SOURCES = hmmufotu-train-hmm.cpp HmmUFOtuEnv.cpp
-hmmufotu_train_hmm_LDADD = libHmmUFOtu_hmm.a util/libEGUtil.a math/libEGMath.a libHmmUFOtu_common.a
+hmmufotu_train_hmm_LDADD = libHmmUFOtu_hmm.a util/libEGUtil.a math/libEGMath.a libHmmUFOtu_common.a \
+$(BOOST_IOSTREAMS_LIB)
 hmmufotu_train_hmm_CPPFLAGS = -DSRC_DATADIR=\"$(abs_top_srcdir)/data\" -DPKG_DATADIR=\"$(pkgdatadir)\"
 
 hmmufotu_sim_SOURCES = hmmufotu-sim.cpp HmmUFOtuEnv.cpp
@@ -92,7 +95,8 @@ hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a util/libEGUtil.a
 
 hmmufotu_build_SOURCES = hmmufotu-build.cpp HmmUFOtuEnv.cpp
 hmmufotu_build_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
-libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
+libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
+$(BOOST_IOSTREAMS_LIB)
 hmmufotu_build_CPPFLAGS = -DSRC_DATADIR=\"$(abs_top_srcdir)/data\" -DPKG_DATADIR=\"$(pkgdatadir)\"
 
 hmmufotu_inspect_SOURCES = hmmufotu-inspect.cpp HmmUFOtuEnv.cpp

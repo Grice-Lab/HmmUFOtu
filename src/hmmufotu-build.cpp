@@ -28,6 +28,11 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <boost/iostreams/filtering_stream.hpp> /* basic boost streams */
+#include <boost/iostreams/device/file.hpp> /* file sink and source */
+#include <boost/iostreams/filter/zlib.hpp> /* for zlib support */
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filter/bzip2.hpp> /* for bzip2 support */
 #include "HmmUFOtu.h"
 
 #ifdef _OPENMP
@@ -67,8 +72,13 @@ void printIntro(void) {
  * Print the usage information
  */
 void printUsage(const string& progName) {
+	string ZLIB_SUPPORT;
+	#ifdef HAVE_LIBZ
+	ZLIB_SUPPORT = ", support .gz or .bz2 compressed file";
+	#endif
+
 	cerr << "Usage:    " << progName << "  <MSA-FILE> <TREE-FILE> [options]" << endl
-		 << "MSA-FILE  FILE                   : multiple-sequence aligned (MSA) input" << endl
+		 << "MSA-FILE  FILE                   : multiple-sequence aligned (MSA) input" << ZLIB_SUPPORT << endl
 		 << "TREE-FILE  FILE                  : phylogenetic-tree file build on the MSA sequences" << endl
 		 << "Options:    -n  STR              : database name (prefix), use 'MSA-FILE' by default" << endl
 		 << "            --fmt  STR           : MSA format, supported format: 'fasta'" << endl
@@ -92,7 +102,8 @@ void printUsage(const string& progName) {
 int main(int argc, char* argv[]) {
 	/* variable declarations */
 	string seqFn, treeFn, dbName, annoFn;
-	ifstream dmIn, smIn, seqIn, treeIn, annoIn;
+	ifstream dmIn, smIn, treeIn, annoIn;
+	boost::iostreams::filtering_istream seqIn;
 	ofstream msaOut, csfmOut, hmmOut, ptuOut;
 	string fmt;
 	string rootName = PhyloTreeUnrooted::DEFAULT_ROOT_NAME;
@@ -184,21 +195,19 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
 
-	/* check options */
+	/* guess input format */
 	if(fmt.empty()) {
-		if(StringUtils::endsWith(seqFn, ".fasta") || StringUtils::endsWith(seqFn, ".fas")
-		|| StringUtils::endsWith(seqFn, ".fa") || StringUtils::endsWith(seqFn, ".fna"))
-			fmt = "fasta";
-		else {
-			cerr << "Unrecognized format of MSA file '" << seqFn << "'" << endl;
-			return EXIT_FAILURE;
-		}
+		string seqPre = seqFn;
+		StringUtils::removeEnd(seqPre, GZIP_FILE_SUFFIX);
+		StringUtils::removeEnd(seqPre, BZIP2_FILE_SUFFIX);
+		fmt = SeqUtils::guessSeqFileFormat(seqPre);
 	}
 	if(fmt != "fasta") {
 		cerr << "Unsupported sequence format '" << fmt << "'" << endl;
 		return EXIT_FAILURE;
 	}
 
+	/* check options */
 	if(!NewickTree::isNewickFileExt(treeFn)) {
 		cerr << "Unrecognized TREE-FILE format, must be in Newick format" << endl;
 		return EXIT_FAILURE;
@@ -223,26 +232,40 @@ int main(int argc, char* argv[]) {
 #endif
 
 	/* open inputs */
-	seqIn.open(seqFn.c_str());
-	if(!seqIn.is_open()) {
-		cerr << "Unable to open '" << seqFn << "': " << ::strerror(errno) << endl;
+#ifdef HAVE_LIBZ
+	if(StringUtils::endsWith(seqFn, GZIP_FILE_SUFFIX))
+		seqIn.push(boost::iostreams::gzip_decompressor());
+	else if(StringUtils::endsWith(seqFn, BZIP2_FILE_SUFFIX))
+		seqIn.push(boost::iostreams::bzip2_decompressor());
+	else { }
+#endif
+	if(!seqIn.empty()) /* binary format */
+		seqIn.push(boost::iostreams::file_source(seqFn, std::ios_base::in | std::ios_base::binary));
+	else
+		seqIn.push(boost::iostreams::file_source(seqFn));
+	if(seqIn.bad()) {
+		cerr << "Unable to open forward seq file '" << seqFn << "' " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
+
 	dmIn.open(dmFn.c_str());
 	if(!dmIn.is_open()) {
 		cerr << "Unable to open '" << dmFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
+
 	smIn.open(smFn.c_str());
 	if(!smIn.is_open()) {
 		cerr << "Unable to open '" << smFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
+
 	treeIn.open(treeFn.c_str());
 	if(!treeIn.is_open()) {
 		cerr << "Unable to open '" << treeFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
+
 	if(!annoFn.empty()) {
 		annoIn.open(annoFn.c_str());
 		if(!annoIn.is_open()) {

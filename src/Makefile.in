@@ -172,7 +172,8 @@ am_hmmufotu_build_OBJECTS = hmmufotu_build-hmmufotu-build.$(OBJEXT) \
 hmmufotu_build_OBJECTS = $(am_hmmufotu_build_OBJECTS)
 hmmufotu_build_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a \
 	libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
-	libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
+	libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
+	$(am__DEPENDENCIES_1)
 am_hmmufotu_inspect_OBJECTS = hmmufotu-inspect.$(OBJEXT) \
 	HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_inspect_OBJECTS = $(am_hmmufotu_inspect_OBJECTS)
@@ -220,18 +221,20 @@ am_hmmufotu_train_dm_OBJECTS = hmmufotu-train-dm.$(OBJEXT) \
 	HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_train_dm_OBJECTS = $(am_hmmufotu_train_dm_OBJECTS)
 hmmufotu_train_dm_DEPENDENCIES = libHmmUFOtu_common.a \
-	libHmmUFOtu_hmm.a util/libEGUtil.a math/libEGMath.a
+	libHmmUFOtu_hmm.a util/libEGUtil.a math/libEGMath.a \
+	$(am__DEPENDENCIES_1)
 am_hmmufotu_train_hmm_OBJECTS =  \
 	hmmufotu_train_hmm-hmmufotu-train-hmm.$(OBJEXT) \
 	hmmufotu_train_hmm-HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_train_hmm_OBJECTS = $(am_hmmufotu_train_hmm_OBJECTS)
 hmmufotu_train_hmm_DEPENDENCIES = libHmmUFOtu_hmm.a util/libEGUtil.a \
-	math/libEGMath.a libHmmUFOtu_common.a
+	math/libEGMath.a libHmmUFOtu_common.a $(am__DEPENDENCIES_1)
 am_hmmufotu_train_sm_OBJECTS = hmmufotu-train-sm.$(OBJEXT) \
 	HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_train_sm_OBJECTS = $(am_hmmufotu_train_sm_OBJECTS)
 hmmufotu_train_sm_DEPENDENCIES = libHmmUFOtu_phylo.a \
-	libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a
+	libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
+	$(am__DEPENDENCIES_1)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -540,17 +543,24 @@ OTUObserved.cpp \
 OTUTable.cpp
 
 hmmufotu_train_dm_SOURCES = hmmufotu-train-dm.cpp HmmUFOtuEnv.cpp
-hmmufotu_train_dm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a util/libEGUtil.a math/libEGMath.a
+hmmufotu_train_dm_LDADD = libHmmUFOtu_common.a libHmmUFOtu_hmm.a util/libEGUtil.a math/libEGMath.a \
+$(BOOST_IOSTREAMS_LIB)
+
 hmmufotu_train_sm_SOURCES = hmmufotu-train-sm.cpp HmmUFOtuEnv.cpp
-hmmufotu_train_sm_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a
+hmmufotu_train_sm_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
+$(BOOST_IOSTREAMS_LIB)
+
 hmmufotu_train_hmm_SOURCES = hmmufotu-train-hmm.cpp HmmUFOtuEnv.cpp
-hmmufotu_train_hmm_LDADD = libHmmUFOtu_hmm.a util/libEGUtil.a math/libEGMath.a libHmmUFOtu_common.a
+hmmufotu_train_hmm_LDADD = libHmmUFOtu_hmm.a util/libEGUtil.a math/libEGMath.a libHmmUFOtu_common.a \
+$(BOOST_IOSTREAMS_LIB)
+
 hmmufotu_train_hmm_CPPFLAGS = -DSRC_DATADIR=\"$(abs_top_srcdir)/data\" -DPKG_DATADIR=\"$(pkgdatadir)\"
 hmmufotu_sim_SOURCES = hmmufotu-sim.cpp HmmUFOtuEnv.cpp
 hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a util/libEGUtil.a
 hmmufotu_build_SOURCES = hmmufotu-build.cpp HmmUFOtuEnv.cpp
 hmmufotu_build_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
-libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
+libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
+$(BOOST_IOSTREAMS_LIB)
 
 hmmufotu_build_CPPFLAGS = -DSRC_DATADIR=\"$(abs_top_srcdir)/data\" -DPKG_DATADIR=\"$(pkgdatadir)\"
 hmmufotu_inspect_SOURCES = hmmufotu-inspect.cpp HmmUFOtuEnv.cpp

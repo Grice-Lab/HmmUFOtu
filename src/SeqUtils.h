@@ -79,6 +79,12 @@ public:
 
 	static bool isFastqFileExt(const string& fn);
 
+	/**
+	 * guess populoar sequence file format based one filename extension
+	 * @return empty string if unrecognized
+	 */
+	static string guessSeqFileFormat(const string& fn);
+
 public:
 	/** static fields */
 	static const char *FASTA_FILE_EXTENSIONS[];
