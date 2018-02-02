@@ -136,7 +136,7 @@ libHmmUFOtu_hmm_a_AR = $(AR) $(ARFLAGS)
 libHmmUFOtu_hmm_a_LIBADD =
 am_libHmmUFOtu_hmm_a_OBJECTS = BandedHMMP7Bg.$(OBJEXT) \
 	BandedHMMP7Prior.$(OBJEXT) BandedHMMP7.$(OBJEXT) \
-	CSFMIndex.$(OBJEXT)
+	CSFMIndex.$(OBJEXT) HmmAlignment.$(OBJEXT)
 libHmmUFOtu_hmm_a_OBJECTS = $(am_libHmmUFOtu_hmm_a_OBJECTS)
 libHmmUFOtu_phylo_a_AR = $(AR) $(ARFLAGS)
 libHmmUFOtu_phylo_a_LIBADD =
@@ -519,7 +519,8 @@ libHmmUFOtu_hmm_a_SOURCES = \
 BandedHMMP7Bg.cpp \
 BandedHMMP7Prior.cpp \
 BandedHMMP7.cpp \
-CSFMIndex.cpp
+CSFMIndex.cpp \
+HmmAlignment.cpp
 
 libHmmUFOtu_phylo_a_SOURCES = \
 NewickTree.cpp \
@@ -758,6 +759,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/F81.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GTR.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HKY85.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HmmAlignment.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HmmUFOtuEnv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HmmUFOtu_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IUPACAmino.Po@am__quote@
