@@ -53,10 +53,6 @@ const double BandedHMMP7::kMinGapFrac = 0.2;
 const double BandedHMMP7::CONS_THRESHOLD = 0.9;
 const double BandedHMMP7::DEFAULT_ERE = 1;
 const IOFormat tabFmt(StreamPrecision, DontAlignCols, "\t", "\n", "", "", "", "");
-//static const int8_t GAP_BASE = DegenAlphabet::GAP_BASE;
-//static const int8_t PAD_BASE = DegenAlphabet::GAP_BASE;
-static const char GAP_SYM = '-';
-static const char PAD_SYM = '.';
 
 BandedHMMP7::BandedHMMP7() :
 		name("unnamed"), K(0), L(0), abc(NULL),
@@ -1175,23 +1171,6 @@ string BandedHMMP7::getPaddingSeq(int L, const string& insert, char padCh, paddi
 
 	assert(pad.length() == L);
 	return pad;
-}
-
-string BandedHMMP7::mergeAlign(const string& fwdAln, const string& revAln) {
-	assert(fwdAln.length() == revAln.length());
-	string mergedAln(fwdAln);
-	for(string::size_type i = 0; i < mergedAln.length(); ++i)
-		if(fwdAln[i] == PAD_SYM && revAln[i] != PAD_SYM) /* use fwd symbol as primary source */
-			mergedAln[i] = revAln[i];
-	return mergedAln;
-}
-
-string& BandedHMMP7::mergeWith(string& fwdAln, const string& revAln) {
-	assert(fwdAln.length() == revAln.length());
-	for(string::size_type i = 0; i < fwdAln.length(); ++i)
-		if(fwdAln[i] == PAD_SYM && revAln[i] != PAD_SYM) /* use fwd symbol as primary source */
-			fwdAln[i] = revAln[i];
-	return fwdAln;
 }
 
 } /* namespace HmmUFOtu */

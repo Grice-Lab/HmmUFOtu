@@ -31,5 +31,6 @@
 #include "BandedHMMP7Prior.h"
 #include "BandedHMMP7.h"
 #include "CSFMIndex.h"
+#include "HmmAlignment.h"
 
 #endif /* SRC_HMMUFOTU_HMM_H_ */

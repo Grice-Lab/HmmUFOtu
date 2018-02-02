@@ -142,6 +142,8 @@ struct PTPlacement {
 	static const double UNASSIGNED_POSTQ;
 	static const double UNASSIGNED_DIST;
 	static const double UNASSIGNED_RATIO;
+
+	static const string TSV_HEADER;
 };
 
 /**
@@ -167,13 +169,11 @@ struct JPlace {
 
 	/* static member fields */
 	static const int MAX_Q = 250; /* maximum allowed Q value */
-
 };
 
 /** Align seq with hmm and csfm, returns the alignment and update csStart and csEnd */
-string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
-		int seedLen, int seedRegion, BandedHMMP7::align_mode mode,
-		int& csStart, int& csEnd);
+HmmAlignment alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
+		int seedLen, int seedRegion, BandedHMMP7::align_mode mode);
 
 /**
  * Get seed placement locations by checking p-dist between a given seq and observed/inferred seq of nodes

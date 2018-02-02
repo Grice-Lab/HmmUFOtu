@@ -39,7 +39,8 @@ libHmmUFOtu_hmm_a_SOURCES = \
 BandedHMMP7Bg.cpp \
 BandedHMMP7Prior.cpp \
 BandedHMMP7.cpp \
-CSFMIndex.cpp
+CSFMIndex.cpp \
+HmmAlignment.cpp
 
 libHmmUFOtu_phylo_a_SOURCES = \
 NewickTree.cpp \

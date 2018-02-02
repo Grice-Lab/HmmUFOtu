@@ -222,6 +222,10 @@ public:
 	static const double CONS_THRESHOLD; // threshold for print upper-case consensus residues
 	static const double DEFAULT_ERE; // target mean average relative entropy of the model
 	static const Eigen::IOFormat tabFmt;
+	//static const int8_t GAP_BASE = DegenAlphabet::GAP_BASE;
+	//static const int8_t PAD_BASE = DegenAlphabet::GAP_BASE;
+	static const char GAP_SYM = '-';
+	static const char PAD_SYM = '.';
 
 	/* member functions */
 	/* Getters and Setters */
@@ -750,14 +754,6 @@ private:
 	}
 
 public:
-	/** Merge two multiple alignments */
-	static string mergeAlign(const string& fwdAln, const string& revAln);
-
-	/** Merge two multiple alignments */
-	static string& mergeWith(string& fwdAln, const string& revAln);
-
-
-//public:
 	/* non-member operators */
 	/**
 	 * utility function for output an alignment path to a human readable string

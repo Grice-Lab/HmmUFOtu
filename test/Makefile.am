@@ -4,9 +4,12 @@ AM_CXXFLAGS = -I$(top_srcdir)/src \
 -I$(top_srcdir)/src/util \
 -I$(top_srcdir)/src/math \
 -I$(top_srcdir)/src/libdivsufsort/include \
--I$(top_srcdir)/src/libcds/include
+-I$(top_srcdir)/src/libcds/include \
+$(BOOST_CPPFLAGS) \
+$(OPENMP_CFLAGS)
 
-AM_LDFLAGS = $(BOOST_LDFLAGS)
+AM_CPPFLAGS = $(BOOST_CPPFLAGS) $(OPENMP_CFLAGS)
+AM_LDFLAGS = $(BOOST_LDFLAGS) $(OPENMP_CFLAGS)
 
 check_PROGRAMS = \
 MSAIO_test \

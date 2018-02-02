@@ -41,6 +41,7 @@ const string PTPlacement::UNASSIGNED_ID = "NULL";
 const double PTPlacement::UNASSIGNED_POSTQ = nan;
 const double PTPlacement::UNASSIGNED_DIST = nan;
 const double PTPlacement::UNASSIGNED_RATIO = nan;
+const string PTPlacement::TSV_HEADER = "branch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
 
 void PTPlacement::calcQValues(vector<PTPlacement>& places, PRIOR_TYPE type) {
 	if(places.empty())
@@ -98,14 +99,14 @@ double PTPlacement::logPriorPr(PRIOR_TYPE type) const {
 	return logP;
 }
 
-string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
-		int seedLen, int seedRegion, BandedHMMP7::align_mode mode,
-		int& csStart, int& csEnd) {
+HmmAlignment alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
+		int seedLen, int seedRegion, BandedHMMP7::align_mode mode) {
 	const DegenAlphabet* abc = hmm.getNuclAbc();
 	const int K = hmm.getProfileSize();
-	const int L = read.length();
+	const int L = hmm.getCSLen();
+	const int N = read.length();
 
-	BandedHMMP7::ViterbiScores seqVscore(K, L); // construct an empty reusable score
+	BandedHMMP7::ViterbiScores seqVscore(K, N); // construct an empty reusable score
 	vector<BandedHMMP7::ViterbiAlignPath> seqVpaths; // construct an empty list of VPaths
 	BandedHMMP7::ViterbiAlignTrace seqVtrace; // construct an empty VTrace
 
@@ -163,10 +164,13 @@ string alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq&
 	assert(seqVtrace.minScore != inf);
 
 	/* find seqStart and seqEnd */
-	csStart = hmm.getCSLoc(seqVtrace.alnStart);
-	csEnd = hmm.getCSLoc(seqVtrace.alnEnd);
+	int csStart = hmm.getCSLoc(seqVtrace.alnStart);
+	int csEnd = hmm.getCSLoc(seqVtrace.alnEnd);
+	/* get aligned seq */
+	const string& align = hmm.buildGlobalAlign(read, seqVscore, seqVtrace);
 
-	return hmm.buildGlobalAlign(read, seqVscore, seqVtrace);
+	return HmmAlignment(K, L, seqVtrace.alnFrom, seqVtrace.alnTo, seqVtrace.alnStart, seqVtrace.alnEnd,
+			csStart, csEnd, seqVtrace.minScore, align);
 }
 
 vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
