@@ -173,6 +173,33 @@ HmmAlignment alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const Prima
 			csStart, csEnd, seqVtrace.minScore, align);
 }
 
+HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& read) {
+	const DegenAlphabet* abc = hmm.getNuclAbc();
+	const int K = hmm.getProfileSize();
+	const int L = hmm.getCSLen();
+	const int N = read.length();
+
+	BandedHMMP7::ViterbiScores seqVscore(K, N); // construct an empty reusable score
+	BandedHMMP7::ViterbiAlignTrace seqVtrace; // construct an empty VTrace
+
+	/* traditional HMM align */
+	hmm.calcViterbiScores(read, seqVscore); /* use original Viterbi algorithm */
+
+	/* build VTrace */
+	hmm.buildViterbiTrace(seqVscore, seqVtrace);
+	cerr << "trace built" << endl;
+
+	assert(seqVtrace.minScore != inf);
+	/* find seqStart and seqEnd */
+	int csStart = hmm.getCSLoc(seqVtrace.alnStart);
+	int csEnd = hmm.getCSLoc(seqVtrace.alnEnd);
+	/* get aligned seq */
+	const string& align = hmm.buildGlobalAlign(read, seqVscore, seqVtrace);
+
+	return HmmAlignment(K, L, seqVtrace.alnFrom, seqVtrace.alnTo, seqVtrace.alnStart, seqVtrace.alnEnd,
+			csStart, csEnd, seqVtrace.minScore, align);
+}
+
 vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 		int start, int end, double maxDiff) {
 	vector<PTLoc> locs; /* candidate locations */

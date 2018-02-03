@@ -171,9 +171,12 @@ struct JPlace {
 	static const int MAX_Q = 250; /* maximum allowed Q value */
 };
 
-/** Align seq with hmm and csfm, returns the alignment and update csStart and csEnd */
+/** Align seq using banded HMM algorithm, returns an HmmAlignment */
 HmmAlignment alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
 		int seedLen, int seedRegion, BandedHMMP7::align_mode mode);
+
+/** Align seq using traditional HMM algorithm, returns an HmmAlignment */
+HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& read);
 
 /**
  * Get seed placement locations by checking p-dist between a given seq and observed/inferred seq of nodes

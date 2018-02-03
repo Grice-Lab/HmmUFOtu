@@ -11,7 +11,7 @@
 namespace EGriceLab {
 namespace HmmUFOtu {
 
-const string HmmAlignment::TSV_HEADER = "K\tL\tseq_start\tseq_end\thmm_start\thmm_end\tCS_start\tCS_end\tcost\talignment";
+const string HmmAlignment::TSV_HEADER = "profile_size\tCS_size\tseq_start\tseq_end\thmm_start\thmm_end\tCS_start\tCS_end\tcost\talignment";
 
 HmmAlignment& HmmAlignment::merge(const HmmAlignment& other) {
 	if(isCompatitable(other)) {
