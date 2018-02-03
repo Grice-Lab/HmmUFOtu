@@ -949,9 +949,9 @@ void BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignTrace& 
 	int i = minRow;
 	int j = minCol <= K ? minCol : K;
 
-	vtrace.alnStart = minCol <= K ? minCol : K;
+//	vtrace.alnStart = minCol <= K ? minCol : K;
 	vtrace.alnEnd = minCol <= K ? minCol : K;
-	vtrace.alnFrom = vtrace.alnTo = minRow;
+	vtrace.alnTo = minRow;
 
 	vtrace.alnTrace.push_back('E'); // ends with E
 	while(i >= 1 && j >= 0) {
@@ -959,44 +959,45 @@ void BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignTrace& 
 		vtrace.alnTrace.push_back(s);
 		// update the status
 		if(s == 'M') {
-			vtrace.alnStart--;
-			vtrace.alnFrom--;
-			s = BandedHMMP7::whichMin(
-					static_cast<double> (vs.DP_M(i, 0) + entryPr_cost(j)), /* from B-state */
-					static_cast<double> (vs.DP_M(i - 1, j - 1) + Tmat_cost[j-1](M, M)), /* from M(i-1,j-1) */
-					static_cast<double> (vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), /* from I(i-1,j-1) */
-					static_cast<double> (vs.DP_D(i - 1, j - 1) + Tmat_cost[j-1](D, M))); /* from D(i-1,j-1) */
-			if(s == 'B')
-				j = 0;
-			else {
-				i--;
-				j--;
-			}
+			s = j > 1 ? BandedHMMP7::whichMin(
+						static_cast<double> (vs.DP_M(i, 0) + entryPr_cost(j)), /* from B-state */
+						static_cast<double> (vs.DP_M(i - 1, j - 1) + Tmat_cost[j-1](M, M)), /* from M(i-1,j-1) */
+						static_cast<double> (vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), /* from I(i-1,j-1) */
+						static_cast<double> (vs.DP_D(i - 1, j - 1) + Tmat_cost[j-1](D, M))) : /* from D(i-1,j-1) */
+					BandedHMMP7::whichMin(
+							static_cast<double> (vs.DP_M(i, 0) + entryPr_cost(j)), /* from B-state */
+							static_cast<double> (vs.DP_I(i - 1, j - 1) + Tmat_cost[j-1](I, M)), /* from I(i-1,j-1) */
+							"BI");
+			i--;
+			j--;
 		}
 		else if(s == 'I') {
 			vtrace.alnFrom--;
-			s = BandedHMMP7::whichMin(
+			s = j > 0 ? BandedHMMP7::whichMin(
 					static_cast<double> (vs.DP_M(i - 1, j) + Tmat_cost[j](M, I)), /* from M(i-1,j) */
 					static_cast<double> (vs.DP_I(i - 1, j) + Tmat_cost[j](I, I)), /* from I(i-1,j) */
-					"MI");
+					"MI") :
+					BandedHMMP7::whichMin(
+										static_cast<double> (vs.DP_M(i, 0) + Tmat_cost[0](M, I)), /* from B aka M(0) */
+										static_cast<double> (vs.DP_I(i - 1, j) + Tmat_cost[j](I, I)), /* from I(i-1,j) */
+										"BI");
 			i--;
 		}
 		else if(s == 'D') {
-			vtrace.alnStart--;
 			s = BandedHMMP7::whichMin(
 					static_cast<double> (vs.DP_M(i, j - 1) + Tmat_cost[j-1](M, D)), /* from M(i,j-1) */
 					static_cast<double> (vs.DP_D(i, j - 1) + Tmat_cost[j-1](D, D)), /* from D(i,j-1) */
 					"MD");
 			j--;
 		}
-		else if(s == 'B')
+		else /* B */
 			break;
-		else { } /* do nothing */
 	} /* end of while */
 
-	vtrace.alnStart++; /* 1-based */
-	vtrace.alnFrom++;  /* 1-based */
+	vtrace.alnStart = j + 1; /* 1-based */
+	vtrace.alnFrom = i + 1;  /* 1-based */
 
+	assert(vtrace.alnStart > 0 && vtrace.alnFrom > 0);
 	if(*vtrace.alnTrace.rbegin() != 'B')
 		vtrace.alnTrace.push_back('B');
 	reverse(vtrace.alnTrace.begin(), vtrace.alnTrace.end()); // reverse the alnPath string

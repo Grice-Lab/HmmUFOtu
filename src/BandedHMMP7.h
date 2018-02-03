@@ -257,6 +257,11 @@ public:
 		return K;
 	}
 
+	/** test whether this HMM Profile is initiated */
+	bool isInitiated() const {
+		return K > 0;
+	}
+
 	/**
 	 * Set the size of an (un-initialized) profile object
 	 * @param size  the designated size of this profile
