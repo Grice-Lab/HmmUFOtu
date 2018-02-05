@@ -187,7 +187,6 @@ HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& read) {
 
 	/* build VTrace */
 	hmm.buildViterbiTrace(seqVscore, seqVtrace);
-	cerr << "trace built" << endl;
 
 	assert(seqVtrace.minScore != inf);
 	/* find seqStart and seqEnd */

@@ -11,7 +11,7 @@
 namespace EGriceLab {
 namespace HmmUFOtu {
 
-const string HmmAlignment::TSV_HEADER = "profile_size\tCS_size\tseq_start\tseq_end\thmm_start\thmm_end\tCS_start\tCS_end\tcost\talignment";
+const string HmmAlignment::TSV_HEADER = "seq_start\tseq_end\thmm_start\thmm_end\tCS_start\tCS_end\tcost\talignment";
 
 HmmAlignment& HmmAlignment::merge(const HmmAlignment& other) {
 	if(isCompatitable(other)) {
@@ -41,8 +41,7 @@ HmmAlignment& HmmAlignment::merge(const HmmAlignment& other) {
 }
 
 ostream& operator<<(ostream& out, const HmmAlignment& hmmAln) {
-	out << hmmAln.K << "\t" << hmmAln.L << "\t" <<
-			hmmAln.seqStart << "\t" << hmmAln.seqEnd << "\t" <<
+	out << hmmAln.seqStart << "\t" << hmmAln.seqEnd << "\t" <<
 			hmmAln.hmmStart << "\t" << hmmAln.hmmEnd << "\t" <<
 			hmmAln.csStart << "\t" << hmmAln.csEnd << "\t" <<
 			hmmAln.cost << "\t" << hmmAln.align;
@@ -50,8 +49,7 @@ ostream& operator<<(ostream& out, const HmmAlignment& hmmAln) {
 }
 
 istream& operator>>(istream& in, HmmAlignment& hmmAln) {
-	in >> hmmAln.K >> hmmAln.L >>
-	hmmAln.seqStart >> hmmAln.seqEnd >>
+	in >> hmmAln.seqStart >> hmmAln.seqEnd >>
 	hmmAln.hmmStart >> hmmAln.hmmEnd >>
 	hmmAln.csStart >> hmmAln.csEnd >>
 	hmmAln.cost >> hmmAln.align;
