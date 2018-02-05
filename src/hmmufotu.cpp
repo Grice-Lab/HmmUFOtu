@@ -33,7 +33,6 @@ using namespace EGriceLab::HmmUFOtu;
 using namespace Eigen;
 
 /* default values */
-static const double DEFAULT_MIN_BG_LOD = 0;
 static const double DEFAULT_MAX_DIFF = inf;
 static const size_t DEFAULT_MAX_LOCATION = 50;
 static const int DEFAULT_SEED_LEN = 20;
@@ -43,7 +42,6 @@ static const int DEFAULT_SEED_REGION = 50;
 static const double DEFAULT_MAX_PLACE_ERROR = 20;
 static const int DEFAULT_NUM_THREADS = 1;
 static const string ALIGN_OUT_FMT = "fasta";
-static const string BG_OUT_FMT = "fastq";
 static const string DEFAULT_BRANCH_EST_METHOD = "unweighted";
 
 /**
@@ -71,10 +69,6 @@ void printUsage(const string& progName) {
 		 << "            -L|--seed-len  INT : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT            : size of 5'/3' seed region for finding seeds [" << DEFAULT_SEED_REGION << "]" << endl
 		 << "            -s  FLAG           : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
-		 << "            --bg-HMM  FILE     : turn on background sequence (i.e. mitochondria or chloroplast) filter during the HMM aligning step using provided HMM file" << endl
-		 << "            --bg-LOD  DBL      : min LOD score for assigning read to target vs. background based on aligning cost [" << DEFAULT_MIN_BG_LOD << "]" << endl
-		 << "            --ignore-LOD  FLAG : ignore the background LOD threshhold and always output result " << endl
-		 << "            --bg-READ  STR     : retain all background filtered reads in FASTQ file/pairs with this name/prefix" << endl
 		 << "            -N  INT            : max number of most potential locations (based on p-dist) to try initial estimation [" << DEFAULT_MAX_LOCATION << "]" << endl
 		 << "            -d  DBL            : maximum read/node p-dist difference allowed to check below the best matching seed during the seed search stage [" << DEFAULT_MAX_DIFF << "]" << endl
 		 << "            -e  DBL            : max placement error between fast estimation and accurate placement [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
@@ -97,19 +91,15 @@ int main(int argc, char* argv[]) {
 	/* filenames */
 	string dbName, fwdFn, revFn, msaFn, csfmFn, hmmFn, ptuFn;
 	string outFn, alnFn;
-	string bgHmmFn, bgSeqFn;
 	/* input */
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
-	ifstream bgHmmIn;
 	boost::iostreams::filtering_istream fwdIn, revIn;
 	/* output */
-	ofstream bgFwdOut, bgRevOut;
 	boost::iostreams::filtering_ostream out, alnOut;
 	/* other */
 	string seqFmt; /* seq file format */
 	string estMethod = DEFAULT_BRANCH_EST_METHOD;
 	SeqIO fwdSeqI, revSeqI, alnSeqO;
-	SeqIO bgFwdSeqO, bgRevSeqO;
 
 	bool isAssembled = true; /* assume assembled seq if not paired-end */
 	bool alignOnly = false;
@@ -117,7 +107,6 @@ int main(int argc, char* argv[]) {
 
 	int seedLen = DEFAULT_SEED_LEN;
 	int seedRegion = DEFAULT_SEED_REGION;
-	double bgLod = DEFAULT_MIN_BG_LOD;
 	double maxDiff = DEFAULT_MAX_DIFF;
 	int maxLocs = DEFAULT_MAX_LOCATION;
 	double maxError = DEFAULT_MAX_PLACE_ERROR;
@@ -169,15 +158,6 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-s"))
 		isAssembled = false;
-
-	if(cmdOpts.hasOpt("--bg-HMM"))
-		bgHmmFn = cmdOpts.getOpt("--bg-HMM");
-	if(cmdOpts.hasOpt("--bg-LOD"))
-		bgLod = ::atof(cmdOpts.getOptStr("--bg-LOD"));
-	if(cmdOpts.hasOpt("--ignore-LOD"))
-		bgLod = infV;
-	if(cmdOpts.hasOpt("--bg-FILE"))
-		bgSeqFn = cmdOpts.getOpt("--bg-FILE");
 
 	if(cmdOpts.hasOpt("-d"))
 		maxDiff = ::atof(cmdOpts.getOptStr("-d"));
@@ -244,10 +224,6 @@ int main(int argc, char* argv[]) {
 	}
 	if(seedRegion < seedLen) {
 		cerr << "-R cannot be smaller than -L" << endl;
-		return EXIT_FAILURE;
-	}
-	if(!(bgLod == infV || bgLod >= 0)) {
-		cerr << "--bg-LOD must be non-negative" << endl;
 		return EXIT_FAILURE;
 	}
 	if(!(maxDiff >= 0)) {
@@ -336,14 +312,6 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if(!bgHmmFn.empty()) {
-		bgHmmIn.open(bgHmmFn.c_str());
-		if(!bgHmmIn) {
-			cerr << "Unable to open background HMM profile '" << bgHmmFn << "': " << ::strerror(errno) << endl;
-			return EXIT_FAILURE;
-		}
-	}
-
 	/* open outputs */
 #ifdef HAVE_LIBZ
 	if(StringUtils::endsWith(outFn, GZIP_FILE_SUFFIX)) /* empty outFn won't match */
@@ -378,24 +346,6 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if(!bgSeqFn.empty()) {
-		bgSeqFn = StringUtils::basename(bgSeqFn); /* remove any suffixe */
-		string bgFwdFn = isSingle ? bgSeqFn + "." + BG_OUT_FMT : bgSeqFn + "_R1." + BG_OUT_FMT;
-		string bgRevFn = isSingle ? "" : bgSeqFn + "_R2." + BG_OUT_FMT;
-		bgFwdOut.open(bgFwdFn);
-		if(!bgFwdOut.is_open()) {
-			cerr << "Unable to write to background file '" << bgFwdFn << "' " << ::strerror(errno) << endl;
-			return EXIT_FAILURE;
-		}
-		if(!bgRevFn.empty()) {
-			bgRevOut.open(bgRevFn);
-			if(!bgRevOut.is_open()) {
-				cerr << "Unable to write to background file '" << bgRevFn << "' " << ::strerror(errno) << endl;
-				return EXIT_FAILURE;
-			}
-		}
-	}
-
 	/* loading database files */
 	if(loadProgInfo(msaIn).bad())
 		return EXIT_FAILURE;
@@ -421,16 +371,6 @@ int main(int argc, char* argv[]) {
 	}
 	const DegenAlphabet* abc = hmm.getNuclAbc();
 
-	BandedHMMP7 bgHmm;
-	if(bgHmmIn.is_open()) {
-		bgHmmIn >> bgHmm;
-		if(bgHmmIn.bad()) {
-			cerr << "Unable to read background HMM profile '" << bgHmmFn << "': " << ::strerror(errno) << endl;
-			return EXIT_FAILURE;
-		}
-		infoLog << "background HMM profile read" << endl;
-	}
-
 	/* prepare SeqIO */
 	fwdSeqI.reset(dynamic_cast<istream*> (&fwdIn), abc, seqFmt);
 	if(!revFn.empty())
@@ -438,11 +378,6 @@ int main(int argc, char* argv[]) {
 
 	if(!alnFn.empty())
 		alnSeqO.reset(dynamic_cast<ostream*> (&alnOut), abc, ALIGN_OUT_FMT);
-
-	if(bgFwdOut.is_open())
-		bgFwdSeqO.reset(&bgFwdOut, abc, BG_OUT_FMT);
-	if(bgRevOut.is_open())
-		bgRevSeqO.reset(&bgRevOut, abc, BG_OUT_FMT);
 
 	debugLog << "Sequence input and output prepared" << endl;
 
@@ -475,10 +410,6 @@ int main(int argc, char* argv[]) {
 	/* configure HMM mode */
 	hmm.setSequenceMode(mode);
 	hmm.wingRetract();
-	if(bgHmm.isInitiated()) {
-		bgHmm.setSequenceMode(mode);
-		bgHmm.wingRetract();
-	}
 
 	infoLog << "Processing read ..." << endl;
 	/* process reads and output */
@@ -507,7 +438,6 @@ int main(int argc, char* argv[]) {
 #pragma omp task
 				{
 					HmmAlignment aln;
-					double alnLOD = EGriceLab::HmmUFOtu::nan;
 					/* align fwdRead */
 					aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode);
 					assert(aln.isValid());
@@ -517,39 +447,13 @@ int main(int argc, char* argv[]) {
 						HmmAlignment revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode);
 						assert(revAln.isValid());
 						//							infoLog << "rev seq aligned: revStart: " << revStart << " revEnd: " << revEnd << " aln: " << revAln << endl;
-						if(!(aln.csStart <= revAln.csStart && aln.csEnd <= revAln.csEnd)) { /* bad paired-end alignment */
+						if(!(aln.csStart <= revAln.csStart && aln.csEnd <= revAln.csEnd)) /* bad paired-end alignment */
 							isOriented = false;
-							alnLOD = infV;
-						}
 						else
 							aln.merge(revAln); /* merge alignment */
 					}
 
-					/* optional background alignment check */
-					if(isOriented && bgHmm.isInitiated()) { /* only check properly aligned read */
-						HmmAlignment bgAln;
-						/* align fwdRead */
-						bgAln = alignSeq(bgHmm, fwdRead);
-						assert(bgAln.isValid());
-						//						infoLog << "fwd seq aligned: csStart: " << csStart << " csEnd: " << csEnd << " aln: " << aln << endl;
-						if(!revFn.empty()) { /* align revRead */
-							//							cerr << "Aligning mate: " << revRead.getId() << endl;
-							HmmAlignment revBgAln = alignSeq(hmm, revRead);
-							assert(revBgAln.isValid());
-							//							infoLog << "rev seq aligned: revStart: " << revStart << " revEnd: " << revEnd << " aln: " << revAln << endl;
-							if(bgAln.csStart <= revBgAln.csStart && bgAln.csEnd <= revBgAln.csEnd) { /* valid bg orientation */
-								bgAln.merge(revBgAln); /* merge alignment */
-								alnLOD = bgAln.cost - aln.cost;
-							}
-							else /* valid ref orientation, invalid bg orientation */
-								alnLOD = inf;
-						}
-						else /* single-end */
-							alnLOD = bgAln.cost - aln.cost;
-						assert(!::isnan(alnLOD));
-					}
-
-					if(::isnan(alnLOD) || alnLOD >= bgLod) { /* a valid alignment */
+					if(isOriented) { /* a valid alignment */
 						/* write the alignment seq to output */
 						if(!alnFn.empty()) {
 							string desc = fwdRead.getDesc();
@@ -594,14 +498,8 @@ int main(int argc, char* argv[]) {
 						/* write main output */
 #pragma omp critical(writeAssign)
 						out << id << "\t" << desc << "\t"
-								<< aln << "\t" << alnLOD << "\t" << bestPlace << endl;
+								<< aln << "\t" << bestPlace << endl;
 					} /* end valid alignment */
-					else { /* background alignment */
-						if(bgFwdOut.is_open())
-							bgFwdSeqO.writeSeq(fwdRead);
-						if(bgRevOut.is_open())
-							bgRevSeqO.writeSeq(revRead);
-					}
 				} /* end task */
 			} /* end each read/pair */
 		} /* end single */
