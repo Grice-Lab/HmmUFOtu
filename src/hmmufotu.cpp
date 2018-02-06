@@ -473,16 +473,33 @@ int main(int argc, char* argv[]) {
 								locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
 							//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
 
-							/* estimate placement */
+							/* estimate placements */
 							vector<PTPlacement> places = estimateSeq(ptu, seq, aln.csStart - 1, aln.csEnd - 1, locs, estMethod);
-							std::sort(places.rbegin(), places.rend(), compareByLoglik); /* sort places decently by estimated loglik */
-							double bestEstLoglik = places[0].loglik;
-							vector<PTPlacement>::iterator goodPlace;
-							for(goodPlace = places.begin(); goodPlace != places.end(); ++goodPlace) {
-								if(::abs(goodPlace->loglik - bestEstLoglik) > maxError)
-									break;
+							/* filter placements */
+							filterPlacements(places, maxError);
+
+							/* repeat seed-estimate steps for seq segments */
+							boost::unordered_map<long, int> taxonID2count;
+//							for(vector<PTPlacement>::const_iterator place = places.begin(); *place != places.end(); ++place)
+//								taxonID2count[place->getTaxonId()] = 0;
+
+							/* devide the alignment to N fragments and re-do the placement */
+							const int segN = 2;
+							const int segLen = (aln.csEnd - aln.csStart + 1) / segN;
+							for(int i = 0; i < segN; ++i) {
+								int segStart = aln.csStart + i * segLen; /* 1-based */
+								int segEnd = segStart + segLen; /* 1-based */
+								vector<PTLoc> segLocs = getSeed(ptu, seq, segStart - 1, segEnd - 1, maxDiff);
+								if(segLocs.size() > maxLocs)
+									segLocs.erase(segLocs.end() - (segLocs.size() - maxLocs), segLocs.end());
+
+								vector<PTPlacement> segPlaces = estimateSeq(ptu, seq, segStart - 1, segEnd - 1, segLocs, estMethod);
+								filterPlacements(segPlaces, maxError);
+								/* count recurrence */
+								for(vector<PTPlacement>::const_iterator place = segPlaces.begin(); place != segPlaces.end(); ++place)
+									taxonID2count[place->getTaxonId()]++;
 							}
-							places.erase(goodPlace, places.end()); /* remove too bad placements */
+
 							/* accurate placement */
 							placeSeq(ptu, seq, aln.csStart - 1, aln.csEnd - 1, places);
 							if(onlyML) { /* don't calculate q-values */
@@ -494,11 +511,16 @@ int main(int argc, char* argv[]) {
 							}
 
 							bestPlace = places[0];
+							cerr << "bestPlace.taxonID: " << bestPlace.getTaxonId() << " recurring_count: " << taxonID2count[bestPlace.getTaxonId()] << endl;
+
 						} /* end if alignOnly */
 						/* write main output */
 #pragma omp critical(writeAssign)
 						out << id << "\t" << desc << "\t"
 								<< aln << "\t" << bestPlace << endl;
+
+
+
 					} /* end valid alignment */
 				} /* end task */
 			} /* end each read/pair */
