@@ -40,6 +40,10 @@ static const int MAX_SEED_LEN = 25;
 static const int MIN_SEED_LEN = 15;
 static const int DEFAULT_SEED_REGION = 50;
 static const double DEFAULT_MAX_PLACE_ERROR = 20;
+static const int DEFAULT_NUM_SEGMENT = 2;
+static const int MIN_NUM_SEGMENT = 2;
+static const int MAX_NUM_SEGMENT = 4;
+static const double DEFAULT_MIN_REPLICATION_RATE = 0.5; /*min recurring rate to determine a placement not chimera */
 static const int DEFAULT_NUM_THREADS = 1;
 static const string ALIGN_OUT_FMT = "fasta";
 static const string DEFAULT_BRANCH_EST_METHOD = "unweighted";
@@ -48,7 +52,9 @@ static const string DEFAULT_BRANCH_EST_METHOD = "unweighted";
  * Print introduction of this program
  */
 void printIntro(void) {
-	cerr << "Ultra-fast 16S read taxonomy assignment using profile-HMM and phylogenetic placement" << endl;
+	cerr << "Ultra-fast microbiome amplicon sequencing read taxonomy assignment and OTU picking tool,"
+		 << "based on Consensus-Sequence-FM-index (CSFM-index) powered HMM alignment"
+		 << " and Seed-Estimate-Place (SEP) local phylogenetic placement" << endl;
 }
 
 /**
@@ -61,41 +67,46 @@ void printUsage(const string& progName) {
 	#endif
 
 	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <READ-FILE1> [READ-FILE2] [options]" << endl
-		 << "READ-FILE1  FILE               : sequence read file for the assembled/forward read" << ZLIB_SUPPORT << endl
-		 << "READ-FILE2  FILE               : sequence read file for the reverse read" << ZLIB_SUPPORT << endl
-		 << "Options:    -o  FILE           : write the assignment output to FILE instead of stdout" << ZLIB_SUPPORT << endl
-		 << "            -a  FILE           : in addition to the assignment output, write the read alignment in " << ALIGN_OUT_FMT << " format" << ZLIB_SUPPORT << endl
-		 << "            --fmt  STR         : read file format (applied to all read files), supported format: 'fasta', 'fastq'" << endl
-		 << "            -L|--seed-len  INT : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
-		 << "            -R  INT            : size of 5'/3' seed region for finding seeds [" << DEFAULT_SEED_REGION << "]" << endl
-		 << "            -s  FLAG           : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
-		 << "            -N  INT            : max number of most potential locations (based on p-dist) to try initial estimation [" << DEFAULT_MAX_LOCATION << "]" << endl
-		 << "            -d  DBL            : maximum read/node p-dist difference allowed to check below the best matching seed during the seed search stage [" << DEFAULT_MAX_DIFF << "]" << endl
-		 << "            -e  DBL            : max placement error between fast estimation and accurate placement [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
-		 << "            -m|--method  STR   : branch length estimating method during the estimated-placement stage, must be one of 'unweighted' or 'weighted' [" << DEFAULT_BRANCH_EST_METHOD << "]" << endl
-		 << "            --ML  FLAG         : use maximum likelihood in phylogenetic placement, do not calculate posterior p-values, this will ignore -q and --prior options" << endl
-		 << "            --prior  STR       : method for calculating prior probability of a placement, either 'uniform' (uniform prior) or 'height' (rooted distance to leaves)" << endl
-		 << "            -S|--seed  INT     : random seed used for banded HMM seed searches, for debug purpose" << endl
+		 << "READ-FILE1  FILE                 : sequence read file for the assembled/forward read" << ZLIB_SUPPORT << endl
+		 << "READ-FILE2  FILE                 : sequence read file for the reverse read" << ZLIB_SUPPORT << endl
+		 << "Options:    -o  FILE             : write the assignment output to FILE instead of stdout" << ZLIB_SUPPORT << endl
+		 << "            -a  FILE             : in addition to the assignment output, write the read alignment in " << ALIGN_OUT_FMT << " format" << ZLIB_SUPPORT << endl
+		 << "            --fmt  STR           : read file format (applied to all read files), supported format: 'fasta', 'fastq'" << endl
+		 << "            -L|--seed-len  INT   : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
+		 << "            -R  INT              : size of 5'/3' seed region for finding seed matches for CSFM-index [" << DEFAULT_SEED_REGION << "]" << endl
+		 << "            -s  FLAG             : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
+		 << "            -N  INT              : max # of seed nodes used in the 'Seed' stage of SEP algorithm [" << DEFAULT_MAX_LOCATION << "]" << endl
+		 << "            -d  DBL              : max p-dist difference allowed for sub-optimal seeds compared the best seed in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_DIFF << "]" << endl
+		 << "            -e  DBL              : max placement error for filtering placements between the 'Estimate' and 'Place' stages of the SEP algorithm [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
+		 << "            -m|--method  STR     : branch length estimating method during the estimated-placement stage, must be one of 'unweighted' or 'weighted' [" << DEFAULT_BRANCH_EST_METHOD << "]" << endl
+		 << "            --ML  FLAG           : use maximum likelihood in phylogenetic placement, do not calculate posterior p-values, this will ignore -q and --prior options" << endl
+		 << "            --prior  STR         : method for calculating prior probability of a placement, either 'uniform' (uniform prior) or 'height' (rooted distance to leaves)" << endl
+		 << "            -C|--chimera  FLAG   : enable a chimera sequence checking procedure before the final 'Place' stage in the SEP algorithm using a segment re-estimation method" << endl
+		 << "            --num-seg  INT       : number of segments used in chimera checking procedure [" << DEFAULT_NUM_SEGMENT << "]" << endl
+		 << "            --rep-rate  DBL      : min replication rate required for defining a non-chimera placement during segment re-estimation [" << DEFAULT_MIN_REPLICATION_RATE << "]" << endl
+		 << "            --chimera-out  FILE  : keep read assignment results of chimera reads in FILE" << ZLIB_SUPPORT << endl
+		 << "            -S|--seed  INT       : random seed used for CSFM-index seed searches, for debug only" << endl
 #ifdef _OPENMP
-		 << "            -p|--process INT   : number of threads/cpus used for parallel processing" << endl
+		 << "            -p|--process INT     : number of threads/cpus used for parallel processing" << endl
 #endif
-		 << "            --align-only  FLAG : only align the read but not try to place it into the tree, this will make " + progName + " behaviors like an HMM aligner" << endl
-		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
-		 << "            --version          : show program version and exit" << endl
-		 << "            -h|--help          : print this message and exit" << endl;
+		 << "            --align-only  FLAG   : only align the read but not try to place it into the tree, this will make " + progName + " behaviors like an HMM aligner" << endl
+		 << "            -v  FLAG             : enable verbose information, you may set multiple -v for more details" << endl
+		 << "            --version            : show program version and exit" << endl
+		 << "            -h|--help            : print this message and exit" << endl;
 }
-
 
 int main(int argc, char* argv[]) {
 	/* variable declarations */
 	/* filenames */
 	string dbName, fwdFn, revFn, msaFn, csfmFn, hmmFn, ptuFn;
 	string outFn, alnFn;
+	string chiOutFn;
 	/* input */
 	ifstream msaIn, csfmIn, hmmIn, ptuIn;
 	boost::iostreams::filtering_istream fwdIn, revIn;
 	/* output */
 	boost::iostreams::filtering_ostream out, alnOut;
+	boost::iostreams::filtering_ostream chiOut;
 	/* other */
 	string seqFmt; /* seq file format */
 	string estMethod = DEFAULT_BRANCH_EST_METHOD;
@@ -112,6 +123,10 @@ int main(int argc, char* argv[]) {
 	double maxError = DEFAULT_MAX_PLACE_ERROR;
 	bool onlyML = false;
 	PRIOR_TYPE myPrior = UNIFORM;
+	bool checkChimera = false;
+	int numSeg = DEFAULT_NUM_SEGMENT;
+	double minRepRate = DEFAULT_MIN_REPLICATION_RATE;
+
 	int nThreads = DEFAULT_NUM_THREADS;
 
 	unsigned seed = time(NULL); // using time as default seed
@@ -187,6 +202,16 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	if(cmdOpts.hasOpt("-C") || cmdOpts.hasOpt("--chimera")) {
+		checkChimera = true;
+		if(cmdOpts.hasOpt("--num-seg"))
+			numSeg = ::atof(cmdOpts.getOptStr("--num-seg"));
+		if(cmdOpts.hasOpt("--rep-rate"))
+			minRepRate = ::atof(cmdOpts.getOptStr("--rep-rate"));
+		if(cmdOpts.hasOpt("--chimera-out"))
+			chiOutFn = cmdOpts.getOpt("--chimera-out");
+	}
+
 	if(cmdOpts.hasOpt("-S"))
 		seed = ::atoi(cmdOpts.getOptStr("-S"));
 	if(cmdOpts.hasOpt("--seed"))
@@ -238,6 +263,15 @@ int main(int argc, char* argv[]) {
 		cerr << "-e must be positive" << endl;
 		return EXIT_FAILURE;
 	}
+	if(!(MIN_NUM_SEGMENT <= numSeg && numSeg <= MAX_NUM_SEGMENT)) {
+		cerr << "--num-seg must be in [" << MIN_NUM_SEGMENT << ", " << MAX_NUM_SEGMENT << "]" << endl;
+		return EXIT_FAILURE;
+	}
+	if(!(0 <= minRepRate && minRepRate <= 1)) {
+		cerr << "--rep-rate must be in [0, 1]" << endl;
+		return EXIT_FAILURE;
+	}
+
 #ifdef _OPENMP
 	if(!(nThreads > 0)) {
 		cerr << "-p|--process must be positive" << endl;
@@ -346,6 +380,24 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+#ifdef HAVE_LIBZ
+	if(StringUtils::endsWith(chiOutFn, GZIP_FILE_SUFFIX)) /* empty outFn won't match */
+		chiOut.push(boost::iostreams::gzip_compressor());
+	else if(StringUtils::endsWith(outFn, BZIP2_FILE_SUFFIX)) /* empty outFn won't match */
+		chiOut.push(boost::iostreams::bzip2_compressor());
+	else { }
+#endif
+	if(!chiOutFn.empty())
+		chiOut.push(boost::iostreams::file_sink(chiOutFn));
+	else
+		chiOut.push(std::cout);
+	if(chiOut.bad()) {
+		cerr << "Unable to write to "
+				<< (!chiOutFn.empty() ? " out file '" + chiOutFn + "' " : "stdout ")
+				<< ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
+
 	/* loading database files */
 	if(loadProgInfo(msaIn).bad())
 		return EXIT_FAILURE;
@@ -415,7 +467,7 @@ int main(int argc, char* argv[]) {
 	/* process reads and output */
 	writeProgInfo(out, string(" taxonomy assignment generated by ") + argv[0]);
 	out << "# command: "<< cmdOpts.getCmdStr() << endl;
-	out << "id\tdescription\t" << HmmAlignment::TSV_HEADER << "\t" + PTPlacement::TSV_HEADER << endl;
+	out << "id\tdescription\t" << HmmAlignment::TSV_HEADER << "\treplication_rate\t" + PTPlacement::TSV_HEADER << endl;
 
 #pragma omp parallel
 	{
@@ -464,6 +516,8 @@ int main(int argc, char* argv[]) {
 						}
 
 						PTPlacement bestPlace;
+						double repRate = EGriceLab::HmmUFOtu::nan;
+
 						if(!alignOnly) {
 							DigitalSeq seq(abc, id, aln.align);
 							/* place seq with seed-estimate-place (SEP) algorithm */
@@ -478,26 +532,23 @@ int main(int argc, char* argv[]) {
 							/* filter placements */
 							filterPlacements(places, maxError);
 
-							/* repeat seed-estimate steps for seq segments */
-							boost::unordered_map<long, int> taxonID2count;
-//							for(vector<PTPlacement>::const_iterator place = places.begin(); *place != places.end(); ++place)
-//								taxonID2count[place->getTaxonId()] = 0;
+							/* optional chimera check */
+							boost::unordered_map<long, int> childID2count; /* use childID as the branch ID for recurring count */
+							if(checkChimera) {
+								/* devide the alignment to N fragments and re-do the placement */
+								const int segLen = (aln.csEnd - aln.csStart + 1) / numSeg;
+								for(int i = 0; i < numSeg; ++i) {
+									int segStart = aln.csStart + i * segLen; /* 1-based */
+									int segEnd = segStart + segLen; /* 1-based */
+									vector<PTLoc> segLocs = getSeed(ptu, seq, segStart - 1, segEnd - 1, maxDiff);
+									if(segLocs.size() > maxLocs)
+										segLocs.erase(segLocs.end() - (segLocs.size() - maxLocs), segLocs.end());
 
-							/* devide the alignment to N fragments and re-do the placement */
-							const int segN = 2;
-							const int segLen = (aln.csEnd - aln.csStart + 1) / segN;
-							for(int i = 0; i < segN; ++i) {
-								int segStart = aln.csStart + i * segLen; /* 1-based */
-								int segEnd = segStart + segLen; /* 1-based */
-								vector<PTLoc> segLocs = getSeed(ptu, seq, segStart - 1, segEnd - 1, maxDiff);
-								if(segLocs.size() > maxLocs)
-									segLocs.erase(segLocs.end() - (segLocs.size() - maxLocs), segLocs.end());
-
-								vector<PTPlacement> segPlaces = estimateSeq(ptu, seq, segStart - 1, segEnd - 1, segLocs, estMethod);
-								filterPlacements(segPlaces, maxError);
-								/* count recurrence */
-								for(vector<PTPlacement>::const_iterator place = segPlaces.begin(); place != segPlaces.end(); ++place)
-									taxonID2count[place->getTaxonId()]++;
+									vector<PTPlacement> segPlaces = estimateSeq(ptu, seq, segStart - 1, segEnd - 1, segLocs, estMethod);
+									filterPlacements(segPlaces, maxError);
+									for(vector<PTPlacement>::const_iterator place = segPlaces.begin(); place != segPlaces.end(); ++place)
+										childID2count[place->cNode->getId()]++;
+								}
 							}
 
 							/* accurate placement */
@@ -511,16 +562,21 @@ int main(int argc, char* argv[]) {
 							}
 
 							bestPlace = places[0];
-							cerr << "bestPlace.taxonID: " << bestPlace.getTaxonId() << " recurring_count: " << taxonID2count[bestPlace.getTaxonId()] << endl;
+							if(checkChimera)
+								repRate = childID2count[bestPlace.cNode->getId()];
 
 						} /* end if alignOnly */
 						/* write main output */
 #pragma omp critical(writeAssign)
 						out << id << "\t" << desc << "\t"
-								<< aln << "\t" << bestPlace << endl;
+							<< aln << "\t" << repRate << "\t"
+							<< bestPlace << endl;
 
-
-
+						if(checkChimera && !chiOutFn.empty())
+#pragma omp critical(writeChiAssign)
+							chiOut << id << "\t" << desc << "\t"
+								<< aln << "\t" << repRate << "\t"
+								<< bestPlace << endl;
 					} /* end valid alignment */
 				} /* end task */
 			} /* end each read/pair */
