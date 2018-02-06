@@ -99,7 +99,7 @@ struct PTPlacement {
 
 	string getId() const {
 		if(cNode != NULL && pNode != NULL)
-			return boost::lexical_cast<string> (cNode->getId()) + "->" + boost::lexical_cast<string> (cNode->getParent()->getId());
+			return boost::lexical_cast<string> (cNode->getId()) + "->" + boost::lexical_cast<string> (pNode->getId());
 		else
 			return UNASSIGNED_ID;
 	}

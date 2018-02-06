@@ -410,10 +410,9 @@ int main(int argc, char* argv[]) {
 
 		if(keepGap)
 			seq.append(csLen - 1 - end, PAD_SYM);
-		string desc = "ID=" + taxonID + ";Name=" + taxonName + ";AnnoDist=" + boost::lexical_cast<string>(annoDist)
+		string desc = "taxonID=" + taxonID + ";taxonName=" + taxonName + ";annoDist=" + boost::lexical_cast<string>(annoDist)
 				+ ";csStart=" + boost::lexical_cast<string>(start) + ";csEnd=" + boost::lexical_cast<string>(end)
-				+ ";csLen=" + boost::lexical_cast<string>(end - start + 1)
-				+ ";InsertLen=" + boost::lexical_cast<string>(seq.length()) + ";";
+				+ ";seqLen=" + boost::lexical_cast<string>(seq.length()) + ";";
 
 		/* output */
 		PrimarySeq insert(abc, rid, seq, desc);
