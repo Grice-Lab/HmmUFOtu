@@ -26,6 +26,7 @@
 
 #include <Eigen/Dense>
 #include <cassert>
+#include <algorithm>
 #include "HmmUFOtu_main.h"
 #include "StringUtils.h"
 
@@ -245,38 +246,57 @@ vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
 	return places;
 }
 
+vector<PTPlacement>& filterPlacements(vector<PTPlacement>& places, double maxError) {
+	assert(!places.empty() && maxError >= 0);
+	std::sort(places.rbegin(), places.rend(), compareByLoglik); /* sort places decently by estimated loglik */
+	double bestEstLoglik = places[0].loglik;
+	vector<PTPlacement>::iterator goodPlace;
+	for(goodPlace = places.begin(); goodPlace != places.end(); ++goodPlace) {
+		if(bestEstLoglik - goodPlace->loglik > maxError)
+			break;
+	}
+	places.erase(goodPlace, places.end()); /* remove bad placements */
+	return places;
+}
+
+
 /** Get accurate placement for a seq given the estimated placements */
+PTPlacement& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
+		PTPlacement& place) {
+	/* accurate placement using estimated values */
+	double ratio0 = place.ratio;
+	double wnr0 = place.wnr;
+	double loglik0 = place.loglik;
+
+	//		cerr << "Estimated placement ratio0: " << ratio0 << " wnr: " << wnr0 << " loglik: " << loglik0 << endl;
+	PTUnrooted subtree = ptu.copySubTree(place.cNode, place.pNode);
+	const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
+	const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
+	double w0 = subtree.getBranchLength(u, v);
+
+	double loglik = subtree.placeSeq(seq, u, v, start, end, ratio0, wnr0);
+	const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
+	const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
+
+	/* update placement info */
+	double wnr = subtree.getBranchLength(n, r);
+	double wur = subtree.getBranchLength(u, r);
+	double wvr = subtree.getBranchLength(v, r);
+	place.ratio = wur / (wur + wvr);
+	//		cerr << "delta loglik: " << (loglik - loglik0) << endl;
+	place.height = ptu.getHeight(place.cNode) + wur;
+	place.annoDist = wvr <= wur ? wvr + wnr : wur + wnr;
+	/* update other placement info */
+	place.wnr = wnr;
+	place.loglik = loglik;
+
+	return place;
+}
+
 vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
 		vector<PTPlacement>& places) {
-	/* accurate placement using estimated values */
-	for(vector<PTPlacement>::iterator place = places.begin(); place != places.end(); ++place) {
-		double ratio0 = place->ratio;
-		double wnr0 = place->wnr;
-		double loglik0 = place->loglik;
-
-//		cerr << "Estimated placement ratio0: " << ratio0 << " wnr: " << wnr0 << " loglik: " << loglik0 << endl;
-		PTUnrooted subtree = ptu.copySubTree(place->cNode, place->pNode);
-		const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
-		const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
-		double w0 = subtree.getBranchLength(u, v);
-
-		double loglik = subtree.placeSeq(seq, u, v, start, end, ratio0, wnr0);
-		const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
-		const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
-
-		/* update placement info */
-		double wnr = subtree.getBranchLength(n, r);
-		double wur = subtree.getBranchLength(u, r);
-		double wvr = w0 - wur;
-		place->ratio = wur / w0;
-//		cerr << "delta loglik: " << (loglik - loglik0) << endl;
-		place->height = ptu.getHeight(place->cNode) + wur;
-		place->annoDist = wvr <= wur ? wvr + wnr : wur + wnr;
-		/* update other placement info */
-		place->wnr = wnr;
-		place->loglik = loglik;
-	} /* end each candidate placement */
-
+	for(vector<PTPlacement>::iterator place = places.begin(); place != places.end(); ++place)
+		placeSeq(ptu, seq, start, end, *place);
 	return places;
 }
 

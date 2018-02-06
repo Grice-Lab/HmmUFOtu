@@ -194,9 +194,21 @@ vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
 		int start, int end, const vector<PTLoc>& locs, const string& method);
 
-/** Get accurate placement for a seq given the estimated placements */
+/**
+ * filter estimated placement by removing bad placement with estimated loglik lower than the best placement
+ * @param places  a vector of placements
+ * @param maxError  maximum error of log-liklihood allowed compared to the best placement
+ * @return  the modified vector of placements sorted by their loglike decreasingly
+ */
+vector<PTPlacement>& filterPlacements(vector<PTPlacement>& places, double maxError);
+
+/** Get accurate placement for a seq given an estimated placement */
 vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
 		vector<PTPlacement>& places);
+
+/** Get accurate placement for a seq given all estimated placements */
+PTPlacement& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
+		PTPlacement& place);
 
 /** get alignment identity, as fraction of non-gap characters in the alignment part */
 double alignIdentity(const DegenAlphabet* abc, const string& align, int start, int end);
