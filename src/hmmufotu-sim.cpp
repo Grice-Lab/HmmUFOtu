@@ -381,9 +381,9 @@ int main(int argc, char* argv[]) {
 
 		/* simulate a read at [start, end] */
 		string rid = readPrefix + boost::lexical_cast<string>(n);
-		string taxonID = boost::lexical_cast<string>(cNode->getId()) + "->" + boost::lexical_cast<string>(pNode->getId());
-		string taxonName = rc < 0.5 ? cNode->getTaxon() : pNode->getTaxon();
-		double annoDist = rc < 0.5 ? v * rc : v * (1 - rc);
+		string branchID = boost::lexical_cast<string>(cNode->getId()) + "->" + boost::lexical_cast<string>(pNode->getId());
+		long taxonID = rc <= 0.5 ? cNode->getId() : pNode->getId();
+		string taxonName = rc <= 0.5 ? cNode->getTaxon() : pNode->getTaxon();
 
 //		PrimarySeq seq(abc, rid, "", desc);
 		string seq;
@@ -410,7 +410,7 @@ int main(int argc, char* argv[]) {
 
 		if(keepGap)
 			seq.append(csLen - 1 - end, PAD_SYM);
-		string desc = "taxonID=" + taxonID + ";taxonName=" + taxonName + ";annoDist=" + boost::lexical_cast<string>(annoDist)
+		string desc = "branchID=" + branchID + ";taxonID=" + boost::lexical_cast<string>(taxonID) + ";taxonName=" + taxonName + ";branchPoint=" + boost::lexical_cast<string>(rc)
 				+ ";csStart=" + boost::lexical_cast<string>(start) + ";csEnd=" + boost::lexical_cast<string>(end)
 				+ ";seqLen=" + boost::lexical_cast<string>(seq.length()) + ";";
 
