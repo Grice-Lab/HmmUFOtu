@@ -474,7 +474,7 @@ int main(int argc, char* argv[]) {
 							//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
 
 							/* estimate placement */
-							vector<PTPlacement> places = estimateSeq(ptu, seq, aln.csStart - 1, aln.csEnd - 1, locs, estMethod);
+							vector<PTPlacement> places = estimateSeq(ptu, seq, locs, estMethod);
 							std::sort(places.rbegin(), places.rend(), compareByLoglik); /* sort places decently by estimated loglik */
 							double bestEstLoglik = places[0].loglik;
 							vector<PTPlacement>::iterator goodPlace;
@@ -484,7 +484,7 @@ int main(int argc, char* argv[]) {
 							}
 							places.erase(goodPlace, places.end()); /* remove too bad placements */
 							/* accurate placement */
-							placeSeq(ptu, seq, aln.csStart - 1, aln.csEnd - 1, places);
+							placeSeq(ptu, seq, places);
 							if(onlyML) { /* don't calculate q-values */
 								std::sort(places.rbegin(), places.rend(), compareByLoglik); /* sort places decently by real loglik */
 							}

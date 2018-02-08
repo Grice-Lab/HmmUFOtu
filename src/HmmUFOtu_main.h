@@ -55,32 +55,37 @@ enum PRIOR_TYPE {
 struct PTLoc {
 	/* constructors */
 	/** construct a location using given node and distance */
-	PTLoc(const PTUnrooted::PTUNodePtr& node, double dist)
-	: node(node), dist(dist)
+	PTLoc(int start, int end, const PTUnrooted::PTUNodePtr& node, double dist)
+	: start(start), end(end), node(node), dist(dist)
 	{  }
 
 	/* non-member functions */
 	friend bool operator<(const PTLoc& lhs, const PTLoc& rhs);
 
+	int start;
+	int end;
 	PTUnrooted::PTUNodePtr node;
 	double dist;
+
 };
 
 /** A candidate Phylogenetic Tree Placement to store (partially) placement information */
 struct PTPlacement {
 //	/** default constructor */
-	PTPlacement() : ratio(nan), wnr(nan), loglik(nan),
+	PTPlacement() : start(0), end(0), ratio(nan), wnr(nan), loglik(nan),
 			height(nan), annoDist(nan), qPlace(nan), qTaxon(nan)
 	{ }
 
 	/** construct a placement with basic info and optionally auxilary info */
-	PTPlacement(const PTUnrooted::PTUNodePtr& cNode, const PTUnrooted::PTUNodePtr& pNode,
+	PTPlacement(int start, int end,
+			const PTUnrooted::PTUNodePtr& cNode, const PTUnrooted::PTUNodePtr& pNode,
 			double ratio, double wnr, double loglik,
 			double height = 0, double annoDist = 0,
 			double qPlace = 0, double qTaxonomy = 0)
-	: cNode(cNode), pNode(pNode), ratio(ratio), wnr(wnr), loglik(loglik),
+	: start(start), end(end), cNode(cNode), pNode(pNode),
+	  ratio(ratio), wnr(wnr), loglik(loglik),
 	  height(height), annoDist(annoDist), qPlace(qPlace), qTaxon(qTaxonomy)
-	{ }
+	{  }
 
 	/** member methods */
 	long getTaxonId() const {
@@ -123,6 +128,8 @@ struct PTPlacement {
 	friend ostream& operator<<(ostream& out, const PTPlacement& place);
 
 	/** member fields */
+	int start;
+	int end;
 	PTUnrooted::PTUNodePtr cNode;
 	PTUnrooted::PTUNodePtr pNode;
 	double ratio; /* placement ratio */
@@ -190,12 +197,19 @@ HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& read);
 vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 		int start, int end, double maxDiff);
 
+/** Get estimated placement for a seq at one PTLoc */
+PTPlacement estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
+		const PTLoc& loc, const string& method);
+
 /** Get estimated placement for a seq at given locations */
 vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
-		int start, int end, const vector<PTLoc>& locs, const string& method);
+		const vector<PTLoc>& locs, const string& method);
+
+/** Get accurate placement for a seq given an estimated placement */
+PTPlacement& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, PTPlacement& place);
 
 /** Get accurate placement for a seq given the estimated placements */
-vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
+vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
 		vector<PTPlacement>& places);
 
 /** get alignment identity, as fraction of non-gap characters in the alignment part */
