@@ -51,24 +51,6 @@ enum PRIOR_TYPE {
 	HEIGHT
 };
 
-/** A "seed" Phylogenetic tree loc to store potential placement location information */
-struct PTLoc {
-	/* constructors */
-	/** construct a location using given node and distance */
-	PTLoc(int start, int end, const PTUnrooted::PTUNodePtr& node, double dist)
-	: start(start), end(end), node(node), dist(dist)
-	{  }
-
-	/* non-member functions */
-	friend bool operator<(const PTLoc& lhs, const PTLoc& rhs);
-
-	int start;
-	int end;
-	PTUnrooted::PTUNodePtr node;
-	double dist;
-
-};
-
 /** A candidate Phylogenetic Tree Placement to store (partially) placement information */
 struct PTPlacement {
 //	/** default constructor */
@@ -226,9 +208,6 @@ double alignIdentity(const DegenAlphabet* abc, const string& align, int start, i
 /** get profile-HMM identity, as fraction of non-gap characters in HMM profile sites */
 double hmmIdentity(const BandedHMMP7& hmm, const string& align, int start, int end);
 
-inline bool operator<(const PTLoc& lhs, const PTLoc& rhs) {
-	return lhs.dist < rhs.dist;
-}
 
 inline ostream& operator<<(ostream& out, const PTPlacement& place) {
 	out << place.getId() << "\t" << place.ratio << "\t"

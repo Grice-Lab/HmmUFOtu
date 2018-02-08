@@ -40,6 +40,7 @@ BandedHMMP7Bg.cpp \
 BandedHMMP7Prior.cpp \
 BandedHMMP7.cpp \
 CSFMIndex.cpp \
+PTLoc.cpp \
 HmmAlignment.cpp
 
 libHmmUFOtu_phylo_a_SOURCES = \
