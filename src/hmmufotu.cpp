@@ -545,31 +545,35 @@ int main(int argc, char* argv[]) {
 							/* optional chimera check */
 							if(checkChimera) {
 								/* devide the alignment to N fragments and re-do the placement */
+								cerr << "bestPlace.loglik: " << bestPlace.loglik << endl;
+								cerr << "bestPlace.taxon: " << bestPlace.getTaxonName() << endl;
+								double loglik = 0;
 								const int segLen = (aln.csEnd - aln.csStart + 1) / numSeg;
 								for(int i = 0; i < numSeg; ++i) {
 									int segStart = aln.csStart + i * segLen; /* 1-based */
 									int segEnd = i < numSeg - 1 ? segStart + segLen - 1 : aln.csEnd; /* 1-based */
 //									int segLen = segEnd - segStart + 1;
-									double segPDist = SeqUtils::pDist(seq,
-											ptu.getNode(bestPlace.getTaxonId())->getSeq(), segStart, segEnd);
-									cerr << seq.getName() << " " << fwdRead.getDesc() << " seg " << i << " pDist: " << segPDist << endl;
-//									vector<PTLoc> segLocs = getSeed(ptu, seq, segStart - 1, segEnd - 1, maxDiff);
-//									if(segLocs.size() > maxLocs)
-//										segLocs.erase(segLocs.end() - (segLocs.size() - maxLocs), segLocs.end());
-//									vector<PTPlacement> segPlaces = estimateSeq(ptu, seq, segLocs, estMethod);
-//									filterPlacements(segPlaces, maxError);
-//									/* accurate placement */
-//									placeSeq(ptu, seq, segPlaces);
-//									if(onlyML) { /* don't calculate q-values */
-//										std::sort(segPlaces.rbegin(), segPlaces.rend(), compareByLoglik); /* sort places decently by real loglik */
-//									}
-//									else { /* calculate q-values */
-//										PTPlacement::calcQValues(segPlaces, myPrior);
-//										std::sort(segPlaces.rbegin(), segPlaces.rend(), compareByQPlace); /* sort places decently by posterior placement probability */
-//									}
-//									if(segPlaces[0].getTaxonId() == bestPlace.getTaxonId())
-//										repRate++;
+//									double segPDist = SeqUtils::pDist(seq,
+//											ptu.getNode(bestPlace.getTaxonId())->getSeq(), segStart, segEnd);
+//									cerr << seq.getName() << " " << fwdRead.getDesc() << " seg " << i << " pDist: " << segPDist << endl;
+									vector<PTLoc> segLocs = getSeed(ptu, seq, segStart - 1, segEnd - 1, maxDiff);
+									if(segLocs.size() > maxLocs)
+										segLocs.erase(segLocs.end() - (segLocs.size() - maxLocs), segLocs.end());
+									vector<PTPlacement> segPlaces = estimateSeq(ptu, seq, segLocs, estMethod);
+									filterPlacements(segPlaces, maxError);
+									/* accurate placement */
+									placeSeq(ptu, seq, segPlaces);
+									if(onlyML) { /* don't calculate q-values */
+										std::sort(segPlaces.rbegin(), segPlaces.rend(), compareByLoglik); /* sort places decently by real loglik */
+									}
+									else { /* calculate q-values */
+										PTPlacement::calcQValues(segPlaces, myPrior);
+										std::sort(segPlaces.rbegin(), segPlaces.rend(), compareByQPlace); /* sort places decently by posterior placement probability */
+									}
+									loglik += segPlaces[0].loglik;
+									cerr << "seg " << i << ": " << segPlaces[0].getTaxonName() << endl;
 								}
+								cerr << seq.getName() << " " << fwdRead.getDesc() << " delta.loglik: " << loglik - bestPlace.loglik << endl;
 							}
 						} /* end if alignOnly */
 						/* write main output */
