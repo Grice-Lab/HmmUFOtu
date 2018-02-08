@@ -40,7 +40,6 @@ BandedHMMP7Bg.cpp \
 BandedHMMP7Prior.cpp \
 BandedHMMP7.cpp \
 CSFMIndex.cpp \
-PTLoc.cpp \
 HmmAlignment.cpp
 
 libHmmUFOtu_phylo_a_SOURCES = \
@@ -54,7 +53,9 @@ F81.cpp \
 K80.cpp \
 JC69.cpp \
 DiscreteGammaModel.cpp \
-DNASubModelFactory.cpp
+DNASubModelFactory.cpp \
+PTLoc.cpp \
+PTPlacement.cpp
 
 libHmmUFOtu_OTU_a_SOURCES = \
 OTUObserved.cpp \

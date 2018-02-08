@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
 	int maxLocs = DEFAULT_MAX_LOCATION;
 	double maxError = DEFAULT_MAX_PLACE_ERROR;
 	bool onlyML = false;
-	PRIOR_TYPE myPrior = UNIFORM;
+	PTPlacement::PRIOR_TYPE myPrior = PTPlacement::UNIFORM;
 	bool checkChimera = false;
 	int numSeg = DEFAULT_NUM_SEGMENT;
 	double minRepRate = DEFAULT_MIN_REPLICATION_RATE;
@@ -193,9 +193,9 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("--prior")) {
 		if(cmdOpts.getOpt("--prior") == "uniform")
-			myPrior = UNIFORM;
+			myPrior = PTPlacement::UNIFORM;
 		else if(cmdOpts.getOpt("--prior") == "height")
-			myPrior = HEIGHT;
+			myPrior = PTPlacement::HEIGHT;
 		else {
 			cerr << "Unsupported prior specified, check the --prior option" << endl;
 			return EXIT_FAILURE;
