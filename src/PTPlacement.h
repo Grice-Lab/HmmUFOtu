@@ -45,6 +45,9 @@ struct PTPlacement {
 	  height(height), annoDist(annoDist), qPlace(qPlace), qTaxon(qTaxonomy)
 	{  }
 
+	/** destructor */
+	virtual ~PTPlacement() {  }
+
 	/** member methods */
 	long getTaxonId() const {
 		if(cNode != NULL && pNode != NULL)
