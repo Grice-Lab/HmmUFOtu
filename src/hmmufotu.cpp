@@ -531,25 +531,6 @@ int main(int argc, char* argv[]) {
 							/* filter placements */
 							filterPlacements(places, maxError);
 
-							/* optional chimera check */
-							boost::unordered_map<long, int> childID2count; /* use childID as the branch ID for recurring count */
-							if(checkChimera) {
-								/* devide the alignment to N fragments and re-do the placement */
-								const int segLen = (aln.csEnd - aln.csStart + 1) / numSeg;
-								for(int i = 0; i < numSeg; ++i) {
-									int segStart = aln.csStart + i * segLen; /* 1-based */
-									int segEnd = segStart + segLen; /* 1-based */
-									vector<PTLoc> segLocs = getSeed(ptu, seq, segStart - 1, segEnd - 1, maxDiff);
-									if(segLocs.size() > maxLocs)
-										segLocs.erase(segLocs.end() - (segLocs.size() - maxLocs), segLocs.end());
-
-									vector<PTPlacement> segPlaces = estimateSeq(ptu, seq, segStart - 1, segEnd - 1, segLocs, estMethod);
-									filterPlacements(segPlaces, maxError);
-									for(vector<PTPlacement>::const_iterator place = segPlaces.begin(); place != segPlaces.end(); ++place)
-										childID2count[place->cNode->getId()]++;
-								}
-							}
-
 							/* accurate placement */
 							placeSeq(ptu, seq, aln.csStart - 1, aln.csEnd - 1, places);
 							if(onlyML) { /* don't calculate q-values */
@@ -561,9 +542,34 @@ int main(int argc, char* argv[]) {
 							}
 
 							bestPlace = places[0];
-							if(checkChimera)
-								repRate = childID2count[bestPlace.cNode->getId()] / static_cast<double>(numSeg);
 
+							/* optional chimera check */
+							if(checkChimera) {
+								repRate = 0;
+								/* devide the alignment to N fragments and re-do the placement */
+								const int segLen = (aln.csEnd - aln.csStart + 1) / numSeg;
+								for(int i = 0; i < numSeg; ++i) {
+									int segStart = aln.csStart + i * segLen; /* 1-based */
+									int segEnd = i < numSeg - 1 ? segStart + segLen - 1 : aln.csEnd; /* 1-based */
+									vector<PTLoc> segLocs = getSeed(ptu, seq, segStart - 1, segEnd - 1, maxDiff);
+									if(segLocs.size() > maxLocs)
+										segLocs.erase(segLocs.end() - (segLocs.size() - maxLocs), segLocs.end());
+									vector<PTPlacement> segPlaces = estimateSeq(ptu, seq, segStart - 1, segEnd - 1, segLocs, estMethod);
+									filterPlacements(segPlaces, maxError);
+									/* accurate placement */
+									placeSeq(ptu, seq, segStart - 1, segEnd - 1, segPlaces);
+									if(onlyML) { /* don't calculate q-values */
+										std::sort(segPlaces.rbegin(), segPlaces.rend(), compareByLoglik); /* sort places decently by real loglik */
+									}
+									else { /* calculate q-values */
+										PTPlacement::calcQValues(segPlaces, myPrior);
+										std::sort(segPlaces.rbegin(), segPlaces.rend(), compareByQPlace); /* sort places decently by posterior placement probability */
+									}
+									if(segPlaces[0].getTaxonId() == bestPlace.getTaxonId())
+										repRate++;
+								}
+								repRate /= numSeg;
+							}
 						} /* end if alignOnly */
 						/* write main output */
 						if(::isnan(repRate) || repRate >= minRepRate)
