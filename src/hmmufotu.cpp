@@ -526,13 +526,12 @@ int main(int argc, char* argv[]) {
 								locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
 							//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
 
-							/* estimate placements */
-							vector<PTPlacement> places = estimateSeq(ptu, seq, aln.csStart - 1, aln.csEnd - 1, locs, estMethod);
+							/* estimate placement */
+							vector<PTPlacement> places = estimateSeq(ptu, seq, locs, estMethod);
 							/* filter placements */
 							filterPlacements(places, maxError);
-
 							/* accurate placement */
-							placeSeq(ptu, seq, aln.csStart - 1, aln.csEnd - 1, places);
+							placeSeq(ptu, seq, places);
 							if(onlyML) { /* don't calculate q-values */
 								std::sort(places.rbegin(), places.rend(), compareByLoglik); /* sort places decently by real loglik */
 							}
@@ -554,10 +553,10 @@ int main(int argc, char* argv[]) {
 									vector<PTLoc> segLocs = getSeed(ptu, seq, segStart - 1, segEnd - 1, maxDiff);
 									if(segLocs.size() > maxLocs)
 										segLocs.erase(segLocs.end() - (segLocs.size() - maxLocs), segLocs.end());
-									vector<PTPlacement> segPlaces = estimateSeq(ptu, seq, segStart - 1, segEnd - 1, segLocs, estMethod);
+									vector<PTPlacement> segPlaces = estimateSeq(ptu, seq, segLocs, estMethod);
 									filterPlacements(segPlaces, maxError);
 									/* accurate placement */
-									placeSeq(ptu, seq, segStart - 1, segEnd - 1, segPlaces);
+									placeSeq(ptu, seq, segPlaces);
 									if(onlyML) { /* don't calculate q-values */
 										std::sort(segPlaces.rbegin(), segPlaces.rend(), compareByLoglik); /* sort places decently by real loglik */
 									}
