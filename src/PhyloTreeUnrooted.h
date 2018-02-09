@@ -444,9 +444,9 @@ public:
 		}
 
 		/** get segment tree loglik at given region */
-		double segLoglik(int start, int end) const {
-			return treeLoglik.segment(start, end - start + 1).sum();
-		}
+//		double segLoglik(int start, int end) const {
+//			return treeLoglik.segment(start, end - start + 1).sum();
+//		}
 
 		/* non-member functions */
 		friend bool compareByDist(const PTPlacement& lhs, const PTPlacement& rhs);
@@ -468,7 +468,7 @@ public:
 		double height;
 		double qPlace;
 		double qTaxon;
-		VectorXd treeLoglik; /* optional entire placement tree loglik at every site */
+//		VectorXd treeLoglik; /* optional entire placement tree loglik at every site */
 
 		/** static member fields */
 		static const int MAX_Q = 250; /* maximum allowed Q value */

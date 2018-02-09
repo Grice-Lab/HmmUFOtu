@@ -34,6 +34,5 @@
 #include "DNASubModelFactory.h"
 #include "DiscreteGammaModel.h"
 #include "PhyloTreeUnrooted.h"
-#include "PTLoc.h"
 
 #endif /* SRC_HMMUFOTU_PHYLO_H_ */
