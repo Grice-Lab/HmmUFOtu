@@ -36,7 +36,7 @@ using namespace Eigen;
 namespace EGriceLab {
 namespace HmmUFOtu {
 
-HmmAlignment alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
+BandedHMMP7::HmmAlignment alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
 		int seedLen, int seedRegion, BandedHMMP7::align_mode mode) {
 	const DegenAlphabet* abc = hmm.getNuclAbc();
 	const int K = hmm.getProfileSize();
@@ -100,17 +100,11 @@ HmmAlignment alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const Prima
 
 	assert(seqVtrace.minScore != inf);
 
-	/* find seqStart and seqEnd */
-	int csStart = hmm.getCSLoc(seqVtrace.alnStart);
-	int csEnd = hmm.getCSLoc(seqVtrace.alnEnd);
 	/* get aligned seq */
-	const string& align = hmm.buildGlobalAlign(read, seqVscore, seqVtrace);
-
-	return HmmAlignment(K, L, seqVtrace.alnFrom, seqVtrace.alnTo, seqVtrace.alnStart, seqVtrace.alnEnd,
-			csStart, csEnd, seqVtrace.minScore, align);
+	return hmm.buildGlobalAlign(read, seqVscore, seqVtrace);
 }
 
-HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& read) {
+BandedHMMP7::HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& read) {
 	const DegenAlphabet* abc = hmm.getNuclAbc();
 	const int K = hmm.getProfileSize();
 	const int L = hmm.getCSLen();
@@ -126,14 +120,8 @@ HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& read) {
 	hmm.buildViterbiTrace(seqVscore, seqVtrace);
 
 	assert(seqVtrace.minScore != inf);
-	/* find seqStart and seqEnd */
-	int csStart = hmm.getCSLoc(seqVtrace.alnStart);
-	int csEnd = hmm.getCSLoc(seqVtrace.alnEnd);
 	/* get aligned seq */
-	const string& align = hmm.buildGlobalAlign(read, seqVscore, seqVtrace);
-
-	return HmmAlignment(K, L, seqVtrace.alnFrom, seqVtrace.alnTo, seqVtrace.alnStart, seqVtrace.alnEnd,
-			csStart, csEnd, seqVtrace.minScore, align);
+	return hmm.buildGlobalAlign(read, seqVscore, seqVtrace);
 }
 
 vector<PTUnrooted::PTPlacement> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,

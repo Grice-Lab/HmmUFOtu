@@ -70,6 +70,65 @@ using Math::RootFinder;
  */
 class BandedHMMP7 {
 public:
+	/* nested types */
+	struct HmmAlignment {
+		/* constructors */
+		/** default constructor */
+		HmmAlignment() {  }
+
+		/** construct from given data */
+		HmmAlignment(int K, int L,
+				int seqStart, int seqEnd, int hmmStart, int hmmEnd,
+				int csStart, int csEnd, double cost, const string& align)
+		: K(K), L(L),
+		  seqStart(seqStart), seqEnd(seqEnd), hmmStart(hmmStart), hmmEnd(hmmEnd),
+		  csStart(csStart), csEnd(csEnd), cost(cost), align(align)
+		{  }
+
+		/* member methods */
+		bool isValid() const {
+			return 0 < seqStart && seqStart <= seqEnd &&
+					0 < hmmStart && hmmStart <= hmmEnd && hmmEnd <= K &&
+					0 < csStart && csStart <= csEnd && csEnd <= L &&
+					cost >= 0 && cost != inf && L == align.length();
+		}
+
+		bool isCompatitable(const HmmAlignment& other) const {
+			return K == other.K && L == other.L;
+		}
+
+		/**
+		 * Merge this alignment with another alignment, or do nothing if they are not compatitable
+		 */
+		HmmAlignment& merge(const HmmAlignment& otherAln);
+
+		/* static methods */
+		/**
+		 * Merge two HmmAlignments
+		 * @return the merged alignment if compatitable, or a copy of the first alignment if not
+		 */
+		static HmmAlignment merge(const HmmAlignment& aln1, const HmmAlignment& aln2);
+
+		/* non-member friend functions */
+		/** write to a text output */
+		friend ostream& operator<<(ostream& out, const HmmAlignment& hmmAln);
+
+		/** read from a text input */
+		friend istream& operator>>(istream& in, HmmAlignment& hmmAln);
+
+		/* member fields */
+		int K; /* HMM profile size */
+		int L; /* concensus size */
+		int seqStart, seqEnd; /* 1-based seq coordinates */
+		int hmmStart, hmmEnd; /* 1-based HMM profile coordinates */
+		int csStart, csEnd; /* 1-based consensus coordinates */
+		double cost; /* HMM align cost */
+		string align; /* alignmented seq */
+
+		/* static fields */
+		static const string TSV_HEADER;
+	};
+
 	/* constructors */
 	/**
 	 * Default constructor, do zero initiation
@@ -406,7 +465,7 @@ public:
 	 * @param vtrace  a calcluated VTrace
 	 * @return  the global aligned sequence of the query seq, i.e. "AC--GTCGA---ACGNC---";
 	 */
-	string buildGlobalAlign(const PrimarySeq& seq, const ViterbiScores& vs, const ViterbiAlignTrace& vtrace) const;
+	HmmAlignment buildGlobalAlign(const PrimarySeq& seq, const ViterbiScores& vs, const ViterbiAlignTrace& vtrace) const;
 
 	/**
 	 * build hmm from a MSA, override any old data
@@ -863,6 +922,12 @@ inline double BandedHMMP7::hmmValueOf(const string& s) {
 inline ostream& hmmPrintValue(ostream& out, double val) {
 	return val != inf ? out << val : out << "*";
 }
+
+inline BandedHMMP7::HmmAlignment BandedHMMP7::HmmAlignment::merge(const HmmAlignment& aln1, const HmmAlignment& aln2) {
+	HmmAlignment alnMerged(aln1); /* make a local copy */
+	return alnMerged.merge(aln2);
+}
+
 
 /**
  * A relative entropy target functor to calculate relative entropy difference

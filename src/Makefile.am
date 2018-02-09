@@ -39,8 +39,7 @@ libHmmUFOtu_hmm_a_SOURCES = \
 BandedHMMP7Bg.cpp \
 BandedHMMP7Prior.cpp \
 BandedHMMP7.cpp \
-CSFMIndex.cpp \
-HmmAlignment.cpp
+CSFMIndex.cpp
 
 libHmmUFOtu_phylo_a_SOURCES = \
 NewickTree.cpp \
@@ -114,7 +113,7 @@ util/libEGUtil.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
 $(BOOST_IOSTREAMS_LIB)
 
-hmmufotu_anneal_SOURCES = hmmufotu-anneal.cpp HmmUFOtuEnv.cpp
+hmmufotu_anneal_SOURCES = hmmufotu-anneal.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp 
 hmmufotu_anneal_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a \
 util/libEGUtil.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la

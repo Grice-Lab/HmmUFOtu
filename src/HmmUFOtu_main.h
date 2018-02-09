@@ -68,11 +68,11 @@ struct JPlace {
 };
 
 /** Align seq using banded HMM algorithm, returns an HmmAlignment */
-HmmAlignment alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
+BandedHMMP7::HmmAlignment alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
 		int seedLen, int seedRegion, BandedHMMP7::align_mode mode);
 
 /** Align seq using traditional HMM algorithm, returns an HmmAlignment */
-HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& read);
+BandedHMMP7::HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& read);
 
 /**
  * Get seed placement locations by checking p-dist between a given seq and observed/inferred seq of nodes
