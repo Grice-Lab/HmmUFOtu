@@ -32,5 +32,6 @@
 #include "HmmUFOtu_OTU.h"
 
 #include "EGMath.h"
+#include "EGUtil.h"
 
 #endif /* HMMUFOTU_H_ */

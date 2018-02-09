@@ -36,70 +36,6 @@ using namespace Eigen;
 namespace EGriceLab {
 namespace HmmUFOtu {
 
-const string PTPlacement::UNASSIGNED_TAXONNAME = "UNASSIGNED";
-const double PTPlacement::UNASSIGNED_LOGLIK = nan;
-const string PTPlacement::UNASSIGNED_ID = "NULL";
-const double PTPlacement::UNASSIGNED_POSTQ = nan;
-const double PTPlacement::UNASSIGNED_DIST = nan;
-const double PTPlacement::UNASSIGNED_RATIO = nan;
-const string PTPlacement::TSV_HEADER = "branch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
-
-void PTPlacement::calcQValues(vector<PTPlacement>& places, PRIOR_TYPE type) {
-	if(places.empty())
-		return;
-
-	/* explore all placements */
-	VectorXd ppPlace(places.size()); /* posterior logP at placement */
-	map<string, double> ppTaxon; /* posterior logP at taxon */
-	double ppTaxNorm = infV; /* log(0) */
-
-	VectorXd::Index i = 0;
-	for(vector<PTPlacement>::const_iterator placement = places.begin(); placement != places.end(); ++placement) {
-		double p = placement->loglik + placement->logPriorPr(type);
-		ppPlace(i++) = p;
-		string taxonomy = placement->getTaxonName();
-		if(ppTaxon.find(taxonomy) == ppTaxon.end())
-			ppTaxon[taxonomy] = p;
-		else
-			ppTaxon[taxonomy] = EGriceLab::Math::add_scaled(ppTaxon[taxonomy], p);
-		ppTaxNorm = EGriceLab::Math::add_scaled(ppTaxNorm, p);
-	}
-	/* scale and normalize llPlace */
-	VectorXd p = (ppPlace.array() - ppPlace.maxCoeff()).exp();
-	p /= p.sum();
-	/* calculate qPlace */
-	for(vector<PTPlacement>::size_type i = 0; i < places.size(); ++i) {
-		double q = EGriceLab::Math::p2q(1 - p(i));
-		places[i].qPlace = q > MAX_Q ? MAX_Q : q;
-	}
-
-	/* calculate qTaxonomy */
-	for(vector<PTPlacement>::iterator placement = places.begin(); placement != places.end(); ++placement) {
-		double q = EGriceLab::Math::p2q(1 - ::exp(ppTaxon[placement->getTaxonName()] - ppTaxNorm));
-		placement->qTaxon = q > MAX_Q ? MAX_Q : q;
-	}
-}
-
-/**
- * calculate prior probability at log-scale
- * @param place  a placement
- * @param type  prior type
- * @param h  base height of this placement (for cNode)
- * @return  log prior always no greater than 0
- */
-double PTPlacement::logPriorPr(PRIOR_TYPE type) const {
-	double logP;
-	switch(type) {
-	case UNIFORM:
-		logP = -0;
-		break;
-	case HEIGHT:
-		logP = -(annoDist - wnr + height);
-		break;
-	}
-	return logP;
-}
-
 HmmAlignment alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
 		int seedLen, int seedRegion, BandedHMMP7::align_mode mode) {
 	const DegenAlphabet* abc = hmm.getNuclAbc();
@@ -200,61 +136,44 @@ HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& read) {
 			csStart, csEnd, seqVtrace.minScore, align);
 }
 
-vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
+vector<PTUnrooted::PTPlacement> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 		int start, int end, double maxDiff) {
-	vector<PTLoc> locs; /* candidate locations */
+	vector<PTUnrooted::PTPlacement> places; /* candidate locations */
 	/* get potential placement locations based on pDist to observed or inferred sequences */
 	for(vector<PTUnrooted::PTUNodePtr>::size_type i = 0; i < ptu.numNodes(); ++i) {
 		PTUnrooted::PTUNodePtr node = ptu.getNode(i);
 		if(node->isRoot())
 			continue;
 		double pDist = SeqUtils::pDist(node->getSeq(), seq, start, end);
-		locs.push_back(PTLoc(start, end, node, pDist));
+		places.push_back(PTUnrooted::PTPlacement(start, end, node, node->getParent(), pDist));
 	}
-	std::sort(locs.begin(), locs.end()); /* sort by dist */
+	std::sort(places.begin(), places.end(), compareByDist); /* sort by p-Dist */
 	/* remove bad seed, if necessary */
-	double bestDist = locs[0].dist;
-	double worstDist = locs[locs.size() - 1].dist;
-	if(worstDist < bestDist + maxDiff) {
-		vector<PTLoc>::iterator goodSeed;
-		for(goodSeed = locs.begin(); goodSeed != locs.end(); ++goodSeed) {
+	double bestDist = places[0].dist;
+	double worstDist = places[places.size() - 1].dist;
+	if(worstDist < bestDist + maxDiff) { /* need filtering */
+		vector<PTUnrooted::PTPlacement>::iterator goodSeed;
+		for(goodSeed = places.begin(); goodSeed != places.end(); ++goodSeed) {
 			if(goodSeed->dist - bestDist > maxDiff)
 				break;
 		}
-		locs.erase(goodSeed, locs.end()); /* remove too bad placements */
+		places.erase(goodSeed, places.end()); /* remove too bad placements */
 	}
-	return locs;
-}
-
-PTPlacement estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
-		const PTLoc& loc, const string& method) {
-	const PTUnrooted::PTUNodePtr& cNode = loc.node;
-	const PTUnrooted::PTUNodePtr& pNode = cNode->getParent();
-	double cDist = loc.dist;
-	double pDist = SeqUtils::pDist(pNode->getSeq(), seq, loc.start, loc.end);
-	double ratio = cDist / (cDist + pDist);
-	if(::isnan(ratio)) // unable to estimate the ratio
-		ratio = 0.5;
-//		cerr << "Estimating at " << cNode->getId() << " cDist: " << cDist << " pDist: " << pDist << " ratio: " << ratio << endl;
-	/* estimate the placement */
-	double wnr;
-	double loglik = ptu.estimateSeq(seq, cNode, pNode, loc.start, loc.end, ratio, wnr, method);
-	return PTPlacement(loc.start, loc.end, cNode, pNode, ratio, wnr, loglik);
-}
-
-vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
-		const vector<PTLoc>& locs, const string& method) {
-	vector<PTPlacement> places;
-	for(vector<PTLoc>::const_iterator loc = locs.begin(); loc < locs.end(); ++loc)
-		places.push_back(estimateSeq(ptu, seq, *loc, method));
 	return places;
 }
 
-vector<PTPlacement>& filterPlacements(vector<PTPlacement>& places, double maxError) {
+vector<PTUnrooted::PTPlacement>& estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
+		vector<PTUnrooted::PTPlacement>& places, const string& method) {
+	for(vector<PTUnrooted::PTPlacement>::iterator place = places.begin(); place != places.end(); ++place)
+		ptu.estimateSeq(seq, *place, method);
+	return places;
+}
+
+vector<PTUnrooted::PTPlacement>& filterPlacements(vector<PTUnrooted::PTPlacement>& places, double maxError) {
 	assert(!places.empty() && maxError >= 0);
 	std::sort(places.rbegin(), places.rend(), compareByLoglik); /* sort places decently by estimated loglik */
 	double bestEstLoglik = places[0].loglik;
-	vector<PTPlacement>::iterator goodPlace;
+	vector<PTUnrooted::PTPlacement>::iterator goodPlace;
 	for(goodPlace = places.begin(); goodPlace != places.end(); ++goodPlace) {
 		if(bestEstLoglik - goodPlace->loglik > maxError)
 			break;
@@ -263,40 +182,46 @@ vector<PTPlacement>& filterPlacements(vector<PTPlacement>& places, double maxErr
 	return places;
 }
 
-PTPlacement& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, PTPlacement& place) {
-	double ratio0 = place.ratio;
-	double wnr0 = place.wnr;
-	double loglik0 = place.loglik;
-
-//		cerr << "Estimated placement ratio0: " << ratio0 << " wnr: " << wnr0 << " loglik: " << loglik0 << endl;
-	PTUnrooted subtree = ptu.copySubTree(place.cNode, place.pNode);
-	const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
-	const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
-	double w0 = subtree.getBranchLength(u, v);
-
-	double loglik = subtree.placeSeq(seq, u, v, place.start, place.end, ratio0, wnr0);
-	const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
-	const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
-
-	/* update placement info */
-	double wnr = subtree.getBranchLength(n, r);
-	double wur = subtree.getBranchLength(u, r);
-	double wvr = w0 - wur;
-	place.ratio = wur / w0;
-//		cerr << "delta loglik: " << (loglik - loglik0) << endl;
-	place.height = ptu.getHeight(place.cNode) + wur;
-	place.annoDist = wvr <= wur ? wvr + wnr : wur + wnr;
-	/* update other placement info */
-	place.wnr = wnr;
-	place.loglik = loglik;
-	return place;
+vector<PTUnrooted::PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, vector<PTUnrooted::PTPlacement>& places) {
+	for(vector<PTUnrooted::PTPlacement>::iterator place = places.begin(); place != places.end(); ++place)
+		ptu.placeSeq(seq, *place);
+	return places;
 }
 
-vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, vector<PTPlacement>& places) {
-	/* accurate placement using estimated values */
-	for(vector<PTPlacement>::iterator place = places.begin(); place != places.end(); ++place)
-		placeSeq(ptu, seq, *place);
-	return places;
+void calcQValues(vector<PTUnrooted::PTPlacement>& places, PTUnrooted::PRIOR_TYPE type) {
+	if(places.empty())
+		return;
+
+	/* explore all placements */
+	VectorXd ppPlace(places.size()); /* posterior logP at placement */
+	map<string, double> ppTaxon; /* posterior logP at taxon */
+	double ppTaxNorm = infV; /* log(0) */
+
+	VectorXd::Index i = 0;
+	for(vector<PTUnrooted::PTPlacement>::const_iterator placement = places.begin(); placement != places.end(); ++placement) {
+		double p = placement->loglik + placement->logPriorPr(type);
+		ppPlace(i++) = p;
+		string taxonomy = placement->getTaxonName();
+		if(ppTaxon.find(taxonomy) == ppTaxon.end())
+			ppTaxon[taxonomy] = p;
+		else
+			ppTaxon[taxonomy] = EGriceLab::Math::add_scaled(ppTaxon[taxonomy], p);
+		ppTaxNorm = EGriceLab::Math::add_scaled(ppTaxNorm, p);
+	}
+	/* scale and normalize llPlace */
+	VectorXd p = (ppPlace.array() - ppPlace.maxCoeff()).exp();
+	p /= p.sum();
+	/* calculate qPlace */
+	for(vector<PTUnrooted::PTPlacement>::size_type i = 0; i < places.size(); ++i) {
+		double q = EGriceLab::Math::p2q(1 - p(i));
+		places[i].qPlace = q > PTUnrooted::PTPlacement::MAX_Q ? PTUnrooted::PTPlacement::MAX_Q : q;
+	}
+
+	/* calculate qTaxonomy */
+	for(vector<PTUnrooted::PTPlacement>::iterator placement = places.begin(); placement != places.end(); ++placement) {
+		double q = EGriceLab::Math::p2q(1 - ::exp(ppTaxon[placement->getTaxonName()] - ppTaxNorm));
+		placement->qTaxon = q > PTUnrooted::PTPlacement::MAX_Q ? PTUnrooted::PTPlacement::MAX_Q : q;
+	}
 }
 
 double alignIdentity(const DegenAlphabet* abc, const string& align, int start, int end) {

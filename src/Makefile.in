@@ -144,8 +144,7 @@ am_libHmmUFOtu_phylo_a_OBJECTS = NewickTree.$(OBJEXT) \
 	PhyloTreeUnrooted.$(OBJEXT) DNASubModel.$(OBJEXT) \
 	GTR.$(OBJEXT) TN93.$(OBJEXT) HKY85.$(OBJEXT) F81.$(OBJEXT) \
 	K80.$(OBJEXT) JC69.$(OBJEXT) DiscreteGammaModel.$(OBJEXT) \
-	DNASubModelFactory.$(OBJEXT) PTLoc.$(OBJEXT) \
-	PTPlacement.$(OBJEXT)
+	DNASubModelFactory.$(OBJEXT)
 libHmmUFOtu_phylo_a_OBJECTS = $(am_libHmmUFOtu_phylo_a_OBJECTS)
 @USE_JSONCPP_TRUE@am__EXEEXT_1 = hmmufotu-jplace$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
@@ -205,7 +204,7 @@ hmmufotu_norm_DEPENDENCIES = libHmmUFOtu_OTU.a libHmmUFOtu_common.a \
 am_hmmufotu_sim_OBJECTS = hmmufotu-sim.$(OBJEXT) HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_sim_OBJECTS = $(am_hmmufotu_sim_OBJECTS)
 hmmufotu_sim_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_common.a \
-	util/libEGUtil.a
+	util/libEGUtil.a math/libEGMath.a
 am_hmmufotu_subset_OBJECTS = hmmufotu-subset.$(OBJEXT) \
 	HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_subset_OBJECTS = $(am_hmmufotu_subset_OBJECTS)
@@ -537,9 +536,7 @@ F81.cpp \
 K80.cpp \
 JC69.cpp \
 DiscreteGammaModel.cpp \
-DNASubModelFactory.cpp \
-PTLoc.cpp \
-PTPlacement.cpp
+DNASubModelFactory.cpp
 
 libHmmUFOtu_OTU_a_SOURCES = \
 OTUObserved.cpp \
@@ -559,7 +556,7 @@ $(BOOST_IOSTREAMS_LIB)
 
 hmmufotu_train_hmm_CPPFLAGS = -DSRC_DATADIR=\"$(abs_top_srcdir)/data\" -DPKG_DATADIR=\"$(pkgdatadir)\"
 hmmufotu_sim_SOURCES = hmmufotu-sim.cpp HmmUFOtuEnv.cpp
-hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a util/libEGUtil.a
+hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a
 hmmufotu_build_SOURCES = hmmufotu-build.cpp HmmUFOtuEnv.cpp
 hmmufotu_build_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
@@ -783,8 +780,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NewickTree.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OTUObserved.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OTUTable.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTLoc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTPlacement.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PhyloTreeUnrooted.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PrimarySeq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SeqIO.Po@am__quote@
