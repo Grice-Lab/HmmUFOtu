@@ -1194,6 +1194,10 @@ public:
 	static double estimateBranchLengthWeighted(const Matrix4Xd& U, const Matrix4Xd& V,
 			int start, int end);
 
+	static double treeLoglik(const Vector4d& pi, const Matrix4Xd& X, int j) {
+		return dot_product_scaled(pi, X.col(j));
+	}
+
 	static double treeLoglik(const Vector4d& pi, const Matrix4Xd& X, int start, int end);
 
 	static double treeLoglik(const Vector4d& pi, const Matrix4Xd& X) {
@@ -1467,7 +1471,7 @@ inline Vector4d PTUnrooted::inferWeight(const Vector4d& loglik) {
 inline double PTUnrooted::treeLoglik(const Vector4d& pi, const Matrix4Xd& X, int start, int end) {
 	double loglik = 0;
 	for(int j = start; j <= end; ++j)
-		loglik += dot_product_scaled(pi, X.col(j));
+		loglik += treeLoglik(pi, X, j);
 	return loglik;
 }
 
