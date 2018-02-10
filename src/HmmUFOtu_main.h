@@ -90,14 +90,6 @@ vector<PTUnrooted::PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 vector<PTUnrooted::PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
 		const vector<PTUnrooted::PTLoc>& locs, const string& method);
 
-/** Get estimated placement for a seq segment at one PTLoc */
-PTSegPlacement estimateSeg(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
-		const PTLoc& segLoc, const string& method);
-
-/** Get estimated placement for a seq at given locations */
-vector<PTSegPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
-		const vector<PTLoc>& segLocs, const string& method);
-
 /**
  * filter estimated placement by removing bad placement with estimated loglik lower than the best placement
  * @param places  a vector of placements
