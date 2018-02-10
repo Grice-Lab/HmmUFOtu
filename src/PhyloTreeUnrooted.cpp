@@ -55,6 +55,14 @@ using namespace EGriceLab;
 using Eigen::Map;
 using Eigen::Matrix4Xd;
 
+const string PTUnrooted::PTPlacement::UNASSIGNED_TAXONNAME = "UNASSIGNED";
+const double PTUnrooted::PTPlacement::UNASSIGNED_LOGLIK = nan;
+const string PTUnrooted::PTPlacement::UNASSIGNED_ID = "NULL";
+const double PTUnrooted::PTPlacement::UNASSIGNED_POSTQ = nan;
+const double PTUnrooted::PTPlacement::UNASSIGNED_DIST = nan;
+const double PTUnrooted::PTPlacement::UNASSIGNED_RATIO = nan;
+const string PTUnrooted::PTPlacement::TSV_HEADER = "branch_id\tbranch_ratio\ttaxon_id\ttaxon_anno\tanno_dist\tloglik\tQ_placement\tQ_taxon";
+
 const double PhyloTreeUnrooted::MIN_LOGLIK_EXP = DBL_MIN_EXP / 2; /* use half of the DBL_MIN_EXP to avoid numeric-underflow */
 const double PhyloTreeUnrooted::INVALID_LOGLIK = 1;
 const double PhyloTreeUnrooted::LOGLIK_REL_EPS = 1e-6;
@@ -766,24 +774,34 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 	return wur / w0;
 }
 
-double PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-		int start, int end, double ratio, double& wnr, const string& method) const {
+PTUnrooted::PTPlacement PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTLoc& loc, const string& method) const {
 	assert(seq.length() == csLen);
-	assert(isParent(v, u));
-
+	PTUnrooted::PTUNodePtr u = getNode(loc.id);
+	PTUnrooted::PTUNodePtr v = u->getParent();
+	double cDist = loc.dist;
+	double pDist = SeqUtils::pDist(v->getSeq(), seq, loc.start, loc.end);
+	/* estimate ratio */
+	double ratio = cDist / (cDist + pDist);
+	if(::isnan(ratio)) // unable to estimate the ratio
+		ratio = 0.5;
+	/* estimate wnr */
 	double w0 = getBranchLength(u, v);
 	const Matrix4Xd& U = getBranchLoglik(u, v);
 	const Matrix4Xd& V = getBranchLoglik(v, u);
-	const Matrix4Xd& N = getLeafLoglik(seq, start, end);
-
+	const Matrix4Xd& N = getLeafLoglik(seq, loc.start, loc.end);
 	double wur = w0 * ratio;
-	double wvr = w0 * (1 - ratio);
-	const Matrix4Xd& UPr = dot_product_scaled(model->Pr(wur), U, start, end); /* U*P(wur) */
-	const Matrix4Xd& VPr = dot_product_scaled(model->Pr(wvr), V, start, end); /* V*P(wvr) */
-	wnr = estimateBranchLength(UPr + VPr /* R */, N, start, end, method);
+	double wvr = w0 - wur;
 
-	return treeLoglik(model->getPi(), UPr + VPr + dot_product_scaled(model->Pr(wnr), N), /* N*P(wnr) */
-				start, end);
+	const Matrix4Xd& UPr = dot_product_scaled(model->Pr(wur), U, loc.start, loc.end); /* U*P(wur) */
+	const Matrix4Xd& VPr = dot_product_scaled(model->Pr(wvr), V, loc.start, loc.end); /* V*P(wvr) */
+	double wnr = estimateBranchLength(UPr + VPr /* R */, N, loc.start, loc.end, method);
+
+	/* estimate loglik */
+	double loglik = treeLoglik(model->getPi(),
+			UPr + VPr + dot_product_scaled(model->Pr(wnr), N), /* N*P(wnr) */
+			loc.start, loc.end);
+
+	return PTPlacement(loc.start, loc.end, u, v, ratio, wnr, loglik);
 }
 
 double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
@@ -832,6 +850,33 @@ double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PT
 		loglik(r, j);
 
 	return treeLoglik(start, end);
+}
+
+PTUnrooted PTUnrooted::placeSeq(const DigitalSeq& seq, PTPlacement& place) const {
+	double ratio0 = place.ratio;
+	double wnr0 = place.wnr;
+	double loglik0 = place.loglik;
+
+	PTUnrooted subtree = copySubTree(place.cNode, place.pNode);
+	const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
+	const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
+	double w0 = subtree.getBranchLength(u, v);
+
+	/* update loglik */
+	place.loglik = subtree.placeSeq(seq, u, v, place.start, place.end, ratio0, wnr0);
+	const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
+	const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
+
+	/* update placement info */
+	place.wnr = subtree.getBranchLength(n, r);
+	double wur = subtree.getBranchLength(u, r);
+	double wvr = w0 - wur;
+	place.ratio = wur / w0;
+
+	place.height = getHeight(place.cNode) + wur;
+	place.annoDist = wvr <= wur ? wvr + place.wnr : wur + place.wnr;
+	/* update other placement info */
+	return subtree;
 }
 
 bool PhyloTreeUnrooted::isFullCanonicalName(const string& taxon) {
@@ -1035,6 +1080,26 @@ string PTUnrooted::toJPlaceTreeStr(const PTUnrooted::PTUNodePtr& node) const {
 	if(edgeID >= 0)
 		str += "{" + boost::lexical_cast<string>(edgeID) + "}";
 	return str;
+}
+
+/**
+ * calculate prior probability at log-scale
+ * @param place  a placement
+ * @param type  prior type
+ * @param h  base height of this placement (for cNode)
+ * @return  log prior always no greater than 0
+ */
+double PTUnrooted::PTPlacement::logPriorPr(PRIOR_TYPE type) const {
+	double logP;
+	switch(type) {
+	case UNIFORM:
+		logP = -0;
+		break;
+	case HEIGHT:
+		logP = -(annoDist - wnr + height);
+		break;
+	}
+	return logP;
 }
 
 } /* namespace HmmUFOtu */

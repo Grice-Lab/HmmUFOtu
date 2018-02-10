@@ -9,9 +9,7 @@
 #include <fstream>
 #include <ctime>
 #include "MSA.h"
-#include "PhyloTreeUnrooted.h"
-#include "HmmUFOtuConst.h"
-#include "HmmUFOtuEnv.h"
+#include "HmmUFOtu.h"
 
 using namespace std;
 using namespace EGriceLab;

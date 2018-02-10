@@ -48,6 +48,7 @@ using namespace Eigen;
 /*const int BandedHMMP7::kMinProfile = 10000; // up-to 10K 16S rRNA profile*/
 const string BandedHMMP7::HMM_TAG =
 		"HMM\t\tA\tC\tG\tT\n\t\tm->m\tm->i\tm->d\ti->m\ti->i\td->m\td->d";
+const string BandedHMMP7::HmmAlignment::TSV_HEADER = "seq_start\tseq_end\thmm_start\thmm_end\tCS_start\tCS_end\tcost\talignment";
 
 const double BandedHMMP7::kMinGapFrac = 0.2;
 const double BandedHMMP7::CONS_THRESHOLD = 0.9;
@@ -1003,14 +1004,14 @@ void BandedHMMP7::buildViterbiTrace(const ViterbiScores& vs, ViterbiAlignTrace& 
 	reverse(vtrace.alnTrace.begin(), vtrace.alnTrace.end()); // reverse the alnPath string
 }
 
-string BandedHMMP7::buildGlobalAlign(const PrimarySeq& seq,
+BandedHMMP7::HmmAlignment BandedHMMP7::buildGlobalAlign(const PrimarySeq& seq,
 		const ViterbiScores& vs, const ViterbiAlignTrace& vtrace) const {
 	assert(seq.length() == vs.L);
 
-	string aln; /* N', aligned and C' of the alignment */
+	HmmAlignment aln;
 
-	string seqN = seq.getSeq().substr(0, vtrace.alnFrom - 1); /* N' of unaligned seq, might be empty */
-	string seqC = seq.getSeq().substr(vtrace.alnTo, L - vtrace.alnTo); /* C' of unaligned seq, might be empty */
+	const string& seqN = seq.getSeq().substr(0, vtrace.alnFrom - 1); /* N' of unaligned seq, might be empty */
+	const string& seqC = seq.getSeq().substr(vtrace.alnTo, L - vtrace.alnTo); /* C' of unaligned seq, might be empty */
 
 	int csStart = profile2CSIdx[vtrace.alnStart]; /* 1-based */
 	int csEnd = profile2CSIdx[vtrace.alnEnd]; /* 1-based */
@@ -1024,7 +1025,7 @@ string BandedHMMP7::buildGlobalAlign(const PrimarySeq& seq,
 //		fprintf(stderr, "i:%d j:%d k:%d cs:%d state:%c aln:%s\n", state - vtrace.alnTrace.begin(), j, k, profile2CSIdx[k], *state, aln.c_str());
 		switch(*state) {
 		case 'B':
-			aln.append(getPaddingSeq(csStart - 1, seqN, PAD_SYM, RIGHT)); /* right aligned N' padding */
+			aln.align.append(getPaddingSeq(csStart - 1, seqN, PAD_SYM, RIGHT)); /* right aligned N' padding */
 			i = csStart;
 			j = vtrace.alnFrom;
 			k = vtrace.alnStart;
@@ -1032,9 +1033,9 @@ string BandedHMMP7::buildGlobalAlign(const PrimarySeq& seq,
 		case 'M':
 			if(k > 1 && state - vtrace.alnTrace.begin() > 1 && profile2CSIdx[k] - profile2CSIdx[k - 1] > 1) /* there are non-CS pos before 'M' */
 				/* fill in the gap with either insert or GAP */
-				aln.append(getPaddingSeq(profile2CSIdx[k] - profile2CSIdx[k - 1] - 1, insert, GAP_SYM, JUSTIFIED)); /* justified aligned gap padding */
+				aln.align.append(getPaddingSeq(profile2CSIdx[k] - profile2CSIdx[k - 1] - 1, insert, GAP_SYM, JUSTIFIED)); /* justified aligned gap padding */
 			insert.clear();
-			aln.push_back(seq.charAt(j - 1));
+			aln.align.push_back(seq.charAt(j - 1));
 			j++;
 			k++;
 			break;
@@ -1051,13 +1052,13 @@ string BandedHMMP7::buildGlobalAlign(const PrimarySeq& seq,
 			assert(insert.empty()); /* no I possible before D */
 			if(k > 1 && profile2CSIdx[k] - profile2CSIdx[k - 1] > 1) /* there are non-CS pos before 'D' */
 				/* fill in the gap with either insert or GAP */
-				aln.append(profile2CSIdx[k] - profile2CSIdx[k - 1] - 1, GAP_SYM);
-			aln.push_back(GAP_SYM);
+				aln.align.append(profile2CSIdx[k] - profile2CSIdx[k - 1] - 1, GAP_SYM);
+			aln.align.push_back(GAP_SYM);
 			k++;
 			break;
 		case 'E':
 			assert(j == vtrace.alnTo + 1);
-			aln.append(getPaddingSeq(L - csEnd, seqC, PAD_SYM, LEFT)); /* left aligned C' padding */
+			aln.align.append(getPaddingSeq(L - csEnd, seqC, PAD_SYM, LEFT)); /* left aligned C' padding */
 			break;
 		default:
 			cerr << "Unexpected align path state '" << *state << "' found" << endl;
@@ -1065,7 +1066,16 @@ string BandedHMMP7::buildGlobalAlign(const PrimarySeq& seq,
 		}
 	}
 
-	assert(aln.length() == L);
+	assert(aln.align.length() == L);
+	aln.K = K;
+	aln.L = L;
+	aln.seqStart = vtrace.alnFrom;
+	aln.seqEnd = vtrace.alnTo;
+	aln.hmmStart = vtrace.alnStart;
+	aln.hmmEnd = vtrace.alnEnd;
+	aln.csStart = csStart;
+	aln.csEnd = csEnd;
+	aln.cost = vtrace.minScore;
 	return aln;
 }
 
@@ -1172,6 +1182,49 @@ string BandedHMMP7::getPaddingSeq(int L, const string& insert, char padCh, paddi
 
 	assert(pad.length() == L);
 	return pad;
+}
+
+BandedHMMP7::HmmAlignment& BandedHMMP7::HmmAlignment::merge(const HmmAlignment& other) {
+	if(isCompatitable(other)) {
+		/* merge seq loc */
+		if(other.seqStart < seqStart)
+			seqStart = other.seqStart;
+		if(other.seqEnd > seqEnd)
+			seqEnd = other.seqEnd;
+		/* merge HMM loc */
+		if(other.hmmStart < hmmStart)
+			hmmStart = other.hmmStart;
+		if(other.hmmEnd > hmmEnd)
+			hmmEnd = other.hmmEnd;
+		/* merge CS loc */
+		if(other.csStart < csStart)
+			csStart = other.csStart;
+		if(other.csEnd > csEnd)
+			csEnd = other.csEnd;
+		/* add cost */
+		cost += other.cost;
+		/* merge aligned seq */
+		for(string::size_type i = 0; i < L; ++i)
+			if(align[i] == BandedHMMP7::PAD_SYM && other.align[i] != BandedHMMP7::PAD_SYM) /* this align has priority */
+				align[i] = other.align[i];
+	}
+	return *this;
+}
+
+ostream& operator<<(ostream& out, const BandedHMMP7::HmmAlignment& hmmAln) {
+	out << hmmAln.seqStart << "\t" << hmmAln.seqEnd << "\t" <<
+			hmmAln.hmmStart << "\t" << hmmAln.hmmEnd << "\t" <<
+			hmmAln.csStart << "\t" << hmmAln.csEnd << "\t" <<
+			hmmAln.cost << "\t" << hmmAln.align;
+	return out;
+}
+
+istream& operator>>(istream& in, BandedHMMP7::HmmAlignment& hmmAln) {
+	in >> hmmAln.seqStart >> hmmAln.seqEnd >>
+	hmmAln.hmmStart >> hmmAln.hmmEnd >>
+	hmmAln.csStart >> hmmAln.csEnd >>
+	hmmAln.cost >> hmmAln.align;
+	return in;
 }
 
 } /* namespace HmmUFOtu */

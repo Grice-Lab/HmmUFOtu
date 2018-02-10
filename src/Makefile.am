@@ -39,8 +39,7 @@ libHmmUFOtu_hmm_a_SOURCES = \
 BandedHMMP7Bg.cpp \
 BandedHMMP7Prior.cpp \
 BandedHMMP7.cpp \
-CSFMIndex.cpp \
-HmmAlignment.cpp
+CSFMIndex.cpp
 
 libHmmUFOtu_phylo_a_SOURCES = \
 NewickTree.cpp \
@@ -53,9 +52,7 @@ F81.cpp \
 K80.cpp \
 JC69.cpp \
 DiscreteGammaModel.cpp \
-DNASubModelFactory.cpp \
-PTLoc.cpp \
-PTPlacement.cpp
+DNASubModelFactory.cpp
 
 libHmmUFOtu_OTU_a_SOURCES = \
 OTUObserved.cpp \
@@ -93,7 +90,7 @@ $(BOOST_IOSTREAMS_LIB)
 hmmufotu_train_hmm_CPPFLAGS = -DSRC_DATADIR=\"$(abs_top_srcdir)/data\" -DPKG_DATADIR=\"$(pkgdatadir)\"
 
 hmmufotu_sim_SOURCES = hmmufotu-sim.cpp HmmUFOtuEnv.cpp
-hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a util/libEGUtil.a
+hmmufotu_sim_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a
 
 hmmufotu_build_SOURCES = hmmufotu-build.cpp HmmUFOtuEnv.cpp
 hmmufotu_build_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
@@ -116,7 +113,7 @@ util/libEGUtil.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
 $(BOOST_IOSTREAMS_LIB)
 
-hmmufotu_anneal_SOURCES = hmmufotu-anneal.cpp HmmUFOtuEnv.cpp
+hmmufotu_anneal_SOURCES = hmmufotu-anneal.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp 
 hmmufotu_anneal_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a \
 util/libEGUtil.a math/libEGMath.a \
 libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la

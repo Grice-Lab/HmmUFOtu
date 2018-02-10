@@ -68,31 +68,27 @@ struct JPlace {
 };
 
 /** Align seq using banded HMM algorithm, returns an HmmAlignment */
-HmmAlignment alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
+BandedHMMP7::HmmAlignment alignSeq(const BandedHMMP7& hmm, const CSFMIndex& csfm, const PrimarySeq& read,
 		int seedLen, int seedRegion, BandedHMMP7::align_mode mode);
 
 /** Align seq using traditional HMM algorithm, returns an HmmAlignment */
-HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& read);
+BandedHMMP7::HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& read);
 
 /**
  * Get seed placement locations by checking p-dist between a given seq and observed/inferred seq of nodes
- * @param ptu  PTUnrooted
+ * @param ptu  PTUnrooted tree to be used
  * @param seq  sequence to be placed
  * @param start  0-based start
  * @param end  0-based end
  * @param maxDiff  maximum allowed p-Distance difference
- * @return  a vector of PTLoc sorted by the p-dist
- * */
-vector<PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
-		int start, int end, double maxDiff);
-
-/** Get estimated placement for a seq at one PTLoc */
-PTPlacement estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
-		const PTLoc& loc, const string& method);
+ * @return  a vector of PTPlacement sorted by the p-dist
+ */
+vector<PTUnrooted::PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
+		int start, int end, double maxDiff = inf);
 
 /** Get estimated placement for a seq at given locations */
-vector<PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
-		const vector<PTLoc>& locs, const string& method);
+vector<PTUnrooted::PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
+		const vector<PTUnrooted::PTLoc>& locs, const string& method);
 
 /** Get estimated placement for a seq segment at one PTLoc */
 PTSegPlacement estimateSeg(const PTUnrooted& ptu, const DigitalSeq& seq, int start, int end,
@@ -108,22 +104,20 @@ vector<PTSegPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
  * @param maxError  maximum error of log-liklihood allowed compared to the best placement
  * @return  the modified vector of placements sorted by their loglike decreasingly
  */
-vector<PTPlacement>& filterPlacements(vector<PTPlacement>& places, double maxError);
-
-/** Get accurate placement for a seq given an estimated placement */
-PTPlacement& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, PTPlacement& place);
+vector<PTUnrooted::PTPlacement>& filterPlacements(vector<PTUnrooted::PTPlacement>& places, double maxError);
 
 /** Get accurate placement for a seq given the estimated placements */
-vector<PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
-		vector<PTPlacement>& places);
+vector<PTUnrooted::PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
+		vector<PTUnrooted::PTPlacement>& places);
+
+/** calculate Q-values using a given prior type */
+void calcQValues(vector<PTUnrooted::PTPlacement>& places, PTUnrooted::PRIOR_TYPE type);
 
 /** get alignment identity, as fraction of non-gap characters in the alignment part */
 double alignIdentity(const DegenAlphabet* abc, const string& align, int start, int end);
 
 /** get profile-HMM identity, as fraction of non-gap characters in HMM profile sites */
 double hmmIdentity(const BandedHMMP7& hmm, const string& align, int start, int end);
-
-
 
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

@@ -34,6 +34,7 @@
 #include <cerrno>
 
 #include "HmmUFOtu.h"
+#include "HmmUFOtu_main.h"
 
 using namespace std;
 using namespace EGriceLab;
@@ -247,45 +248,28 @@ int main(int argc, char* argv[]) {
 		PrimarySeq revRead = fwdRead.revcom();
 		string strand;
 		double minCost = inf;
-		int csStart = 0; /* 1-based csStart */
-		int csEnd = 0; /* 1-based csEnd */
-		string aln;
-		BandedHMMP7::VScore seqVscore; /* construct an empty VScore */
-		BandedHMMP7::VTrace seqVtrace; /* construct an empty VTrace */
+		BandedHMMP7::HmmAlignment aln;
 
 		if(searchStrand & 01) {
-			seqVscore.reset(fwdRead.length());
-			hmm.calcViterbiScores(fwdRead, seqVscore); /* use original Viterbi algorithm */
-			hmm.buildViterbiTrace(seqVscore, seqVtrace);
-			if(seqVtrace.minScore < minCost) {
-				strand = "+";
-				csStart = hmm.getCSLoc(seqVtrace.alnStart);
-				csEnd = hmm.getCSLoc(seqVtrace.alnEnd);
-				aln = hmm.buildGlobalAlign(fwdRead, seqVscore, seqVtrace);
-				minCost = seqVtrace.minScore;
-			}
+			aln = alignSeq(hmm, fwdRead);
+			minCost = aln.cost;
 		}
 
 		if(searchStrand & 02) {
-			seqVscore.reset(revRead.length());
-			hmm.calcViterbiScores(revRead, seqVscore); /* use original Viterbi algorithm */
-			hmm.buildViterbiTrace(seqVscore, seqVtrace);
-			if(seqVtrace.minScore < minCost) {
-				strand = "-";
-				csStart = hmm.getCSLoc(seqVtrace.alnStart);
-				csEnd = hmm.getCSLoc(seqVtrace.alnEnd);
-				aln = hmm.buildGlobalAlign(revRead, seqVscore, seqVtrace);
-				minCost = seqVtrace.minScore;
+			BandedHMMP7::HmmAlignment revAln = alignSeq(hmm, revRead);
+			if(revAln.cost < minCost) {
+				aln = revAln;
+				minCost = revAln.cost;
 			}
 		}
-		assert(aln.length() == csLen);
-		assert(1 <= csStart && csStart <= csEnd && csEnd <= csLen);
+
+		assert(aln.isValid());
 
 		size_t hitsNodes = 0;
 		size_t hitsLeaves = 0;
 
 		for(vector<PTUnrooted::PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-			double pDist = SeqUtils::pDist(aln, (*node)->getSeq(), csStart - 1, csEnd - 1); /* consider degenerated seq */
+			double pDist = SeqUtils::pDist(aln.align, (*node)->getSeq(), aln.csStart - 1, aln.csEnd - 1); /* consider degenerated seq */
 			if(pDist <= maxDist) {
 				hitsNodes++;
 				if((*node)->isLeaf())
@@ -295,7 +279,8 @@ int main(int argc, char* argv[]) {
 
 		/* output */
 		out << fwdRead.getId() << "\t" << fwdRead.getDesc() << "\t" << fwdRead.getSeq() << "\t" <<
-				strand << "\t" << csStart << "\t" << csEnd << "\t" << aln.substr(csStart - 1, csEnd - csStart + 1) << "\t" <<
+				strand << "\t" << aln.csStart << "\t" << aln.csEnd << "\t" <<
+				aln.align.substr(aln.csStart - 1, aln.csEnd - aln.csStart + 1) << "\t" <<
 				nNodes << "\t" << nLeaves << "\t" << hitsNodes << "\t" << hitsLeaves << "\t" <<
 				static_cast<double>(hitsNodes) / nNodes << "\t" << static_cast<double>(hitsLeaves) / nLeaves << endl;
 	}

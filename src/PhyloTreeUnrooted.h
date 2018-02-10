@@ -46,6 +46,7 @@
 #include <boost/unordered_map.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/iterator.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "AlphabetFactory.h"
 #include "HmmUFOtuConst.h"
@@ -56,6 +57,7 @@
 #include "MSA.h"
 #include "DNASubModel.h"
 #include "DiscreteGammaModel.h"
+#include "EGMath.h"
 
 namespace EGriceLab {
 namespace HmmUFOtu {
@@ -79,8 +81,15 @@ typedef PhyloTreeUnrooted PTUnrooted;
 class PhyloTreeUnrooted {
 public:
 	/* nested types and enums */
+	/** taxon levels */
 	enum TaxonLevel {
 		Domain, Kindom, Phylum, Class, Order, Family, Genus, Species
+	};
+
+	/** prior probability types */
+	enum PRIOR_TYPE {
+		UNIFORM,
+		HEIGHT
 	};
 
 	class PhyloTreeUnrootedNode;
@@ -88,6 +97,8 @@ public:
 
 	class PhyloTreeUnrootedBranch;
 	typedef PTUnrooted::PhyloTreeUnrootedBranch PTUBranch;
+
+	class PTPlacement;
 
 	typedef shared_ptr<PTUNode> PTUNodePtr; /* use boost shared_ptr to hold node pointers */
 	typedef shared_ptr<const PTUNode> PTUNodeConstPtr; /* use boost shared_ptr to hold node pointers */
@@ -373,6 +384,122 @@ public:
 		Matrix4Xd loglik; /* outgoing message (loglik) of this branch, before convoluting into branch length */
 	};
 
+	/**
+	 * A simple POD type for store PT seed locations
+	 */
+	struct PTLoc {
+		/* constructors */
+		/** construct from given data */
+		PTLoc(int start, int end, long id, double dist)
+		: start(start), end(end), id(id), dist(dist)
+		{  }
+
+		/* non-member friend functions */
+		friend bool operator<(const PTLoc& lhs, const PTLoc& rhs);
+
+		/* member fields */
+		int start; /* 0-based aln start */
+		int end;   /* 0-based aln end */
+		long id;   /* node ID */
+		double dist; /* p-Dist to node */
+	};
+
+	/**
+	 * A candidate Phylogenetic Tree Placement to store placement information
+	 */
+	struct PTPlacement {
+		/* constructors */
+	//	/** default constructor */
+		PTPlacement() : start(0), end(0), ratio(nan), wnr(nan), loglik(nan),
+				height(nan), annoDist(nan), qPlace(nan), qTaxon(nan)
+		{  }
+
+		/** construct a placement with basic info and optionally auxilary info */
+		PTPlacement(int start, int end,
+				const PTUnrooted::PTUNodePtr& cNode, const PTUnrooted::PTUNodePtr& pNode,
+				double ratio, double wnr, double loglik,
+				double height = 0, double annoDist = 0,
+				double qPlace = 0, double qTaxonomy = 0)
+		: start(start), end(end), cNode(cNode), pNode(pNode),
+		  ratio(ratio), wnr(wnr), loglik(loglik),
+		  height(height), annoDist(annoDist), qPlace(qPlace), qTaxon(qTaxonomy)
+		{  }
+
+		/** destructor */
+		virtual ~PTPlacement() {  }
+
+		/** member methods */
+		long getTaxonId() const {
+			if(cNode != NULL && pNode != NULL)
+				return ratio <= 0.5 ? cNode->getId() : pNode->getId();
+			else
+				return UNASSIGNED_TAXONID;
+		}
+
+		string getTaxonName() const {
+			if(cNode != NULL && pNode != NULL)
+				return ratio <= 0.5 ? cNode->getAnno() : pNode->getAnno();
+			else
+				return UNASSIGNED_TAXONNAME;
+		}
+
+		string getId() const {
+			if(cNode != NULL && pNode != NULL)
+				return boost::lexical_cast<string> (cNode->getId()) + "->" + boost::lexical_cast<string> (pNode->getId());
+			else
+				return UNASSIGNED_ID;
+		}
+
+		bool isValidPlace() const {
+			return isParent(pNode, cNode);
+		}
+
+		/** calculate prior probability of a placement given a prior type in log-scale */
+		double logPriorPr(PRIOR_TYPE type) const;
+
+		/** calculate prior proability of a placement given a prior type */
+		double priorPr(PRIOR_TYPE type) const {
+			return ::exp(logPriorPr(type));
+		}
+
+		/** get segment tree loglik at given region */
+//		double segLoglik(int start, int end) const {
+//			return treeLoglik.segment(start, end - start + 1).sum();
+//		}
+
+		/* non-member functions */
+		friend bool compareByLoglik(const PTPlacement& lhs, const PTPlacement& rhs);
+		friend bool compareByQTaxon(const PTPlacement& lhs, const PTPlacement& rhs);
+		friend bool compareByQPlace(const PTPlacement& lhs, const PTPlacement& rhs);
+		friend ostream& operator<<(ostream& out, const PTPlacement& place);
+
+		/** member fields */
+		int start; /* 0-based align start */
+		int end;   /* 0-based align end */
+		PTUnrooted::PTUNodePtr cNode;  /* child node */
+		PTUnrooted::PTUNodePtr pNode;  /* parent node */
+		double ratio; /* placement ratio */
+		double wnr;   /* new branch length */
+		double loglik;
+		double annoDist;
+		double height;
+		double qPlace;
+		double qTaxon;
+//		VectorXd treeLoglik; /* optional entire placement tree loglik at every site */
+
+		/** static member fields */
+		static const int MAX_Q = 250; /* maximum allowed Q value */
+		static const long UNASSIGNED_TAXONID = -1;
+		static const string UNASSIGNED_TAXONNAME;
+		static const double UNASSIGNED_LOGLIK;
+		static const string UNASSIGNED_ID;
+		static const double UNASSIGNED_POSTQ;
+		static const double UNASSIGNED_DIST;
+		static const double UNASSIGNED_RATIO;
+
+		static const string TSV_HEADER;
+	};
+
 	/* constructors */
 	/** Default constructor, do nothing */
 	PhyloTreeUnrooted() : csLen(0) {  }
@@ -381,9 +508,7 @@ public:
 	PhyloTreeUnrooted(const NewickTree& ntree);
 
 public:
-
 	/* member methods */
-
 	/** Get the number of nodes of this tree */
 	size_t numNodes() const {
 		return id2node.size();
@@ -967,33 +1092,14 @@ public:
 	}
 
 	/**
-	 * estimate the potential treeLoglik, if we place an additional seq (n) at given branch in given region [start,end]
+	 * estimate placement given a potential placement loc
 	 * the tree breaches will be only evaluated in one path in the order of wnr -> wur -> wvr
-	 * and wnr will be modified accordingly
-	 * @param  new seq to be test
-	 * @param u  branch start (u->v)
-	 * @param v  branch end (u->v)
-	 * @param start  seq start position (non-gap start)
-	 * @param end  seq end position (non-gap end)
-	 * @param ratio  esimated insert ratio = wur / (wuv)
-	 * @param wnr  estimated new branch length
-	 * @return  the estimated treeLoglik if seq is placed here
+	 * and the ratio, wnr and loglik will be estimated
+	 * @param  new seq to be estimate placement
+	 * @param place  placement holder
+	 * @return  modified placement
 	 */
-	double estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-			int start, int end, double ratio, double& wnr, const string& method = "weighted") const;
-
-	/**
-	 * estimate the potential treeLoglik, if we place an additional seq (n) at given branch in the entire seq region
-	 * at the mid-point of branch u->v, without modifying the original tree
-	 * @param  new seq to be test
-	 * @param u  branch start (u->v)
-	 * @param v  branch end (u->v)
-	 * @return  the estimated treeLoglik if seq is placed here
-	 */
-	double estimateSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
-			double& ratio, double& wnr, const string& method = "weighted") const {
-		return estimateSeq(seq, u, v, 0, csLen - 1, ratio, wnr, method);
-	}
+	PTPlacement estimateSeq(const DigitalSeq& seq, const PTLoc& loc, const string& method = "weighted") const;
 
 	/**
 	 * place an additional seq (n) at given branch in given region [start,end]
@@ -1001,7 +1107,7 @@ public:
 	 * and the new branch n->r set to initial length wnr0
 	 * then all three new branches will be optimized jointly
 	 * the modified tree will have r as its new root
-	 * @param  new seq to be placed
+	 * @param seq  new seq to be placed
 	 * @param u  branch start (u->v)
 	 * @param v  branch end (u->v)
 	 * @param start  seq start position (non-gap start)
@@ -1012,6 +1118,17 @@ public:
 	 */
 	double placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
 			int start, int end, double ratio0, double wnr0);
+
+	/**
+	 * place an additional seq (n) at given placement position,
+	 * by copying a subtree at given position then do placement,
+	 * which will not affect the oroginal tree
+	 * after placement, all branch lengths, ratio and loglik will be updated
+	 * @param seq  new seq to be placed at a copy of subtree
+	 * @param place  given placement position
+	 * @return  the subtree used for this placement
+	 */
+	PTUnrooted placeSeq(const DigitalSeq& seq, PTPlacement& place) const;
 
 	/**
 	 * place an additional seq (n) at given branch in the entire seq region
@@ -1489,6 +1606,30 @@ inline double PTUnrooted::estimateBranchLength(const Matrix4Xd& U, const Matrix4
 		return estimateBranchLengthWeighted(U, V, start, end);
 	else
 		throw std::invalid_argument("Unknown branch length estimating method '" + method + "'");
+}
+
+inline ostream& operator<<(ostream& out, const PTUnrooted::PTPlacement& place) {
+	out << place.getId() << "\t" << place.ratio << "\t"
+			<< place.getTaxonId() << "\t" << place.getTaxonName() << "\t"
+			<< place.annoDist << "\t" << place.loglik << "\t"
+			<< place.qPlace << "\t" << place.qTaxon;
+	return out;
+}
+
+inline bool operator<(const PTUnrooted::PTLoc& lhs, const PTUnrooted::PTLoc& rhs) {
+	return lhs.dist < rhs.dist;
+}
+
+inline bool compareByLoglik(const PTUnrooted::PTPlacement& lhs, const PTUnrooted::PTPlacement& rhs) {
+	return lhs.loglik < rhs.loglik;
+}
+
+inline bool compareByQPlace(const PTUnrooted::PTPlacement& lhs, const PTUnrooted::PTPlacement& rhs) {
+	return lhs.qPlace < rhs.qPlace;
+}
+
+inline bool compareByQTaxon(const PTUnrooted::PTPlacement& lhs, const PTUnrooted::PTPlacement& rhs) {
+	return lhs.qTaxon < rhs.qTaxon;
 }
 
 } /* namespace HmmUFOtu */
