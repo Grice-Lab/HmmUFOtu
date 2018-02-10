@@ -124,36 +124,37 @@ BandedHMMP7::HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& rea
 	return hmm.buildGlobalAlign(read, seqVscore, seqVtrace);
 }
 
-vector<PTUnrooted::PTPlacement> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
+vector<PTUnrooted::PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 		int start, int end, double maxDiff) {
-	vector<PTUnrooted::PTPlacement> places; /* candidate locations */
+	vector<PTUnrooted::PTLoc> locs; /* candidate locations */
 	/* get potential placement locations based on pDist to observed or inferred sequences */
 	for(vector<PTUnrooted::PTUNodePtr>::size_type i = 0; i < ptu.numNodes(); ++i) {
 		PTUnrooted::PTUNodePtr node = ptu.getNode(i);
 		if(node->isRoot())
 			continue;
 		double pDist = SeqUtils::pDist(node->getSeq(), seq, start, end);
-		places.push_back(PTUnrooted::PTPlacement(start, end, node, node->getParent(), pDist));
+		locs.push_back(PTUnrooted::PTLoc(start, end, node->getId(), pDist));
 	}
-	std::sort(places.begin(), places.end(), compareByDist); /* sort by p-Dist */
+	std::sort(locs.begin(), locs.end()); /* sort by p-Dist */
 	/* remove bad seed, if necessary */
-	double bestDist = places[0].dist;
-	double worstDist = places[places.size() - 1].dist;
+	double bestDist = locs[0].dist;
+	double worstDist = locs[locs.size() - 1].dist;
 	if(worstDist < bestDist + maxDiff) { /* need filtering */
-		vector<PTUnrooted::PTPlacement>::iterator goodSeed;
-		for(goodSeed = places.begin(); goodSeed != places.end(); ++goodSeed) {
+		vector<PTUnrooted::PTLoc>::iterator goodSeed;
+		for(goodSeed = locs.begin(); goodSeed != locs.end(); ++goodSeed) {
 			if(goodSeed->dist - bestDist > maxDiff)
 				break;
 		}
-		places.erase(goodSeed, places.end()); /* remove too bad placements */
+		locs.erase(goodSeed, locs.end()); /* remove too bad placements */
 	}
-	return places;
+	return locs;
 }
 
-vector<PTUnrooted::PTPlacement>& estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
-		vector<PTUnrooted::PTPlacement>& places, const string& method) {
-	for(vector<PTUnrooted::PTPlacement>::iterator place = places.begin(); place != places.end(); ++place)
-		ptu.estimateSeq(seq, *place, method);
+vector<PTUnrooted::PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
+		const vector<PTUnrooted::PTLoc>& locs, const string& method) {
+	vector<PTUnrooted::PTPlacement> places;
+	for(vector<PTUnrooted::PTLoc>::const_iterator loc = locs.begin(); loc != locs.end(); ++loc)
+		places.push_back(ptu.estimateSeq(seq, *loc, method));
 	return places;
 }
 

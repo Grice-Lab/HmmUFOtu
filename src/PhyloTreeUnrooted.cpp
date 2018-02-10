@@ -774,35 +774,34 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 	return wur / w0;
 }
 
-PTUnrooted::PTPlacement& PTUnrooted::estimateSeq(const DigitalSeq& seq, PTPlacement& place, const string& method) const {
+PTUnrooted::PTPlacement PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTLoc& loc, const string& method) const {
 	assert(seq.length() == csLen);
-	assert(place.isValidPlace());
-	PTUnrooted::PTUNodePtr v = place.pNode;
-	PTUnrooted::PTUNodePtr u = place.cNode;
-	double cDist = place.dist;
-	double pDist = SeqUtils::pDist(v->getSeq(), seq, place.start, place.end);
+	PTUnrooted::PTUNodePtr u = getNode(loc.id);
+	PTUnrooted::PTUNodePtr v = u->getParent();
+	double cDist = loc.dist;
+	double pDist = SeqUtils::pDist(v->getSeq(), seq, loc.start, loc.end);
 	/* estimate ratio */
-	place.ratio = cDist / (cDist + pDist);
-	if(::isnan(place.ratio)) // unable to estimate the ratio
-		place.ratio = 0.5;
+	double ratio = cDist / (cDist + pDist);
+	if(::isnan(ratio)) // unable to estimate the ratio
+		ratio = 0.5;
 	/* estimate wnr */
 	double w0 = getBranchLength(u, v);
 	const Matrix4Xd& U = getBranchLoglik(u, v);
 	const Matrix4Xd& V = getBranchLoglik(v, u);
-	const Matrix4Xd& N = getLeafLoglik(seq, place.start, place.end);
-	double wur = w0 * place.ratio;
-	double wvr = w0 * (1 - place.ratio);
+	const Matrix4Xd& N = getLeafLoglik(seq, loc.start, loc.end);
+	double wur = w0 * ratio;
+	double wvr = w0 - wur;
 
-	const Matrix4Xd& UPr = dot_product_scaled(model->Pr(wur), U, place.start, place.end); /* U*P(wur) */
-	const Matrix4Xd& VPr = dot_product_scaled(model->Pr(wvr), V, place.start, place.end); /* V*P(wvr) */
-	place.wnr = estimateBranchLength(UPr + VPr /* R */, N, place.start, place.end, method);
+	const Matrix4Xd& UPr = dot_product_scaled(model->Pr(wur), U, loc.start, loc.end); /* U*P(wur) */
+	const Matrix4Xd& VPr = dot_product_scaled(model->Pr(wvr), V, loc.start, loc.end); /* V*P(wvr) */
+	double wnr = estimateBranchLength(UPr + VPr /* R */, N, loc.start, loc.end, method);
 
 	/* estimate loglik */
-	place.loglik = treeLoglik(model->getPi(),
-			UPr + VPr + dot_product_scaled(model->Pr(place.wnr), N), /* N*P(wnr) */
-			place.start, place.end);
+	double loglik = treeLoglik(model->getPi(),
+			UPr + VPr + dot_product_scaled(model->Pr(wnr), N), /* N*P(wnr) */
+			loc.start, loc.end);
 
-	return place;
+	return PTPlacement(loc.start, loc.end, u, v, ratio, wnr, loglik);
 }
 
 double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,

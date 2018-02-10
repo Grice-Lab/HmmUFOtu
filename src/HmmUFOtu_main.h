@@ -83,12 +83,12 @@ BandedHMMP7::HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& rea
  * @param maxDiff  maximum allowed p-Distance difference
  * @return  a vector of PTPlacement sorted by the p-dist
  */
-vector<PTUnrooted::PTPlacement> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
+vector<PTUnrooted::PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
 		int start, int end, double maxDiff = inf);
 
 /** Get estimated placement for a seq at given locations */
-vector<PTUnrooted::PTPlacement>& estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
-		vector<PTUnrooted::PTPlacement>& places, const string& method);
+vector<PTUnrooted::PTPlacement> estimateSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
+		const vector<PTUnrooted::PTLoc>& locs, const string& method);
 
 /**
  * filter estimated placement by removing bad placement with estimated loglik lower than the best placement

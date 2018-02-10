@@ -385,24 +385,43 @@ public:
 	};
 
 	/**
+	 * A simple POD type for store PT seed locations
+	 */
+	struct PTLoc {
+		/* constructors */
+		/** construct from given data */
+		PTLoc(int start, int end, long id, double dist)
+		: start(start), end(end), id(id), dist(dist)
+		{  }
+
+		/* non-member friend functions */
+		friend bool operator<(const PTLoc& lhs, const PTLoc& rhs);
+
+		/* member fields */
+		int start; /* 0-based aln start */
+		int end;   /* 0-based aln end */
+		long id;   /* node ID */
+		double dist; /* p-Dist to node */
+	};
+
+	/**
 	 * A candidate Phylogenetic Tree Placement to store placement information
 	 */
 	struct PTPlacement {
 		/* constructors */
 	//	/** default constructor */
-		PTPlacement() : start(0), end(0), dist(0), ratio(nan), wnr(nan), loglik(nan),
+		PTPlacement() : start(0), end(0), ratio(nan), wnr(nan), loglik(nan),
 				height(nan), annoDist(nan), qPlace(nan), qTaxon(nan)
 		{  }
 
 		/** construct a placement with basic info and optionally auxilary info */
 		PTPlacement(int start, int end,
 				const PTUnrooted::PTUNodePtr& cNode, const PTUnrooted::PTUNodePtr& pNode,
-				double dist,
-				double ratio = nan, double wnr = nan, double loglik = nan,
+				double ratio, double wnr, double loglik,
 				double height = 0, double annoDist = 0,
 				double qPlace = 0, double qTaxonomy = 0)
 		: start(start), end(end), cNode(cNode), pNode(pNode),
-		  dist(dist), ratio(ratio), wnr(wnr), loglik(loglik),
+		  ratio(ratio), wnr(wnr), loglik(loglik),
 		  height(height), annoDist(annoDist), qPlace(qPlace), qTaxon(qTaxonomy)
 		{  }
 
@@ -449,7 +468,6 @@ public:
 //		}
 
 		/* non-member functions */
-		friend bool compareByDist(const PTPlacement& lhs, const PTPlacement& rhs);
 		friend bool compareByLoglik(const PTPlacement& lhs, const PTPlacement& rhs);
 		friend bool compareByQTaxon(const PTPlacement& lhs, const PTPlacement& rhs);
 		friend bool compareByQPlace(const PTPlacement& lhs, const PTPlacement& rhs);
@@ -460,7 +478,6 @@ public:
 		int end;   /* 0-based align end */
 		PTUnrooted::PTUNodePtr cNode;  /* child node */
 		PTUnrooted::PTUNodePtr pNode;  /* parent node */
-		double dist; /* p-Dist to child node */
 		double ratio; /* placement ratio */
 		double wnr;   /* new branch length */
 		double loglik;
@@ -1082,7 +1099,7 @@ public:
 	 * @param place  placement holder
 	 * @return  modified placement
 	 */
-	PTPlacement& estimateSeq(const DigitalSeq& seq, PTPlacement& place, const string& method = "weighted") const;
+	PTPlacement estimateSeq(const DigitalSeq& seq, const PTLoc& loc, const string& method = "weighted") const;
 
 	/**
 	 * place an additional seq (n) at given branch in given region [start,end]
@@ -1595,7 +1612,7 @@ inline ostream& operator<<(ostream& out, const PTUnrooted::PTPlacement& place) {
 	return out;
 }
 
-inline bool compareByDist(const PTUnrooted::PTPlacement& lhs, const PTUnrooted::PTPlacement& rhs) {
+inline bool operator<(const PTUnrooted::PTLoc& lhs, const PTUnrooted::PTLoc& rhs) {
 	return lhs.dist < rhs.dist;
 }
 

@@ -511,12 +511,12 @@ int main(int argc, char* argv[]) {
 							DigitalSeq seq(abc, id, aln.align);
 							/* place seq with seed-estimate-place (SEP) algorithm */
 							/* get potential locs */
-							vector<PTUnrooted::PTPlacement> places = getSeed(ptu, seq, aln.csStart - 1, aln.csEnd - 1, maxDiff);
-							if(places.size() > maxLocs)
-								places.erase(places.end() - (places.size() - maxLocs), places.end()); /* remove last maxLocs elements */
+							vector<PTUnrooted::PTLoc> locs = getSeed(ptu, seq, aln.csStart - 1, aln.csEnd - 1, maxDiff);
+							if(locs.size() > maxLocs)
+								locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
 							//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
 							/* estimate placements */
-							estimateSeq(ptu, seq, places, estMethod);
+							vector<PTUnrooted::PTPlacement> places = estimateSeq(ptu, seq, locs, estMethod);
 							/* filter placements */
 							filterPlacements(places, maxError);
 							/* accurate placements */
