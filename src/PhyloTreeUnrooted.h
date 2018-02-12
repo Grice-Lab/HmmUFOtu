@@ -913,7 +913,9 @@ public:
 	/**
 	 * calculate the loglike of the subtree at site j
 	 */
-	double treeLoglik(const PTUNodePtr& node, int j) const;
+	double treeLoglik(const PTUNodePtr& node, int j) const {
+		return treeLoglik(model->getPi(), getBranchLoglik(node, node->parent), j);
+	}
 
 	/**
 	 * calculate the loglik of the subtree in a given range [start, end]
@@ -923,17 +925,30 @@ public:
 	/**
 	 * calculate the loglik of the subtree in a whole length
 	 */
-	double treeLoglik(const PTUNodePtr& node) const;
+	double treeLoglik(const PTUNodePtr& node) const {
+		return treeLoglik(node, 0, csLen - 1);
+	}
+
+	/**
+	 * calculate the tree loglik at given site for root node
+	 */
+	double treeLoglik(int j) const {
+		return treeLoglik(root, j);
+	}
 
 	/**
 	 * calculate the entire tree loglik in a given range [start, end]
 	 */
-	double treeLoglik(int start, int end) const;
+	double treeLoglik(int start, int end) const {
+		return treeLoglik(root, start, end);
+	}
 
 	/**
 	 * calculate the entire tree loglik in the whole length
 	 */
-	double treeLoglik() const;
+	double treeLoglik() const {
+		return treeLoglik(root);
+	}
 
 	/**
 	 * infer the ancestor (or real if a leaf) state (base) of given node and site
@@ -1423,29 +1438,6 @@ inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, in
 	return false;
 }
 
-inline double PTUnrooted::treeLoglik(const PTUNodePtr& node, int j) const {
-	return treeLoglik(model->getPi(), getBranchLoglik(node, node->parent), j);
-}
-
-inline double PTUnrooted::treeLoglik(const PTUNodePtr& node, int start, int end) const {
-	double loglik = 0;
-	for(int j = start; j <= end; ++j)
-		loglik += treeLoglik(node, j);
-	return loglik;
-}
-
-inline double PTUnrooted::treeLoglik(int start, int end) const {
-	return treeLoglik(root, start, end);
-}
-
-inline double PTUnrooted::treeLoglik() const {
-	return treeLoglik(root);
-}
-
-inline double PTUnrooted::treeLoglik(const PTUNodePtr& node) const {
-	return treeLoglik(node, 0, csLen - 1);
-}
-
 inline Vector4d PTUnrooted::getLeafLoglik(const DigitalSeq& seq, int j) const {
 	int8_t base = seq[j];
 	if(base >= 0)
@@ -1608,13 +1600,6 @@ inline int8_t PTUnrooted::inferState(const Vector4d& loglik) {
 inline Vector4d PTUnrooted::inferWeight(const Vector4d& loglik) {
 	Vector4d p = (loglik.array() - loglik.maxCoeff()).exp(); /* scale before exponent */
 	return p / p.sum();
-}
-
-inline double PTUnrooted::treeLoglik(const Vector4d& pi, const Matrix4Xd& X, int start, int end) {
-	double loglik = 0;
-	for(int j = start; j <= end; ++j)
-		loglik += treeLoglik(pi, X, j);
-	return loglik;
 }
 
 inline Matrix4d PTUnrooted::initLeafMat() {

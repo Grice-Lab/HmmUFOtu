@@ -649,6 +649,20 @@ ostream& PTUnrooted::saveDGModel(ostream& out) const {
 	return out;
 }
 
+double PTUnrooted::treeLoglik(const Vector4d& pi, const Matrix4Xd& X, int start, int end) {
+	double loglik = 0;
+	for(int j = start; j <= end; ++j)
+		loglik += treeLoglik(pi, X, j);
+	return loglik;
+}
+
+double PTUnrooted::treeLoglik(const PTUNodePtr& node, int start, int end) const {
+	double loglik = 0;
+	for(int j = start; j <= end; ++j)
+		loglik += treeLoglik(node, j);
+	return loglik;
+}
+
 PTUnrooted PTUnrooted::copySubTree(const PTUNodePtr& u, const PTUNodePtr& v) const {
 	assert(isParent(v, u));
 
@@ -876,6 +890,22 @@ PTUnrooted PTUnrooted::placeSeq(const DigitalSeq& seq, PTPlacement& place) const
 	place.height = getHeight(place.cNode) + wur;
 	place.annoDist = wvr <= wur ? wvr + place.wnr : wur + place.wnr;
 	/* update other placement info */
+	return subtree;
+}
+
+PTUnrooted PTUnrooted::placeSeg(const DigitalSeq& seq, int alnStart, int alnEnd, PTPlacement& place) const {
+	assert(alnStart <= place.start && place.end <= alnEnd);
+	PTUnrooted subtree = placeSeq(seq, place); /* subtree only evaluated at the segment sites */
+	/* evaluate 5' of segment */
+	for(int j = alnStart; j < place.start; ++j)
+		subtree.loglik(subtree.root, j);
+	/* evluate 3' of segment */
+	for(int j = place.end + 1; j <= alnEnd; ++j)
+		subtree.loglik(subtree.root, j);
+	/* evaluate tree */
+	place.treeLoglik.resize(seq.length());
+	for(int j = alnStart; j <= alnEnd; ++j)
+		place.treeLoglik(j) = subtree.treeLoglik(j);
 	return subtree;
 }
 

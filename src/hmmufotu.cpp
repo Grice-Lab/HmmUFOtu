@@ -34,7 +34,7 @@ using namespace Eigen;
 
 /* default values */
 static const double DEFAULT_MAX_DIFF = inf;
-static const size_t DEFAULT_MAX_LOCATION = 50;
+static const size_t DEFAULT_MAX_NSEED = 50;
 static const int DEFAULT_SEED_LEN = 20;
 static const int MAX_SEED_LEN = 25;
 static const int MIN_SEED_LEN = 15;
@@ -43,9 +43,12 @@ static const double DEFAULT_MAX_PLACE_ERROR = 20;
 static const int DEFAULT_NUM_SEGMENT = 2;
 static const int MIN_NUM_SEGMENT = 2;
 static const int MAX_NUM_SEGMENT = 4;
+static const int DEFAULT_MAX_CHIMERA_NSEED = 4;
+static const double DEFAULT_MAX_CHIMERA_ERROR = 10;
 static const int DEFAULT_NUM_THREADS = 1;
 static const string ALIGN_OUT_FMT = "fasta";
 static const string DEFAULT_BRANCH_EST_METHOD = "unweighted";
+static const string CHIMERA_TSV_HEADER = "chimera_lod_5\tchimera_lod_3";
 
 /**
  * Print introduction of this program
@@ -74,15 +77,19 @@ void printUsage(const string& progName) {
 		 << "            -L|--seed-len  INT   : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT              : size of 5'/3' seed region for finding seed matches for CSFM-index [" << DEFAULT_SEED_REGION << "]" << endl
 		 << "            -s  FLAG             : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
-		 << "            -N  INT              : max # of seed nodes used in the 'Seed' stage of SEP algorithm [" << DEFAULT_MAX_LOCATION << "]" << endl
-		 << "            -d  DBL              : max p-dist difference allowed for sub-optimal seeds compared the best seed in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_DIFF << "]" << endl
-		 << "            -e  DBL              : max placement error for filtering placements between the 'Estimate' and 'Place' stages of the SEP algorithm [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
+		 << "            -N  INT              : max # of seed nodes used in the 'Seed' stage of SEP algorithm [" << DEFAULT_MAX_NSEED << "]" << endl
+		 << "            -d  DBL              : max p-dist difference allowed for sub-optimal seeds used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_DIFF << "]" << endl
+		 << "            -e|--err  DBL        : max placement error used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
 		 << "            -m|--method  STR     : branch length estimating method during the estimated-placement stage, must be one of 'unweighted' or 'weighted' [" << DEFAULT_BRANCH_EST_METHOD << "]" << endl
 		 << "            --ML  FLAG           : use maximum likelihood in phylogenetic placement, do not calculate posterior p-values, this will ignore -q and --prior options" << endl
 		 << "            --prior  STR         : method for calculating prior probability of a placement, either 'uniform' (uniform prior) or 'height' (rooted distance to leaves)" << endl
 		 << "            -C|--chimera  FLAG   : enable a chimera sequence checking procedure before the final 'Place' stage in the SEP algorithm using a segment re-estimation method" << endl
-		 << "            --num-seg  INT       : number of segments used in chimera checking procedure [" << DEFAULT_NUM_SEGMENT << "]" << endl
+		 << "            --num-segment  INT   : number of segments used in chimera checking procedure [" << DEFAULT_NUM_SEGMENT << "]" << endl
+		 << "            --chimera-N  INT     : max # of seed hits used in 'Seed' stage of chimera SEP algorithm [" << DEFAULT_MAX_CHIMERA_NSEED << "]" << endl
+		 << "            --chimera-err  DBL   : max placement error used in the 'Estimate' stage of chimera SEP algorithm [" << DEFAULT_MAX_CHIMERA_ERROR << "]" << endl
+		 << "            --chimera-lod  DBL   : min log-odd required for defining a chimera read between best- and alt- segment alignments, default use --chimera-err" << endl
 		 << "            --chimera-out  FILE  : keep read assignment results of chimera reads in FILE" << ZLIB_SUPPORT << endl
+		 << "            --ignore-lod    FLAG : calculate and report chimera-lod values but don't filter based on them, for debug purpose only" << endl
 		 << "            -S|--seed  INT       : random seed used for CSFM-index seed searches, for debug only" << endl
 #ifdef _OPENMP
 		 << "            -p|--process INT     : number of threads/cpus used for parallel processing" << endl
@@ -117,12 +124,16 @@ int main(int argc, char* argv[]) {
 	int seedLen = DEFAULT_SEED_LEN;
 	int seedRegion = DEFAULT_SEED_REGION;
 	double maxDiff = DEFAULT_MAX_DIFF;
-	int maxLocs = DEFAULT_MAX_LOCATION;
+	int maxNSeed = DEFAULT_MAX_NSEED;
 	double maxError = DEFAULT_MAX_PLACE_ERROR;
 	bool onlyML = false;
 	PTUnrooted::PRIOR_TYPE myPrior = PTUnrooted::UNIFORM;
 	bool checkChimera = false;
 	int numSeg = DEFAULT_NUM_SEGMENT;
+	int maxChimeraNSeed = DEFAULT_MAX_CHIMERA_NSEED;
+	double maxChimeraError = DEFAULT_MAX_CHIMERA_ERROR;
+	double maxChimeraLod = maxChimeraError;
+	bool ignoreLod = false;
 
 	int nThreads = DEFAULT_NUM_THREADS;
 
@@ -175,10 +186,12 @@ int main(int argc, char* argv[]) {
 		maxDiff = ::atof(cmdOpts.getOptStr("-d"));
 
 	if(cmdOpts.hasOpt("-N"))
-		maxLocs = ::atoi(cmdOpts.getOptStr("-N"));
+		maxNSeed = ::atoi(cmdOpts.getOptStr("-N"));
 
 	if(cmdOpts.hasOpt("-e"))
 		maxError = ::atof(cmdOpts.getOptStr("-e"));
+	if(cmdOpts.hasOpt("--err"))
+		maxError = ::atof(cmdOpts.getOptStr("--err"));
 
 	if(cmdOpts.hasOpt("-m"))
 		estMethod = cmdOpts.getOpt("-m");
@@ -201,10 +214,18 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-C") || cmdOpts.hasOpt("--chimera")) {
 		checkChimera = true;
-		if(cmdOpts.hasOpt("--num-seg"))
-			numSeg = ::atof(cmdOpts.getOptStr("--num-seg"));
+		if(cmdOpts.hasOpt("--num-segment"))
+			numSeg = ::atof(cmdOpts.getOptStr("--num-segment"));
+		if(cmdOpts.hasOpt("--chimera-N"))
+			maxChimeraNSeed = ::atoi(cmdOpts.getOptStr("--chimera-N"));
+		if(cmdOpts.hasOpt("--chimera-err"))
+			maxChimeraError = ::atof(cmdOpts.getOptStr("--chimera-err"));
+		if(cmdOpts.hasOpt("--chimera-lod"))
+			maxChimeraLod = ::atof(cmdOpts.getOptStr("--chimera-lod"));
 		if(cmdOpts.hasOpt("--chimera-out"))
 			chiOutFn = cmdOpts.getOpt("--chimera-out");
+		if(cmdOpts.hasOpt("--ignore-lod"))
+			ignoreLod = true;
 	}
 
 	if(cmdOpts.hasOpt("-S"))
@@ -250,7 +271,7 @@ int main(int argc, char* argv[]) {
 		cerr << "-d must be non-negative" << endl;
 		return EXIT_FAILURE;
 	}
-	if(!(maxLocs > 0)) {
+	if(!(maxNSeed > 0)) {
 		cerr << "-N must be positive" << endl;
 		return EXIT_FAILURE;
 	}
@@ -259,7 +280,11 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 	if(!(MIN_NUM_SEGMENT <= numSeg && numSeg <= MAX_NUM_SEGMENT)) {
-		cerr << "--num-seg must be in [" << MIN_NUM_SEGMENT << ", " << MAX_NUM_SEGMENT << "]" << endl;
+		cerr << "--num-segment must be in [" << MIN_NUM_SEGMENT << ", " << MAX_NUM_SEGMENT << "]" << endl;
+		return EXIT_FAILURE;
+	}
+	if(numSeg % 2) {
+		cerr << "--num-segment must be an even number" << endl;
 		return EXIT_FAILURE;
 	}
 
@@ -455,9 +480,13 @@ int main(int argc, char* argv[]) {
 	/* process reads and output */
 	writeProgInfo(out, string(" taxonomy assignment generated by ") + argv[0]);
 	out << "# command: "<< cmdOpts.getCmdStr() << endl;
-	out << "id\tdescription\t" << BandedHMMP7::HmmAlignment::TSV_HEADER << "\t" + PTUnrooted::PTPlacement::TSV_HEADER << endl;
+	out << "id\tdescription\t" << BandedHMMP7::HmmAlignment::TSV_HEADER
+			<< (ignoreLod ? "\t" + CHIMERA_TSV_HEADER + "\t" : "\t")
+			<< PTUnrooted::PTPlacement::TSV_HEADER << endl;
 	if(chiOut.is_complete())
-		chiOut << "id\tdescription\t" << BandedHMMP7::HmmAlignment::TSV_HEADER << "\t" + PTUnrooted::PTPlacement::TSV_HEADER << endl;
+		chiOut << "id\tdescription\t" << BandedHMMP7::HmmAlignment::TSV_HEADER
+				<< (ignoreLod ? "\t" + CHIMERA_TSV_HEADER + "\t" : "\t")
+				<< PTUnrooted::PTPlacement::TSV_HEADER << endl;
 
 #pragma omp parallel
 	{
@@ -468,7 +497,7 @@ int main(int argc, char* argv[]) {
 				string desc;
 				PrimarySeq fwdRead, revRead;
 				bool isPaired = true;
-				bool isOriented = true;
+				bool isChimera = false;
 
 				fwdRead = fwdSeqI.nextSeq();
 				id = fwdRead.getId();
@@ -489,13 +518,64 @@ int main(int argc, char* argv[]) {
 						BandedHMMP7::HmmAlignment revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode);
 						assert(revAln.isValid());
 						//							infoLog << "rev seq aligned: revStart: " << revStart << " revEnd: " << revEnd << " aln: " << revAln << endl;
-						if(!(aln.csStart <= revAln.csStart && aln.csEnd <= revAln.csEnd)) /* bad paired-end alignment */
-							isOriented = false;
+						if(!(aln.csStart <= revAln.csStart && aln.csEnd <= revAln.csEnd))
+							isChimera = true; /* bad orientation indicates a chimera seq */
 						else
 							aln.merge(revAln); /* merge alignment */
 					}
+					DigitalSeq seq(abc, id, aln.align);
+					PTUnrooted::PTPlacement bestPlace;
+					double chimeraLod5 = EGriceLab::HmmUFOtu::nan;
+					double chimeraLod3 = EGriceLab::HmmUFOtu::nan;
+					if(!isChimera && checkChimera) { /* need further chimera checking */
+						vector<PTUnrooted::PTPlacement> seg5Places; /* placements of 5' segments */
+						vector<PTUnrooted::PTPlacement> seg3Places; /* placements of 3' segments */
+						const int segLen = (aln.csEnd - aln.csStart + 1) / numSeg;
+						for(int n = 0; n < numSeg; ++n) {
+							int segStart = aln.csStart + n * segLen; /* 1-based */
+							int segEnd = segStart + segLen - 1;      /* 1-based */
+							/* get segment seeds */
+							vector<PTUnrooted::PTLoc> segSeeds = getSeed(ptu, seq, segStart - 1, segEnd - 1);
+							if(segSeeds.size() > maxChimeraNSeed)
+								segSeeds.erase(segSeeds.end() - (segSeeds.size() - maxChimeraNSeed), segSeeds.end());
+							/* estimate segment placements */
+							vector<PTUnrooted::PTPlacement> segPlaces = estimateSeq(ptu, seq, segSeeds, estMethod);
+							/* filter placesments for this segment */
+							filterPlacements(segPlaces, maxChimeraError);
+							placeSeg(ptu, seq, aln.csStart - 1, aln.csEnd - 1, segPlaces);
+							/* add placements of this segment to the larget lists */
+							if(n < numSeg / 2)
+								seg5Places.insert(seg5Places.end(), segPlaces.begin(), segPlaces.end());
+							else
+								seg3Places.insert(seg3Places.end(), segPlaces.begin(), segPlaces.end());
+						}
+						std::sort(seg5Places.rbegin(), seg5Places.rend(), compareByLoglik);
+						std::sort(seg3Places.rbegin(), seg3Places.rend(), compareByLoglik);
+						const PTUnrooted::PTPlacement& bestSeg5Place = seg5Places[0];
+						const PTUnrooted::PTPlacement& bestSeg3Place = seg3Places[0];
+						chimeraLod5 = bestSeg5Place.loglik - bestSeg3Place.segLoglik(bestSeg5Place.start, bestSeg5Place.end);
+						chimeraLod3 = bestSeg3Place.loglik - bestSeg5Place.segLoglik(bestSeg3Place.start, bestSeg3Place.end);
+//								cerr << "id: " << id << " desc: " << desc
+//									 << " 5' taxonID: " << bestSeg5Place.getTaxonId() << " 3' taxonID: " << bestSeg3Place.getTaxonId() << endl;
+//								cerr << "5'-loglik: " << bestLoglik5 << " 5'-alt-loglik: " << altLoglik5 << " delta 5'-loglik: " << bestLoglik5 - altLoglik5 << endl;
+//								cerr << "3'-loglik: " << bestLoglik3 << " 3'-alt-loglik: " << altLoglik3 << " delta 3'-loglik: " << bestLoglik3 - altLoglik3 << endl;
+						isChimera = chimeraLod5 > maxChimeraLod && chimeraLod5 > maxChimeraLod;
+					} /* end check chimera */
 
-					if(isOriented) { /* a valid alignment */
+					if(!ignoreLod && isChimera) { /* a potential chimera sequence */
+						if(chiOut.is_complete())
+							if(!ignoreLod)
+#pragma omp critical(writeChiAssign)
+							chiOut << id << "\t" << desc << "\t" << aln
+							<< "\t"
+							<< bestPlace << endl;
+							else
+#pragma omp critical(writeChiAssign)
+							chiOut << id << "\t" << desc << "\t" << aln
+							<< "\t" << chimeraLod5 << "\t" << chimeraLod3
+							<< bestPlace << endl;
+					}
+					else { /* ignore or not a chimera sequence */
 						/* write the alignment seq to output */
 						if(!alnFn.empty()) {
 							string desc = fwdRead.getDesc();
@@ -505,15 +585,12 @@ int main(int argc, char* argv[]) {
 							alnSeqO.writeSeq(PrimarySeq(abc, id, aln.align, desc));
 						}
 
-						PTUnrooted::PTPlacement bestPlace;
-
 						if(!alignOnly) {
-							DigitalSeq seq(abc, id, aln.align);
 							/* place seq with seed-estimate-place (SEP) algorithm */
-							/* get potential locs */
+							/* get seeds */
 							vector<PTUnrooted::PTLoc> locs = getSeed(ptu, seq, aln.csStart - 1, aln.csEnd - 1, maxDiff);
-							if(locs.size() > maxLocs)
-								locs.erase(locs.end() - (locs.size() - maxLocs), locs.end()); /* remove last maxLocs elements */
+							if(locs.size() > maxNSeed)
+								locs.erase(locs.end() - (locs.size() - maxNSeed), locs.end()); /* remove last maxLocs elements */
 							//	cerr << "Found " << locs.size() << " potential placement locations" << endl;
 							/* estimate placements */
 							vector<PTUnrooted::PTPlacement> places = estimateSeq(ptu, seq, locs, estMethod);
@@ -530,19 +607,18 @@ int main(int argc, char* argv[]) {
 							}
 
 							bestPlace = places[0];
-
 						} /* end if alignOnly */
 						/* write main output */
+						if(!ignoreLod)
 #pragma omp critical(writeAssign)
-						out << id << "\t" << desc << "\t"
-								<< aln << "\t"
-								<< bestPlace << endl;
-						if(chiOut.is_complete())
-#pragma omp critical(writeChiAssign)
-							chiOut << id << "\t" << desc << "\t"
-							<< aln << "\t"
+							out << id << "\t" << desc << "\t" << aln
+							<< "\t"
 							<< bestPlace << endl;
-					} /* end valid alignment */
+						else
+							out << id << "\t" << desc << "\t" << aln
+							<< "\t" << chimeraLod5 << "\t" << chimeraLod3 << "\t"
+							<< bestPlace << endl;
+					} /* end not chimera alignment */
 				} /* end task */
 			} /* end each read/pair */
 		} /* end single */
