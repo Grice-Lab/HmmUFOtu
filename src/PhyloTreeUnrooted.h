@@ -463,9 +463,9 @@ public:
 		}
 
 		/** get segment tree loglik at given region */
-//		double segLoglik(int start, int end) const {
-//			return treeLoglik.segment(start, end - start + 1).sum();
-//		}
+		double segLoglik(int start, int end) const {
+			return treeLoglik.segment(start, end - start + 1).sum();
+		}
 
 		/* non-member functions */
 		friend bool compareByLoglik(const PTPlacement& lhs, const PTPlacement& rhs);
@@ -485,7 +485,7 @@ public:
 		double height;
 		double qPlace;
 		double qTaxon;
-//		VectorXd treeLoglik; /* optional entire placement tree loglik at every site */
+		VectorXd treeLoglik; /* optional entire placement tree loglik at every site */
 
 		/** static member fields */
 		static const int MAX_Q = 250; /* maximum allowed Q value */
@@ -910,6 +910,10 @@ public:
 	 */
 	void evaluate(const PTUNodePtr& node, int j);
 
+	/**
+	 * calculate the loglike of the subtree at site j
+	 */
+	double treeLoglik(const PTUNodePtr& node, int j) const;
 
 	/**
 	 * calculate the loglik of the subtree in a given range [start, end]
@@ -1129,6 +1133,20 @@ public:
 	 * @return  the subtree used for this placement
 	 */
 	PTUnrooted placeSeq(const DigitalSeq& seq, PTPlacement& place) const;
+
+	/**
+	 * place a segment of an additional seq at given placement position,
+	 * by copying a subtree at given position then do placement,
+	 * which will not affect the oroginal tree
+	 * after placement, all branch lengths, ratio and loglik will be updated
+	 * and the treeLoglik will be evaluated at all sites not just the segment
+	 * @param seq  new seq to be placed at a copy of subtree
+	 * @param alnStart  0-based start of the entire alignment of the seq
+	 * @param alnEnd  0-based end of the entire alignment of the seq
+	 * @param place  given placement position
+	 * @return  the subtree used for this placement
+	 */
+	PTUnrooted placeSeg(const DigitalSeq& seq, int alnStart, int alnEnd, PTPlacement& place) const;
 
 	/**
 	 * place an additional seq (n) at given branch in the entire seq region
@@ -1405,8 +1423,15 @@ inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, in
 	return false;
 }
 
+inline double PTUnrooted::treeLoglik(const PTUNodePtr& node, int j) const {
+	return treeLoglik(model->getPi(), getBranchLoglik(node, node->parent), j);
+}
+
 inline double PTUnrooted::treeLoglik(const PTUNodePtr& node, int start, int end) const {
-	return treeLoglik(model->getPi(), getBranchLoglik(node, node->parent), start, end);
+	double loglik = 0;
+	for(int j = start; j <= end; ++j)
+		loglik += treeLoglik(node, j);
+	return loglik;
 }
 
 inline double PTUnrooted::treeLoglik(int start, int end) const {
