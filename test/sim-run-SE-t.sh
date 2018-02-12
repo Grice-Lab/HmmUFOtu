@@ -12,6 +12,7 @@ SIMSEED=0
 
 # assigning info
 ASSIGNFILE="${DB}_sim_assign.txt"
+CHIMERAFILE="${DB}_sim_chimera.txt"
 
 # OTU info
 OTUFILE="${DB}_sim_OTU.txt"
@@ -46,6 +47,17 @@ if [ $? == 0 ]
 		echo "Failed to generate assignment file"
 		exit 1
 fi 
+
+echo "Running taxonomy assignment with chimera checking enabled ..."
+$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE -v -C --chimera-out $CHIMERAFILE
+if [ $? == 0 ]
+then
+echo "taxonomy assignment file generated"
+else
+echo "Failed to generate assignment file"
+exit 1
+fi
+
 
 echo "Summarizing OTU table ..."
 $SRCPATH/hmmufotu-sum $DB $ASSIGNFILE -o $OTUFILE -r $OTULIST -c $OTUALIGN -t $OTUTREE -v
