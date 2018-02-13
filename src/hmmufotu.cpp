@@ -619,6 +619,7 @@ int main(int argc, char* argv[]) {
 							<< "\t"
 							<< bestPlace << endl;
 						else
+#pragma omp critical(writeAssign)
 							out << id << "\t" << desc << "\t" << aln
 							<< "\t" << bestSeg5Place.getTaxonId() << "\t" << bestSeg3Place.getTaxonId()
 							<< "\t" << bestSeg5Place.getTaxonName() << "\t" << bestSeg3Place.getTaxonName()
