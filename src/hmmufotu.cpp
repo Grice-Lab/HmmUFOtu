@@ -48,7 +48,7 @@ static const double DEFAULT_MAX_CHIMERA_ERROR = 10;
 static const int DEFAULT_NUM_THREADS = 1;
 static const string ALIGN_OUT_FMT = "fasta";
 static const string DEFAULT_BRANCH_EST_METHOD = "unweighted";
-static const string CHIMERA_TSV_HEADER = "chimera_lod_5\tchimera_lod_3";
+static const string CHIMERA_TSV_HEADER = "seg5_taxon_id\tseg3_taxon_id\tseg5_taxon_anno\tseg3_taxon_anno\tseg5_chimera_lod\tseg3_chimera_lod";
 
 /**
  * Print introduction of this program
@@ -88,8 +88,8 @@ void printUsage(const string& progName) {
 		 << "            --chimera-N  INT     : max # of seed hits used in 'Seed' stage of chimera SEP algorithm [" << DEFAULT_MAX_CHIMERA_NSEED << "]" << endl
 		 << "            --chimera-err  DBL   : max placement error used in the 'Estimate' stage of chimera SEP algorithm [" << DEFAULT_MAX_CHIMERA_ERROR << "]" << endl
 		 << "            --chimera-lod  DBL   : min log-odd required for defining a chimera read between best- and alt- segment alignments, default use --chimera-err" << endl
-		 << "            --chimera-out  FILE  : keep read assignment results of chimera reads in FILE" << ZLIB_SUPPORT << endl
-		 << "            --ignore-lod    FLAG : calculate and report chimera-lod values but don't filter based on them, for debug purpose only" << endl
+		 << "            --chimera-out  FILE  : keep assignment output of chimera reads in FILE" << ZLIB_SUPPORT << endl
+		 << "            --ignore-lod    FLAG : calculate and report chimera information but don't filter based on the lod values, for debug purpose only" << endl
 		 << "            -S|--seed  INT       : random seed used for CSFM-index seed searches, for debug only" << endl
 #ifdef _OPENMP
 		 << "            -p|--process INT     : number of threads/cpus used for parallel processing" << endl
@@ -527,6 +527,8 @@ int main(int argc, char* argv[]) {
 					PTUnrooted::PTPlacement bestPlace;
 					double chimeraLod5 = EGriceLab::HmmUFOtu::nan;
 					double chimeraLod3 = EGriceLab::HmmUFOtu::nan;
+					PTUnrooted::PTPlacement bestSeg5Place;
+					PTUnrooted::PTPlacement bestSeg3Place;
 					if(!isChimera && checkChimera) { /* need further chimera checking */
 						vector<PTUnrooted::PTPlacement> seg5Places; /* placements of 5' segments */
 						vector<PTUnrooted::PTPlacement> seg3Places; /* placements of 3' segments */
@@ -551,8 +553,8 @@ int main(int argc, char* argv[]) {
 						}
 						std::sort(seg5Places.rbegin(), seg5Places.rend(), compareByLoglik);
 						std::sort(seg3Places.rbegin(), seg3Places.rend(), compareByLoglik);
-						const PTUnrooted::PTPlacement& bestSeg5Place = seg5Places[0];
-						const PTUnrooted::PTPlacement& bestSeg3Place = seg3Places[0];
+						bestSeg5Place = seg5Places[0];
+						bestSeg3Place = seg3Places[0];
 						chimeraLod5 = bestSeg5Place.loglik - bestSeg3Place.segLoglik(bestSeg5Place.start, bestSeg5Place.end);
 						chimeraLod3 = bestSeg3Place.loglik - bestSeg5Place.segLoglik(bestSeg3Place.start, bestSeg3Place.end);
 //								cerr << "id: " << id << " desc: " << desc
@@ -572,8 +574,10 @@ int main(int argc, char* argv[]) {
 							else
 #pragma omp critical(writeChiAssign)
 							chiOut << id << "\t" << desc << "\t" << aln
+							<< "\t" << bestSeg5Place.getTaxonId() << "\t" << bestSeg3Place.getTaxonId()
+							<< "\t" << bestSeg5Place.getTaxonName() << "\t" << bestSeg3Place.getTaxonName()
 							<< "\t" << chimeraLod5 << "\t" << chimeraLod3
-							<< bestPlace << endl;
+							<< "\t" << bestPlace << endl;
 					}
 					else { /* ignore or not a chimera sequence */
 						/* write the alignment seq to output */
@@ -616,8 +620,10 @@ int main(int argc, char* argv[]) {
 							<< bestPlace << endl;
 						else
 							out << id << "\t" << desc << "\t" << aln
-							<< "\t" << chimeraLod5 << "\t" << chimeraLod3 << "\t"
-							<< bestPlace << endl;
+							<< "\t" << bestSeg5Place.getTaxonId() << "\t" << bestSeg3Place.getTaxonId()
+							<< "\t" << bestSeg5Place.getTaxonName() << "\t" << bestSeg3Place.getTaxonName()
+							<< "\t" << chimeraLod5 << "\t" << chimeraLod3
+							<< "\t" << bestPlace << endl;
 					} /* end not chimera alignment */
 				} /* end task */
 			} /* end each read/pair */
