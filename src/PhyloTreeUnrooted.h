@@ -804,6 +804,13 @@ public:
 	}
 
 	/**
+	 * reset the cached loglik of edge u->v at given region
+	 */
+	void resetLoglik(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end) {
+		node2branch[u][v].loglik.block(0, start, 4, end - start + 1).setConstant(INVALID_LOGLIK);
+	}
+
+	/**
 	 * reset the cached loglik of every node
 	 */
 	void resetBranchLoglik();

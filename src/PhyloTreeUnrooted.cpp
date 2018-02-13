@@ -725,7 +725,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 		p /= N;
 		q = 1 - p;
 
-//		cerr << "N: " << N << " p: " << p << " q: " << q << endl;
+//		debugLog << "N: " << N << " p: " << p << " q: " << q << endl;
 		if(::fabs(::log(q) - ::log(q0)) < BRANCH_EPS)
 			break;
 		// update p0 and q0
@@ -751,27 +751,30 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 	double wnr0 = getBranchLength(n, r);
 	double w0 = wur0 + wvr0;
 
+//	debugLog << "wur0: " << wur0 << " wvr0: " << wvr0 << " wnr0: " << wnr0 << " w0: " << w0 << endl;
+
 	double wur = wur0;
 	double wvr = wvr0;
 	double wnr = wnr0;
 
 	/* every outgoing loglik(r,u), loglik(r,v) and loglik(r,n) depends on the other two incoming loglik */
 	for(int iter = 0; iter < MAX_ITER && 0 <= wur && wur <= w0; ++iter) {
+//		debugLog << "i: " << iter << " wur: " << wur << " wvr: " << wvr << " wnr: " << wnr << " w0: " << w0 << endl;
 		/* evaluate loglik(r, n) and update wnr */
 		setRoot(n);
-		resetLoglik(r, n);
+		resetLoglik(r, n, start, end);
 		evaluate(n, start, end);
 		wnr = optimizeBranchLength(r, n, start, end, 1); /* do not use branch length > 1 */
 		/* update loglik(r,u) and wur */
 		setRoot(u);
-		resetLoglik(r, u);
+		resetLoglik(r, u, start, end);
 		evaluate(u, start, end);
 		wur = optimizeBranchLength(r, u, start, end, w0);
 		/* update wvr and loglik(r, v) */
 		wvr = w0 - wur;
 		setRoot(v);
 		setBranchLength(r, v, wvr);
-		resetLoglik(r, v);
+		resetLoglik(r, v, start, end);
 		evaluate(v, start, end);
 
 		setRoot(r);
@@ -894,14 +897,57 @@ PTUnrooted PTUnrooted::placeSeq(const DigitalSeq& seq, PTPlacement& place) const
 }
 
 PTUnrooted PTUnrooted::placeSeg(const DigitalSeq& seq, int alnStart, int alnEnd, PTPlacement& place) const {
-	assert(alnStart <= place.start && place.end <= alnEnd);
+	assert(0 <= alnStart && alnStart <= alnEnd && alnEnd < seq.length());
 	PTUnrooted subtree = placeSeq(seq, place); /* subtree only evaluated at the segment sites */
-	/* evaluate 5' of segment */
-	for(int j = alnStart; j < place.start; ++j)
-		subtree.loglik(subtree.root, j);
-	/* evluate 3' of segment */
-	for(int j = place.end + 1; j <= alnEnd; ++j)
-		subtree.loglik(subtree.root, j);
+	const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
+	const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
+	const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
+	const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
+
+	/* backup original branch lengths */
+	double wvr0 = subtree.getBranchLength(v, r);
+	double wur0 = subtree.getBranchLength(u, r);
+	double wnr0 = subtree.getBranchLength(n, r);
+	double w0 = wvr0 + wur0;
+	double ratio0 = place.ratio;
+	assert(wnr0 == place.wnr);
+	double loglik0 = place.loglik;
+	/* optimize and evaluate 5' of segment, if exists */
+	if(alnStart < place.start) {
+		/* re-estimate */
+		PTLoc segLoc(alnStart, place.start - 1, place.cNode->getId(), SeqUtils::pDist(seq, place.cNode->getSeq(), alnStart, place.start - 1));
+		PTPlacement segPlace = estimateSeq(seq, segLoc);
+		subtree.setBranchLength(v, r, w0 * (1 - segPlace.ratio));
+		subtree.setBranchLength(u, r, w0 * segPlace.ratio);
+		subtree.setBranchLength(n, r, segPlace.wnr);
+		subtree.evaluate(r, alnStart, place.start - 1); /* n->r evaluated */
+		/* joint optimization */
+		subtree.optimizeBranchLength(u, v, r, n, alnStart, place.start - 1);
+		for(int j = alnStart; j <= place.start - 1; ++j)
+			subtree.loglik(subtree.root, j);
+	}
+	/* optimize and evluate 3' of segment */
+	if(place.end < alnEnd) {
+		/* re-estimate */
+		PTLoc segLoc(place.end + 1, alnEnd, place.cNode->getId(), SeqUtils::pDist(seq, place.cNode->getSeq(), place.end + 1, alnEnd));
+		PTPlacement segPlace = estimateSeq(seq, segLoc);
+		subtree.setBranchLength(v, r, w0 * (1 - segPlace.ratio));
+		subtree.setBranchLength(u, r, w0 * segPlace.ratio);
+		subtree.setBranchLength(n, r, segPlace.wnr);
+		subtree.evaluate(r, place.end + 1, alnEnd); /* n->r evaluated */
+		/* joint optimization */
+		subtree.optimizeBranchLength(u, v, r, n, place.end + 1, alnEnd);
+		for(int j = place.end + 1; j <= alnEnd; ++j)
+			subtree.loglik(subtree.root, j);
+	}
+	/* restore data */
+	subtree.setBranchLength(v, r, wvr0);
+	subtree.setBranchLength(u, r, wur0);
+	subtree.setBranchLength(n, r, wnr0);
+	place.ratio = ratio0;
+	place.wnr = wnr0;
+	place.loglik = loglik0;
+
 	/* evaluate tree */
 	place.treeLoglik.resize(seq.length());
 	for(int j = alnStart; j <= alnEnd; ++j)
