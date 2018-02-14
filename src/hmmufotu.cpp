@@ -575,7 +575,7 @@ int main(int argc, char* argv[]) {
 						PTUnrooted::PTPlacement altSeg3Place = ptu.estimateSeq(seq, alt3Loc);
 						ptu.placeSeq(seq, altSeg3Place);
 						chimeraLod = bestSeg5Place.loglik - altSeg5Place.loglik + bestSeg3Place.loglik - altSeg3Place.loglik;
-						isChimera = chimeraLod > minChimeraLod;
+						isChimera = bestSeg5Place.getTaxonId() != bestSeg3Place.getTaxonId() && chimeraLod > minChimeraLod;
 					} /* end check chimera */
 
 					if(isChimera) { /* a potential chimera sequence */
