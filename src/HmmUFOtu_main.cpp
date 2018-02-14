@@ -177,13 +177,6 @@ vector<PTUnrooted::PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSe
 	return places;
 }
 
-vector<PTUnrooted::PTPlacement>& placeSeg(const PTUnrooted& ptu, const DigitalSeq& seq,
-		int alnStart, int alnEnd, vector<PTUnrooted::PTPlacement>& places) {
-	for(vector<PTUnrooted::PTPlacement>::iterator place = places.begin(); place != places.end(); ++place)
-		ptu.placeSeg(seq, alnStart, alnEnd, *place);
-	return places;
-}
-
 void calcQValues(vector<PTUnrooted::PTPlacement>& places, PTUnrooted::PRIOR_TYPE type) {
 	if(places.empty())
 		return;

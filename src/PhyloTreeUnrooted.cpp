@@ -896,65 +896,6 @@ PTUnrooted PTUnrooted::placeSeq(const DigitalSeq& seq, PTPlacement& place) const
 	return subtree;
 }
 
-PTUnrooted PTUnrooted::placeSeg(const DigitalSeq& seq, int alnStart, int alnEnd, PTPlacement& place) const {
-	assert(0 <= alnStart && alnStart <= alnEnd && alnEnd < seq.length());
-	PTUnrooted subtree = placeSeq(seq, place); /* subtree only evaluated at the segment sites */
-	const PTUnrooted::PTUNodePtr& v = subtree.getNode(0);
-	const PTUnrooted::PTUNodePtr& u = subtree.getNode(1);
-	const PTUnrooted::PTUNodePtr& r = subtree.getNode(2);
-	const PTUnrooted::PTUNodePtr& n = subtree.getNode(3);
-
-	/* backup original branch lengths */
-	double wvr0 = subtree.getBranchLength(v, r);
-	double wur0 = subtree.getBranchLength(u, r);
-	double wnr0 = subtree.getBranchLength(n, r);
-	double w0 = wvr0 + wur0;
-	double ratio0 = place.ratio;
-	assert(wnr0 == place.wnr);
-	double loglik0 = place.loglik;
-	/* optimize and evaluate 5' of segment, if exists */
-	if(alnStart < place.start) {
-		/* re-estimate */
-		PTLoc segLoc(alnStart, place.start - 1, place.cNode->getId(), SeqUtils::pDist(seq, place.cNode->getSeq(), alnStart, place.start - 1));
-		PTPlacement segPlace = estimateSeq(seq, segLoc);
-		subtree.setBranchLength(v, r, w0 * (1 - segPlace.ratio));
-		subtree.setBranchLength(u, r, w0 * segPlace.ratio);
-		subtree.setBranchLength(n, r, segPlace.wnr);
-		subtree.evaluate(r, alnStart, place.start - 1); /* n->r evaluated */
-		/* joint optimization */
-		subtree.optimizeBranchLength(u, v, r, n, alnStart, place.start - 1);
-		for(int j = alnStart; j <= place.start - 1; ++j)
-			subtree.loglik(subtree.root, j);
-	}
-	/* optimize and evluate 3' of segment */
-	if(place.end < alnEnd) {
-		/* re-estimate */
-		PTLoc segLoc(place.end + 1, alnEnd, place.cNode->getId(), SeqUtils::pDist(seq, place.cNode->getSeq(), place.end + 1, alnEnd));
-		PTPlacement segPlace = estimateSeq(seq, segLoc);
-		subtree.setBranchLength(v, r, w0 * (1 - segPlace.ratio));
-		subtree.setBranchLength(u, r, w0 * segPlace.ratio);
-		subtree.setBranchLength(n, r, segPlace.wnr);
-		subtree.evaluate(r, place.end + 1, alnEnd); /* n->r evaluated */
-		/* joint optimization */
-		subtree.optimizeBranchLength(u, v, r, n, place.end + 1, alnEnd);
-		for(int j = place.end + 1; j <= alnEnd; ++j)
-			subtree.loglik(subtree.root, j);
-	}
-	/* restore data */
-	subtree.setBranchLength(v, r, wvr0);
-	subtree.setBranchLength(u, r, wur0);
-	subtree.setBranchLength(n, r, wnr0);
-	place.ratio = ratio0;
-	place.wnr = wnr0;
-	place.loglik = loglik0;
-
-	/* evaluate tree */
-	place.treeLoglik.resize(seq.length());
-	for(int j = alnStart; j <= alnEnd; ++j)
-		place.treeLoglik(j) = subtree.treeLoglik(j);
-	return subtree;
-}
-
 bool PhyloTreeUnrooted::isFullCanonicalName(const string& taxon) {
 	vector<string> fields;
 	boost::split(fields, taxon, boost::is_any_of(TAXON_SEP), boost::token_compress_on);
