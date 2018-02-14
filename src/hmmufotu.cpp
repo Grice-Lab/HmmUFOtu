@@ -40,9 +40,10 @@ static const int MAX_SEED_LEN = 25;
 static const int MIN_SEED_LEN = 15;
 static const int DEFAULT_SEED_REGION = 50;
 static const double DEFAULT_MAX_PLACE_ERROR = 20;
-static const int DEFAULT_NUM_SEGMENT = 4;
+static const int DEFAULT_NUM_SEGMENT = 2;
 static const int MIN_NUM_SEGMENT = 2;
 static const int MAX_NUM_SEGMENT = 6;
+static const double DEFAULT_MIN_CHIMERA_LOD = 0;
 static const int DEFAULT_NUM_THREADS = 1;
 static const string ALIGN_OUT_FMT = "fasta";
 static const string DEFAULT_BRANCH_EST_METHOD = "unweighted";
@@ -84,7 +85,7 @@ void printUsage(const string& progName) {
 		 << "            -C|--chimera  FLAG   : enable a chimera sequence checking procedure before the final 'Place' stage in the SEP algorithm using a segment re-estimation method" << endl
 		 << "            --num-segment  INT   : number of segments used in chimera checking procedure [" << DEFAULT_NUM_SEGMENT << "]" << endl
 		 << "            --chimera-err  DBL   : max placement error used in the 'Estimate' stage of chimera SEP algorithm, default use -e/--seg-number" << endl
-		 << "            --chimera-lod  DBL   : min log-odd required for defining a chimera read between best- and alt- segment alignments, default use --chimera-err" << endl
+		 << "            --chimera-lod  DBL   : min log-odd required for defining a chimera read between best- and alt- segment alignments [" << DEFAULT_MIN_CHIMERA_LOD << "]" << endl
 		 << "            --chimera-out  FILE  : keep assignment output of chimera reads in FILE" << ZLIB_SUPPORT << endl
 		 << "            --chimera-info  FLAG : report detailed chimera information in assignment outputs" << endl
 		 << "            -S|--seed  INT       : random seed used for CSFM-index seed searches, for debug only" << endl
@@ -128,7 +129,7 @@ int main(int argc, char* argv[]) {
 	bool checkChimera = false;
 	int numSeg = DEFAULT_NUM_SEGMENT;
 	double maxChimeraError = maxError / numSeg;
-	double maxChimeraLod = maxChimeraError;
+	double minChimeraLod = DEFAULT_MIN_CHIMERA_LOD;
 	bool chimeraInfo = false;
 
 	int nThreads = DEFAULT_NUM_THREADS;
@@ -215,7 +216,7 @@ int main(int argc, char* argv[]) {
 		if(cmdOpts.hasOpt("--chimera-err"))
 			maxChimeraError = ::atof(cmdOpts.getOptStr("--chimera-err"));
 		if(cmdOpts.hasOpt("--chimera-lod"))
-			maxChimeraLod = ::atof(cmdOpts.getOptStr("--chimera-lod"));
+			minChimeraLod = ::atof(cmdOpts.getOptStr("--chimera-lod"));
 		if(cmdOpts.hasOpt("--chimera-out"))
 			chiOutFn = cmdOpts.getOpt("--chimera-out");
 		if(cmdOpts.hasOpt("--chimera-info"))
@@ -270,7 +271,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 	if(!(maxError > 0)) {
-		cerr << "-e must be positive" << endl;
+		cerr << "-e|--err must be positive" << endl;
 		return EXIT_FAILURE;
 	}
 	if(!(MIN_NUM_SEGMENT <= numSeg && numSeg <= MAX_NUM_SEGMENT)) {
@@ -279,6 +280,14 @@ int main(int argc, char* argv[]) {
 	}
 	if(numSeg % 2) {
 		cerr << "--num-segment must be an even number" << endl;
+		return EXIT_FAILURE;
+	}
+	if(!(maxChimeraError > 0)) {
+		cerr << "--chimera-err must be positive" << endl;
+		return EXIT_FAILURE;
+	}
+	if(!(minChimeraLod >= 0)) {
+		cerr << "--chimera-lod must be non-negative" << endl;
 		return EXIT_FAILURE;
 	}
 
@@ -566,7 +575,7 @@ int main(int argc, char* argv[]) {
 						PTUnrooted::PTPlacement altSeg3Place = ptu.estimateSeq(seq, alt3Loc);
 						ptu.placeSeq(seq, altSeg3Place);
 						chimeraLod = bestSeg5Place.loglik - altSeg5Place.loglik + bestSeg3Place.loglik - altSeg3Place.loglik;
-						isChimera = chimeraLod > maxChimeraLod;
+						isChimera = chimeraLod > minChimeraLod;
 					} /* end check chimera */
 
 					if(isChimera) { /* a potential chimera sequence */
