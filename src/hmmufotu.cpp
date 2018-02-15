@@ -342,7 +342,9 @@ int main(int argc, char* argv[]) {
 	else { }
 #endif
 	/* open source */
+	debugLog << "adding file source" << endl;
 	fwdIn.push(boost::iostreams::file_source(fwdFn));
+	debugLog << "file source added" << endl;
 	if(fwdIn.bad()) {
 		cerr << "Unable to open forward seq file '" << fwdFn << "' " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
