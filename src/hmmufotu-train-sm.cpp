@@ -154,10 +154,8 @@ int main(int argc, char* argv[]) {
 		msaIn.push(boost::iostreams::bzip2_decompressor());
 	else { }
 #endif
-	if(fmt == "msa" || !msaIn.empty()) /* binary format */
-		msaIn.push(boost::iostreams::file_source(msaFn, std::ios_base::in | std::ios_base::binary));
-	else
-		msaIn.push(boost::iostreams::file_source(msaFn));
+	/* open source */
+	msaIn.push(boost::iostreams::file_source(msaFn));
 	if(msaIn.bad()) {
 		cerr << "Unable to open forward seq file '" << msaFn << "' " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;

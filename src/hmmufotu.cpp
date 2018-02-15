@@ -341,10 +341,8 @@ int main(int argc, char* argv[]) {
 		fwdIn.push(boost::iostreams::bzip2_decompressor());
 	else { }
 #endif
-	if(fwdIn.empty()) /* not zipped */
-		fwdIn.push(boost::iostreams::file_source(fwdFn));
-	else
-		fwdIn.push(boost::iostreams::file_source(fwdFn, std::ios_base::in | std::ios_base::binary));
+	/* open source */
+	fwdIn.push(boost::iostreams::file_source(fwdFn));
 	if(fwdIn.bad()) {
 		cerr << "Unable to open forward seq file '" << fwdFn << "' " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
