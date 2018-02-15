@@ -410,7 +410,8 @@ int main(int argc, char* argv[]) {
 
 		if(keepGap)
 			seq.append(csLen - 1 - end, PAD_SYM);
-		string desc = "branchID=" + branchID + ";taxonID=" + boost::lexical_cast<string>(taxonID) + ";taxonName=" + taxonName + ";branchPoint=" + boost::lexical_cast<string>(rc)
+		string desc = "branchID=" + branchID + ";taxonID=" + boost::lexical_cast<string>(taxonID)
+				+ ";taxonName=\"" + taxonName + "\";branchPoint=" + boost::lexical_cast<string>(rc)
 				+ ";csStart=" + boost::lexical_cast<string>(start) + ";csEnd=" + boost::lexical_cast<string>(end)
 				+ ";seqLen=" + boost::lexical_cast<string>(seq.length()) + ";";
 
