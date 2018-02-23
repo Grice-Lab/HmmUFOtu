@@ -76,7 +76,7 @@ void printUsage(const string& progName) {
 		 << "            --aln-iden  DBL    : minimum alignment identity required for assignment result [" << DEFAULT_MIN_ALN_IDENTITY << "]" << endl
 		 << "            --hmm-iden  DBL    : minimum profile-HMM identity required for assignment result [" << DEFAULT_MIN_HMM_IDENTITY << "]" << endl
 		 << "            -sm  FLAG          : report the DNA Substitution Model name in metadata used for the phylogenetic placement" << endl
-		 << "            -V|--var  FLAG        : report the among site rate variation model in metadata used for the phylogenetic placement" << endl
+		 << "            -V|--var  FLAG     : report the among site rate variation model in metadata used for the phylogenetic placement" << endl
 		 << "            -a|--anno  FLAG    : report all node taxonomic annotations in metadata" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            --version          : show program version and exit" << endl

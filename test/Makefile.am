@@ -51,4 +51,8 @@ $(top_srcdir)/src/util/libEGUtil.a \
 $(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/HmmUFOtuEnv.o
 
-TESTS = GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh sim-run-SE-t.sh
+TESTS = GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh 
+if USE_JSONCPP
+TESTS += jplace-t.sh
+endif
+TESTS += sim-run-SE-t.sh 

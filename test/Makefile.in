@@ -91,6 +91,7 @@ target_triplet = @target@
 check_PROGRAMS = MSAIO_test$(EXEEXT) bHmmPrior_IO_test$(EXEEXT) \
 	bHmm_IO_test$(EXEEXT) dna_model_IO_test$(EXEEXT) \
 	FMIO_test$(EXEEXT) PTU_IO_test$(EXEEXT)
+@USE_JSONCPP_TRUE@am__append_1 = jplace-t.sh
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -595,7 +596,8 @@ $(top_srcdir)/src/util/libEGUtil.a \
 $(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/HmmUFOtuEnv.o
 
-TESTS = GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh sim-run-SE-t.sh
+TESTS = GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh $(am__append_1) \
+	sim-run-SE-t.sh
 all: all-am
 
 .SUFFIXES:
@@ -923,6 +925,13 @@ HKY85-t.sh.log: HKY85-t.sh
 GTR-dG-t.sh.log: GTR-dG-t.sh
 	@p='GTR-dG-t.sh'; \
 	b='GTR-dG-t.sh'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+jplace-t.sh.log: jplace-t.sh
+	@p='jplace-t.sh'; \
+	b='jplace-t.sh'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
