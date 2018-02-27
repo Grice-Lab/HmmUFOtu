@@ -295,62 +295,64 @@ void PhyloTreeUnrooted::initBranchLoglik() {
 			node2branch[*u][*v].loglik = Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK);
 }
 
-Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j, double r) {
-	Vector4d loglikVec = Vector4d::Zero();
-	for(vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
-		if(isChild(*child, node)) /* a child neighbor */
-			loglikVec += dot_product_scaled(model->Pr(getBranchLength(node, *child) * r), loglik(*child, j)); /* evaluate child recursively */
-	}
-	if(node->isLeaf() && !node->seq.empty()) /* is a leaf root with assigned seq */
-		loglikVec += getLeafLoglik(node->seq, j);
-	return loglikVec;
+Vector4d PhyloTreeUnrooted::loglikConv(const PTUNodePtr& node, int j, double r) const {
+	assert(isEvaluated(node, node->parent, j));
+	return dot_product_scaled(model->Pr(getBranchLength(node, node->parent) * r), getBranchLoglik(node, node->parent, j));
 }
 
-Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) {
+Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) const {
 	if(isEvaluated(node, node->parent, j))
 		return getBranchLoglik(node, node->parent, j);
 
-	if(dG == nulldG) {
-		const Vector4d& loglikVec = loglik(node, j, 1); // using fixed rate
-		/* cache this conditional loglik */
-		setBranchLoglik(node, node->parent, j, loglikVec);
-		return loglikVec;
+	Vector4d loglikVec = Vector4d::Zero();
+	Matrix4Xd loglikMat;
+	if(dG != nulldG)
+		loglikMat = Matrix4Xd::Zero(4, dG->getK());
+
+	for(vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
+		if(isChild(*child, node)) {
+			if(dG == nulldG) // fixed rate
+				loglikVec += loglikConv(*child, j); // using fixed rate
+			else { /* use Gamma model */
+				for(int k = 0; k < dG->getK(); ++k)
+					loglikMat.col(k) += loglikConv(*child, j, dG->rate(k));
+			}
+		}
 	}
-	else { /* use Gamma model */
-		Matrix4Xd loglikMat(4, dG->getK());
-		for(int k = 0; k < dG->getK(); ++k)
-			loglikMat.col(k) = loglik(node, j, dG->rate(k));
-		const Vector4d& loglikVec = row_mean_exp_scaled(loglikMat); // use average of DiscreteGammaModel rate
-		/* cache this conditional loglik, parent could be nullNode */
-		setBranchLoglik(node, node->parent, j, loglikVec);
-		return loglikVec;
-	}
+
+	if(!node->isLeaf() && dG != nulldG)
+		loglikVec = row_mean_exp_scaled(loglikMat); // use average of DiscreteGammaModel rate
+	if(node->isLeaf() && !node->seq.empty())
+		loglikVec += getLeafLoglik(node->seq, j);
+
+	return loglikVec;
 }
 
-Matrix4Xd PTUnrooted::loglik(const PTUNodePtr& node) {
+Matrix4Xd PTUnrooted::loglik(const PTUNodePtr& node) const {
 	if(isEvaluated(node, node->parent)) /* already evaluated */
 		return getBranchLoglik(node, node->parent);
 
 	Matrix4Xd loglikMat(4, csLen);
 	for(int j = 0; j < csLen; ++j)
 		loglikMat.col(j) = loglik(node, j);
-	setBranchLoglik(node, node->parent, loglikMat);
 	return loglikMat;
 }
 
-void PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int start, int end) {
-#pragma omp parallel for
-	for(int j = start; j <= end; ++j)
-		evaluate(node, j);
-}
-
-void PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int j) {
-	if(isEvaluated(node, node->parent, j)) /* already evaluated */
+void PTUnrooted::evaluate(const PTUNodePtr& node, int start, int end) {
+	if(isEvaluated(node, node->parent, start, end)) /* already evaluated */
 		return;
+
+	/* evaluate each child recursively */
 	for(vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) { /* check each child */
 		if(isChild(*child, node)) /* a child neighbor */
-			loglik(*child, j); /* evaluate child recursively */
+			evaluate(*child, start, end); /* evaluate child recursively */
 	}
+	/* evaluating either a leaf node or a node with all children evaluated */
+	Matrix4Xd loglikMat(4, csLen);
+#pragma omp parallel for
+	for(int j = start; j <= end; ++j)
+		loglikMat.col(j) = loglik(node, j);
+	node2branch[node][node->parent].loglik = loglikMat;
 }
 
 NewickTree PTUnrooted::convertToNewickTree(const PTUNodePtr& node, const string& prefix) const {

@@ -421,6 +421,7 @@ int main(int argc, char* argv[]) {
 		infoLog << "Evaluating Phylogenetic Tree at root id: " << root->getId() << endl;
 	else
 		infoLog << "Evaluating Phylogenetic Tree at root id: " << root->getId() << " with fixed rate model first" << endl;
+
 	tree.evaluate(); /* only evaluate, do not cache the root loglik */
 //	infoLog << "tree log-liklihood: " << tree.treeLoglik() << endl;
 

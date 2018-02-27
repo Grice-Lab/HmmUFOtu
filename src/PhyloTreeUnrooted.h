@@ -589,6 +589,16 @@ public:
 			return -1;
 	}
 
+private:
+	/**
+	 * get branch from u->v
+	 */
+	PTUBranch& branch(const PTUNodePtr& u, const PTUNodePtr& v) {
+		return node2branch[u][v];
+	}
+
+public:
+
 	/**
 	 * get branch from u-> v
 	 * @throw  out_of_range exception if not exists
@@ -785,6 +795,11 @@ public:
 	bool isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int j) const;
 
 	/**
+	 * test whether the loglik of node u->v of this region is evaluated
+	 */
+	bool isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end) const;
+
+	/**
 	 * initiate the cached incoming loglik of between every node u and every neighbor v
 	 */
 	void initBranchLoglik();
@@ -823,32 +838,32 @@ public:
 	}
 
 	/**
-	 * evaluate the conditional loglik of the jth site of a subtree,
+	 * evaluate the convoluted conditional loglik of the jth site of a subtree,
 	 * rooted at given node, with a given rate factor r
 	 * this is the base for all evaluate/loglik methods
 	 * @param node  subtree root
 	 * @param j  the jth aligned site
 	 * @param r  the rate factor at site j
-	 * @return  conditional loglik at the jth site
+	 * @return  convoluted conditional loglik at the jth site
 	 */
-	Vector4d loglik(const PTUNodePtr& node, int j, double r);
+	Vector4d loglikConv(const PTUNodePtr& node, int j, double r = 1) const;
 
 	/**
-	 * evaluate the conditional loglik of the jth site of a subtree, rooted at given node
-	 * this method will use either fixed rate (r===1) or a DiscreteGammaModel to evaluate the loglik
-	 * according to Yang 1994 (b)
-	 * it cache the calculated loglik if necessary
+	 * evaluate the convoluted conditional loglik of the jth site of a subtree,
+	 * rooted at given node, with a given rate factor r
+	 * this is the base for all evaluate/loglik methods
 	 * @param node  subtree root
 	 * @param j  the jth aligned site
-	 * @return  conditional loglik at the jth site
+	 * @param r  the rate factor at site j
+	 * @return  convoluted conditional loglik at the jth site
 	 */
-	Vector4d loglik(const PTUNodePtr& node, int j);
+	Vector4d loglik(const PTUNodePtr& node, int j) const;
 
 	/**
 	 * evaluate the log-likelihood (loglik) of the entire tree
 	 * @return  loglik matrix of the entire tree
 	 */
-	Matrix4Xd loglik() {
+	Matrix4Xd loglik() const {
 		return loglik(root);
 	}
 
@@ -856,7 +871,7 @@ public:
 	 * evaluate the log-likelihood (loglik) at the jth site of the entire tree
 	 * @return  loglik vector at the jth site
 	 */
-	Vector4d loglik(int j) {
+	Vector4d loglik(int j) const {
 		return loglik(root, j);
 	}
 
@@ -865,23 +880,7 @@ public:
 	 * @param node  subtree root
 	 * @return  conditional loglik matrix of the subtree
 	 */
-	Matrix4Xd loglik(const PTUNodePtr& node);
-
-	/**
-	 * get the evaluated node loglik
-	 * this is a alias as getBranchLoglik
-	 */
-	Vector4d loglik(const PTUNodePtr& node, int j) const {
-		return getBranchLoglik(node, node->parent, j);
-	}
-
-	/**
-	 * get the evaluated node loglik
-	 * this is a alias as getBranchLoglik
-	 */
-	Matrix4Xd loglik(const PTUNodePtr& node) const {
-		return getBranchLoglik(node, node->parent);
-	}
+	Matrix4Xd loglik(const PTUNodePtr& node) const;
 
 	/**
 	 * evaluate the entire tree
@@ -891,11 +890,6 @@ public:
 	}
 
 	/**
-	 * evaluate the given node in region [start, end]
-	 */
-	void evaluate(const PTUNodePtr& node, int start, int end);
-
-	/**
 	 * evaluate the subtree at given node
 	 */
 	void evaluate(const PTUNodePtr& node) {
@@ -903,19 +897,9 @@ public:
 	}
 
 	/**
-	 * evaluate the current root in region [start, end]
+	 * evaluate the subtree at given node at given region
 	 */
-	void evaluate(int start, int end) {
-		return evaluate(root, start, end);
-	}
-
-	/**
-	 * evaluate every child of this node at the jth site of a subtree, rooted at given node
-	 * but does not calculate the loglik of this node itself
-	 * @param node  subtree root
-	 * @param j  the jth aligned site
-	 */
-	void evaluate(const PTUNodePtr& node, int j);
+	void evaluate(const PTUNodePtr& node, int start, int end);
 
 	/**
 	 * calculate the loglike of the subtree at site j
@@ -1427,6 +1411,17 @@ inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, in
 		if(innerResult != outerResult->second.end())
 			return innerResult->second.loglik.cols() == csLen && /* Matrix is initiated */
 					(innerResult->second.loglik.col(j).array() != INVALID_LOGLIK).all(); /* values are not invalid */
+	}
+	return false;
+}
+
+inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end) const {
+	BranchMap::const_iterator outerResult = node2branch.find(u);
+	if(outerResult != node2branch.end()) {
+		unordered_map<PTUNodePtr, PTUBranch>::const_iterator innerResult = outerResult->second.find(v);
+		if(innerResult != outerResult->second.end())
+			return innerResult->second.loglik.cols() == csLen && /* Matrix is initiated */
+					(innerResult->second.loglik.block(0, start, 4, end - start + 1).array() != INVALID_LOGLIK).all(); /* values are all valid */
 	}
 	return false;
 }
