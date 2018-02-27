@@ -348,11 +348,14 @@ void PTUnrooted::evaluate(const PTUNodePtr& node, int start, int end) {
 			evaluate(*child, start, end); /* evaluate child recursively */
 	}
 	/* evaluating either a leaf node or a node with all children evaluated */
-	Matrix4Xd loglikMat(4, csLen);
+	if(node2branch[node][node->parent].loglik.cols() != csLen)
+		node2branch[node][node->parent].loglik.resize(4, csLen);
 #pragma omp parallel for
-	for(int j = start; j <= end; ++j)
-		loglikMat.col(j) = loglik(node, j);
-	node2branch[node][node->parent].loglik = loglikMat;
+	for(int j = start; j <= end; ++j) {
+		node2branch[node][node->parent].loglik.col(j) = loglik(node, j);
+//		loglikMat.col(j) = loglik(node, j);
+	}
+//	node2branch[node][node->parent].loglik = loglikMat;
 }
 
 NewickTree PTUnrooted::convertToNewickTree(const PTUNodePtr& node, const string& prefix) const {
