@@ -812,6 +812,11 @@ public:
 	}
 
 	/**
+	 * update the cached root loglik
+	 */
+	void updateRootLoglik();
+
+	/**
 	 * reset the cached loglik of edge u->v
 	 */
 	void resetLoglik(const PTUNodePtr& u, const PTUNodePtr& v) {
@@ -1394,36 +1399,21 @@ inline size_t PTUnrooted::numLeaves() const {
 }
 
 inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v) const {
-	BranchMap::const_iterator outerResult = node2branch.find(u);
-	if(outerResult != node2branch.end()) {
-		unordered_map<PTUNodePtr, PTUBranch>::const_iterator innerResult = outerResult->second.find(v);
-		if(innerResult != outerResult->second.end())
-			return innerResult->second.loglik.cols() == csLen && /* Matrix is initiated */
-					(innerResult->second.loglik.array() != INVALID_LOGLIK).all(); /* values are all valid */
-	}
-	return false;
+	return node2branch.count(u) != 0 &&
+			node2branch.at(u).count(v) != 0 &&
+			(node2branch.at(u).at(v).loglik.array() != INVALID_LOGLIK).all();
 }
 
 inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int j) const {
-	BranchMap::const_iterator outerResult = node2branch.find(u);
-	if(outerResult != node2branch.end()) {
-		unordered_map<PTUNodePtr, PTUBranch>::const_iterator innerResult = outerResult->second.find(v);
-		if(innerResult != outerResult->second.end())
-			return innerResult->second.loglik.cols() == csLen && /* Matrix is initiated */
-					(innerResult->second.loglik.col(j).array() != INVALID_LOGLIK).all(); /* values are not invalid */
-	}
-	return false;
+	return node2branch.count(u) != 0 &&
+			node2branch.at(u).count(v) != 0 &&
+			(node2branch.at(u).at(v).loglik.col(j).array() != INVALID_LOGLIK).all();
 }
 
 inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v, int start, int end) const {
-	BranchMap::const_iterator outerResult = node2branch.find(u);
-	if(outerResult != node2branch.end()) {
-		unordered_map<PTUNodePtr, PTUBranch>::const_iterator innerResult = outerResult->second.find(v);
-		if(innerResult != outerResult->second.end())
-			return innerResult->second.loglik.cols() == csLen && /* Matrix is initiated */
-					(innerResult->second.loglik.block(0, start, 4, end - start + 1).array() != INVALID_LOGLIK).all(); /* values are all valid */
-	}
-	return false;
+	return node2branch.count(u) != 0 &&
+			node2branch.at(u).count(v) != 0 &&
+			(node2branch.at(u).at(v).loglik.block(0, start, 4, end - start + 1).array() != INVALID_LOGLIK).all();
 }
 
 inline Vector4d PTUnrooted::getLeafLoglik(const DigitalSeq& seq, int j) const {

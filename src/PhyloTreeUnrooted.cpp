@@ -283,6 +283,11 @@ void PhyloTreeUnrooted::calcNodeHeight() {
 	}
 }
 
+void PTUnrooted::updateRootLoglik() {
+	for(int j = 0; j < csLen; ++j)
+		node2branch[root][nullNode].loglik.col(j) = loglik(root, j);
+}
+
 void PhyloTreeUnrooted::resetBranchLoglik() {
 	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u)
 		for(vector<PTUNodePtr>::iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
@@ -348,14 +353,12 @@ void PTUnrooted::evaluate(const PTUNodePtr& node, int start, int end) {
 			evaluate(*child, start, end); /* evaluate child recursively */
 	}
 	/* evaluating either a leaf node or a node with all children evaluated */
-	if(node2branch[node][node->parent].loglik.cols() != csLen)
-		node2branch[node][node->parent].loglik.resize(4, csLen);
+	/* cache loglik if it is not the root */
+	if(!node->isRoot()) {
 #pragma omp parallel for
-	for(int j = start; j <= end; ++j) {
-		node2branch[node][node->parent].loglik.col(j) = loglik(node, j);
-//		loglikMat.col(j) = loglik(node, j);
+		for(int j = start; j <= end; ++j)
+			node2branch[node][node->parent].loglik.col(j) = loglik(node, j);
 	}
-//	node2branch[node][node->parent].loglik = loglikMat;
 }
 
 NewickTree PTUnrooted::convertToNewickTree(const PTUNodePtr& node, const string& prefix) const {
@@ -399,9 +402,6 @@ vector<Matrix4d> PTUnrooted::getModelTraningSetGoldman() const {
 	/* check every node of this tree */
 	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
 		if((*node)->isTip() && (*node)->neighbors.size() > 2) { // tip with >=2 children
-//			cerr << "Find a candidate node id: " << (*node)->id << endl;
-//			cerr << "First child: " << (*node)->firstChild()->name << endl;
-//			cerr << "Last child: " << (*node)->lastChild()->name << endl;
 			const DigitalSeq& seq1 = (*node)->firstChild()->seq;
 			const DigitalSeq& seq2 = (*node)->lastChild()->seq;
 			if(SeqUtils::pDist(seq1, seq1) <= DNASubModel::MAX_PDIST)

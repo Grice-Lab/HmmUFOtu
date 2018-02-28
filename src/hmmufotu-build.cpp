@@ -444,7 +444,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if(!isVar)
+	if(!tree.getDGModel())
 		infoLog << "Evaluating Phylogenetic Tree at all other " << (tree.numNodes() - 1) << " nodes" << endl;
 	else
 		infoLog << "Re-evaluating Phylogenetic Tree at all " << tree.numNodes() << " nodes" << endl;
@@ -458,7 +458,7 @@ int main(int argc, char* argv[]) {
 	}
 	/* reset to original root, and evaluate its root Loglik */
 	tree.setRoot(root);
-	tree.loglik(); /* evaluate the root and store value */
+	tree.updateRootLoglik();
 	infoLog << "Final Tree log-liklihood: " << tree.treeLoglik() << endl;
 
 	/* infer the ancestor seq of all intermediate nodes */
