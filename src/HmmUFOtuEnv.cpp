@@ -38,7 +38,7 @@ using namespace std;
 
 int VERBOSE_LEVEL = LOG_WARNING; /* DEFAULT VERBOSE LEVEL */
 const std::string progName = "HmmUFOtu";
-const VersionSequence progVer("v1.2.5");
+const VersionSequence progVer("v1.3.1");
 const string projectURL = "https://github.com/Grice-Lab/HmmUFOtu";
 
 void printVersion(const string& app, ostream& out) {
