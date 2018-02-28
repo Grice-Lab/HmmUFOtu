@@ -58,11 +58,17 @@ ostream& saveProgInfo(ostream& out);
 /** load program info from a binary input and check agains known values */
 istream& loadProgInfo(istream& in);
 
+/** load program info from a binary input and check agains known values */
+istream& loadProgInfo(istream& in, VersionSequence& pver);
+
 /** write progInfo and additional information to a text output */
 ostream& writeProgInfo(ostream& out, const string& info = "");
 
 /** read progInfo and additional information from a text input */
 istream& readProgInfo(istream& in);
+
+/** read progInfo and additional information from a text input */
+istream& readProgInfo(istream& in, VersionSequence& pver);
 
 } /* namespace EGriceLab */
 

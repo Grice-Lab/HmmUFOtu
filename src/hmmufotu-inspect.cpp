@@ -180,9 +180,10 @@ int main(int argc, char* argv[]) {
 
 	/* start inspecting */
 	int csLen;
+	VersionSequence pver;
 
 	infoLog << "Inspecting MSA data ..." << endl;
-	if(loadProgInfo(msaIn).bad())
+	if(loadProgInfo(msaIn, pver).bad())
 		return EXIT_FAILURE;
 	MSA msa;
 	msa.load(msaIn);
@@ -191,10 +192,11 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 	csLen = msa.getCSLen();
-	cout << "MSA loaded. Number of seq: " << msa.getNumSeq() << " CS length: " << csLen << endl;
+	cout << "MSA loaded. Version: " << pver <<
+			" # of seq: " << msa.getNumSeq() << " CS length: " << csLen << endl;
 
 	infoLog << "Inspecting CSFM-index ..." << endl;
-	if(loadProgInfo(csfmIn).bad())
+	if(loadProgInfo(csfmIn, pver).bad())
 		return EXIT_FAILURE;
 	CSFMIndex csfm;
 	csfm.load(csfmIn);
@@ -202,7 +204,8 @@ int main(int argc, char* argv[]) {
 		cerr << "Failed to load CSFM-index '" << csfmFn << "': " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
-	cout << "CSFM-index loaded. Concatenated length: " << csfm.getConcatLen() << " CS length: " << csfm.getCSLen() << endl;
+	cout << "CSFM-index loaded. Version: " << pver <<
+			" Concatenated length: " << csfm.getConcatLen() << " CS length: " << csfm.getCSLen() << endl;
 	if(csfm.getCSLen() != csLen) {
 		cerr << "Error: Unmatched CS length between CSFM-index and MSA data" << endl;
 		return EXIT_FAILURE;
@@ -223,7 +226,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	infoLog << "Inspecting Phylogenetic tree data ..." << endl;
-	if(loadProgInfo(ptuIn).bad())
+	if(loadProgInfo(ptuIn, pver).bad())
 		return EXIT_FAILURE;
 	PTUnrooted ptu;
 	ptu.load(ptuIn);
@@ -233,11 +236,12 @@ int main(int argc, char* argv[]) {
 	}
 	const DegenAlphabet* abc = msa.getAbc();
 
-	cout << "Phylogenetic tree loaded. Root ID: " << ptu.getRoot()->getId()
-		 << " Number of leaves: " << ptu.numLeaves()
-		 << " Number of nodes: " << ptu.numNodes()
-		 << " Number of branches: " << ptu.numBranches()
-		 << " Number of sites: " << ptu.numAlignSites() << endl;
+	cout << "Phylogenetic tree loaded. Vesion: " << pver
+		 << " Root ID: " << ptu.getRoot()->getId()
+		 << " # of leaves: " << ptu.numLeaves()
+		 << " # of nodes: " << ptu.numNodes()
+		 << " # of branches: " << ptu.numBranches()
+		 << " # of sites: " << ptu.numAlignSites() << endl;
 	cout << "Overall tree log-likelihood: " << ptu.treeLoglik() << endl;
 
 	if(showSm)
@@ -245,7 +249,7 @@ int main(int argc, char* argv[]) {
 
 	if(showDg && ptu.getDGModel() != NULL)
 		cout << "Discrete Gamma Model is enabled for this tree" << endl
-		     << "Number of categories used: " << ptu.getDGModel()->getK()
+		     << "# of categories used: " << ptu.getDGModel()->getK()
 			 << " Shape parameter: " << ptu.getDGModel()->getShape() << endl;
 
 	if(treeOut.is_open()) {

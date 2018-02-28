@@ -88,6 +88,41 @@ istream& loadProgInfo(istream& in) {
 	return in;
 }
 
+istream& loadProgInfo(istream& in, VersionSequence& pver) {
+	/* load program info */
+	string pname;
+	StringUtils::loadString(pname, in, progName.length());
+
+	/* load name */
+	if(in.bad()) {
+		cerr << "Unable to load database file: " << ::strerror(errno) << endl;
+		return in;
+	}
+	if(progName != pname) {
+		cerr << "Not an valid database file of " << progName << endl;
+		in.setstate(ios_base::badbit);
+		return in;
+	}
+
+	/* load version */
+	pver.load(in);
+	if(in.bad()) {
+		cerr << "Unrecognized " << progName << " version: " << ::strerror(errno) << endl;
+		return in;
+	}
+
+	if(!(progVer >= pver)) {
+		cerr << "You are using an old version of " << getProgFullName(progName, progVer)
+				<< " to read a newer database file that is build by " << getProgFullName(pname, pver)
+				<< " please download the latest program from '"
+				<< projectURL << "'" << endl;
+		in.setstate(ios_base::badbit);
+		return in;
+	}
+
+	return in;
+}
+
 ostream& writeProgInfo(ostream& out, const string& info) {
 	out << "# " << progName << " " << progVer << info << endl;
 	return out;
@@ -111,6 +146,36 @@ istream& readProgInfo(istream& in) {
 	}
 
 	VersionSequence pver(ver);
+	if(!(progVer >= pver)) {
+		cerr << "You are using an old version of " << getProgFullName(progName, progVer)
+				<< " to read a newer input file that is build by " << getProgFullName(pname, pver)
+				<< " please download the latest program from '"
+				<< projectURL << "'" << endl;
+		in.setstate(ios_base::badbit);
+		return in;
+	}
+
+	return in;
+}
+
+istream& readProgInfo(istream& in, VersionSequence& pver) {
+	string header;
+	std::getline(in, header);
+	/* check program info */
+	char pname[HmmUFOtu::MAX_NAME_LENGTH], ver[HmmUFOtu::MAX_NAME_LENGTH];
+	if(sscanf(header.c_str(), "# %s %s", pname, ver) != 2) {
+		cerr << "Unrecognized input file for " << progName << endl;
+		in.setstate(ios_base::badbit);
+		return in;
+	}
+
+	if(progName != pname) {
+		cerr << "Not an valid input file of " << progName << endl;
+		in.setstate(ios_base::badbit);
+		return in;
+	}
+
+	pver = VersionSequence(ver);
 	if(!(progVer >= pver)) {
 		cerr << "You are using an old version of " << getProgFullName(progName, progVer)
 				<< " to read a newer input file that is build by " << getProgFullName(pname, pver)
