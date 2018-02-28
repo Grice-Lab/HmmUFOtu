@@ -256,10 +256,11 @@ PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRo
 
 			/* check each neighbor of v */
 			for(vector<PTUNodePtr>::iterator v = u->neighbors.begin(); v != u->neighbors.end(); ++v) {
-				if(visited.find(*v) == visited.end() /* not parent/ancestor of v */
-					&& !isChild(*v, u)) /* update this child's parent */
+				if(visited.find(*v) == visited.end() /* v is not parent/ancestor of u */
+						&& !isChild(*v, u)) { /* v has not been set as u's child */
 					(*v)->parent = u;
-				S.push(*v);
+					S.push(*v);
+				}
 			}
 		}
 	}

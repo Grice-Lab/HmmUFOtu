@@ -451,10 +451,9 @@ int main(int argc, char* argv[]) {
 
 	const size_t numNodes = tree.numNodes();
 	for(size_t i = 0; i < numNodes; ++i) {
-//		cerr << "Setting root at " << i << endl;
+		debugLog << "Evaluating root at node " << i << endl;
 		tree.setRoot(i);
 		tree.evaluate();
-//		cerr << "loglik: " << tree.loglik() << endl;
 	}
 	/* reset to original root, and evaluate its root Loglik */
 	tree.setRoot(root);
