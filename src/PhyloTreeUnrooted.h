@@ -83,7 +83,7 @@ public:
 	/* nested types and enums */
 	/** taxon levels */
 	enum TaxonLevel {
-		Domain, Kindom, Phylum, Class, Order, Family, Genus, Species
+		/* Domain, */ Kindom, Phylum, Class, Order, Family, Genus, Species
 	};
 
 	/** prior probability types */
@@ -588,16 +588,6 @@ public:
 		else
 			return -1;
 	}
-
-private:
-	/**
-	 * get branch from u->v
-	 */
-	PTUBranch& branch(const PTUNodePtr& u, const PTUNodePtr& v) {
-		return node2branch[u][v];
-	}
-
-public:
 
 	/**
 	 * get branch from u-> v
@@ -1518,8 +1508,8 @@ inline Vector4d PTUnrooted::row_mean_exp_scaled(const Matrix4Xd& X) {
 
 inline string PTUnrooted::taxonLevel2prefix(TaxonLevel level) {
 	switch(level) {
-	case Domain:
-		return DOMAIN_PREFIX;
+//	case Domain:
+//		return DOMAIN_PREFIX;
 	case Kindom:
 		return KINDOM_PREFIX;
 	case Phylum:
