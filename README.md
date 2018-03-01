@@ -28,7 +28,8 @@ You can clone or fork and pull the source codes from GitHub at: https://github.c
 Dependencies
 ------------
 HmmUFOtu depends on the popular head-only C++ libraries Boost and Eigen3. They are available and often pre-installed on most Linux distributions, and can be easily installed on Windows and Mac OS X.
-Some additional features of HmmUFOtu depend on ZLIB and Boost-IOSTREAMS libraries (for handling .gz|.bz2 files), but is not required and can be disabled.
+The ZLIB and Boost-IOSTREAMS libraries are optionally dependent for handling GZIP/GZIP2 compressed files, but are not required and can be disabled.
+The JSONCPP C++ library is optionally dependent for formatting HmmUFOtu's assignment output into standard .jplace output; if "jsoncpp" library is found or specified during the configuring step, an optional program **hmmufotu-jplace** will be installed.
 
 Installation
 ------------
@@ -99,4 +100,5 @@ Utility programs include:
 * **hmmufotu-sim**		generate simulated single or paired-end NGS reads, aligned or un-aligned, using a pre-built HmmUFOtu database
 * **hmmufotu-subset**		subset (subsample) an OTUTable so every sample contains the same mimimum required reads, and prune the samples and OTUs if necessary
 * **hmmufotu-norm**		normalize an OTUTable so every sample contains the same number of reads, you can generate a relative abundance OTUTable using a constant of 1
+* **hmmufotu-jplace**  format HmmUFOtu's assignment output into standard .jplace file for compatibility of third party tools
 
