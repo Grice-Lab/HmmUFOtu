@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(HmmUFOtu, 1.0)
+AC_INIT([HmmUFOtu], [1.3.1])
 LT_INIT([shared static])
 
 AC_CANONICAL_SYSTEM
