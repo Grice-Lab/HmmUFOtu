@@ -66,13 +66,7 @@ One other major program 'hmmufotu-sum' generates TSV format OTU tables (Operatio
 
 Pre-built databases
 -------------------
-You need to build an HmmUFOtu database before assigning taxonomies to your 16S or other target-loci sequencing reads. You can build your own database using `hmmufotu-build`, or alternatively download the pre-built databases below.
-* [gg_97_otus_GTR](https://upenn.box.com/shared/static/o146rpg53ebmn3pxikf7zm1uwatez6sl.zip "GreenGenes 97% OUT + GTR")    GreenGenes (v13.8) species-level (97% OTU) reference + GTR DNA model
-* [gg_97_otus_TN93](https://upenn.box.com/shared/static/ergmvb9gce1t5y4zwrb4soe1kls7it5c.zip "GreenGenes 97% OUT + TN93")    GreenGenes (v13.8) species-level (97% OTU) reference + TN93 DNA model
-* [gg_97_otus_HKY85](https://upenn.box.com/shared/static/4vdigyt6oywm4lyl0h60f68lc8ag09nt.zip "GreenGenes 97% OUT + HKY85")    GreenGenes (v13.8) species-level (97% OTU) reference + HKY85 DNA model
-* [gg_79_otus_GTR](https://upenn.box.com/shared/static/0o7kg211qq7jtc7ocpfsdwrs0oyxn2nh.zip) "GreenGenes 79% OTU + GTR")    GreenGenes (v13.8) middle-level (79% OTU) reference + GTR DNA model
-* [gg_79_otus_TN93](https://upenn.box.com/shared/static/uuwmkb3bciirl6npjoq6u7dxihnu9mrk.zip) "GreenGenes 79% OTU + TN93")    GreenGenes (v13.8) middle-level (79% OTU) reference + TN93 DNA model
-* [gg_79_otus_HKY85](https://upenn.box.com/shared/static/pgl5wya9b9vcvay81peaovewu940671u.zip) "GreenGenes 79% OTU + HKY85")    GreenGenes (v13.8) middle-level (79% OTU) reference + HKY85 DNA model
+You need to build an HmmUFOtu database before assigning taxonomies to your 16S or other target-loci sequencing reads. You can build your own database using `hmmufotu-build`, or alternatively [download the pre-built databases](https://www.med.upenn.edu/gricelab/hmmufotu.html#databases "Pre-built databases").
 
 Core programs
 -------------
