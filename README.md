@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/45686296.svg)](https://zenodo.org/badge/latestdoi/45686296)
+
 HmmUFOtu introduction
 =====================
 HmmUFOtu is an HMM based Ultra-fast OTU assignment tool for baterial 16S and amplicon sequencing research,
