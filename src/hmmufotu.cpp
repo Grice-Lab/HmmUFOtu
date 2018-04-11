@@ -54,7 +54,7 @@ static const string CHIMERA_TSV_HEADER = "seg5_taxon_id\tseg3_taxon_id\tseg5_tax
  */
 void printIntro(void) {
 	cerr << "Ultra-fast microbiome amplicon sequencing read taxonomy assignment and OTU picking tool,"
-		 << "based on Consensus-Sequence-FM-index (CSFM-index) powered HMM alignment"
+		 << " based on Consensus-Sequence-FM-index (CSFM-index) powered HMM alignment"
 		 << " and Seed-Estimate-Place (SEP) local phylogenetic placement" << endl;
 }
 
