@@ -635,8 +635,8 @@ LTLIBOBJS
 LIBOBJS
 OPENMP_CFLAGS
 subdirs
-USE_JSONCPP_FALSE
-USE_JSONCPP_TRUE
+HAVE_LIBJSONCPP_FALSE
+HAVE_LIBJSONCPP_TRUE
 BOOST_IOSTREAMS_LIB
 BOOST_LDFLAGS
 BOOST_CPPFLAGS
@@ -17951,8 +17951,7 @@ fi
 
 case "$with_libjsoncpp" in #(
   yes) :
-    #[AC_CHECK_LIB([jsoncpp], [main], [HAVE_LIBJSONCPP=1], [HAVE_LIBJSONCPP=0])], # yes check
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -ljsoncpp" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -ljsoncpp" >&5
 $as_echo_n "checking for main in -ljsoncpp... " >&6; }
 if ${ac_cv_lib_jsoncpp_main+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -17996,7 +17995,6 @@ fi
      ;; #(
   *) :
     # no, not check
-        #[AC_CHECK_LIB([jsoncpp], [main], [HAVE_LIBJSONCPP=1], [HAVE_LIBJSONCPP=0])] # default check
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -ljsoncpp" >&5
 $as_echo_n "checking for main in -ljsoncpp... " >&6; }
 if ${ac_cv_lib_jsoncpp_main+:} false; then :
@@ -18039,11 +18037,11 @@ fi
         ;;
 esac
  if test "$with_libjsoncpp" != no -a "$ac_cv_lib_jsoncpp_main" = yes; then
-  USE_JSONCPP_TRUE=
-  USE_JSONCPP_FALSE='#'
+  HAVE_LIBJSONCPP_TRUE=
+  HAVE_LIBJSONCPP_FALSE='#'
 else
-  USE_JSONCPP_TRUE='#'
-  USE_JSONCPP_FALSE=
+  HAVE_LIBJSONCPP_TRUE='#'
+  HAVE_LIBJSONCPP_FALSE=
 fi
 
 
@@ -18294,8 +18292,8 @@ if test -z "${am__fastdepCXX_TRUE}" && test -z "${am__fastdepCXX_FALSE}"; then
   as_fn_error $? "conditional \"am__fastdepCXX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${USE_JSONCPP_TRUE}" && test -z "${USE_JSONCPP_FALSE}"; then
-  as_fn_error $? "conditional \"USE_JSONCPP\" was never defined.
+if test -z "${HAVE_LIBJSONCPP_TRUE}" && test -z "${HAVE_LIBJSONCPP_FALSE}"; then
+  as_fn_error $? "conditional \"HAVE_LIBJSONCPP\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
