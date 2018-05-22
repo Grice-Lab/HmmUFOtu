@@ -23,3 +23,5 @@ config.status
 # Ignore test temporaries
 **/*.trs
 **/*.swp
+# Ignore test binaries
+MultinomialDistribution_test
