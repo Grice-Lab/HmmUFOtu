@@ -51,7 +51,7 @@
 # include <fcntl.h>
 #endif
 #include <time.h>
-#include <divsufsort.h>
+#include <divsufsort_private.h>
 #include "lfs.h"
 
 
