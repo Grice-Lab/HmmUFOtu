@@ -13,3 +13,13 @@ DirichletModel.cpp \
 DirichletDensity.cpp \
 DirichletMixture.cpp \
 RootFinder.cpp
+
+check_PROGRAMS = \
+MultinomialDistribution_test
+
+MultinomialDistribution_test_SOURCES = MultinomialDistribution_test.cpp
+MultinomialDistribution_test_LDADD = \
+libEGMath.a
+
+TESTS = \
+MultinomialDistribution_test
