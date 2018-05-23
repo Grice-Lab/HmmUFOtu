@@ -14,5 +14,6 @@
 #include "StringUtils.h"
 #include "TSVScanner.h"
 #include "TSVRecord.h"
+#include "ProgEnv.h"
 
 #endif /* EGUTIL_H_ */
