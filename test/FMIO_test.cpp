@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include "HmmUFOtuConst.h"
-#include "HmmUFOtuEnv.h"
+#include "ProgEnv.h"
 #include "ProgLog.h"
 #include "CSFMIndex.h"
 

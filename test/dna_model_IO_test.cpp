@@ -9,7 +9,6 @@
 #include <fstream>
 #include "HmmUFOtu_common.h"
 #include "HmmUFOtu_phylo.h"
-#include "HmmUFOtuEnv.h"
 
 using namespace std;
 using namespace EGriceLab;

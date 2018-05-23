@@ -2,7 +2,7 @@
 #include <fstream>
 #include "MSA.h"
 #include "HmmUFOtuConst.h"
-#include "HmmUFOtuEnv.h"
+#include "HmmUFOtu_common.h"
 
 using namespace std;
 using namespace EGriceLab;
