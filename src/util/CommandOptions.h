@@ -57,6 +57,11 @@ public:
 		return hasOpt(name) ? opts.find(name)->second.c_str() : "";
 	}
 
+	/**
+	 * get options of tage 'name' as a vector of strings, which is potentially empty
+	 */
+	vector<string> getOpts(const string& name) const;
+
 	int numMainOpts() const {
 		return mainOpts.size();
 	}

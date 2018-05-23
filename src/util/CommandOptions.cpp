@@ -29,18 +29,19 @@
 
 namespace EGriceLab {
 
-CommandOptions::CommandOptions(int argc, char** argv) : prog(argv[0])
-{
+CommandOptions::CommandOptions(int argc, char** argv)
+: prog(argv[0]) {
 	/* parse options */
 	for(int i = 1; i < argc; ++i) {
 		if(*argv[i] == '-') { /* a tag name */
 			if(i < argc - 1 && *argv[i+1] != '-') {/* a tag value */
-				opts[argv[i]] = argv[i+1];
+				if(opts.count(argv[i])) /* already exists */
+					opts[argv[i]].push_back('\0'); /* 0-separated strings */
+				opts[argv[i]] += argv[i+1];
 				i++;
 			}
-			else { /* a flag tag */
+			else /* a flag tag */
 				opts[argv[i]].push_back('\0'); /* append null values */
-			}
 		}
 		else /* a main opt */
 			mainOpts.push_back(argv[i]);
@@ -48,6 +49,20 @@ CommandOptions::CommandOptions(int argc, char** argv) : prog(argv[0])
 	/* concatenate optStr */
 	for(int i = 1; i < argc; ++i)
 		optStr += i < argc - 1 ? argv[i] + string(" "): argv[i];
+}
+
+vector<string> CommandOptions::getOpts(const string& name) const {
+	vector<string> opts;
+	if(hasOpt(name)) {
+		vector<string>::size_type i = 0;
+		string val = getOpt(name);
+		for(string::const_iterator c = val.begin(); c != val.end(); ++c)
+			if(*c != '\0') /* not a separator */
+				opts[i].push_back(*c);
+			else
+				i++;
+	}
+	return opts;
 }
 
 } /* namespace EGriceLab */
