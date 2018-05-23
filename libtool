@@ -282,10 +282,10 @@ finish_eval=""
 hardcode_into_libs=yes
 
 # Compile-time system search path for libraries.
-sys_lib_search_path_spec="/usr/lib/gcc/x86_64-redhat-linux/6.4.1 /usr/lib64 /lib64 /usr/lib /lib "
+sys_lib_search_path_spec="/usr/lib/gcc/x86_64-redhat-linux/7 /usr/lib64 /lib64 /usr/lib /lib "
 
 # Detected run-time system search path for libraries.
-sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib /usr/lib64/R/lib /usr/lib64/atlas /usr/lib64/bind99 /opt/illumina/bsfs /usr/lib64/dyninst                /usr/lib64/iscsi /usr/lib64/mysql "
+sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib /usr/lib64/R/lib /usr/lib64/atlas /usr/lib64/bind99 /opt/illumina/bsfs /usr/lib64/dyninst                /usr/lib64/iscsi /usr/lib64/llvm4.0/lib /usr/lib64/mysql "
 
 # Explicit LT_SYS_LIBRARY_PATH set during ./configure time.
 configure_time_lt_sys_library_path=""
@@ -11792,17 +11792,17 @@ file_list_spec=""
 hardcode_action=immediate
 
 # The directories searched by this compiler when creating a shared library.
-compiler_lib_search_dirs="/usr/lib/gcc/x86_64-redhat-linux/6.4.1 /usr/lib/gcc/x86_64-redhat-linux/6.4.1/../../../../lib64 /lib/../lib64 /usr/lib/../lib64 /usr/lib/gcc/x86_64-redhat-linux/6.4.1/../../.."
+compiler_lib_search_dirs="/usr/lib/gcc/x86_64-redhat-linux/7 /usr/lib/gcc/x86_64-redhat-linux/7/../../../../lib64 /lib/../lib64 /usr/lib/../lib64 /usr/lib/gcc/x86_64-redhat-linux/7/../../.."
 
 # Dependencies to place before and after the objects being linked to
 # create a shared library.
-predep_objects="/usr/lib/gcc/x86_64-redhat-linux/6.4.1/../../../../lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/6.4.1/crtbeginS.o"
-postdep_objects="/usr/lib/gcc/x86_64-redhat-linux/6.4.1/crtendS.o /usr/lib/gcc/x86_64-redhat-linux/6.4.1/../../../../lib64/crtn.o"
+predep_objects="/usr/lib/gcc/x86_64-redhat-linux/7/../../../../lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/7/crtbeginS.o"
+postdep_objects="/usr/lib/gcc/x86_64-redhat-linux/7/crtendS.o /usr/lib/gcc/x86_64-redhat-linux/7/../../../../lib64/crtn.o"
 predeps=""
 postdeps="-lstdc++ -lm -lgcc_s -lc -lgcc_s"
 
 # The library search path used internally by the compiler when linking
 # a shared library.
-compiler_lib_search_path="-L/usr/lib/gcc/x86_64-redhat-linux/6.4.1 -L/usr/lib/gcc/x86_64-redhat-linux/6.4.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/usr/lib/gcc/x86_64-redhat-linux/6.4.1/../../.."
+compiler_lib_search_path="-L/usr/lib/gcc/x86_64-redhat-linux/7 -L/usr/lib/gcc/x86_64-redhat-linux/7/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/usr/lib/gcc/x86_64-redhat-linux/7/../../.."
 
 # ### END LIBTOOL TAG CONFIG: CXX
