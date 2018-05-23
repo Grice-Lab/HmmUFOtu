@@ -12,4 +12,5 @@ ProgLog.cpp \
 StringUtils.cpp \
 TSVRecord.cpp \
 TSVScanner.cpp \
-VersionSequence.cpp
+VersionSequence.cpp \
+ProgEnv.cpp
