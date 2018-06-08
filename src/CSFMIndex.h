@@ -200,9 +200,9 @@ private:
 	string csSeq; /* 1-based consensus seq with dummy position at 0 */
 	double* csIdentity; /* 1-based consensus identity index */
 
-	uint16_t* concat2CS; /* 1-based concatSeq pos to CS pos, 0 for gap pos on CS */
-	uint32_t* saSampled; /* 1-based sampled SA of concatSeq */
-	cds_static::BitSequence* saIdx; /* 1-based bit index for telling whether this SA position is sampled */
+	uint16_t* concat2CS; /* 0-based concatSeq pos to 1-based CS pos, 0 for gap pos on CS */
+	uint32_t* saSampled; /* sampled SA of concatSeq */
+	cds_static::BitSequence* saIdx; /* 0-based bit index for telling whether this SA position is sampled */
 	cds_static::WaveletTreeNoptrs* bwt; /* Wavelet-Tree transformed BWT string for forward concatSeq */
 };
 
