@@ -11,7 +11,7 @@
 #include <cmath>
 #include <boost/math/special_functions/gamma.hpp>
 #include <boost/math/special_functions/factorials.hpp>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 namespace EGriceLab {
 namespace Math {
