@@ -17,7 +17,8 @@ bHmmPrior_IO_test \
 bHmm_IO_test \
 dna_model_IO_test \
 FMIO_test \
-PTU_IO_test
+PTU_IO_test \
+CSFMIndex_test
 
 MSAIO_test_SOURCES = MSAIO_test.cpp
 MSAIO_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_common.a $(top_srcdir)/src/util/libEGUtil.a \
@@ -51,7 +52,15 @@ $(top_srcdir)/src/util/libEGUtil.a \
 $(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/HmmUFOtuEnv.o
 
-TESTS = GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh 
+CSFMIndex_test_SOURCES = CSFMIndex_test.cpp
+CSFMIndex_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a $(top_srcdir)/src/libHmmUFOtu_common.a \
+$(top_srcdir)/src/util/libEGUtil.a \
+$(top_srcdir)/src/math/libEGMath.a \
+$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+$(top_srcdir)/src/libcds/src/libcds.la \
+$(top_srcdir)/src/HmmUFOtuEnv.o
+
+TESTS = CSFMIndex_test GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh 
 if HAVE_LIBJSONCPP
 TESTS += jplace-t.sh
 endif

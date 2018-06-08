@@ -90,7 +90,10 @@ host_triplet = @host@
 target_triplet = @target@
 check_PROGRAMS = MSAIO_test$(EXEEXT) bHmmPrior_IO_test$(EXEEXT) \
 	bHmm_IO_test$(EXEEXT) dna_model_IO_test$(EXEEXT) \
-	FMIO_test$(EXEEXT) PTU_IO_test$(EXEEXT)
+	FMIO_test$(EXEEXT) PTU_IO_test$(EXEEXT) \
+	CSFMIndex_test$(EXEEXT)
+TESTS = CSFMIndex_test$(EXEEXT) GTR-t.sh TN93-t.sh HKY85-t.sh \
+	GTR-dG-t.sh $(am__append_1) sim-run-SE-t.sh
 @HAVE_LIBJSONCPP_TRUE@am__append_1 = jplace-t.sh
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -107,6 +110,19 @@ DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+am_CSFMIndex_test_OBJECTS = CSFMIndex_test.$(OBJEXT)
+CSFMIndex_test_OBJECTS = $(am_CSFMIndex_test_OBJECTS)
+CSFMIndex_test_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
+	$(top_srcdir)/src/libHmmUFOtu_common.a \
+	$(top_srcdir)/src/util/libEGUtil.a \
+	$(top_srcdir)/src/math/libEGMath.a \
+	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+	$(top_srcdir)/src/libcds/src/libcds.la \
+	$(top_srcdir)/src/HmmUFOtuEnv.o
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 am_FMIO_test_OBJECTS = FMIO_test.$(OBJEXT)
 FMIO_test_OBJECTS = $(am_FMIO_test_OBJECTS)
 FMIO_test_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
@@ -115,10 +131,6 @@ FMIO_test_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_hmm.a \
 	$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
 	$(top_srcdir)/src/libcds/src/libcds.la \
 	$(top_srcdir)/src/HmmUFOtuEnv.o
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
 am_MSAIO_test_OBJECTS = MSAIO_test.$(OBJEXT)
 MSAIO_test_OBJECTS = $(am_MSAIO_test_OBJECTS)
 MSAIO_test_DEPENDENCIES = $(top_srcdir)/src/libHmmUFOtu_common.a \
@@ -187,12 +199,14 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(FMIO_test_SOURCES) $(MSAIO_test_SOURCES) \
-	$(PTU_IO_test_SOURCES) $(bHmmPrior_IO_test_SOURCES) \
-	$(bHmm_IO_test_SOURCES) $(dna_model_IO_test_SOURCES)
-DIST_SOURCES = $(FMIO_test_SOURCES) $(MSAIO_test_SOURCES) \
-	$(PTU_IO_test_SOURCES) $(bHmmPrior_IO_test_SOURCES) \
-	$(bHmm_IO_test_SOURCES) $(dna_model_IO_test_SOURCES)
+SOURCES = $(CSFMIndex_test_SOURCES) $(FMIO_test_SOURCES) \
+	$(MSAIO_test_SOURCES) $(PTU_IO_test_SOURCES) \
+	$(bHmmPrior_IO_test_SOURCES) $(bHmm_IO_test_SOURCES) \
+	$(dna_model_IO_test_SOURCES)
+DIST_SOURCES = $(CSFMIndex_test_SOURCES) $(FMIO_test_SOURCES) \
+	$(MSAIO_test_SOURCES) $(PTU_IO_test_SOURCES) \
+	$(bHmmPrior_IO_test_SOURCES) $(bHmm_IO_test_SOURCES) \
+	$(dna_model_IO_test_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -596,8 +610,14 @@ $(top_srcdir)/src/util/libEGUtil.a \
 $(top_srcdir)/src/math/libEGMath.a \
 $(top_srcdir)/src/HmmUFOtuEnv.o
 
-TESTS = GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh $(am__append_1) \
-	sim-run-SE-t.sh
+CSFMIndex_test_SOURCES = CSFMIndex_test.cpp
+CSFMIndex_test_LDADD = $(top_srcdir)/src/libHmmUFOtu_hmm.a $(top_srcdir)/src/libHmmUFOtu_common.a \
+$(top_srcdir)/src/util/libEGUtil.a \
+$(top_srcdir)/src/math/libEGMath.a \
+$(top_srcdir)/src/libdivsufsort/lib/libdivsufsort.a \
+$(top_srcdir)/src/libcds/src/libcds.la \
+$(top_srcdir)/src/HmmUFOtuEnv.o
+
 all: all-am
 
 .SUFFIXES:
@@ -641,6 +661,10 @@ clean-checkPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
+CSFMIndex_test$(EXEEXT): $(CSFMIndex_test_OBJECTS) $(CSFMIndex_test_DEPENDENCIES) $(EXTRA_CSFMIndex_test_DEPENDENCIES) 
+	@rm -f CSFMIndex_test$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(CSFMIndex_test_OBJECTS) $(CSFMIndex_test_LDADD) $(LIBS)
+
 FMIO_test$(EXEEXT): $(FMIO_test_OBJECTS) $(FMIO_test_DEPENDENCIES) $(EXTRA_FMIO_test_DEPENDENCIES) 
 	@rm -f FMIO_test$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(FMIO_test_OBJECTS) $(FMIO_test_LDADD) $(LIBS)
@@ -671,6 +695,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CSFMIndex_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FMIO_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MSAIO_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PTU_IO_test.Po@am__quote@
@@ -901,6 +926,13 @@ recheck: all $(check_PROGRAMS)
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
+CSFMIndex_test.log: CSFMIndex_test$(EXEEXT)
+	@p='CSFMIndex_test$(EXEEXT)'; \
+	b='CSFMIndex_test'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 GTR-t.sh.log: GTR-t.sh
 	@p='GTR-t.sh'; \
 	b='GTR-t.sh'; \

@@ -142,6 +142,25 @@ private:
 	CSFMIndex(const CSFMIndex& other);
 	CSFMIndex& operator=(const CSFMIndex& other);
 
+	/**
+	 * LF-mapping with given position and base
+	 * @param c  base
+	 * @param i  0-based loc on L column (BWT)
+	 * @return  1-based loc on F column
+	 */
+	uint32_t LF(int8_t c, uint32_t i) const {
+		return C[c] + bwt->rank(c, i);
+	}
+
+	/**
+	 * LF-mapping on given position
+	 * @param i  0-based loc on L column (BWT)
+	 * @return  1-based loc on F column
+	 */
+	uint32_t LF(uint32_t i) const {
+		return LF(bwt->access(i), i);
+	}
+
 	/* private functions */
 	/*
 	 * Access a given SA loc, either by directly searching the stored value or the next sampled value

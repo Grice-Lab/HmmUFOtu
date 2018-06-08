@@ -45,13 +45,19 @@ int32_t CSFMIndex::count(const string& pattern) const {
 	if(m == 0)
 		return 0; /* empty pattern matches to nothing */
 
-    int32_t start = 1;
+    int32_t start = 0;
     int32_t end = concatLen;
-	/* while there are possible occs and pattern not done */
-    for (string::const_reverse_iterator rit = pattern.rbegin(); rit != pattern.rend() && start <= end; ++rit) {
-      int8_t c = abc->encode(*rit) + 1; /* map pattern to our alphabet */
-      start = C[c] + bwt->rank(c, start - 1); /* LF Mapping */
-      end = C[c] + bwt->rank(c, end) - 1; /* LF Mapping */
+	/* search pattern left-to-right, as bwt is the reverse FM-index */
+    for(string::const_reverse_iterator c = pattern.rbegin(); c != pattern.rend() && start <= end; ++c) {
+        int8_t b = abc->encode(*c) + 1; /* map pattern to our alphabet */
+    	if(start == 0) {
+    		start = C[b];
+    		end = C[b + 1] - 1;
+    	}
+    	else {
+    		start = LF(b, start - 1); /* LF Mapping */
+    		end = LF(b, end) - 1; /* LF Mapping */
+    	}
     }
     return start <= end ? end - start + 1 : 0;
 }
@@ -60,17 +66,23 @@ vector<CSLoc> CSFMIndex::locate(const string& pattern) const {
 	vector<CSLoc> locs;
 	if(pattern.empty())
 		return locs; /* empty pattern matches to nothing */
-    int32_t start = 1; /* starting range in M from p[m-1] */
+    int32_t start = 0; /* 1-based */
     int32_t end = concatLen;
 	/* while there are possible occs and pattern not done */
-    for (string::const_reverse_iterator rit = pattern.rbegin(); rit != pattern.rend() && start <= end; ++rit) {
-      int8_t c = abc->encode(*rit) + 1; /* map pattern to 1 .. size */
-      start = C[c] + bwt->rank(c, start - 1); /* LF Mapping */
-      end = C[c] + bwt->rank(c, end) - 1; /* LF Mapping */
+    for (string::const_reverse_iterator c = pattern.rbegin(); c != pattern.rend() && start <= end; ++c) {
+      int8_t b = abc->encode(*c) + 1; /* map pattern to 1 .. size */
+      if(start == 0) {
+    	  start = C[b];
+    	  end = C[b + 1] - 1;
+      }
+      else {
+    	  start = LF(b, start - 1); /* LF Mapping */
+    	  end = LF(b, end) - 1; /* LF Mapping */
+      }
     }
 
     for(int32_t i = start; i <= end; ++i) {
-    	uint32_t concatStart = accessSA(i);
+    	uint32_t concatStart = accessSA(i); /* 1-based */
     	int32_t csStart = concat2CS[concatStart];
     	int32_t csEnd = concat2CS[concatStart + pattern.length() - 1];
     	locs.push_back(CSLoc(csStart, csEnd, extractCS(concatStart, pattern)));
@@ -81,18 +93,23 @@ vector<CSLoc> CSFMIndex::locate(const string& pattern) const {
 CSLoc CSFMIndex::locateFirst(const string& pattern) const {
 	if(pattern.empty())
 		return CSLoc(); /* empty pattern matches to nothing */
-	int32_t start = 1;
+	int32_t start = 0;
 	int32_t end = concatLen;
 	/* while there are possible occs and pattern not done */
-	for (string::const_reverse_iterator rit = pattern.rbegin(); rit != pattern.rend() && start <= end; ++rit) {
-		int8_t c = abc->encode(*rit) + 1; /* map pattern to 1 .. size */
-		start = C[c] + bwt->rank(c, start - 1); /* LF Mapping */
-		end = C[c] + bwt->rank(c, end) - 1; /* LF Mapping */
-		//cerr << "start:" << start << " end:" << end << endl;
+	for (string::const_reverse_iterator c = pattern.rbegin(); c != pattern.rend() && start <= end; ++c) {
+		int8_t b = abc->encode(*c) + 1; /* map pattern to 1 .. size */
+		if(start == 0) {
+			start = C[b];
+			end = C[b + 1] - 1;
+		}
+		else {
+			start = LF(b, start - 1); /* LF Mapping */
+			end = LF(b, end) - 1; /* LF Mapping */
+		}
 	}
 
 	if(start <= end) {
-		uint32_t concatStart = accessSA(start);
+		uint32_t concatStart = accessSA(start); /* 1-based */
     	int32_t csStart = concat2CS[concatStart];
     	int32_t csEnd = concat2CS[concatStart + pattern.length() - 1];
 		return CSLoc(csStart, csEnd, extractCS(concatStart, pattern));
@@ -104,17 +121,23 @@ CSLoc CSFMIndex::locateFirst(const string& pattern) const {
 CSLoc CSFMIndex::locateOne(const string& pattern) const {
 	if(pattern.empty())
 		return CSLoc(); /* empty pattern matches to nothing */
-    int32_t start = 1;
+    int32_t start = 0;
     int32_t end = concatLen;
 	/* while there are possible occs and pattern not done */
-    for (string::const_reverse_iterator rit = pattern.rbegin(); rit != pattern.rend() && start <= end; ++rit) {
-    	int8_t c = abc->encode(*rit) + 1; /* map pattern to 1 .. size */
-    	start = C[c] + bwt->rank(c, start - 1); /* LF Mapping */
-    	end = C[c] + bwt->rank(c, end) - 1; /* LF Mapping */
+    for (string::const_reverse_iterator c = pattern.rbegin(); c != pattern.rend() && start <= end; ++c) {
+    	int8_t b = abc->encode(*c) + 1; /* map pattern to 1 .. size */
+        if(start == 0) {
+      	  start = C[b];
+      	  end = C[b + 1] - 1;
+        }
+        else {
+      	  start = LF(b, start - 1); /* LF Mapping */
+      	  end = LF(b, end) - 1; /* LF Mapping */
+        }
     }
     if(start <= end) {
     	int32_t i = start + rand() % (end - start + 1);
-    	uint32_t concatStart = accessSA(i); // sample a random position
+    	uint32_t concatStart = accessSA(i); // random 1-based position
     	int32_t csStart = concat2CS[concatStart];
     	int32_t csEnd = concat2CS[concatStart + pattern.length() - 1];
     	return CSLoc(csStart, csEnd, extractCS(concatStart, pattern));
@@ -127,17 +150,23 @@ set<unsigned> CSFMIndex::locateIndex(const string& pattern) const {
     set<unsigned> idx;
 	if(pattern.empty())
 		return idx; /* empty pattern matches to nothing */
-    int32_t start = 1;
+    int32_t start = 0;
     int32_t end = concatLen;
 	/* while there are possible occs and pattern not done */
-    for (string::const_reverse_iterator rit = pattern.rbegin(); rit != pattern.rend() && start <= end; ++rit) {
-    	int8_t c = abc->encode(*rit) + 1; /* map pattern to 1 .. size */
-    	start = C[c] + bwt->rank(c, start - 1); /* LF Mapping */
-    	end = C[c] + bwt->rank(c, end) - 1; /* LF Mapping */
+    for (string::const_reverse_iterator c = pattern.rbegin(); c != pattern.rend() && start <= end; ++c) {
+    	int8_t b = abc->encode(*c) + 1; /* map pattern to 1 .. size */
+        if(start == 0) {
+      	  start = C[b];
+      	  end = C[b + 1] - 1;
+        }
+        else {
+      	  start = LF(b, start - 1); /* LF Mapping */
+      	  end = LF(b, end) - 1; /* LF Mapping */
+        }
     }
 
     for(int32_t i = start; i <= end; ++i) {
-    	uint32_t k = accessSA(i); /* concatStart */
+    	int32_t k = accessSA(i); /* 0-based */
     	idx.insert(k / (csLen + 1));
     }
 
@@ -224,7 +253,7 @@ uint32_t CSFMIndex::accessSA(uint32_t i) const {
 	int32_t dist = 0;
 	while(!saIdx->access(i)) {
 		uint8_t c = bwt->access(i);
-		i = C[c] + bwt->rank(c, i) - 1; // backward LF-mapping
+		i = LF(i) - 1; // backward LF-mapping
 		dist++;
 	}
 	return saSampled[saIdx->rank1(i) - 1] + dist;
