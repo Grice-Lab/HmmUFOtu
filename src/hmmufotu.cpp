@@ -522,8 +522,10 @@ int main(int argc, char* argv[]) {
 						BandedHMMP7::HmmAlignment revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode);
 						assert(revAln.isValid());
 						//							infoLog << "rev seq aligned: revStart: " << revStart << " revEnd: " << revEnd << " aln: " << revAln << endl;
-						if(!(aln.csStart <= revAln.csStart && aln.csEnd <= revAln.csEnd))
+						if(!(aln.csStart <= revAln.csStart && aln.csEnd <= revAln.csEnd)) {
+							warningLog << "bad orientation of forward/reverse read detected, deeming as chimera" << endl;
 							isChimera = true; /* bad orientation indicates a chimera seq */
+						}
 						else
 							aln.merge(revAln); /* merge alignment */
 					}
