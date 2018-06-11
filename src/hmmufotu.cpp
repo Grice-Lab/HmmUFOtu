@@ -76,6 +76,7 @@ void printUsage(const string& progName) {
 		 << "            -L|--seed-len  INT   : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT              : size of 5'/3' seed region for finding seed matches for CSFM-index [" << DEFAULT_SEED_REGION << "]" << endl
 		 << "            -s  FLAG             : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
+		 << "            -i|--ignore  FLAG    : ignore forward/reverse orientation check, only recommended when your read size is larger than the expected amplicon size" << endl
 		 << "            -N  INT              : max # of seed nodes used in the 'Seed' stage of SEP algorithm [" << DEFAULT_MAX_NSEED << "]" << endl
 		 << "            -d  DBL              : max p-dist difference allowed for sub-optimal seeds used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_DIFF << "]" << endl
 		 << "            -e|--err  DBL        : max placement error used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
@@ -115,6 +116,7 @@ int main(int argc, char* argv[]) {
 	string estMethod = DEFAULT_BRANCH_EST_METHOD;
 	SeqIO fwdSeqI, revSeqI, alnSeqO;
 
+	bool ignoreOrient = false; /* ignore orientation errors */
 	bool isAssembled = true; /* assume assembled seq if not paired-end */
 	bool alignOnly = false;
 	BandedHMMP7::align_mode mode;
@@ -175,6 +177,9 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-R"))
 		seedRegion = ::atoi(cmdOpts.getOptStr("-R"));
+
+	if(cmdOpts.hasOpt("-i") || cmdOpts.hasOpt("--ignore"))
+		ignoreOrient = true;
 
 	if(cmdOpts.hasOpt("-s"))
 		isAssembled = false;
@@ -522,8 +527,13 @@ int main(int argc, char* argv[]) {
 						BandedHMMP7::HmmAlignment revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode);
 						assert(revAln.isValid());
 						//							infoLog << "rev seq aligned: revStart: " << revStart << " revEnd: " << revEnd << " aln: " << revAln << endl;
-						if(!(aln.csStart <= revAln.csStart && aln.csEnd <= revAln.csEnd)) {
-							warningLog << "bad orientation of forward/reverse read detected, deeming as chimera" << endl;
+						if(!ignoreOrient && !(aln.csStart <= revAln.csStart && aln.csEnd <= revAln.csEnd)) {
+#pragma omp critical(writeLog)
+						{
+							warningLog << "Bad orientation of forward/reverse read detected, treating as chimera" << endl;
+							infoLog << "fwd.csStart: " << aln.csStart << " fwd.csEnd: " << aln.csEnd
+									<< " rev.csStart: " << revAln.csStart << " rev.csEnd" << revAln.csEnd << endl;
+						}
 							isChimera = true; /* bad orientation indicates a chimera seq */
 						}
 						else
