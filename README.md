@@ -18,6 +18,10 @@ HmmUFOtu supports all major DNA substitution models, including
 
 HmmUFOtu supports variable mutation rate phylogenetic evaluation using the Discrete Gamma (dΓ) models (Yang 1994).
 
+Citations
+---------
+> Zheng, Q., Bartow-McKenney, C., Meisel, J. S., & Grice, E. A. (2018). HmmUFOtu: An HMM and phylogenetic placement based ultra-fast taxonomic assignment and OTU picking tool for microbiome amplicon sequencing studies. Genome biology, 19(1), 82. [PubMed ID:     29950165](https://www.ncbi.nlm.nih.gov/pubmed/29950165)
+
 Implementation
 --------------
 HmmUFOtu is written in pure C++98, and built with the GNU Autotools (autoconfig/automake), and can be easily installed under Linux, Windows and Mac OS X.
