@@ -369,9 +369,8 @@ int main(int argc, char* argv[]) {
 					&& (minHmmIden == 0 || hmmIdentity(hmm, aln, csStart - 1, csEnd - 1) >= minHmmIden )) { /* a valid assignment */
 				const PTUnrooted::PTUNodePtr& node = ptu.getNode(taxon_id);
 				string otuID = otuPrefix + boost::lexical_cast<string>(node->getId());
-				if(otuData.count(node) == 0) /* not initiated */ {
-					otuData.insert(std::make_pair(node, OTUObserved(otuID, node->getTaxon(), L, S)));
-				}
+				if(otuData.count(node) == 0) /* not initiated */
+					otuData[node] = OTUObserved(otuID, node->getTaxon(), L, S);
 				OTUObserved& otu = otuData.find(node)->second;
 				otu.count(s)++;
 				if(readOut.is_open())

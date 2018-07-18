@@ -24,7 +24,8 @@ OTUTREE="${DB}_sim_OTU.tree"
 SUBSETFILE="${DB}_sim_OTU_subset.txt"
 SUBSETN=20
 NORMFILE="${DB}_sim_OTU_norm.txt"
-
+MERGEDFILE="${DB}_sim_OTU_merged.txt"
+MERGEDTREE="${DB}_sim_OTU_merged.tree"
 
 echo "Using database $DB"
 
@@ -89,4 +90,14 @@ if [ $? == 0 ]
 		exit 1
 fi 
 
-rm -f ${DB}*
+echo "Merging OTU table ..."
+$SRCPATH/hmmufotu-merge $OTUFILE $SUBSETFILE $NORMFILE -o $MERGEDFILE --db $DB -t $MERGEDTREE -v
+if [ $? == 0 ]
+	then
+		echo "OTU tables merged"
+	else
+		echo "Failed to merge OTU tables"
+		exit 1
+fi 
+
+#rm -f ${DB}*

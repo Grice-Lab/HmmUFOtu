@@ -52,6 +52,7 @@ using std::find;
 using std::istream;
 using std::ostream;
 using Eigen::MatrixXd;
+using Eigen::VectorXd;
 using Eigen::RowVectorXd;
 
 class OTUTable {
@@ -82,7 +83,7 @@ public:
 	/** member methods */
 	/** test whether this OTU table is empty */
 	bool isEmpty() const {
-		return otuMetric.size() == 0;
+		return numOTUs() == 0 && numSamples() == 0;
 	}
 
 	/** get number of samples */
@@ -94,7 +95,6 @@ public:
 	size_t numOTUs() const {
 		return otus.size();
 	}
-
 
 	/** get all sample names */
 	const vector<string>& getSamples() const {
@@ -114,6 +114,11 @@ public:
 	/** get OTU at given position */
 	const string& getOTU(string::size_type i) const {
 		return otus[i];
+	}
+
+	/** get entire OTU metric count */
+	const MatrixXd& getMetric() const {
+		return otuMetric;
 	}
 
 	/**
@@ -139,19 +144,19 @@ public:
 	}
 
 	/**
-	 * get the index of a given sample, or -1 if not found
+	 * get the index of a given sample
+	 * @return  0..numSamples-1 if found, or numSamples if not
 	 */
 	size_t getSampleIndex(const string& sampleName) const {
-		vector<string>::const_iterator result = find(samples.begin(), samples.end(), sampleName);
-		return result != samples.end() ? result - samples.begin() : -1;
+		return find(samples.begin(), samples.end(), sampleName) - samples.begin();
 	}
 
 	/**
-	 * get the index of a given OTU, or -1 if not found
+	 * get the index of a given OTU
+	 * @return  0..numOTUs-1 if found, or numOTUs if not
 	 */
 	size_t getOTUIndex(const string& otuID) const {
-		vector<string>::const_iterator result = find(otus.begin(), otus.end(), otuID);
-		return result != otus.end() ? result - otus.begin() : -1;
+		return find(otus.begin(), otus.end(), otuID) - otus.begin();
 	}
 
 	/**
@@ -166,29 +171,65 @@ public:
 		return getTaxon(getOTU(i));
 	}
 
+	/** get count of given sample index */
+	VectorXd numSampleMetric(size_t j) const {
+		return otuMetric.col(j);
+	}
+
+	/** get count of given sample name */
+	VectorXd numSampleMetric(const string& sn) const {
+		return numSampleMetric(getSampleIndex(sn));
+	}
+
+	/** get count of given OTU index */
+	RowVectorXd numOTUMetric(size_t i) const {
+		return otuMetric.row(i);
+	}
+
+	/** get count of given OTU */
+	RowVectorXd numOTUMetric(const string& otuID) const {
+		return numOTUMetric(getOTUIndex(otuID));
+	}
+
+	/** get count of given OTU and sample idx */
+	double numOTUMetric(size_t i, size_t j) const {
+		return otuMetric(i, j);
+	}
+
+	/** get count of given OTU and sample */
+	double numOTUMetric(const string& otuID, const string& sn) const {
+		return numOTUMetric(getOTUIndex(otuID), getSampleIndex(sn));
+	}
+
 	/**
 	 * get number of reads in sample j
 	 */
-	double numSampleReads(size_t j) const {
+	double sumSampleMetric(size_t j) const {
 		return otuMetric.col(j).sum();
 	}
 
 	/**
 	 * get number of reads in OTU i
 	 */
-	double numOTUReads(size_t i) const {
+	double sumOTUMetric(size_t i) const {
 		return otuMetric.row(i).sum();
 	}
 
 	/**
-	 * get total count of a given sample across all OTUs, or 0 if not found
+	 * get total count of a given sample across all OTUs
+	 * @return  column-sum of given sample, or undefined behavior if not found
 	 */
-	double numSampleReads(const string& sampleName) const;
+	double sumSampleMetric(const string& sn) const {
+		return sumSampleMetric(getSampleIndex(sn));
+	}
 
 	/**
-	 * get total count of an OTU across all samples, or 0 if not found
+	 * get total count of an OTU across all samples
+	 * @return  row-sum of given otuID, or undefined behavior if not found
 	 */
-	double numOTUReads(const string& otuTotal) const;
+	double sumOTUMetric(const string& otuID) const {
+		return sumOTUMetric(getOTUIndex(otuID));
+	}
 
 	/**
 	 * add a new sample into this OTUTable, ignored if already exists
@@ -209,7 +250,6 @@ public:
 	 * @return  true only if the index is in range
 	 */
 	bool removeSample(size_t j);
-
 
 	/**
 	 * add a new OTU into this OTUTable, ignored if already exists
@@ -348,6 +388,12 @@ public:
 	 */
 	ostream& saveHdf5(ostream& out) const;
 
+	/** merge this OTUTable with another */
+	OTUTable& operator+=(const OTUTable& other);
+
+	/* non-member functions */
+	friend OTUTable operator+(const OTUTable& lhs, const OTUTable& rhs);
+
 private:
 	/** member fields */
 	vector<string> samples; /* 0..N sample names */
@@ -360,23 +406,6 @@ private:
 	static const Eigen::IOFormat fltTabFmt;
 	static RNG rng;
 };
-
-inline void OTUTable::clear() {
-	samples.clear();
-	otus.clear();
-	otuMetric.resize(0, 0);
-	otu2Taxon.clear();
-}
-
-inline double OTUTable::numSampleReads(const string& sampleName) const {
-	size_t j = getSampleIndex(sampleName);
-	return j != -1 ? numSampleReads(j) : 0;
-}
-
-inline double OTUTable::numOTUReads(const string& otuID) const {
-	size_t i = getOTUIndex(otuID);
-	return i != -1 ? numOTUReads(i) : 0;
-}
 
 inline std::istream& OTUTable::load(istream& in, const string& format) {
 	if(format == "table")
@@ -405,6 +434,12 @@ inline bool OTUTable::removeSample(const string& sampleName) {
 inline bool OTUTable::removeOTU(const string& otuID) {
 	return removeOTU(std::find(otus.begin(), otus.end(), otuID) - otus.begin());
 }
+
+inline OTUTable operator+(const OTUTable& lhs, const OTUTable& rhs) {
+	OTUTable otuMerged(lhs); /* make a local copy */
+	return otuMerged += rhs;
+}
+
 
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

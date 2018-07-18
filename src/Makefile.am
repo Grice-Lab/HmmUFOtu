@@ -71,7 +71,8 @@ hmmufotu \
 hmmufotu-sum \
 hmmufotu-anneal \
 hmmufotu-subset \
-hmmufotu-norm
+hmmufotu-norm \
+hmmufotu-merge 
 if HAVE_LIBJSONCPP
 bin_PROGRAMS += hmmufotu-jplace
 endif
@@ -123,6 +124,10 @@ hmmufotu_subset_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_common.a util/libEGUtil.a
 
 hmmufotu_norm_SOURCES = hmmufotu-norm.cpp HmmUFOtuEnv.cpp
 hmmufotu_norm_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_common.a util/libEGUtil.a
+
+hmmufotu_merge_SOURCES = hmmufotu-merge.cpp HmmUFOtuEnv.cpp
+hmmufotu_merge_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_common.a \
+util/libEGUtil.a math/libEGMath.a
 
 if HAVE_LIBJSONCPP
 hmmufotu_jplace_SOURCES = hmmufotu-jplace.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp

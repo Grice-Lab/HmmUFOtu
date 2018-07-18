@@ -96,7 +96,7 @@ bin_PROGRAMS = hmmufotu$(EXEEXT) hmmufotu-train-dm$(EXEEXT) \
 	hmmufotu-inspect$(EXEEXT) hmmufotu$(EXEEXT) \
 	hmmufotu-sum$(EXEEXT) hmmufotu-anneal$(EXEEXT) \
 	hmmufotu-subset$(EXEEXT) hmmufotu-norm$(EXEEXT) \
-	$(am__EXEEXT_1)
+	hmmufotu-merge$(EXEEXT) $(am__EXEEXT_1)
 @HAVE_LIBJSONCPP_TRUE@am__append_1 = hmmufotu-jplace
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -197,6 +197,11 @@ hmmufotu_jplace_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_hmmufotu_merge_OBJECTS = hmmufotu-merge.$(OBJEXT) \
+	HmmUFOtuEnv.$(OBJEXT)
+hmmufotu_merge_OBJECTS = $(am_hmmufotu_merge_OBJECTS)
+hmmufotu_merge_DEPENDENCIES = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a \
+	libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a
 am_hmmufotu_norm_OBJECTS = hmmufotu-norm.$(OBJEXT) \
 	HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_norm_OBJECTS = $(am_hmmufotu_norm_OBJECTS)
@@ -274,19 +279,21 @@ SOURCES = $(libHmmUFOtu_OTU_a_SOURCES) $(libHmmUFOtu_common_a_SOURCES) \
 	$(libHmmUFOtu_hmm_a_SOURCES) $(libHmmUFOtu_phylo_a_SOURCES) \
 	$(hmmufotu_SOURCES) $(hmmufotu_anneal_SOURCES) \
 	$(hmmufotu_build_SOURCES) $(hmmufotu_inspect_SOURCES) \
-	$(hmmufotu_jplace_SOURCES) $(hmmufotu_norm_SOURCES) \
-	$(hmmufotu_sim_SOURCES) $(hmmufotu_subset_SOURCES) \
-	$(hmmufotu_sum_SOURCES) $(hmmufotu_train_dm_SOURCES) \
-	$(hmmufotu_train_hmm_SOURCES) $(hmmufotu_train_sm_SOURCES)
+	$(hmmufotu_jplace_SOURCES) $(hmmufotu_merge_SOURCES) \
+	$(hmmufotu_norm_SOURCES) $(hmmufotu_sim_SOURCES) \
+	$(hmmufotu_subset_SOURCES) $(hmmufotu_sum_SOURCES) \
+	$(hmmufotu_train_dm_SOURCES) $(hmmufotu_train_hmm_SOURCES) \
+	$(hmmufotu_train_sm_SOURCES)
 DIST_SOURCES = $(libHmmUFOtu_OTU_a_SOURCES) \
 	$(libHmmUFOtu_common_a_SOURCES) $(libHmmUFOtu_hmm_a_SOURCES) \
 	$(libHmmUFOtu_phylo_a_SOURCES) $(hmmufotu_SOURCES) \
 	$(hmmufotu_anneal_SOURCES) $(hmmufotu_build_SOURCES) \
 	$(hmmufotu_inspect_SOURCES) \
-	$(am__hmmufotu_jplace_SOURCES_DIST) $(hmmufotu_norm_SOURCES) \
-	$(hmmufotu_sim_SOURCES) $(hmmufotu_subset_SOURCES) \
-	$(hmmufotu_sum_SOURCES) $(hmmufotu_train_dm_SOURCES) \
-	$(hmmufotu_train_hmm_SOURCES) $(hmmufotu_train_sm_SOURCES)
+	$(am__hmmufotu_jplace_SOURCES_DIST) $(hmmufotu_merge_SOURCES) \
+	$(hmmufotu_norm_SOURCES) $(hmmufotu_sim_SOURCES) \
+	$(hmmufotu_subset_SOURCES) $(hmmufotu_sum_SOURCES) \
+	$(hmmufotu_train_dm_SOURCES) $(hmmufotu_train_hmm_SOURCES) \
+	$(hmmufotu_train_sm_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -587,6 +594,10 @@ hmmufotu_subset_SOURCES = hmmufotu-subset.cpp HmmUFOtuEnv.cpp
 hmmufotu_subset_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_common.a util/libEGUtil.a 
 hmmufotu_norm_SOURCES = hmmufotu-norm.cpp HmmUFOtuEnv.cpp
 hmmufotu_norm_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_common.a util/libEGUtil.a
+hmmufotu_merge_SOURCES = hmmufotu-merge.cpp HmmUFOtuEnv.cpp
+hmmufotu_merge_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_common.a \
+util/libEGUtil.a math/libEGMath.a
+
 @HAVE_LIBJSONCPP_TRUE@hmmufotu_jplace_SOURCES = hmmufotu-jplace.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
 @HAVE_LIBJSONCPP_TRUE@hmmufotu_jplace_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
 @HAVE_LIBJSONCPP_TRUE@libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
@@ -720,6 +731,10 @@ hmmufotu-jplace$(EXEEXT): $(hmmufotu_jplace_OBJECTS) $(hmmufotu_jplace_DEPENDENC
 	@rm -f hmmufotu-jplace$(EXEEXT)
 	$(AM_V_CXXLD)$(hmmufotu_jplace_LINK) $(hmmufotu_jplace_OBJECTS) $(hmmufotu_jplace_LDADD) $(LIBS)
 
+hmmufotu-merge$(EXEEXT): $(hmmufotu_merge_OBJECTS) $(hmmufotu_merge_DEPENDENCIES) $(EXTRA_hmmufotu_merge_DEPENDENCIES) 
+	@rm -f hmmufotu-merge$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(hmmufotu_merge_OBJECTS) $(hmmufotu_merge_LDADD) $(LIBS)
+
 hmmufotu-norm$(EXEEXT): $(hmmufotu_norm_OBJECTS) $(hmmufotu_norm_DEPENDENCIES) $(EXTRA_hmmufotu_norm_DEPENDENCIES) 
 	@rm -f hmmufotu-norm$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(hmmufotu_norm_OBJECTS) $(hmmufotu_norm_LDADD) $(LIBS)
@@ -786,6 +801,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TN93.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-anneal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-inspect.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-merge.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-norm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-sim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hmmufotu-subset.Po@am__quote@

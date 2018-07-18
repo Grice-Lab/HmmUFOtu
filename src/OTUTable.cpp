@@ -24,6 +24,13 @@ const IOFormat OTUTable::dblTabFmt(FullPrecision, DontAlignCols, "\t", "\n", "",
 const IOFormat OTUTable::fltTabFmt(FullPrecision, DontAlignCols, "\t", "\n", "", "", "");
 OTUTable::RNG OTUTable::rng(time(NULL)); /* initiate RNG with random seed */
 
+void OTUTable::clear() {
+	samples.clear();
+	otus.clear();
+	otuMetric.resize(0, 0);
+	otu2Taxon.clear();
+}
+
 bool OTUTable::addSample(const string& sampleName) {
 	if(hasSample(sampleName))
 		return false;
@@ -35,7 +42,6 @@ bool OTUTable::addSample(const string& sampleName) {
 
 	return true;
 }
-
 
 bool OTUTable::removeSample(size_t j) {
 	if(!(j >= 0 && j < numSamples()))
@@ -54,7 +60,6 @@ bool OTUTable::removeSample(size_t j) {
 
 	return true;
 }
-
 
 bool OTUTable::addOTU(const string& otuID, const string& taxon, const RowVectorXd& count) {
 	if(hasOTU(otuID))
@@ -95,7 +100,7 @@ void OTUTable::pruneSamples(size_t min) {
 	const size_t N = numSamples();
 	/* remove samples backwards */
 	for(size_t j = N; j > 0; --j) {
-		if(numSampleReads(j - 1) < min)
+		if(sumSampleMetric(j - 1) < min)
 			removeSample(j - 1);
 	}
 }
@@ -104,7 +109,7 @@ void OTUTable::pruneOTUs(size_t min) {
 	const size_t M = numOTUs();
 	/* remove samples backwards */
 	for(size_t i = M; i > 0; --i) {
-		double nRead = numOTUReads(i - 1);
+		double nRead = sumOTUMetric(i - 1);
 		if(min > 0 && nRead < min || min == 0 && nRead == 0)
 			removeOTU(i - 1);
 	}
@@ -169,7 +174,7 @@ ostream& OTUTable::saveTable(ostream& out) const {
 
 void OTUTable::subsetUniform(size_t min) {
 	for(int j = 0; j < numSamples(); ++j) {
-		double sampleTotal = numSampleReads(j);
+		double sampleTotal = sumSampleMetric(j);
 		if(sampleTotal <= min) /* not enough reads to subset */
 			continue;
 
@@ -196,7 +201,7 @@ void OTUTable::subsetMultinom(size_t min) {
 	ReadDistrib rdist(otuPr, otuPr + M); /* construct the discrete distribution */
 
 	for(int j = 0; j < numSamples(); ++j) {
-		double sampleTotal = numSampleReads(j);
+		double sampleTotal = sumSampleMetric(j);
 		if(sampleTotal <= min) /* not enough reads to subset */
 			continue;
 
@@ -211,6 +216,31 @@ void OTUTable::subsetMultinom(size_t min) {
 	}
 	delete[] otuPr;
 }
+
+OTUTable& OTUTable::operator+=(const OTUTable& other) {
+	if(isEmpty()) {
+		*this = other;
+		return *this;
+	}
+	if(other.isEmpty())
+		return *this;
+
+	/* add non-existing samples */
+	for(size_t j = 0; j < other.numSamples(); ++j)
+		addSample(other.getSample(j));
+
+	/* add or merge OTUs */
+	for(size_t i = 0; i < other.numOTUs(); ++i) {
+		string otuID = other.getOTU(i);
+		if(!hasOTU(otuID)) /* a new OTU */
+			addOTU(otuID, other.getTaxon(otuID), other.numOTUMetric(i));
+		else /* existing OTU */
+			otuMetric.row(getOTUIndex(otuID)) += other.numOTUMetric(i);
+	}
+
+	return *this;
+}
+
 
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
