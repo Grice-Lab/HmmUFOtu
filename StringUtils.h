@@ -91,19 +91,12 @@ public:
 	static bool startsWith(const string& str, const string& prefix);
 
 	/**
-	 * Get basename of a path/filename, trim all leading path and optionally tailing suffix, if any
+	 * Get basename of a path/filename, trim all leading path and optionally tailing suffix, if provided
 	 * @param @path  pathname
 	 * @param @suffix  suffix of filename
-	 * @return a new string with directory path and suffix trimmed
+	 * @return a new string with directory path and suffix trimmed (if not empty)
 	 */
-	static string basename(string path, string suffix);
-
-	/**
-	 * Get basename of a path/filename, trim all leading path tailing suffix, if any
-	 * @param @path  pathname
-	 * @return a new string with directory path and suffix trimmed
-	 */
-	static string basename(string path);
+	static string basename(string path, string suffix = "");
 
 	/**
 	 * Remove leading and tailing quotes from a given string

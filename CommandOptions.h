@@ -78,6 +78,10 @@ public:
 		return mainOpts.at(i);
 	}
 
+	const vector<string>& getMainOpt() const {
+		return mainOpts;
+	}
+
 	const string& getProg() const {
 		return prog;
 	}
