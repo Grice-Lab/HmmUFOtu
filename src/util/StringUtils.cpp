@@ -87,23 +87,15 @@ bool StringUtils::startsWith(const string& str, const string& prefix) {
 }
 
 string StringUtils::basename(string path, string suffix) {
-	if(suffix.empty())
-		return StringUtils::basename(path);
-	if(suffix[0] != '.')
-		suffix.insert(suffix.begin(), '.');
-
 	/* trim directory path */
 	path.erase(0, path.find_last_of('/') + 1); /* erase prefix, could be empty (0 length) */
-	if(path.length() > suffix.length() && path.substr(path.length() - suffix.length()) == suffix) /* suffix exists */
-		path.erase(path.length() - suffix.length());
-	return path;
-}
-
-string StringUtils::basename(string path) {
-	path.erase(0, path.find_last_of('/') + 1); /* erase prefix, could be empty (0 length) */
-	string::size_type sufStart = path.find_last_of('.');
-	if(sufStart != string::npos)
-		path.erase(sufStart);
+	/* trim optional suffix */
+	if(!suffix.empty()) {
+		if(suffix[0] != '.')
+			suffix.insert(suffix.begin(), '.');
+		if(path.length() > suffix.length() && path.substr(path.length() - suffix.length()) == suffix) /* suffix exists */
+			path.erase(path.length() - suffix.length());
+	}
 	return path;
 }
 
