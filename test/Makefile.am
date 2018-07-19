@@ -61,7 +61,7 @@ $(top_srcdir)/src/libcds/src/libcds.la \
 $(top_srcdir)/src/HmmUFOtuEnv.o
 
 TESTS = CSFMIndex_test GTR-t.sh TN93-t.sh HKY85-t.sh GTR-dG-t.sh 
-if HAVE_LIBJSONCPP
+if HAVE_JSONCPP
 TESTS += jplace-t.sh
 endif
 TESTS += sim-run-SE-t.sh 

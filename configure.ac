@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([HmmUFOtu], [1.3.2])
+AC_INIT([HmmUFOtu], [1.4.1])
 LT_INIT([shared static])
 
 AC_CANONICAL_SYSTEM
@@ -44,21 +44,21 @@ AX_BOOST_BASE([1.50.0])
 AX_BOOST_IOSTREAMS()
 
 # conditional packages
-AC_ARG_WITH([libjsoncpp],
-            [AS_HELP_STRING([--with-libjsoncpp],
+AC_ARG_WITH([jsoncpp],
+            [AS_HELP_STRING([--with-jsoncpp],
                             [support generating .jplace and other JSON files @<:@default=check@:>@]
                             )],
             [],
-  	        [with_libjsoncpp=check]
+  	        [with_jsoncpp=check]
   	        )
   	        
-AS_CASE(["$with_libjsoncpp"],
+AS_CASE(["$with_jsoncpp"],
         [yes],
         [AC_CHECK_LIB([jsoncpp], [main], [], [])], # yes check
         [no], [], # no, not check
         [AC_CHECK_LIB([jsoncpp], [main], [], [])] # default check
        )
-AM_CONDITIONAL([HAVE_LIBJSONCPP], [test "$with_libjsoncpp" != no -a "$ac_cv_lib_jsoncpp_main" = yes])
+AM_CONDITIONAL([HAVE_JSONCPP], [test "$with_jsoncpp" != no -a "$ac_cv_lib_jsoncpp_main" = yes])
 
 AC_CONFIG_FILES([Makefile
 				 data/Makefile

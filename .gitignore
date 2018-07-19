@@ -20,3 +20,4 @@ config.status
 # Ignore test temporaries
 **/*.trs
 **/*.swp
+hmmufotu*.tar.gz

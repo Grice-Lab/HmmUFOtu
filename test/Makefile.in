@@ -94,7 +94,7 @@ check_PROGRAMS = MSAIO_test$(EXEEXT) bHmmPrior_IO_test$(EXEEXT) \
 	CSFMIndex_test$(EXEEXT)
 TESTS = CSFMIndex_test$(EXEEXT) GTR-t.sh TN93-t.sh HKY85-t.sh \
 	GTR-dG-t.sh $(am__append_1) sim-run-SE-t.sh
-@HAVE_LIBJSONCPP_TRUE@am__append_1 = jplace-t.sh
+@HAVE_JSONCPP_TRUE@am__append_1 = jplace-t.sh
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \

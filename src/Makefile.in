@@ -97,7 +97,7 @@ bin_PROGRAMS = hmmufotu$(EXEEXT) hmmufotu-train-dm$(EXEEXT) \
 	hmmufotu-sum$(EXEEXT) hmmufotu-anneal$(EXEEXT) \
 	hmmufotu-subset$(EXEEXT) hmmufotu-norm$(EXEEXT) \
 	hmmufotu-merge$(EXEEXT) $(am__EXEEXT_1)
-@HAVE_LIBJSONCPP_TRUE@am__append_1 = hmmufotu-jplace
+@HAVE_JSONCPP_TRUE@am__append_1 = hmmufotu-jplace
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -146,7 +146,7 @@ am_libHmmUFOtu_phylo_a_OBJECTS = NewickTree.$(OBJEXT) \
 	K80.$(OBJEXT) JC69.$(OBJEXT) DiscreteGammaModel.$(OBJEXT) \
 	DNASubModelFactory.$(OBJEXT)
 libHmmUFOtu_phylo_a_OBJECTS = $(am_libHmmUFOtu_phylo_a_OBJECTS)
-@HAVE_LIBJSONCPP_TRUE@am__EXEEXT_1 = hmmufotu-jplace$(EXEEXT)
+@HAVE_JSONCPP_TRUE@am__EXEEXT_1 = hmmufotu-jplace$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_hmmufotu_OBJECTS = hmmufotu.$(OBJEXT) HmmUFOtu_main.$(OBJEXT) \
@@ -182,17 +182,16 @@ hmmufotu_inspect_DEPENDENCIES = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a \
 	libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la
 am__hmmufotu_jplace_SOURCES_DIST = hmmufotu-jplace.cpp \
 	HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
-@HAVE_LIBJSONCPP_TRUE@am_hmmufotu_jplace_OBJECTS = hmmufotu_jplace-hmmufotu-jplace.$(OBJEXT) \
-@HAVE_LIBJSONCPP_TRUE@	hmmufotu_jplace-HmmUFOtu_main.$(OBJEXT) \
-@HAVE_LIBJSONCPP_TRUE@	hmmufotu_jplace-HmmUFOtuEnv.$(OBJEXT)
+@HAVE_JSONCPP_TRUE@am_hmmufotu_jplace_OBJECTS =  \
+@HAVE_JSONCPP_TRUE@	hmmufotu_jplace-hmmufotu-jplace.$(OBJEXT) \
+@HAVE_JSONCPP_TRUE@	hmmufotu_jplace-HmmUFOtu_main.$(OBJEXT) \
+@HAVE_JSONCPP_TRUE@	hmmufotu_jplace-HmmUFOtuEnv.$(OBJEXT)
 hmmufotu_jplace_OBJECTS = $(am_hmmufotu_jplace_OBJECTS)
-@HAVE_LIBJSONCPP_TRUE@hmmufotu_jplace_DEPENDENCIES =  \
-@HAVE_LIBJSONCPP_TRUE@	libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a \
-@HAVE_LIBJSONCPP_TRUE@	libHmmUFOtu_common.a util/libEGUtil.a \
-@HAVE_LIBJSONCPP_TRUE@	math/libEGMath.a \
-@HAVE_LIBJSONCPP_TRUE@	libdivsufsort/lib/libdivsufsort.a \
-@HAVE_LIBJSONCPP_TRUE@	libcds/src/libcds.la \
-@HAVE_LIBJSONCPP_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_JSONCPP_TRUE@hmmufotu_jplace_DEPENDENCIES = libHmmUFOtu_phylo.a \
+@HAVE_JSONCPP_TRUE@	libHmmUFOtu_hmm.a libHmmUFOtu_common.a \
+@HAVE_JSONCPP_TRUE@	util/libEGUtil.a math/libEGMath.a \
+@HAVE_JSONCPP_TRUE@	libdivsufsort/lib/libdivsufsort.a \
+@HAVE_JSONCPP_TRUE@	libcds/src/libcds.la $(am__DEPENDENCIES_1)
 hmmufotu_jplace_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CXXLD) \
 	$(hmmufotu_jplace_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
@@ -598,13 +597,13 @@ hmmufotu_merge_SOURCES = hmmufotu-merge.cpp HmmUFOtuEnv.cpp
 hmmufotu_merge_LDADD = libHmmUFOtu_OTU.a libHmmUFOtu_phylo.a libHmmUFOtu_common.a \
 util/libEGUtil.a math/libEGMath.a
 
-@HAVE_LIBJSONCPP_TRUE@hmmufotu_jplace_SOURCES = hmmufotu-jplace.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
-@HAVE_LIBJSONCPP_TRUE@hmmufotu_jplace_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
-@HAVE_LIBJSONCPP_TRUE@libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
-@HAVE_LIBJSONCPP_TRUE@$(BOOST_IOSTREAMS_LIB) $(jsoncpp_LIBS)
+@HAVE_JSONCPP_TRUE@hmmufotu_jplace_SOURCES = hmmufotu-jplace.cpp HmmUFOtu_main.cpp HmmUFOtuEnv.cpp
+@HAVE_JSONCPP_TRUE@hmmufotu_jplace_LDADD = libHmmUFOtu_phylo.a libHmmUFOtu_hmm.a libHmmUFOtu_common.a util/libEGUtil.a math/libEGMath.a \
+@HAVE_JSONCPP_TRUE@libdivsufsort/lib/libdivsufsort.a libcds/src/libcds.la \
+@HAVE_JSONCPP_TRUE@$(BOOST_IOSTREAMS_LIB) $(jsoncpp_LIBS)
 
-@HAVE_LIBJSONCPP_TRUE@hmmufotu_jplace_CFLAGS = $(AM_CFLAGS) $(jsoncpp_CFLAGS)
-@HAVE_LIBJSONCPP_TRUE@hmmufotu_jplace_CXXFLAGS = $(AM_CXXFLAGS) $(jsoncpp_CFLAGS)
+@HAVE_JSONCPP_TRUE@hmmufotu_jplace_CFLAGS = $(AM_CFLAGS) $(jsoncpp_CFLAGS)
+@HAVE_JSONCPP_TRUE@hmmufotu_jplace_CXXFLAGS = $(AM_CXXFLAGS) $(jsoncpp_CFLAGS)
 all: all-recursive
 
 .SUFFIXES:
