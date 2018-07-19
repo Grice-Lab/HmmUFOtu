@@ -184,6 +184,30 @@ private:
 
 /* non-member operator implementations */
 /*
+ * compare two DigitalSeq
+ * return true if and only if all residuals are equal and are the same Alphabet
+ */
+inline bool operator==(const DigitalSeq& lhs, const DigitalSeq& rhs) {
+	return (lhs.abc == rhs.abc || *lhs.abc == *rhs.abc) &&
+			dynamic_cast<const std::basic_string<int8_t>&>(lhs) == dynamic_cast<const std::basic_string<int8_t>&> (rhs);
+}
+
+/*
+ * compare two DigitalSeq strict weak order, based on lexical order of the decoded string
+ * return true if and only if lhs is strictly less than rhs
+ */
+inline bool operator<(const DigitalSeq& lhs, const DigitalSeq& rhs) {
+	return lhs.toString() < rhs.toString();
+}
+
+
+inline ostream& operator<<(ostream& os, const DigitalSeq& dSeq) {
+	for(DigitalSeq::const_iterator it = dSeq.begin(); it != dSeq.end(); ++it)
+		os << dSeq.abc->decode(*it);
+	return os;
+}
+
+/*
  * operator+ implemented based on operator+=
  */
 inline DigitalSeq operator+(const DigitalSeq& lhs, const DigitalSeq& rhs) {

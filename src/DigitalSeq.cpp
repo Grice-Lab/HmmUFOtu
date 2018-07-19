@@ -87,36 +87,6 @@ DigitalSeq& DigitalSeq::append(const string& str) {
 	return *this;
 }
 
-/*
- * compare two DigitalSeq
- * return true if and only if all residuals are equal and are the same Alphabet
- */
-bool operator==(const DigitalSeq& lhs, const DigitalSeq& rhs) {
-	if(!(lhs.abc == rhs.abc /* same object */ || *lhs.abc == *rhs.abc /* equal object */))
-		return false;
-	if(lhs.length() != rhs.length())
-		return false;
-	for(DigitalSeq::size_type i = 0; i != lhs.length(); ++i)
-		if(lhs[i] != rhs[i])
-			return false;
-	return true;
-}
-
-/*
- * compare two DigitalSeq strict weak order, based on lexical order of the decoded string
- * return true if and only if lhs is strictly less than rhs
- */
-bool operator<(const DigitalSeq& lhs, const DigitalSeq& rhs) {
-	return lhs.toString() < rhs.toString();
-}
-
-
-ostream& operator<<(ostream& os, const DigitalSeq& dSeq) {
-	for(DigitalSeq::const_iterator it = dSeq.begin(); it != dSeq.end(); ++it)
-		os << dSeq.abc->decode(*it);
-	return os;
-}
-
 ostream& DigitalSeq::save(ostream& out, bool withAbc) const {
 	/* save flag */
 	bool flag = abc != NULL && withAbc;
