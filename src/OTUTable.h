@@ -69,21 +69,26 @@ public:
 
 	/** construct an OTUTable with given samples and OTU list */
 	OTUTable(const vector<string>& samples, const vector<string>& otus, const otuMap& otu2Taxon, const MatrixXd& otuMetric) :
-		samples(samples), otus(otus), otu2Taxon(otu2Taxon), otuMetric(otuMetric)
+		samples(samples), otus(otus), otu2Taxon(otu2Taxon), metric(otuMetric)
 	{  }
 
 	/** construct an OTUTable with initial samples only */
 	explicit OTUTable(const vector<string>& samples) :
-			samples(samples), otuMetric(0, samples.size())
+			samples(samples), metric(0, samples.size())
 	{  }
 
 	/** destructor, do nothing */
 	virtual ~OTUTable() { }
 
 	/** member methods */
+	/** get size of this OTUTable */
+	size_t size() const {
+		return numOTUs() * numSamples();
+	}
+
 	/** test whether this OTU table is empty */
-	bool isEmpty() const {
-		return numOTUs() == 0 && numSamples() == 0;
+	bool empty() const {
+		return size() == 0;
 	}
 
 	/** get number of samples */
@@ -118,7 +123,7 @@ public:
 
 	/** get entire OTU metric count */
 	const MatrixXd& getMetric() const {
-		return otuMetric;
+		return metric;
 	}
 
 	/**
@@ -126,7 +131,7 @@ public:
 	 * @return  true only if all metrics are no greater than 1
 	 */
 	bool isRelative() const {
-		return (otuMetric.array() <= 1.0).all();
+		return (metric.array() <= 1.0).all();
 	}
 
 	/**
@@ -173,7 +178,7 @@ public:
 
 	/** get count of given sample index */
 	VectorXd numSampleMetric(size_t j) const {
-		return otuMetric.col(j);
+		return metric.col(j);
 	}
 
 	/** get count of given sample name */
@@ -183,7 +188,7 @@ public:
 
 	/** get count of given OTU index */
 	RowVectorXd numOTUMetric(size_t i) const {
-		return otuMetric.row(i);
+		return metric.row(i);
 	}
 
 	/** get count of given OTU */
@@ -192,27 +197,27 @@ public:
 	}
 
 	/** get count of given OTU and sample idx */
-	double numOTUMetric(size_t i, size_t j) const {
-		return otuMetric(i, j);
+	double numMetric(size_t i, size_t j) const {
+		return metric(i, j);
 	}
 
 	/** get count of given OTU and sample */
 	double numOTUMetric(const string& otuID, const string& sn) const {
-		return numOTUMetric(getOTUIndex(otuID), getSampleIndex(sn));
+		return numMetric(getOTUIndex(otuID), getSampleIndex(sn));
 	}
 
 	/**
 	 * get number of reads in sample j
 	 */
 	double sumSampleMetric(size_t j) const {
-		return otuMetric.col(j).sum();
+		return metric.col(j).sum();
 	}
 
 	/**
 	 * get number of reads in OTU i
 	 */
 	double sumOTUMetric(size_t i) const {
-		return otuMetric.row(i).sum();
+		return metric.row(i).sum();
 	}
 
 	/**
@@ -234,62 +239,62 @@ public:
 	/**
 	 * add a new sample into this OTUTable, ignored if already exists
 	 * @param sampleName  new sample name
-	 * @return  true if this sampleName is not already exist
+	 * @return  sample index in 0 .. numSamples
 	 */
-	bool addSample(const string& sampleName);
+	size_t addSample(const string& sampleName);
 
 	/** delete an existing sample from this OTUTable, ignored if not exists
 	 * @param sampleName  existing sample name
 	 * @return  true only if this sampleName exists
 	 */
-	bool removeSample(const string& sampleName);
-
+	void removeSample(const string& sampleName) {
+		removeSample(getSampleIndex(sampleName));
+	}
 
 	/** delete an existing sample from this OTUTable using its index
 	 * @param j  sample index
-	 * @return  true only if the index is in range
 	 */
-	bool removeSample(size_t j);
+	void removeSample(size_t j);
 
 	/**
 	 * add a new OTU into this OTUTable, ignored if already exists
 	 * @param otuID  new OTU ID
 	 * @param taxon  taxon for new OTU
 	 * @param count  count row vector for new OTU
-	 * @return  true if this OTUID is not already exist
+	 * @return  OTU index in 0..numOTUs
 	 */
-	bool addOTU(const string& otuID, const string& taxon, const RowVectorXd& count);
+	size_t addOTU(const string& otuID, const string& taxon, const RowVectorXd& count);
 
 	/**
 	 * add a new OTU into this OTUTable, ignored if already exists
 	 * @param otuID  new OTU ID
 	 * @param taxon  taxon for new OTU
-	 * @return  true if this OTUID is not already exist
+	 * @return  OTU index in 0..numOTUs
 	 */
-	bool addOTU(const string& otuID, const string& taxon = "") {
+	size_t addOTU(const string& otuID, const string& taxon = "") {
 		return addOTU(otuID, taxon, RowVectorXd::Zero(numSamples()));
 	}
 
 	/**
 	 * add an OTUObserved into this OTUTable, ignore if already exists
 	 * @param otu  new OTUObserved
-	 * @return  true if this otu is not already exist
+	 * @return  OTU index in 0..numOTUs
 	 */
-	bool addOTU(const OTUObserved& otu) {
+	size_t addOTU(const OTUObserved& otu) {
 		return addOTU(otu.id, otu.taxon, otu.count);
 	}
 
 	/** delete an existing otuID from this OTUTable at index i, ignored if outside range
 	 * @param i  OTU index
-	 * @return  true only if this OTU index is in range
 	 */
-	bool removeOTU(size_t i);
+	void removeOTU(size_t i);
 
 	/** delete an existing otuID from this OTUTable, ignored if not exists
 	 * @param otuID  existing OTU ID
-	 * @return  true only if this otuID exists
 	 */
-	bool removeOTU(const string& otuID);
+	void removeOTU(const string& otuID) {
+		return removeOTU(getOTUIndex(otuID));
+	}
 
 	/**
 	 * clear this entire OTUTable to empty
@@ -399,7 +404,7 @@ private:
 	vector<string> samples; /* 0..N sample names */
 	vector<string> otus;    /* 0..M OTUs */
 	otuMap otu2Taxon;
-	MatrixXd otuMetric; /* M * N matrix of OTU (relative) abundance metric */
+	MatrixXd metric; /* M * N matrix of OTU (relative) abundance metric */
 
 	/** static fields */
 	static const Eigen::IOFormat dblTabFmt;
@@ -425,14 +430,6 @@ inline std::ostream& OTUTable::save(ostream& out, const string& format) const {
 		out.setstate(std::ios_base::failbit);
 		return out;
 	}
-}
-
-inline bool OTUTable::removeSample(const string& sampleName) {
-	return removeSample(std::find(samples.begin(), samples.end(), sampleName) - samples.begin());
-}
-
-inline bool OTUTable::removeOTU(const string& otuID) {
-	return removeOTU(std::find(otus.begin(), otus.end(), otuID) - otus.begin());
 }
 
 inline OTUTable operator+(const OTUTable& lhs, const OTUTable& rhs) {

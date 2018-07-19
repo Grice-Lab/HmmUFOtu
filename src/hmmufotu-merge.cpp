@@ -74,6 +74,8 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
+	inFiles = cmdOpts.getMainOpt();
+
 	if(cmdOpts.hasOpt("-o"))
 		otuFn = cmdOpts.getOpt("-o");
 
@@ -152,7 +154,6 @@ int main(int argc, char* argv[]) {
 		otuTable.load(otuIn, TABLE_FORMAT);
 
 		otuMerged += otuTable;
-		cerr << "otuMerged: " << otuMerged.getMetric() << endl;
 	}
 
 	/* write output */

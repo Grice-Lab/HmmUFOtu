@@ -8,9 +8,11 @@
 #include <ctime>
 #include <cassert>
 #include <algorithm>
+#include <sstream>
 #include <boost/lexical_cast.hpp>
 #include <boost/random/random_number_generator.hpp> /* an adapter between randome_number_generator and uniform_random_number_generator */
 #include <Eigen/Dense>
+#include "StringUtils.h"
 #include "HmmUFOtuConst.h"
 #include "OTUTable.h"
 
@@ -27,70 +29,60 @@ OTUTable::RNG OTUTable::rng(time(NULL)); /* initiate RNG with random seed */
 void OTUTable::clear() {
 	samples.clear();
 	otus.clear();
-	otuMetric.resize(0, 0);
+	metric.resize(0, 0);
 	otu2Taxon.clear();
 }
 
-bool OTUTable::addSample(const string& sampleName) {
-	if(hasSample(sampleName))
-		return false;
+size_t OTUTable::addSample(const string& sampleName) {
+	const size_t N = getSampleIndex(sampleName);
+	if(N < numSamples()) /* already exists */
+		return N;
 
-	const size_t N = otuMetric.cols();
 	samples.push_back(sampleName);
-	otuMetric.conservativeResize(Eigen::NoChange, N + 1);
-	otuMetric.col(N).setZero();
+	metric.conservativeResize(Eigen::NoChange, N + 1);
+	metric.col(N).setZero();
 
-	return true;
+	return N;
 }
 
-bool OTUTable::removeSample(size_t j) {
-	if(!(j >= 0 && j < numSamples()))
-		return false;
-
-	const size_t N = otuMetric.cols();
+void OTUTable::removeSample(size_t j) {
+	const size_t N = metric.cols();
 	samples.erase(samples.begin() + j);
-	MatrixXd oldMetric(otuMetric); /* copy the old values */
-	otuMetric.resize(Eigen::NoChange, N - 1);
+	MatrixXd oldMetric(metric); /* copy the old values */
+	metric.resize(Eigen::NoChange, N - 1);
 	for(MatrixXd::Index n = 0, k = 0; n < N; ++n) {
 		if(n != j) { /* not the deleted column */
-			otuMetric.col(k) = oldMetric.col(n);
+			metric.col(k) = oldMetric.col(n);
 			k++;
 		}
 	}
-
-	return true;
 }
 
-bool OTUTable::addOTU(const string& otuID, const string& taxon, const RowVectorXd& count) {
-	if(hasOTU(otuID))
-		return false;
+size_t OTUTable::addOTU(const string& otuID, const string& taxon, const RowVectorXd& count) {
+	const size_t M = getOTUIndex(otuID);
+	if(M < numOTUs()) /* already exists */
+		return M;
 
-	const size_t M = otuMetric.rows();
 	otus.push_back(otuID);
 	otu2Taxon[otuID] = taxon;
-	otuMetric.conservativeResize(M + 1, Eigen::NoChange);
-	otuMetric.row(M) = count;
+	metric.conservativeResize(M + 1, Eigen::NoChange);
+	metric.row(M) = count;
 
-	return true;
+	return M;
 }
 
-bool OTUTable::removeOTU(size_t i) {
-	if(!(i >= 0 && i < numOTUs()))
-		return false;
-
-	const size_t M = otuMetric.rows();
+void OTUTable::removeOTU(size_t i) {
+	const size_t M = metric.rows();
 	otu2Taxon.erase(otus[i]); /* remove taxon first */
 	otus.erase(otus.begin() + i); /* remove the actual OTU */
-	MatrixXd oldMetric(otuMetric); /* copy the old values */
-	otuMetric.resize(M - 1, Eigen::NoChange);
+	MatrixXd oldMetric(metric); /* copy the old values */
+	metric.resize(M - 1, Eigen::NoChange);
 	for(MatrixXd::Index m = 0, k = 0; m < M; ++m) {
 		if(m != i) { /* not the deleted row */
-			otuMetric.row(k) = oldMetric.row(m);
+			metric.row(k) = oldMetric.row(m);
 			k++;
 		}
 	}
-
-	return true;
 }
 
 void OTUTable::pruneSamples(size_t min) {
@@ -117,43 +109,42 @@ void OTUTable::pruneOTUs(size_t min) {
 
 void OTUTable::normalizeConst(double Z) {
 	assert(Z >= 0);
-	if(isEmpty() || (otuMetric.array() == 0).all()) /* empty or all zero metric */
+	if(empty() || (metric.array() == 0).all()) /* empty or all zero metric */
 		return;
 	if(Z == 0)
-		Z = otuMetric.colwise().sum().maxCoeff(); /* use max column sum as constant */
+		Z = metric.colwise().sum().maxCoeff(); /* use max column sum as constant */
 
-	const size_t N = otuMetric.cols();
-	RowVectorXd norm = otuMetric.colwise().sum() / Z;
+	const size_t N = metric.cols();
+	RowVectorXd norm = metric.colwise().sum() / Z;
 	for(MatrixXd::Index j = 0; j < N; ++j)
-		otuMetric.col(j) /= norm(j);
+		metric.col(j) /= norm(j);
 }
 
 istream& OTUTable::loadTable(istream& in) {
 	clear(); /* clear old data */
 	/* input header */
 	string line;
-	size_t M = 0;
 	size_t N = 0;
 	while(std::getline(in, line)) {
-		vector<string> fields;
-		boost::split(fields, line, boost::is_any_of("\t"));
-		if(fields[0] == "otuID") { /* header line */
-			N = fields.size() - 2;
+		if(StringUtils::startsWith(line, "otuID")) { /* header line */
+			vector<string> headers;
+			boost::split(headers, line, boost::is_any_of("\t"));
+			N = headers.size() - 2;
 			/* update samples */
 			samples.resize(N);
-			std::copy(fields.begin() + 1, fields.end() - 1, samples.begin());
-			otuMetric.resize(0, N);
+			std::copy(headers.begin() + 1, headers.end() - 1, samples.begin());
+			metric.resize(0, N);
 		}
 		else { /* value line */
-			if(fields.size() != N + 2)
-				continue;
-			bool isNew = addOTU(fields[0], fields[fields.size() - 1]); /* add a new OTU */
-			if(!isNew)
-				continue;
-			otuMetric.conservativeResize(M + 1, Eigen::NoChange);
+			string otuID, taxon;
+			istringstream lineIn(line);
+			std::getline(lineIn, otuID, '\t');
+			RowVectorXd counts(N);
 			for(size_t j = 0; j < N; ++j)
-				otuMetric(M, j) = boost::lexical_cast<double> (fields[j + 1]);
-			M++;
+				lineIn >> counts(j);
+			lineIn.ignore(1, '\t');
+			std::getline(lineIn, taxon);
+			addOTU(otuID, taxon, counts); /* add a new OTU */
 		}
 	}
 
@@ -167,7 +158,7 @@ ostream& OTUTable::saveTable(ostream& out) const {
 	/* output each OTU */
 	const size_t M = numOTUs();
 	for(size_t i = 0; i < M; ++i)
-		out << otus[i] << "\t" << otuMetric.row(i).format(fltTabFmt) << "\t" << otu2Taxon.at(otus[i]) << endl;
+		out << otus[i] << "\t" << metric.row(i).format(fltTabFmt) << "\t" << otu2Taxon.at(otus[i]) << endl;
 
 	return out;
 }
@@ -185,9 +176,9 @@ void OTUTable::subsetUniform(size_t min) {
 		boost::random_shuffle(otuIdx, gen);
 		/* subset reads in OTUs without replacement using the random index */
 		for(size_t i = 0, k = 0; i < numOTUs(); ++i) { /* k is the start index of current OTU */
-			size_t N = static_cast<size_t> (otuMetric(i, j));
-			otuMetric(i, j) = std::count(otuIdx.begin() + k, otuIdx.begin() + k + N, true);
-			assert(otuMetric(i, j) <= N);
+			size_t N = static_cast<size_t> (metric(i, j));
+			metric(i, j) = std::count(otuIdx.begin() + k, otuIdx.begin() + k + N, true);
+			assert(metric(i, j) <= N);
 			k += N;
 		}
 	}
@@ -206,41 +197,47 @@ void OTUTable::subsetMultinom(size_t min) {
 			continue;
 
 		/** reset rdist probabilities according to current counts */
-		otuPrMap = otuMetric.col(j);
+		otuPrMap = metric.col(j);
 		rdist.param(ReadParam(otuPr, otuPr + M));
 		/* sample min reads */
 		VectorXd sampled = VectorXd::Zero(M);
 		for(size_t m = 0; m < min; ++m)
 			sampled(rdist(rng))++;
-		otuMetric.col(j) = sampled;
+		metric.col(j) = sampled;
 	}
 	delete[] otuPr;
 }
 
 OTUTable& OTUTable::operator+=(const OTUTable& other) {
-	if(isEmpty()) {
+	if(empty()) {
 		*this = other;
 		return *this;
 	}
-	if(other.isEmpty())
+	if(other.empty())
 		return *this;
 
 	/* add non-existing samples */
 	for(size_t j = 0; j < other.numSamples(); ++j)
 		addSample(other.getSample(j));
 
-	/* add or merge OTUs */
+	/* add non-existing OTUs */
 	for(size_t i = 0; i < other.numOTUs(); ++i) {
 		string otuID = other.getOTU(i);
-		if(!hasOTU(otuID)) /* a new OTU */
-			addOTU(otuID, other.getTaxon(otuID), other.numOTUMetric(i));
-		else /* existing OTU */
-			otuMetric.row(getOTUIndex(otuID)) += other.numOTUMetric(i);
+		addOTU(otuID, other.getTaxon(otuID));
+	}
+
+	/** merge counts */
+	for(size_t i = 0; i < other.numOTUs(); ++i) {
+		string otuID = other.getOTU(i);
+		int i0 = getOTUIndex(otuID);
+		for(size_t j = 0; j < other.numSamples(); ++j) {
+			int j0 = getSampleIndex(other.getSample(j));
+			metric(i0, j0) += other.numMetric(i, j);
+		}
 	}
 
 	return *this;
 }
-
 
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */

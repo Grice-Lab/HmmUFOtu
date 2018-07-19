@@ -18,4 +18,5 @@ Makefile
 /hmmufotu-subset
 /hmmufotu-norm
 /hmmufotu-jplace
+/hmmufotu-merge
 *.exe

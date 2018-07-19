@@ -100,4 +100,5 @@ if [ $? == 0 ]
 		exit 1
 fi 
 
-#rm -f ${DB}*
+rm -f ${DB}*
+
