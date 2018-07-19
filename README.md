@@ -44,7 +44,7 @@ Installation
 ./configure
 ```
 You may consider providing additional options, such as `--prefix`, `--exec-prefix`,
-`--with-zlib`, `--with-boost`, `--with-libjsoncpp`, etc.
+`--with-zlib`, `--with-boost`, `--with-jsoncpp`, etc.
 
 2. Compile and link, by running the command
 ```bash
