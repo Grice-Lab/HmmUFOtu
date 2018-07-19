@@ -100,5 +100,6 @@ Utility programs include:
 * **hmmufotu-sim**		generate simulated single or paired-end NGS reads, aligned or un-aligned, using a pre-built HmmUFOtu database
 * **hmmufotu-subset**		subset (subsample) an OTUTable so every sample contains the same mimimum required reads, and prune the samples and OTUs if necessary
 * **hmmufotu-norm**		normalize an OTUTable so every sample contains the same number of reads, you can generate a relative abundance OTUTable using a constant of 1
+* **hmmufotu-merge**  merge two or more OTUTables, redundant OTUs and samples will be aggregated, an optional merged OTU-tree can also be generated providing the corresponding database
 * **hmmufotu-jplace**  format HmmUFOtu's assignment output into standard .jplace file for compatibility of third party tools
 
