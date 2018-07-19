@@ -91,7 +91,7 @@ if [ $? == 0 ]
 fi 
 
 echo "Merging OTU table ..."
-$SRCPATH/hmmufotu-merge $OTUFILE $SUBSETFILE $NORMFILE -o $MERGEDFILE --db $DB -t $MERGEDTREE -v
+$SRCPATH/hmmufotu-merge $SUBSETFILE $NORMFILE -o $MERGEDFILE --db $DB -t $MERGEDTREE -v
 if [ $? == 0 ]
 	then
 		echo "OTU tables merged"
