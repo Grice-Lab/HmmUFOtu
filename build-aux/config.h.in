@@ -1,8 +1,5 @@
 /* build-aux/config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* define if the compiler supports basic C++11 syntax */
-#undef HAVE_CXX11
-
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
@@ -23,6 +20,9 @@
 
 /* Define to 1 if stdbool.h conforms to C99. */
 #undef HAVE_STDBOOL_H
+
+/* Define if g++ supports C++0x features. */
+#undef HAVE_STDCXX_0X
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
