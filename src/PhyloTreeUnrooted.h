@@ -775,6 +775,12 @@ public:
 	void calcNodeHeight();
 
 	/**
+	 * fix tree branch length with non-positive values
+	 * @param minLen  minimum branch length to use, must be non-negative
+	 */
+	void fixBranchLength(double minLen = BRANCH_EPS);
+
+	/**
 	 * test whether the loglik (message) of node u -> v of all site j has been evaluated
 	 */
 	bool isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v) const;

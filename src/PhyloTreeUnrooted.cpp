@@ -284,6 +284,15 @@ void PhyloTreeUnrooted::calcNodeHeight() {
 	}
 }
 
+void PhyloTreeUnrooted::fixBranchLength(double minLen) {
+	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
+		if(!(*node)->isRoot() && (*node)->isLeaf()) {
+			if(getBranchLength(*node, (*node)->parent) <= 0)
+				setBranchLength(*node, (*node)->parent, minLen);
+		}
+	}
+}
+
 void PTUnrooted::updateRootLoglik() {
 	for(int j = 0; j < csLen; ++j)
 		node2branch[root][nullNode].loglik.col(j) = loglik(root, j);

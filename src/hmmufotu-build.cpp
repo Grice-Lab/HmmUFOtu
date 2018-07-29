@@ -367,6 +367,10 @@ int main(int argc, char* argv[]) {
 	}
 	else
 		infoLog << "MSA loaded into Phylogenetic Tree" << endl;
+
+	infoLog << "Verifying and fixing branch length" << endl;
+	tree.fixBranchLength();
+
 	if(annoIn.is_open()) {
 		tree.loadAnnotation(annoIn);
 		if(annoIn.bad()) {
@@ -381,8 +385,6 @@ int main(int argc, char* argv[]) {
 
 	tree.annotate(rootName);
 	infoLog << "Unnamed tree nodes annotated" << endl;
-//	for(int i = 0; i < tree.numNodes(); ++i)
-//		cerr << "ID: " << tree.getNode(i)->getId() << " annotation: " << tree.getNode(i)->getTaxon() << endl;
 
 	tree.calcNodeHeight();
 	infoLog << "Node height calculated" << endl;
