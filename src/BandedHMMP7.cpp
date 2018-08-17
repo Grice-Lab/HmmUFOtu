@@ -377,7 +377,7 @@ ostream& operator<<(ostream& out, const BandedHMMP7& hmm) {
 	return out;
 }
 
-ostream& operator<<(ostream& os, const deque<BandedHMMP7::p7_state> path) {
+ostream& operator<<(ostream& os, const deque<BandedHMMP7::p7_state>& path) {
 	for(deque<BandedHMMP7::p7_state>::const_iterator it = path.begin(); it != path.end(); ++it)
 		os << BandedHMMP7::decode(*it);
 	return os;

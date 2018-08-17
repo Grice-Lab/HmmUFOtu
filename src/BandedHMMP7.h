@@ -822,7 +822,7 @@ public:
 	/**
 	 * utility function for output an alignment path to a human readable string
 	 */
-	friend ostream& operator<<(ostream& os, const deque<p7_state> path);
+	friend ostream& operator<<(ostream& os, const deque<p7_state>& path);
 
 	/**
 	 * Read a BandedHMMP7 profile from an hmm file

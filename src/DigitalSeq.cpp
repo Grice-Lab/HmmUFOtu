@@ -126,6 +126,12 @@ bool DigitalSeq::seqEquals(const string& seq, bool allowDegen) const {
 	return allowDegen ? seq == toString() : DigitalSeq(abc, name, seq) == *this;
 }
 
+ostream& operator<<(ostream& os, const DigitalSeq& dSeq) {
+	for(DigitalSeq::const_iterator it = dSeq.begin(); it != dSeq.end(); ++it)
+		os << dSeq.abc->decode(*it);
+	return os;
+}
+
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 

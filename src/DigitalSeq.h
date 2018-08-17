@@ -200,13 +200,6 @@ inline bool operator<(const DigitalSeq& lhs, const DigitalSeq& rhs) {
 	return lhs.toString() < rhs.toString();
 }
 
-
-inline ostream& operator<<(ostream& os, const DigitalSeq& dSeq) {
-	for(DigitalSeq::const_iterator it = dSeq.begin(); it != dSeq.end(); ++it)
-		os << dSeq.abc->decode(*it);
-	return os;
-}
-
 /*
  * operator+ implemented based on operator+=
  */
