@@ -13,6 +13,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
+#include <algorithm>
 #include <boost/algorithm/string.hpp> /* for boost string split and join */
 #include <boost/iostreams/filtering_stream.hpp> /* basic boost streams */
 #include <boost/iostreams/device/file.hpp> /* file sink and source */
@@ -33,6 +34,11 @@ using namespace EGriceLab::HmmUFOtu;
 using namespace Eigen;
 
 /* default values */
+static const int DEFAULT_READ_STRAND = 0;
+static const int MIN_STRAND_TEST = 100;
+static const int MAX_STRAND_TEST = 1000;
+static const int DEFAULT_STRAND_TEST = MIN_STRAND_TEST;
+static const double STRAND_CONFIDENCE = 0.9;
 static const double DEFAULT_MAX_DIFF = inf;
 static const size_t DEFAULT_MAX_NSEED = 50;
 static const int DEFAULT_SEED_LEN = 20;
@@ -75,7 +81,9 @@ void printUsage(const string& progName) {
 		 << "            --fmt  STR           : read file format (applied to all read files), supported format: 'fasta', 'fastq'" << endl
 		 << "            -L|--seed-len  INT   : seed length used for banded-Hmm search [" << DEFAULT_SEED_LEN << "]" << endl
 		 << "            -R  INT              : size of 5'/3' seed region for finding seed matches for CSFM-index [" << DEFAULT_SEED_REGION << "]" << endl
-		 << "            -s  FLAG             : assume READ-FILE1 is single-end read instead of assembled read, if no READ-FILE2 provided" << endl
+		 << "            --single  FLAG       : assume READ-FILE1 is single-end read instead of assembled read, and a respectively partial-local, partial-global HMM setting" << endl
+		 << "            -s|--strand  INT     : strand of reads/mates, 1 for 1st-strand (original orientation), 2 for 2nd-strand (reverse-complemented), 0 for auto-detection [" << DEFAULT_READ_STRAND << "]" << endl
+		 << "            -t|--test  INT       : use first # reads to detect the strandness of input reads/mates, ignored if -s is not 0 [" << DEFAULT_STRAND_TEST << "]" << endl
 		 << "            -i|--ignore  FLAG    : ignore forward/reverse orientation check, only recommended when your read size is larger than the expected amplicon size" << endl
 		 << "            -N  INT              : max # of seed nodes used in the 'Seed' stage of SEP algorithm [" << DEFAULT_MAX_NSEED << "]" << endl
 		 << "            -d  DBL              : max p-dist difference allowed for sub-optimal seeds used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_DIFF << "]" << endl
@@ -115,6 +123,9 @@ int main(int argc, char* argv[]) {
 	string seqFmt; /* seq file format */
 	string estMethod = DEFAULT_BRANCH_EST_METHOD;
 	SeqIO fwdSeqI, revSeqI, alnSeqO;
+
+	int rStrand = DEFAULT_READ_STRAND;
+	int nTest = DEFAULT_STRAND_TEST;
 
 	bool ignoreOrient = false; /* ignore orientation errors */
 	bool isAssembled = true; /* assume assembled seq if not paired-end */
@@ -181,8 +192,18 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("-i") || cmdOpts.hasOpt("--ignore"))
 		ignoreOrient = true;
 
-	if(cmdOpts.hasOpt("-s"))
+	if(cmdOpts.hasOpt("--single"))
 		isAssembled = false;
+
+	if(cmdOpts.hasOpt("-s"))
+		rStrand = ::atoi(cmdOpts.getOptStr("-s"));
+	if(cmdOpts.hasOpt("--strand"))
+		rStrand = ::atoi(cmdOpts.getOptStr("--strand"));
+
+	if(cmdOpts.hasOpt("-t"))
+		nTest = ::atoi(cmdOpts.getOptStr("-t"));
+	if(cmdOpts.hasOpt("--test"))
+		nTest = ::atoi(cmdOpts.getOptStr("--test"));
 
 	if(cmdOpts.hasOpt("-d"))
 		maxDiff = ::atof(cmdOpts.getOptStr("-d"));
@@ -259,6 +280,14 @@ int main(int argc, char* argv[]) {
 	}
 
 	/* validate options */
+	if(!(0 <= rStrand && rStrand <= 2)) {
+		cerr << "-s|--strand must be 0, 1, or 2" << endl;
+		return EXIT_FAILURE;
+	}
+	if(rStrand != 0 && !(MIN_STRAND_TEST <= nTest && nTest <= MAX_STRAND_TEST)) {
+		cerr << "-t|--test must between " << MIN_STRAND_TEST << " and " << MAX_STRAND_TEST << endl;
+		return EXIT_FAILURE;
+	}
 	if(!(MIN_SEED_LEN <= seedLen && seedLen <= MAX_SEED_LEN)) {
 		cerr << "-L|--seed-len must be in range [" << MIN_SEED_LEN << ", " << MAX_SEED_LEN << "]" << endl;
 		return EXIT_FAILURE;
@@ -339,35 +368,6 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-#ifdef HAVE_LIBZ
-	if(StringUtils::endsWith(fwdFn, GZIP_FILE_SUFFIX))
-		fwdIn.push(boost::iostreams::gzip_decompressor());
-	else if(StringUtils::endsWith(fwdFn, BZIP2_FILE_SUFFIX))
-		fwdIn.push(boost::iostreams::bzip2_decompressor());
-	else { }
-#endif
-	/* open source */
-	fwdIn.push(boost::iostreams::file_source(fwdFn));
-	if(fwdIn.bad()) {
-		cerr << "Unable to open forward seq file '" << fwdFn << "' " << ::strerror(errno) << endl;
-		return EXIT_FAILURE;
-	}
-
-	if(!revFn.empty()) {
-#ifdef HAVE_LIBZ
-		if(StringUtils::endsWith(revFn, GZIP_FILE_SUFFIX))
-			revIn.push(boost::iostreams::gzip_decompressor());
-		else if(StringUtils::endsWith(revFn, BZIP2_FILE_SUFFIX))
-			revIn.push(boost::iostreams::bzip2_decompressor());
-		else { }
-#endif
-		revIn.push(boost::iostreams::file_source(revFn));
-		if(revIn.bad()) {
-			cerr << "Unable to open reverse seq file '" << revFn << "' " << ::strerror(errno) << endl;
-			return EXIT_FAILURE;
-		}
-	}
-
 	/* open outputs */
 #ifdef HAVE_LIBZ
 	if(StringUtils::endsWith(outFn, GZIP_FILE_SUFFIX)) /* empty outFn won't match */
@@ -442,16 +442,6 @@ int main(int argc, char* argv[]) {
 	}
 	const DegenAlphabet* abc = hmm.getNuclAbc();
 
-	/* prepare SeqIO */
-	fwdSeqI.reset(dynamic_cast<istream*> (&fwdIn), abc, seqFmt);
-	if(!revFn.empty())
-		revSeqI.reset(dynamic_cast<istream*> (&revIn), abc, seqFmt);
-
-	if(!alnFn.empty())
-		alnSeqO.reset(dynamic_cast<ostream*> (&alnOut), abc, ALIGN_OUT_FMT);
-
-	debugLog << "Sequence input and output prepared" << endl;
-
 	if(loadProgInfo(csfmIn).bad())
 		return EXIT_FAILURE;
 	CSFMIndex csfm;
@@ -482,6 +472,93 @@ int main(int argc, char* argv[]) {
 	hmm.setSequenceMode(mode);
 	hmm.wingRetract();
 
+	/* determine strandness if requested using forward reads */
+	if(rStrand == 0) {
+		infoLog << "Determining read strand by alignment cost ..." << endl;
+		/* open test input */
+		boost::iostreams::filtering_istream testIn;
+#ifdef HAVE_LIBZ
+		if(StringUtils::endsWith(fwdFn, GZIP_FILE_SUFFIX))
+			testIn.push(boost::iostreams::gzip_decompressor());
+		else if(StringUtils::endsWith(fwdFn, BZIP2_FILE_SUFFIX))
+			testIn.push(boost::iostreams::bzip2_decompressor());
+		else { }
+#endif
+
+		testIn.push(boost::iostreams::file_source(fwdFn));
+		if(testIn.bad()) {
+			cerr << "Unable to test forward seq file '" << fwdFn << "' " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+
+		SeqIO testSeqI(dynamic_cast<istream*>(&testIn), abc, seqFmt);
+		double fwdScore = 0;
+		double revScore = 0;
+		for(int i = 0; i < nTest && testSeqI.hasNext(); ++i) {
+			PrimarySeq fwdRead = testSeqI.nextSeq();
+			PrimarySeq revRead = fwdRead.revcom();
+			const BandedHMMP7::HmmAlignment& fwdAln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode);
+			const BandedHMMP7::HmmAlignment& revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode);
+			if(fwdAln.cost < revAln.cost)
+				fwdScore++;
+			else
+				revScore++;
+		}
+		if(fwdScore >= (fwdScore + revScore) * STRAND_CONFIDENCE)
+			rStrand = 1;
+		else if(revScore >= (fwdScore + revScore) * STRAND_CONFIDENCE)
+			rStrand = 2;
+		else {
+			cerr << "Failed to determine read strandness. Try larger -t|--test or determine manually" << endl;
+			return EXIT_FAILURE;
+		}
+		infoLog << "Read strand determined as " << rStrand << endl;
+	}
+	if(rStrand == 2 && !revFn.empty()) { /* use simple file swap */
+		string tmpFn = fwdFn;
+		fwdFn = revFn;
+		revFn = tmpFn;
+	}
+
+	/* (re)-open seq inputs */
+#ifdef HAVE_LIBZ
+	if(StringUtils::endsWith(fwdFn, GZIP_FILE_SUFFIX))
+		fwdIn.push(boost::iostreams::gzip_decompressor());
+	else if(StringUtils::endsWith(fwdFn, BZIP2_FILE_SUFFIX))
+		fwdIn.push(boost::iostreams::bzip2_decompressor());
+	else { }
+#endif
+
+	fwdIn.push(boost::iostreams::file_source(fwdFn));
+	if(fwdIn.bad()) {
+		cerr << "Unable to open forward seq file '" << fwdFn << "' " << ::strerror(errno) << endl;
+		return EXIT_FAILURE;
+	}
+
+	if(!revFn.empty()) {
+#ifdef HAVE_LIBZ
+		if(StringUtils::endsWith(revFn, GZIP_FILE_SUFFIX))
+			revIn.push(boost::iostreams::gzip_decompressor());
+		else if(StringUtils::endsWith(revFn, BZIP2_FILE_SUFFIX))
+			revIn.push(boost::iostreams::bzip2_decompressor());
+		else { }
+#endif
+		revIn.push(boost::iostreams::file_source(revFn));
+		if(revIn.bad()) {
+			cerr << "Unable to open reverse seq file '" << revFn << "' " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+	}
+	/* prepare SeqIO */
+	fwdSeqI.reset(dynamic_cast<istream*> (&fwdIn), abc, seqFmt);
+	if(!revFn.empty())
+		revSeqI.reset(dynamic_cast<istream*> (&revIn), abc, seqFmt);
+
+	if(!alnFn.empty())
+		alnSeqO.reset(dynamic_cast<ostream*> (&alnOut), abc, ALIGN_OUT_FMT);
+
+	debugLog << "Sequence input and output prepared" << endl;
+
 	infoLog << "Processing read ..." << endl;
 	/* process reads and output */
 	writeProgInfo(out, string(" taxonomy assignment generated by ") + argv[0]);
@@ -507,14 +584,16 @@ int main(int argc, char* argv[]) {
 				PrimarySeq fwdRead, revRead;
 				bool isPaired = true;
 				bool isChimera = false;
-
 				fwdRead = fwdSeqI.nextSeq();
 				id = fwdRead.getId();
 				desc = fwdRead.getDesc();
-				if(!revFn.empty()) { /* paired-ended */
+				if(!revFn.empty()) {
 					revRead = revSeqI.nextSeq().revcom();
-					assert(fwdRead.getId() == revRead.getId());
+					assert(revRead.getId() == id);
 				}
+
+				if(rStrand == 2 && revFn.empty()) /* wrong strand for single-strand reads */
+					fwdRead = fwdRead.revcom();
 #pragma omp task
 				{
 					BandedHMMP7::HmmAlignment aln;
@@ -531,8 +610,8 @@ int main(int argc, char* argv[]) {
 #pragma omp critical(writeLog)
 						{
 							warningLog << "Bad orientation of forward/reverse read detected, treating as chimera" << endl;
-							infoLog << "fwd.csStart: " << aln.csStart << " fwd.csEnd: " << aln.csEnd
-									<< " rev.csStart: " << revAln.csStart << " rev.csEnd" << revAln.csEnd << endl;
+//							infoLog << "fwd.csStart: " << aln.csStart << " fwd.csEnd: " << aln.csEnd
+//									<< " rev.csStart: " << revAln.csStart << " rev.csEnd: " << revAln.csEnd << endl;
 						}
 							isChimera = true; /* bad orientation indicates a chimera seq */
 						}
