@@ -23,3 +23,6 @@ config.status
 **/*.trs
 **/*.swp
 **/config.h
+# ignore test binaries
+**/*test
+UCSC/.dirstamp
