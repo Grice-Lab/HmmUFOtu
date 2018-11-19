@@ -144,10 +144,25 @@ string& StringUtils::removeAll(string& str, const string& pattern) {
 	return str;
 }
 
+string StringUtils::removeAll(const string& str, const string& pattern) {
+	string strN = str;
+	string::size_type n = pattern.length();
+	for(string::size_type i = strN.find(pattern); i!= string::npos; i = strN.find(pattern))
+		strN.erase(i, n);
+	return strN;
+}
+
 string& StringUtils::removeEnd(string& str, const string& suffix) {
 	if(str.rfind(suffix) == str.length() - suffix.length())
 		str.erase(str.end() - suffix.length(), str.end());
 	return str;
+}
+
+string StringUtils::removeEnd(const string& str, const string& suffix) {
+	string strN = str;
+	if(strN.rfind(suffix) == strN.length() - suffix.length())
+		strN.erase(strN.end() - suffix.length(), strN.end());
+	return strN;
 }
 
 string::size_type StringUtils::common(const string& str1, const string& str2) {
