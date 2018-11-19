@@ -12,14 +12,8 @@ StringUtils.cpp \
 TSVRecord.cpp \
 TSVScanner.cpp \
 VersionSequence.cpp \
-ProgEnv.cpp \
-GFF.cpp
+ProgEnv.cpp
 
-check_PROGRAMS = \
-GFF_test 
+check_PROGRAMS = 
 
-GFF_test_SOURCES = GFF_test.cpp
-GFF_test_LDADD = libEGUtil.a
-
-TESTS = \
-GFF_test
+TESTS = 

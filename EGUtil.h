@@ -15,6 +15,5 @@
 #include "TSVScanner.h"
 #include "TSVRecord.h"
 #include "ProgEnv.h"
-#include "GFF.h"
 
 #endif /* EGUTIL_H_ */

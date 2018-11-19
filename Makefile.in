@@ -88,8 +88,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-check_PROGRAMS = GFF_test$(EXEEXT)
-TESTS = GFF_test$(EXEEXT)
+check_PROGRAMS =
+TESTS =
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -145,15 +145,8 @@ libEGUtil_a_AR = $(AR) $(ARFLAGS)
 libEGUtil_a_LIBADD =
 am_libEGUtil_a_OBJECTS = CommandOptions.$(OBJEXT) ProgLog.$(OBJEXT) \
 	StringUtils.$(OBJEXT) TSVRecord.$(OBJEXT) TSVScanner.$(OBJEXT) \
-	VersionSequence.$(OBJEXT) ProgEnv.$(OBJEXT) GFF.$(OBJEXT)
+	VersionSequence.$(OBJEXT) ProgEnv.$(OBJEXT)
 libEGUtil_a_OBJECTS = $(am_libEGUtil_a_OBJECTS)
-am_GFF_test_OBJECTS = GFF_test.$(OBJEXT)
-GFF_test_OBJECTS = $(am_GFF_test_OBJECTS)
-GFF_test_DEPENDENCIES = libEGUtil.a
-AM_V_lt = $(am__v_lt_@AM_V@)
-am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
-am__v_lt_0 = --silent
-am__v_lt_1 = 
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -172,6 +165,10 @@ am__depfiles_maybe = depfiles
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 LTCXXCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) \
 	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
@@ -188,8 +185,8 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(libEGUtil_a_SOURCES) $(GFF_test_SOURCES)
-DIST_SOURCES = $(libEGUtil_a_SOURCES) $(GFF_test_SOURCES)
+SOURCES = $(libEGUtil_a_SOURCES)
+DIST_SOURCES = $(libEGUtil_a_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -375,8 +372,12 @@ am__set_TESTS_bases = \
 RECHECK_LOGS = $(TEST_LOGS)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
-LOG_DRIVER = $(SHELL) $(top_srcdir)/test-driver
-LOG_COMPILE = $(LOG_COMPILER) $(AM_LOG_FLAGS) $(LOG_FLAGS)
+am__test_logs1 = $(TESTS:=.log)
+am__test_logs2 = $(am__test_logs1:@EXEEXT@.log=.log)
+TEST_LOGS = $(am__test_logs2:.test.log=.log)
+TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/test-driver
+TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
+	$(TEST_LOG_FLAGS)
 am__set_b = \
   case '$@' in \
     */*) \
@@ -387,12 +388,6 @@ am__set_b = \
     *) \
       b='$*';; \
   esac
-am__test_logs1 = $(TESTS:=.log)
-am__test_logs2 = $(am__test_logs1:@EXEEXT@.log=.log)
-TEST_LOGS = $(am__test_logs2:.test.log=.log)
-TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/test-driver
-TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
-	$(TEST_LOG_FLAGS)
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in AUTHORS \
 	COPYING ChangeLog INSTALL NEWS README compile config.guess \
 	config.sub depcomp install-sh ltmain.sh missing test-driver
@@ -549,11 +544,8 @@ StringUtils.cpp \
 TSVRecord.cpp \
 TSVScanner.cpp \
 VersionSequence.cpp \
-ProgEnv.cpp \
-GFF.cpp
+ProgEnv.cpp
 
-GFF_test_SOURCES = GFF_test.cpp
-GFF_test_LDADD = libEGUtil.a
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -653,10 +645,6 @@ clean-checkPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
-GFF_test$(EXEEXT): $(GFF_test_OBJECTS) $(GFF_test_DEPENDENCIES) $(EXTRA_GFF_test_DEPENDENCIES) 
-	@rm -f GFF_test$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(GFF_test_OBJECTS) $(GFF_test_LDADD) $(LIBS)
-
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -664,8 +652,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CommandOptions.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GFF.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GFF_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ProgEnv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ProgLog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StringUtils.Po@am__quote@
@@ -903,13 +889,6 @@ recheck: all $(check_PROGRAMS)
 	        am__force_recheck=am--force-recheck \
 	        TEST_LOGS="$$log_list"; \
 	exit $$?
-GFF_test.log: GFF_test$(EXEEXT)
-	@p='GFF_test$(EXEEXT)'; \
-	b='GFF_test'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 .test.log:
 	@p='$<'; \
 	$(am__set_b); \

@@ -138,12 +138,28 @@ public:
 	static string& removeAll(string& str, const string& pattern);
 
 	/**
+	 * Remove all occurrences of pattern in str
+	 * @param str  input string
+	 * @param pattern  pattern to remove
+	 * @return  the a copy of modified input
+	 */
+	static string removeAll(const string& str, const string& pattern);
+
+	/**
 	 * Remove the given tail in a string, if exists
 	 * @param str  input string
 	 * @param suffix  siffix to remove
 	 * @return  the modified input
 	 */
 	static string& removeEnd(string& str, const string& pattern);
+
+	/**
+	 * Remove the given tail in a string, if exists
+	 * @param str  input string
+	 * @param suffix  siffix to remove
+	 * @return  the a copy of modified input
+	 */
+	static string removeEnd(const string& str, const string& pattern);
 
 	/**
 	 * load data from a binary input to given basic_string, override any old data
