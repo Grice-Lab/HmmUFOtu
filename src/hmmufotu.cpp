@@ -515,9 +515,7 @@ int main(int argc, char* argv[]) {
 		infoLog << "Read strand determined as " << rStrand << endl;
 	}
 	if(rStrand == 2 && !revFn.empty()) { /* use simple file swap */
-		string tmpFn = fwdFn;
-		fwdFn = revFn;
-		revFn = tmpFn;
+		std::swap(fwdFn, revFn);
 	}
 
 	/* (re)-open seq inputs */
@@ -579,29 +577,23 @@ int main(int argc, char* argv[]) {
 #pragma omp single
 		{
 			while(fwdSeqI.hasNext() && (revFn.empty() || revSeqI.hasNext())) {
-				string id;
-				string desc;
-				PrimarySeq fwdRead, revRead;
-				bool isPaired = true;
-				bool isChimera = false;
-				fwdRead = fwdSeqI.nextSeq();
-				id = fwdRead.getId();
-				desc = fwdRead.getDesc();
-				if(!revFn.empty()) {
-					revRead = revSeqI.nextSeq().revcom();
-					assert(revRead.getId() == id);
-				}
-
-				if(rStrand == 2 && revFn.empty()) /* wrong strand for single-strand reads */
-					fwdRead = fwdRead.revcom();
-#pragma omp task
+				PrimarySeq fwdRead = fwdSeqI.nextSeq();
+				PrimarySeq revRead = revFn.empty() ? PrimarySeq() : revSeqI.nextSeq().revcom();
+#pragma omp task firstprivate(fwdRead, revRead)
 				{
-					BandedHMMP7::HmmAlignment aln;
+					bool isPaired = !revFn.empty();
+					bool isChimera = false;
+					const string& id = fwdRead.getId();
+					const string& desc = fwdRead.getDesc();
+
+					if(rStrand == 2 && !isPaired) /* wrong strand for single-strand reads */
+						fwdRead.revcom();
+
 					/* align fwdRead */
-					aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode);
+					BandedHMMP7::HmmAlignment aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode);
 					assert(aln.isValid());
 					//						infoLog << "fwd seq aligned: csStart: " << csStart << " csEnd: " << csEnd << " aln: " << aln << endl;
-					if(!revFn.empty()) { /* align revRead */
+					if(isPaired) { /* align revRead */
 						//							cerr << "Aligning mate: " << revRead.getId() << endl;
 						BandedHMMP7::HmmAlignment revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode);
 						assert(revAln.isValid());
@@ -727,8 +719,7 @@ int main(int argc, char* argv[]) {
 					} /* end not chimera alignment */
 				} /* end task */
 			} /* end each read/pair */
-		} /* end single */
-#pragma omp taskwait
+		} /* end single, implicit barrier */
 	} /* end parallel */
 	/* release resources */
 }

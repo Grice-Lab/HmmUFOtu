@@ -31,6 +31,7 @@
 #include <string>
 #include <stdexcept>
 #include <iostream>
+#include <cctype>
 #include "DegenAlphabet.h"
 
 namespace EGriceLab {
@@ -67,10 +68,10 @@ public:
 	}
 	/**
 	 * Get the complement char of given symbol
-	 * @return the complement symbol, or leave unchanged if not defined
+	 * @return the complement symbol of matched case, or leave unchanged if not defined
 	 */
 	virtual char getComplementSymbol(char c) const {
-		return compl_map[c];
+		return !::islower(c) ? compl_map[c] : ::tolower(compl_map[::toupper(c)]);
 	}
 
 private:

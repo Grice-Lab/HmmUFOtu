@@ -54,15 +54,17 @@ PrimarySeq& PrimarySeq::removeGaps() {
 	return *this;
 }
 
-PrimarySeq PrimarySeq::revcom() const {
+PrimarySeq& PrimarySeq::reverse() {
+	std::reverse(seq.begin(), seq.end());
+	return *this;
+}
+
+PrimarySeq& PrimarySeq::complement() {
 	if(!abc->hasComplement())
 		throw logic_error("This seq's alphabet " + abc->getName() + " doesn't support reverse-complement action");
-	string revcomSeq;
-	for(string::const_reverse_iterator it = seq.rbegin(); it != seq.rend(); ++it) {
-		char rCh = abc->getComplementSymbol(::toupper(*it));
-		revcomSeq.push_back(::isupper(*it) ? rCh : ::tolower(rCh));
-	}
-	return PrimarySeq(abc, id, revcomSeq, desc);
+	for(string::iterator ch = seq.begin(); ch != seq.end(); ++ch)
+		*ch = abc->getComplementSymbol(*ch);
+	return *this;
 }
 
 string::size_type PrimarySeq::numGap() const {

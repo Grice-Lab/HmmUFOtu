@@ -207,12 +207,34 @@ public:
 	 */
 	PrimarySeq& removeGaps();
 
-	/**
-	 * Generate a reverse-complement copy of this seq
-	 * @return a reverse-complement new seq
-	 * @throw logic error if the alphabet doesn't support this operation
-	 */
-	PrimarySeq revcom() const;
+	/** reverse this seq */
+	PrimarySeq& reverse();
+
+	/** get a reverse copy of this seq */
+	PrimarySeq reverse() const {
+		PrimarySeq rSeq(*this);
+		return rSeq.reverse();
+	}
+
+	/** complement this seq */
+	PrimarySeq& complement();
+
+	/** get a complement copy of this seq */
+	PrimarySeq complement() const {
+		PrimarySeq cSeq(*this);
+		return cSeq.complement();
+	}
+
+	/** reverse-complement this seq */
+	PrimarySeq& revcom() {
+		return reverse().complement();
+	}
+
+	/** get a reverse-complement copy of this seq */
+	PrimarySeq revom() const {
+		PrimarySeq rcSeq(*this);
+		return rcSeq.revcom();
+	}
 
 	/**
 	 * Get the subseq string of this PrimarySeq

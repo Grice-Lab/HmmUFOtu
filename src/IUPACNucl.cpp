@@ -51,7 +51,7 @@ IUPACNucl::IUPACNucl() : DegenAlphabet("IUPACNucl", "ACGT", "UMRWSYKVHDBN", init
 	/* init compl_map with self complementary */
 	for(int8_t i = 0; i != INT8_MAX; ++i)
 		compl_map[i] = i;
-	/* override DNA complements */
+	/* upper case complements */
 	compl_map['A'] = 'T';
 	compl_map['T'] = 'A';
 	compl_map['C'] = 'G';
