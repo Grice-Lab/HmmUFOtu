@@ -171,11 +171,12 @@ int main(int argc, char *argv[]) {
 	else { }
 #endif
 	/* open source */
-	in.push(boost::iostreams::file_source(inFn));
-	if(in.bad()) {
-		cerr << "Unable to open forward seq file '" << inFn << "' " << ::strerror(errno) << endl;
+	boost::iostreams::file_source inSrc(inFn);
+	if(!inSrc.is_open()) {
+		cerr << "Unable to open seq file '" << inFn << "' " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
+	in.push(inSrc);
 
 	if(!outFn.empty()) {
 		of.open(outFn.c_str());

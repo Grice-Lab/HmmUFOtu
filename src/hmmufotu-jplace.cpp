@@ -215,11 +215,12 @@ int main(int argc, char* argv[]) {
 		else { }
 #endif
 
-		in.push(boost::iostreams::file_source(*infn));
-		if(in.bad()) {
+		boost::iostreams::file_source inSrc(*infn);
+		if(!inSrc.is_open()) {
 			cerr << "Unable to open assignment input file '" << *infn << "' " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
+		in.push(inSrc);
 
 		/* check program info */
 		if(readProgInfo(in).bad())

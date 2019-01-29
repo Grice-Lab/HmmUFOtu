@@ -485,11 +485,12 @@ int main(int argc, char* argv[]) {
 		else { }
 #endif
 
-		testIn.push(boost::iostreams::file_source(fwdFn));
-		if(testIn.bad()) {
+		boost::iostreams::file_source testSrc(fwdFn);
+		if(!testSrc.is_open()) {
 			cerr << "Unable to test forward seq file '" << fwdFn << "' " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
+		testIn.push(testSrc);
 
 		SeqIO testSeqI(dynamic_cast<istream*>(&testIn), abc, seqFmt);
 		double fwdScore = 0;
@@ -527,11 +528,12 @@ int main(int argc, char* argv[]) {
 	else { }
 #endif
 
-	fwdIn.push(boost::iostreams::file_source(fwdFn));
-	if(fwdIn.bad()) {
+	boost::iostreams::file_source fwdSrc(fwdFn);
+	if(!fwdSrc.is_open()) {
 		cerr << "Unable to open forward seq file '" << fwdFn << "' " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
+	fwdIn.push(fwdSrc);
 
 	if(!revFn.empty()) {
 #ifdef HAVE_LIBZ
@@ -541,11 +543,12 @@ int main(int argc, char* argv[]) {
 			revIn.push(boost::iostreams::bzip2_decompressor());
 		else { }
 #endif
-		revIn.push(boost::iostreams::file_source(revFn));
-		if(revIn.bad()) {
+		boost::iostreams::file_source revSrc(revFn);
+		if(!revSrc.is_open()) {
 			cerr << "Unable to open reverse seq file '" << revFn << "' " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
+		revIn.push(revSrc);
 	}
 	/* prepare SeqIO */
 	fwdSeqI.reset(dynamic_cast<istream*> (&fwdIn), abc, seqFmt);

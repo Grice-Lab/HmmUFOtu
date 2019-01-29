@@ -155,11 +155,12 @@ int main(int argc, char* argv[]) {
 	else { }
 #endif
 	/* open source */
-	msaIn.push(boost::iostreams::file_source(msaFn));
-	if(msaIn.bad()) {
-		cerr << "Unable to open forward seq file '" << msaFn << "' " << ::strerror(errno) << endl;
+	boost::iostreams::file_source msaSrc(msaFn);
+	if(!msaSrc.is_open()) {
+		cerr << "Unable to open MSA file '" << msaFn << "' " << ::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
+	msaIn.push(msaSrc);
 
 	treeIn.open(treeFn.c_str());
 	if(!treeIn.is_open()) {
