@@ -403,9 +403,9 @@ BandedHMMP7& BandedHMMP7::build(const MSA& msa, double symfrac,
 	unsigned k = 0;
 
 	for(unsigned j = 0; j < L; ++j) {
+		cs2ProfileIdx[j + 1] = k + 1;
 		if(msa.symWFrac(j) >= symfrac)
 			profile2CSIdx[++k] = j + 1; /* all index are 1-based */
-		cs2ProfileIdx[j+1] = k;
 	}
 	/* profile size calculated as current k */
 	setProfileSize(k);
@@ -521,11 +521,11 @@ BandedHMMP7& BandedHMMP7::build(const MSA& msa, double symfrac,
 		int map = profile2CSIdx[k];
 		sprintf(value, "%d", map);
 		setLocOptTag("MAP", value, k);
-		char c = msa.CSBaseAt(map);
+		char c = msa.CSBaseAt(map - 1);
 		int8_t b = abc->encode(c);
-		if(msa.wIdentityAt(map) < CONS_THRESHOLD)
+		if(msa.wIdentityAt(map - 1) < CONS_THRESHOLD)
 			c = ::tolower(c);
-		setLocOptTag("CONS", string() + c, k);
+		setLocOptTag("CONS", string(1, c), k);
 	}
 
 	/* set DATE tag after all done */
