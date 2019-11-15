@@ -400,12 +400,12 @@ BandedHMMP7& BandedHMMP7::build(const MSA& msa, double symfrac,
 	/* set/determine the bHMM size */
 	L = msa.getCSLen();
 	const unsigned N = msa.getNumSeq();
-	unsigned k = 0;
+	unsigned k = 0; // k is 1-based on profile
 
-	for(unsigned j = 0; j < L; ++j) {
-		cs2ProfileIdx[j + 1] = k + 1;
-		if(msa.symWFrac(j) >= symfrac)
-			profile2CSIdx[++k] = j + 1; /* all index are 1-based */
+	for(unsigned j = 1; j <= L; ++j) { // j is 1-based on CS
+		if(msa.symWFrac(j - 1) >= symfrac)
+			profile2CSIdx[++k] = j;
+		cs2ProfileIdx[j] = k;
 	}
 	/* profile size calculated as current k */
 	setProfileSize(k);
@@ -519,6 +519,7 @@ BandedHMMP7& BandedHMMP7::build(const MSA& msa, double symfrac,
 	locOptTags["MAP"].resize(K + 1);
 	for(int k = 1; k <= K; ++k) {
 		int map = profile2CSIdx[k];
+//		debugLog << "K: " << K << " k: " << k << " map: " << map << std::endl;
 		sprintf(value, "%d", map);
 		setLocOptTag("MAP", value, k);
 		char c = msa.CSBaseAt(map - 1);
