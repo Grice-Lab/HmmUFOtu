@@ -376,8 +376,14 @@ int main(int argc, char* argv[]) {
 		out.push(boost::iostreams::bzip2_compressor());
 	else { }
 #endif
-	if(!outFn.empty())
-		out.push(boost::iostreams::file_sink(outFn));
+	if(!outFn.empty()) {
+		boost::iostreams::file_sink outSrc(outFn);
+		if(!outSrc.is_open()) {
+			cerr << "Unable to write to '" << outFn << "' " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+		out.push(outSrc);
+	}
 	else
 		out.push(std::cout);
 	if(out.bad()) {
@@ -395,7 +401,12 @@ int main(int argc, char* argv[]) {
 			alnOut.push(boost::iostreams::bzip2_compressor());
 		else { }
 #endif
-		alnOut.push(boost::iostreams::file_sink(alnFn));
+		boost::iostreams::file_sink alnSrc(alnFn);
+		if(!alnSrc.is_open()) {
+			cerr << "Unable to write to '" << alnFn << "' " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+		alnOut.push(alnSrc);
 		if(alnOut.bad()) {
 			cerr << "Unable to write to align file '" << alnFn << "' " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
