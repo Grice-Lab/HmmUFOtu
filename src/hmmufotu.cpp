@@ -86,7 +86,7 @@ void printUsage(const string& progName) {
 		 << "            -t|--test  INT       : use first # reads to detect the strandness of input reads/mates, ignored if -s is not 0 [" << DEFAULT_STRAND_TEST << "]" << endl
 		 << "            -i|--ignore  FLAG    : ignore forward/reverse orientation check, only recommended when your read size is larger than the expected amplicon size" << endl
 		 << "            -N  INT              : max # of seed nodes used in the 'Seed' stage of SEP algorithm [" << DEFAULT_MAX_NSEED << "]" << endl
-		 << "            -d  DBL              : max p-dist difference allowed for sub-optimal seeds used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_DIFF << "]" << endl
+		 << "            -d|--max-diff  DBL   : max p-dist difference allowed for sub-optimal seeds used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_DIFF << "]" << endl
 		 << "            -e|--err  DBL        : max placement error used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
 		 << "            -m|--method  STR     : branch length estimating method during the estimated-placement stage, must be one of 'unweighted' or 'weighted' [" << DEFAULT_BRANCH_EST_METHOD << "]" << endl
 		 << "            --ML  FLAG           : use maximum likelihood in phylogenetic placement, do not calculate posterior p-values, this will ignore -q and --prior options" << endl
@@ -207,6 +207,8 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("-d"))
 		maxDiff = ::atof(cmdOpts.getOptStr("-d"));
+	if(cmdOpts.hasOpt("--max-diff"))
+		maxDiff = ::atof(cmdOpts.getOptStr("--max-diff"));
 
 	if(cmdOpts.hasOpt("-N"))
 		maxNSeed = ::atoi(cmdOpts.getOptStr("-N"));
@@ -628,7 +630,7 @@ int main(int argc, char* argv[]) {
 					/* common seeds used for both segments and whole seq */
 					vector<PTUnrooted::PTLoc> seeds;
 					if(checkChimera && !isChimera || !alignOnly) {
-						seeds = getSeed(ptu, seq, aln.csStart - 1, aln.csEnd - 1);
+						seeds = getSeed(ptu, seq, aln.csStart - 1, aln.csEnd - 1, maxDiff);
 						if(seeds.size() > maxNSeed)
 							seeds.erase(seeds.end() - (seeds.size() - maxNSeed), seeds.end()); /* remove bad seeds */
 					}
