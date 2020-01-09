@@ -88,7 +88,7 @@ void printUsage(const string& progName) {
 		 << "            -i|--ignore  FLAG    : ignore forward/reverse orientation check, only recommended when your read size is larger than the expected amplicon size" << endl
 		 << "            -N  INT              : max # of seed nodes used in the 'Seed' stage of SEP algorithm [" << DEFAULT_MAX_NSEED << "]" << endl
 		 << "            -d|--max-diff  DBL   : max p-dist difference allowed for sub-optimal seeds used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_DIFF << "]" << endl
-		 << "            -h|--max-hight  DBL  : max height of the node to be considered by the SEP algorithm, set to 0 to only place reads to 'leaf' nodes" << DEFAULT_MAX_HEIGHT << "]" << endl
+		 << "            -h|--max-hight  DBL  : max height of seed nodes to be used in the SEP algorithm, set to 0 to only place reads near 'leaf' nodes" << DEFAULT_MAX_HEIGHT << "]" << endl
 		 << "            -e|--err  DBL        : max placement error used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
 		 << "            -m|--method  STR     : branch length estimating method during the estimated-placement stage, must be one of 'unweighted' or 'weighted' [" << DEFAULT_BRANCH_EST_METHOD << "]" << endl
 		 << "            --ML  FLAG           : use maximum likelihood in phylogenetic placement, do not calculate posterior p-values, this will ignore -q and --prior options" << endl
