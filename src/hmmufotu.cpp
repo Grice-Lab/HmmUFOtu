@@ -40,6 +40,7 @@ static const int MAX_STRAND_TEST = 1000;
 static const int DEFAULT_STRAND_TEST = MIN_STRAND_TEST;
 static const double STRAND_CONFIDENCE = 0.9;
 static const double DEFAULT_MAX_DIFF = inf;
+static const double DEFAULT_MAX_HEIGHT = inf;
 static const size_t DEFAULT_MAX_NSEED = 50;
 static const int DEFAULT_SEED_LEN = 20;
 static const int MAX_SEED_LEN = 25;
@@ -87,6 +88,7 @@ void printUsage(const string& progName) {
 		 << "            -i|--ignore  FLAG    : ignore forward/reverse orientation check, only recommended when your read size is larger than the expected amplicon size" << endl
 		 << "            -N  INT              : max # of seed nodes used in the 'Seed' stage of SEP algorithm [" << DEFAULT_MAX_NSEED << "]" << endl
 		 << "            -d|--max-diff  DBL   : max p-dist difference allowed for sub-optimal seeds used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_DIFF << "]" << endl
+		 << "            -h|--max-hight  DBL  : max height of the node to be considered by the SEP algorithm, set to 0 to only place reads to 'leaf' nodes" << DEFAULT_MAX_HEIGHT << "]" << endl
 		 << "            -e|--err  DBL        : max placement error used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
 		 << "            -m|--method  STR     : branch length estimating method during the estimated-placement stage, must be one of 'unweighted' or 'weighted' [" << DEFAULT_BRANCH_EST_METHOD << "]" << endl
 		 << "            --ML  FLAG           : use maximum likelihood in phylogenetic placement, do not calculate posterior p-values, this will ignore -q and --prior options" << endl
@@ -135,6 +137,7 @@ int main(int argc, char* argv[]) {
 	int seedLen = DEFAULT_SEED_LEN;
 	int seedRegion = DEFAULT_SEED_REGION;
 	double maxDiff = DEFAULT_MAX_DIFF;
+	double maxHeight = DEFAULT_MAX_HEIGHT;
 	int maxNSeed = DEFAULT_MAX_NSEED;
 	double maxError = DEFAULT_MAX_PLACE_ERROR;
 	bool onlyML = false;
@@ -209,6 +212,11 @@ int main(int argc, char* argv[]) {
 		maxDiff = ::atof(cmdOpts.getOptStr("-d"));
 	if(cmdOpts.hasOpt("--max-diff"))
 		maxDiff = ::atof(cmdOpts.getOptStr("--max-diff"));
+
+	if(cmdOpts.hasOpt("-h"))
+		maxHeight = ::atof(cmdOpts.getOptStr("-h"));
+	if(cmdOpts.hasOpt("--max-height"))
+		maxHeight = ::atof(cmdOpts.getOptStr("--max-height"));
 
 	if(cmdOpts.hasOpt("-N"))
 		maxNSeed = ::atoi(cmdOpts.getOptStr("-N"));
@@ -300,6 +308,10 @@ int main(int argc, char* argv[]) {
 	}
 	if(!(maxDiff >= 0)) {
 		cerr << "-d must be non-negative" << endl;
+		return EXIT_FAILURE;
+	}
+	if(!(maxHeight >= 0)) {
+		cerr << "-h must be non-negative" << endl;
 		return EXIT_FAILURE;
 	}
 	if(!(maxNSeed > 0)) {
@@ -630,7 +642,7 @@ int main(int argc, char* argv[]) {
 					/* common seeds used for both segments and whole seq */
 					vector<PTUnrooted::PTLoc> seeds;
 					if(checkChimera && !isChimera || !alignOnly) {
-						seeds = getSeed(ptu, seq, aln.csStart - 1, aln.csEnd - 1, maxDiff);
+						seeds = getSeed(ptu, seq, aln.csStart - 1, aln.csEnd - 1, maxDiff, maxHeight);
 						if(seeds.size() > maxNSeed)
 							seeds.erase(seeds.end() - (seeds.size() - maxNSeed), seeds.end()); /* remove bad seeds */
 					}

@@ -125,16 +125,17 @@ BandedHMMP7::HmmAlignment alignSeq(const BandedHMMP7& hmm, const PrimarySeq& rea
 }
 
 vector<PTUnrooted::PTLoc> getSeed(const PTUnrooted& ptu, const DigitalSeq& seq,
-		int start, int end, double maxDiff) {
+		int start, int end, double maxDiff, double maxHeight) {
 	vector<PTUnrooted::PTLoc> locs; /* candidate locations */
 	/* get potential placement locations based on pDist to observed or inferred sequences */
 	for(vector<PTUnrooted::PTUNodePtr>::size_type i = 0; i < ptu.numNodes(); ++i) {
 		PTUnrooted::PTUNodePtr node = ptu.getNode(i);
-		if(node->isRoot())
-			continue;
-		double pDist = SeqUtils::pDist(node->getSeq(), seq, start, end);
-		locs.push_back(PTUnrooted::PTLoc(start, end, node->getId(), pDist));
+		if(!node->isRoot() && ptu.getHeight(node) <= maxHeight) {
+			double pDist = SeqUtils::pDist(node->getSeq(), seq, start, end);
+			locs.push_back(PTUnrooted::PTLoc(start, end, node->getId(), pDist));
+		}
 	}
+	assert(!locs.empty());
 	std::sort(locs.begin(), locs.end()); /* sort by p-Dist */
 	/* remove bad seed, if necessary */
 	double bestDist = locs[0].dist;
