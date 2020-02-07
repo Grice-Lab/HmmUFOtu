@@ -75,8 +75,8 @@ void printIntro(void) {
  */
 void printUsage(const string& progName) {
 	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <SEQ-OUT> [MATE-OUT] <-N NUM-READS> [options]" << endl
-		 << "Options:    SEQ-OUT  FILE       : OUTPUT file" << endl
-		 << "            MATE-OUT  FILE      : optional OUTPUT file for paired-end mode, this will suppress -k|--keep-gap option" << endl
+		 << "Options:    SEQ-OUT  FILE       : READ OUTPUT in FASTA format" << endl
+		 << "            MATE-OUT  FILE      : optional MATE OUTPUT in FASTA format, ignored if -k|--keep-gap is set" << endl
 		 << "            -N  LONG            : number of reads/pairs to generate" << endl
 		 << "            -f|--fmt  STRING    : output format [" << DEFAULT_FMT << "]" << endl
 		 << "            -k|--keep-gap FLAG  : keep simulated gaps in generated reads, so final seq will be aligned" << endl
