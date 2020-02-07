@@ -88,7 +88,7 @@ void printUsage(const string& progName) {
 		 << "            -i|--ignore  FLAG    : ignore forward/reverse orientation check, only recommended when your read size is larger than the expected amplicon size" << endl
 		 << "            -N  INT              : max # of seed nodes used in the 'Seed' stage of SEP algorithm [" << DEFAULT_MAX_NSEED << "]" << endl
 		 << "            -d|--max-diff  DBL   : max p-dist difference allowed for sub-optimal seeds used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_DIFF << "]" << endl
-		 << "            -h|--max-height  DBL : max height of seed nodes to be used in the SEP algorithm, set to 0 to only place reads near 'leaf' nodes" << DEFAULT_MAX_HEIGHT << "]" << endl
+		 << "            -H|--max-height  DBL : max height of seed nodes to be used in the SEP algorithm, set to 0 to only place reads near 'leaf' nodes" << DEFAULT_MAX_HEIGHT << "]" << endl
 		 << "            -e|--err  DBL        : max placement error used in the 'Estimate' stage of SEP algorithm [" << DEFAULT_MAX_PLACE_ERROR << "]" << endl
 		 << "            -m|--method  STR     : branch length estimating method during the estimated-placement stage, must be one of 'unweighted' or 'weighted' [" << DEFAULT_BRANCH_EST_METHOD << "]" << endl
 		 << "            --ML  FLAG           : use maximum likelihood in phylogenetic placement, do not calculate posterior p-values, this will ignore -q and --prior options" << endl
@@ -213,8 +213,8 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("--max-diff"))
 		maxDiff = ::atof(cmdOpts.getOptStr("--max-diff"));
 
-	if(cmdOpts.hasOpt("-h"))
-		maxHeight = ::atof(cmdOpts.getOptStr("-h"));
+	if(cmdOpts.hasOpt("-H"))
+		maxHeight = ::atof(cmdOpts.getOptStr("-H"));
 	if(cmdOpts.hasOpt("--max-height"))
 		maxHeight = ::atof(cmdOpts.getOptStr("--max-height"));
 
@@ -667,7 +667,7 @@ int main(int argc, char* argv[]) {
 							vector<PTUnrooted::PTPlacement> segPlaces = estimateSeq(ptu, seq, segSeeds, estMethod);
 							/* filter placesments for this segment */
 							filterPlacements(segPlaces, maxChimeraError);
-							placeSeq(ptu, seq, segPlaces);
+							placeSeq(ptu, seq, segPlaces, maxHeight);
 							/* add placements of this segment to the larget lists */
 							if(n < numSeg / 2)
 								seg5Places.insert(seg5Places.end(), segPlaces.begin(), segPlaces.end());
@@ -681,11 +681,11 @@ int main(int argc, char* argv[]) {
 						/* get alt-seg5-place */
 						PTUnrooted::PTLoc alt5Loc(bestSeg5Place.start, bestSeg5Place.end, bestSeg3Place.cNode->getId() /* seg3 branch */, SeqUtils::pDist(seq, bestSeg5Place.cNode->getSeq(), bestSeg5Place.start, bestSeg5Place.end));
 						PTUnrooted::PTPlacement altSeg5Place = ptu.estimateSeq(seq, alt5Loc);
-						ptu.placeSeq(seq, altSeg5Place);
+						ptu.placeSeq(seq, altSeg5Place, maxHeight);
 						/* get alt-seg3-place */
 						PTUnrooted::PTLoc alt3Loc(bestSeg3Place.start, bestSeg3Place.end, bestSeg5Place.cNode->getId() /* seg5 branch */, SeqUtils::pDist(seq, bestSeg3Place.cNode->getSeq(), bestSeg3Place.start, bestSeg3Place.end));
 						PTUnrooted::PTPlacement altSeg3Place = ptu.estimateSeq(seq, alt3Loc);
-						ptu.placeSeq(seq, altSeg3Place);
+						ptu.placeSeq(seq, altSeg3Place, maxHeight);
 						chimeraLod = bestSeg5Place.loglik - altSeg5Place.loglik + bestSeg3Place.loglik - altSeg3Place.loglik;
 						isChimera = bestSeg5Place.getTaxonId() != bestSeg3Place.getTaxonId() && chimeraLod > minChimeraLod;
 					} /* end check chimera */
@@ -721,7 +721,7 @@ int main(int argc, char* argv[]) {
 							/* filter placements */
 							filterPlacements(places, maxError);
 							/* accurate placements */
-							placeSeq(ptu, seq, places);
+							placeSeq(ptu, seq, places, maxHeight);
 							if(onlyML) { /* don't calculate q-values */
 								std::sort(places.rbegin(), places.rend(), compareByLoglik); /* sort places decently by real loglik */
 							}

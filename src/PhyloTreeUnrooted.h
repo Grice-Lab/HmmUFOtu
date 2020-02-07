@@ -449,7 +449,7 @@ public:
 		}
 
 		bool isValidPlace() const {
-			return isParent(pNode, cNode) && (aNode == cNode || aNode == pNode);
+			return isParent(pNode, cNode);
 		}
 
 		/** calculate prior probability of a placement given a prior type in log-scale */

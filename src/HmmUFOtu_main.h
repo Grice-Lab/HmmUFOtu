@@ -101,7 +101,7 @@ vector<PTUnrooted::PTPlacement>& filterPlacements(vector<PTUnrooted::PTPlacement
 
 /** Get accurate placement for a seq given the estimated placements */
 vector<PTUnrooted::PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
-		vector<PTUnrooted::PTPlacement>& places);
+		vector<PTUnrooted::PTPlacement>& places, double maxHeight = inf);
 
 /** calculate Q-values using a given prior type */
 void calcQValues(vector<PTUnrooted::PTPlacement>& places, PTUnrooted::PRIOR_TYPE type);

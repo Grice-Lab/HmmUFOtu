@@ -172,9 +172,10 @@ vector<PTUnrooted::PTPlacement>& filterPlacements(vector<PTUnrooted::PTPlacement
 	return places;
 }
 
-vector<PTUnrooted::PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq, vector<PTUnrooted::PTPlacement>& places) {
+vector<PTUnrooted::PTPlacement>& placeSeq(const PTUnrooted& ptu, const DigitalSeq& seq,
+		vector<PTUnrooted::PTPlacement>& places, double maxHeight) {
 	for(vector<PTUnrooted::PTPlacement>::iterator place = places.begin(); place != places.end(); ++place)
-		ptu.placeSeq(seq, *place);
+		ptu.placeSeq(seq, *place, maxHeight);
 	return places;
 }
 

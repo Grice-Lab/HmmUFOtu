@@ -907,12 +907,11 @@ PTUnrooted PTUnrooted::placeSeq(const DigitalSeq& seq, PTPlacement& place, doubl
 	place.height = getHeight(place.cNode) + wur;
 
 	/* assign placement node */
-	assert(getHeight(u) <= maxHeight || getHeight(v) <= maxHeight);
-	if(place.ratio <= 0.5 || getHeight(v) > maxHeight)
-		place.aNode = u;
+	assert(getHeight(place.cNode) <= maxHeight || getHeight(place.pNode) <= maxHeight);
+	if(place.ratio <= 0.5 || getHeight(place.pNode) > maxHeight)
+		place.aNode = place.cNode;
 	else
-		place.aNode = v;
-
+		place.aNode = place.pNode;
 	return subtree;
 }
 

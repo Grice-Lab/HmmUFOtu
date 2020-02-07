@@ -29,7 +29,7 @@ if [ $? == 0 ]
 fi
 
 echo "Running taxonomy assignment ..."
-$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE -v
+$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE -v -s 1
 if [ $? == 0 ]
   then
     echo "taxonomy assignment file generated"

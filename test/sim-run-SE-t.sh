@@ -13,6 +13,7 @@ SIMSEED=0
 # assigning info
 ASSIGNFILE="${DB}_sim_assign.txt"
 CHIMERAFILE="${DB}_sim_chimera.txt"
+ASSIGNFILE1="${DB}_sim_leaf_assign.txt"
 
 # OTU info
 OTUFILE="${DB}_sim_OTU.txt"
@@ -40,7 +41,7 @@ if [ $? == 0 ]
 fi
 
 echo "Running taxonomy assignment ..."
-$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE -v
+$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE -s 1 -v
 if [ $? == 0 ]
 	then
 		echo "taxonomy assignment file generated"
@@ -50,7 +51,7 @@ if [ $? == 0 ]
 fi 
 
 echo "Running taxonomy assignment with chimera checking enabled ..."
-$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE -v -C --chimera-out $CHIMERAFILE
+$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE -v -C --chimera-out $CHIMERAFILE -s 1
 if [ $? == 0 ]
 then
 echo "taxonomy assignment file generated"
@@ -59,6 +60,15 @@ echo "Failed to generate assignment file"
 exit 1
 fi
 
+echo "Running taxonomy assignment only to leaf nodes ..."
+$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE1 -s 1 -v -H 0
+if [ $? == 0 ]
+	then
+		echo "leaf-only taxonomy assignment file generated"
+	else
+		echo "Failed to generate assignment file"
+		exit 1
+fi 
 
 echo "Summarizing OTU table ..."
 $SRCPATH/hmmufotu-sum $DB $ASSIGNFILE -o $OTUFILE -r $OTULIST -c $OTUALIGN -t $OTUTREE -v
