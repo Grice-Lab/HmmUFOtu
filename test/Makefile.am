@@ -65,3 +65,4 @@ if HAVE_JSONCPP
 TESTS += jplace-t.sh
 endif
 TESTS += sim-run-SE-t.sh 
+TESTS += sim-run-PE-t.sh
