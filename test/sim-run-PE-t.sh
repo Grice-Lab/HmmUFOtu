@@ -6,7 +6,8 @@ SRCPATH="../src"
 DATAPATH="../data"
 
 # simulating info
-SIMFILE="${DB}_sim.fasta"
+SIMFILE1="${DB}_sim_1.fasta"
+SIMFILE2="${DB}_sim_2.fasta"
 SIMNUM=100
 SIMSEED=0
 
@@ -31,7 +32,7 @@ MERGEDTREE="${DB}_sim_OTU_merged.tree"
 echo "Using database $DB"
 
 echo "Generating simulated reads ..."
-$SRCPATH/hmmufotu-sim $DB $SIMFILE -N $SIMNUM -S $SIMSEED -v
+$SRCPATH/hmmufotu-sim $DB $SIMFILE1 $SIMFILE2 -N $SIMNUM -S $SIMSEED -v
 if [ $? == 0 ]
 	then
 		echo "simulated reads generated"
@@ -41,7 +42,7 @@ if [ $? == 0 ]
 fi
 
 echo "Running taxonomy assignment ..."
-$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE -s 1 -v
+$SRCPATH/hmmufotu $DB $SIMFILE1 $SIMFILE2 -o $ASSIGNFILE -s 1 -v
 if [ $? == 0 ]
 	then
 		echo "taxonomy assignment file generated"
@@ -51,7 +52,7 @@ if [ $? == 0 ]
 fi 
 
 echo "Running taxonomy assignment with chimera checking enabled ..."
-$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE -v -C --chimera-out $CHIMERAFILE -s 1
+$SRCPATH/hmmufotu $DB $SIMFILE1 $SIMFILE2 -o $ASSIGNFILE -v -C --chimera-out $CHIMERAFILE -s 1
 if [ $? == 0 ]
 then
 echo "taxonomy assignment file generated"
@@ -61,7 +62,7 @@ exit 1
 fi
 
 echo "Running taxonomy assignment only to leaf nodes ..."
-$SRCPATH/hmmufotu $DB $SIMFILE -o $ASSIGNFILE1 -s 1 -v -H 0
+$SRCPATH/hmmufotu $DB $SIMFILE1 $SIMFILE2 -o $ASSIGNFILE1 -s 1 -v -H 0
 if [ $? == 0 ]
 	then
 		echo "leaf-only taxonomy assignment file generated"
@@ -110,5 +111,5 @@ if [ $? == 0 ]
 		exit 1
 fi 
 
-#rm -f ${DB}*
+rm -f ${DB}*
 
