@@ -833,7 +833,7 @@ PTUnrooted::PTPlacement PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTL
 			UPr + VPr + dot_product_scaled(model->Pr(wnr), N), /* N*P(wnr) */
 			loc.start, loc.end);
 
-	return PTPlacement(loc.start, loc.end, u, v, ratio, wnr, loglik);
+	return PTPlacement(loc.start, loc.end, u, v, NULL, w0, ratio, wnr, loglik);
 }
 
 double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
@@ -884,7 +884,7 @@ double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PT
 	return treeLoglik(start, end);
 }
 
-PTUnrooted PTUnrooted::placeSeq(const DigitalSeq& seq, PTPlacement& place) const {
+PTUnrooted PTUnrooted::placeSeq(const DigitalSeq& seq, PTPlacement& place, double maxHeight) const {
 	double ratio0 = place.ratio;
 	double wnr0 = place.wnr;
 	double loglik0 = place.loglik;
@@ -904,10 +904,15 @@ PTUnrooted PTUnrooted::placeSeq(const DigitalSeq& seq, PTPlacement& place) const
 	double wur = subtree.getBranchLength(u, r);
 	double wvr = w0 - wur;
 	place.ratio = wur / w0;
-
 	place.height = getHeight(place.cNode) + wur;
-	place.annoDist = wvr <= wur ? wvr + place.wnr : wur + place.wnr;
-	/* update other placement info */
+
+	/* assign placement node */
+	assert(getHeight(u) <= maxHeight || getHeight(v) <= maxHeight);
+	if(place.ratio <= 0.5 || getHeight(v) > maxHeight)
+		place.aNode = u;
+	else
+		place.aNode = v;
+
 	return subtree;
 }
 
@@ -1128,7 +1133,7 @@ double PTUnrooted::PTPlacement::logPriorPr(PRIOR_TYPE type) const {
 		logP = -0;
 		break;
 	case HEIGHT:
-		logP = -(annoDist - wnr + height);
+		logP = -(getAnnoDist() - wnr + height);
 		break;
 	}
 	return logP;

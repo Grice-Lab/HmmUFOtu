@@ -157,10 +157,6 @@ public:
 			return anno;
 		}
 
-		double getAnnoDist() const {
-			return annoDist;
-		}
-
 		/**
 		 * Get node taxon annotation, with an optional "Other" suffix if too far from its annotation source
 		 */
@@ -180,6 +176,10 @@ public:
 
 		const DigitalSeq& getSeq() const {
 			return seq;
+		}
+
+		double getAnnoDist() const {
+			return annoDist;
 		}
 
 		void setAnno(const string& anno) {
@@ -410,19 +410,17 @@ public:
 	struct PTPlacement {
 		/* constructors */
 	//	/** default constructor */
-		PTPlacement() : start(0), end(0), ratio(nan), wnr(nan), loglik(nan),
-				height(nan), annoDist(nan), qPlace(nan), qTaxon(nan)
+		PTPlacement() : start(0), end(0), cNode(NULL), pNode(NULL), aNode(NULL),
+				wuv(nan), ratio(nan), wnr(nan), loglik(nan), height(nan), qPlace(nan), qTaxon(nan)
 		{  }
 
 		/** construct a placement with basic info and optionally auxilary info */
 		PTPlacement(int start, int end,
-				const PTUnrooted::PTUNodePtr& cNode, const PTUnrooted::PTUNodePtr& pNode,
-				double ratio, double wnr, double loglik,
-				double height = 0, double annoDist = 0,
-				double qPlace = 0, double qTaxonomy = 0)
-		: start(start), end(end), cNode(cNode), pNode(pNode),
-		  ratio(ratio), wnr(wnr), loglik(loglik),
-		  height(height), annoDist(annoDist), qPlace(qPlace), qTaxon(qTaxonomy)
+				const PTUnrooted::PTUNodePtr& cNode, const PTUnrooted::PTUNodePtr& pNode, const PTUnrooted::PTUNodePtr& aNode,
+				double wuv, double ratio, double wnr, double loglik,
+				double height = 0, double qPlace = 0, double qTaxonomy = 0)
+		: start(start), end(end), cNode(cNode), pNode(pNode), aNode(aNode),
+		  wuv(wuv), ratio(ratio), wnr(wnr), loglik(loglik), height(height), qPlace(qPlace), qTaxon(qTaxonomy)
 		{  }
 
 		/** destructor */
@@ -430,15 +428,15 @@ public:
 
 		/** member methods */
 		long getTaxonId() const {
-			if(cNode != NULL && pNode != NULL)
-				return ratio <= 0.5 ? cNode->getId() : pNode->getId();
+			if(aNode != NULL)
+				return aNode->getId();
 			else
 				return UNASSIGNED_TAXONID;
 		}
 
 		string getTaxonName() const {
-			if(cNode != NULL && pNode != NULL)
-				return ratio <= 0.5 ? cNode->getAnno() : pNode->getAnno();
+			if(aNode != NULL)
+				return aNode->getAnno();
 			else
 				return UNASSIGNED_TAXONNAME;
 		}
@@ -451,7 +449,7 @@ public:
 		}
 
 		bool isValidPlace() const {
-			return isParent(pNode, cNode);
+			return isParent(pNode, cNode) && (aNode == cNode || aNode == pNode);
 		}
 
 		/** calculate prior probability of a placement given a prior type in log-scale */
@@ -461,6 +459,15 @@ public:
 		double priorPr(PRIOR_TYPE type) const {
 			return ::exp(logPriorPr(type));
 		}
+
+		/** get the annotation distance of this placement */
+		double getAnnoDist() const {
+			assert(isValidPlace());
+			return aNode == cNode ? wuv * ratio + wnr : (1 - ratio) * wuv + wnr;
+		}
+
+		/** write this PTPlacement to text output */
+		ostream& write(ostream& out) const;
 
 		/** get segment tree loglik at given region */
 //		double segLoglik(int start, int end) const {
@@ -478,10 +485,12 @@ public:
 		int end;   /* 0-based align end */
 		PTUnrooted::PTUNodePtr cNode;  /* child node */
 		PTUnrooted::PTUNodePtr pNode;  /* parent node */
+		PTUnrooted::PTUNodePtr aNode;  /* assigned/annotated node, can be either cNode or pNode */
+		double wuv;   /* placement branch length */
 		double ratio; /* placement ratio */
 		double wnr;   /* new branch length */
 		double loglik;
-		double annoDist;
+//		double annoDist;
 		double height;
 		double qPlace;
 		double qTaxon;
@@ -1137,9 +1146,10 @@ public:
 	 * after placement, all branch lengths, ratio and loglik will be updated
 	 * @param seq  new seq to be placed at a copy of subtree
 	 * @param place  given placement position
+	 * @param maxHeight  maximum height of the annotation source node
 	 * @return  the subtree used for this placement
 	 */
-	PTUnrooted placeSeq(const DigitalSeq& seq, PTPlacement& place) const;
+	PTUnrooted placeSeq(const DigitalSeq& seq, PTPlacement& place, double maxHeight = inf) const;
 
 	/**
 	 * place an additional seq (n) at given branch in the entire seq region
@@ -1592,12 +1602,16 @@ inline double PTUnrooted::estimateBranchLength(const Matrix4Xd& U, const Matrix4
 		throw std::invalid_argument("Unknown branch length estimating method '" + method + "'");
 }
 
-inline ostream& operator<<(ostream& out, const PTUnrooted::PTPlacement& place) {
-	out << place.getId() << "\t" << place.ratio << "\t"
-			<< place.getTaxonId() << "\t" << place.getTaxonName() << "\t"
-			<< place.annoDist << "\t" << place.loglik << "\t"
-			<< place.qPlace << "\t" << place.qTaxon;
+inline ostream& PTUnrooted::PTPlacement::write(ostream& out) const {
+	out << getId() << "\t" << ratio << "\t"
+			<< getTaxonId() << "\t" << getTaxonName() << "\t"
+			<< getAnnoDist() << "\t" << loglik << "\t"
+			<< qPlace << "\t" << qTaxon;
 	return out;
+}
+
+inline ostream& operator<<(ostream& out, const PTUnrooted::PTPlacement& place) {
+	return place.write(out);
 }
 
 inline bool operator<(const PTUnrooted::PTLoc& lhs, const PTUnrooted::PTLoc& rhs) {
