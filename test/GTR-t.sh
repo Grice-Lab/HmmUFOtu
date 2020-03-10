@@ -10,7 +10,7 @@ DATAPATH="../data"
 echo $DB
 
 echo "Constructing a test database ..."
-$SRCPATH/hmmufotu-build ${INPUT}.fasta ${INPUT}.tree -a ${INPUT}_taxonomy.txt -n $DBNAME -s $SMTYPE -v
+$SRCPATH/hmmufotu-build ${INPUT}.fasta ${INPUT}.tree -a ${INPUT}_taxonomy.txt -n $DB -s $SMTYPE -v
 if [ $? == 0 ]
 	then
 		echo "$DB constructed successfully"
@@ -40,6 +40,7 @@ if [ $? == 0 ]
 		echo "CSFM IO failed"
 		rm -f ${DB}.*
 		exit 1
+gk
 fi
 
 echo "Testing bHMM IO ..."

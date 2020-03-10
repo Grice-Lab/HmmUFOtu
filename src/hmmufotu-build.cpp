@@ -276,7 +276,6 @@ int main(int argc, char* argv[]) {
 	/* set dbName */
 	if(dbName.empty())
 		dbName = StringUtils::basename(seqFn);
-	dbName += "_" + smType + (isVar ? "_dG" : "");
 
 	string msaFn = dbName + MSA_FILE_SUFFIX;
 	string csfmFn = dbName + CSFM_FILE_SUFFIX;

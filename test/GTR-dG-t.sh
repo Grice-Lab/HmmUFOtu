@@ -10,7 +10,7 @@ DATAPATH="../data"
 echo $DB
 
 echo "Constructing a test database ..."
-$SRCPATH/hmmufotu-build ${INPUT}.fasta ${INPUT}.tree -a ${INPUT}_taxonomy.txt -n $DBNAME -s $SMTYPE -V -v
+$SRCPATH/hmmufotu-build ${INPUT}.fasta ${INPUT}.tree -a ${INPUT}_taxonomy.txt -n $DB -s $SMTYPE -V -v
 if [ $? == 0 ]
 	then
 		echo "$DB constructed successfully"
