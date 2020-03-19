@@ -530,7 +530,7 @@ public:
 
 	/** Get number of branches in this tree */
 	size_t numBranches() const {
-		return numLeaves() / 2;
+		return numNodes();
 	}
 
 	/** get number of aligned sites */
