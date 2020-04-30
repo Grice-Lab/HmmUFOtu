@@ -984,6 +984,12 @@ public:
 	/** Infer all non-leaf node in a tree */
 	void inferSeq();
 
+	/**
+	 * add pseudo-leaves to the tree given a set of flagged nodes (as OTUs)
+	 * return new leaves added into the tree
+	 */
+	size_t addPseudoLeaf(const boost::unordered_set<PTUNodePtr>& subset);
+
 	/** convert this PTUnrooted subtree into NewickTree */
 	NewickTree convertToNewickTree(const PTUNodePtr& subtree, const string& prefix = "") const;
 

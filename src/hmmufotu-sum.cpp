@@ -95,6 +95,7 @@ void printUsage(const string& progName) {
 		 << "            -n  INT            : minimum number of observed reads required to define an OTU across all samples, 0 for no filtering [" << DEFAULT_MIN_NREAD << "]" << endl
 		 << "            -s  INT            : minimum number of observed samples required to define an OTU, 0 for no filtering [" << DEFAULT_MIN_NSAMPLE << "]" << endl
 		 << "            --no-gap  FLAG     : if -c is set, this will output the non-gapped OTU sequences instead of aligned CS alignment" << endl
+		 << "            --pseudo-node FLAG : if set, all OTUs will be guaranteed as leaves by adding pseudo-nodes with zero branch-length into the original treem for OTUs from intermediate nodes" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            --version          : show program version and exit" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
@@ -119,6 +120,7 @@ int main(int argc, char* argv[]) {
 	int minRead = DEFAULT_MIN_NREAD;
 	int minSample = DEFAULT_MIN_NSAMPLE;
 	bool noGap = false;
+	bool addPseudo = false;
 	bool useDBName = false;
 
 	/* parse options */
@@ -184,6 +186,9 @@ int main(int argc, char* argv[]) {
 
 	if(cmdOpts.hasOpt("--no-gap"))
 		noGap = true;
+
+	if(cmdOpts.hasOpt("--pseudo-node"))
+		addPseudo = true;
 
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
@@ -448,6 +453,11 @@ int main(int argc, char* argv[]) {
 	/* write the tree */
 	if(treeOut.is_open()) {
 		infoLog << "Writing OTU tree" << endl;
+		if(addPseudo) {
+			size_t n = ptu.addPseudoLeaf(otuSeen);
+			if(n > 0)
+				infoLog << "Added " << n << " pseudo-nodes to the tree to make all OTUs as leaves" << endl;
+		}
 		treeOut << ptu.convertToNewickTree(PTUnrooted::getAncestors(otuSeen), otuPrefix);
 	}
 }

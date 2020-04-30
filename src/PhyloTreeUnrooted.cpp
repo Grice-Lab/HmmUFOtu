@@ -31,7 +31,9 @@
 #include <cfloat>
 #include <cctype>
 #include <cmath>
+#include <cstdlib>
 #include <algorithm>
+#include <utility>
 #include <cassert>
 #include <boost/algorithm/string.hpp> /* for boost string split */
 #include <boost/lexical_cast.hpp>
@@ -184,7 +186,7 @@ unsigned PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 	unsigned n0 = msaId2node.size(); /* original number of loaded nodes */
 	if(msa.getAbc()->getAlias() != "DNA") {
 		cerr << "PhyloTreeUnrooted can only read in MSA in DNA alphabet" << endl;
-		return -1;
+		return EXIT_FAILURE;
 	}
 	const unsigned numSeq = msa.getNumSeq();
 	csLen = msa.getCSLen();
@@ -195,7 +197,7 @@ unsigned PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 		string name = msa.seqNameAt(i);
 		if(name2msaId.find(name) != name2msaId.end()) {
 			cerr << "Non-unique seq name " << name << " found in your MSA data " << msa.getName() << endl;
-			return -1;
+			return EXIT_FAILURE;
 		}
 		else
 			name2msaId[name] = i;
@@ -369,6 +371,44 @@ void PTUnrooted::evaluate(const PTUNodePtr& node, int start, int end) {
 		for(int j = start; j <= end; ++j)
 			node2branch[node][node->parent].loglik.col(j) = loglik(node, j);
 	}
+}
+
+size_t PTUnrooted::addPseudoLeaf(const unordered_set<PTUNodePtr>& subset) {
+	const size_t N = numNodes();
+	long id = N;
+	for(unordered_set<PTUNodePtr>::const_iterator node = subset.begin(); node != subset.end(); ++node) {
+		if((*node)->isLeaf())
+			continue; // ignore leaf OTUs
+		/* create a new internal node with same name as old one */
+		PTUNodePtr r(new PTUNode(id++, (*node)->name, (*node)->anno, (*node)->annoDist));
+		/* create a new leaf node with too */
+		PTUNodePtr n(new PTUNode(id++, (*node)->name, (*node)->anno, (*node)->annoDist));
+
+		/* insert the r and n to the tree */
+		PTUNodePtr oldParent = (*node)->parent; // could be nullNode
+		n->parent = r;
+		(*node)->parent = r;
+		r->parent = oldParent;
+
+		/* swap id between n and node */
+		std::swap(n->id, (*node)->id);
+
+		if(oldParent != nullNode)
+			removeEdge(*node, oldParent);
+		id2node.push_back(r);
+		id2node.push_back(n);
+		if(oldParent != nullNode)
+			addEdge(r, oldParent);
+		else
+			setRoot(r);
+		addEdge(*node, r);
+		addEdge(n, r);
+
+		setBranchLength(r, oldParent, getBranchLength(*node, oldParent));
+		setBranchLength(*node, r, 0);
+		setBranchLength(n, r, 0);
+	}
+	return id - N;
 }
 
 NewickTree PTUnrooted::convertToNewickTree(const PTUNodePtr& node, const string& prefix) const {
@@ -838,8 +878,6 @@ PTUnrooted::PTPlacement PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTL
 
 double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
 		int start, int end, double ratio0, double wnr0) {
-//	cerr << "Placing seq " << seq.getName() << " at " << u->getId() << "->" << v->getId() <<
-//			" start: " << start << " end: " << end << " ratio0: " << ratio0 << " wnr0: " << wnr0 << endl;
 	assert(seq.length() == csLen); /* make sure this is an aligned seq */
 	assert(isParent(v, u));
 	assert(0 <= ratio0 && ratio0 <= 1);

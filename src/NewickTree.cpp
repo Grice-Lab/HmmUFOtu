@@ -70,7 +70,7 @@ ostream& NewickTree::write(ostream& out) const {
 		out << ')';
 	}
 	out << quoteName(name);
-	if(length > 0)
+	if(length >= 0)
 		out << ':' << length;
 
 	return out;
