@@ -873,7 +873,7 @@ PTUnrooted::PTPlacement PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTL
 			UPr + VPr + dot_product_scaled(model->Pr(wnr), N), /* N*P(wnr) */
 			loc.start, loc.end);
 
-	return PTPlacement(loc.start, loc.end, u, v, NULL, w0, ratio, wnr, loglik);
+	return PTPlacement(loc.start, loc.end, u, v, (ratio <= 0.5 ? u : v), w0, ratio, wnr, loglik);
 }
 
 double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PTUNodePtr& v,
