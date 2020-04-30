@@ -410,7 +410,7 @@ public:
 	struct PTPlacement {
 		/* constructors */
 	//	/** default constructor */
-		PTPlacement() : start(0), end(0), cNode(NULL), pNode(NULL), aNode(NULL),
+		PTPlacement() : start(0), end(0),
 				wuv(nan), ratio(nan), wnr(nan), loglik(nan), height(nan), qPlace(nan), qTaxon(nan)
 		{  }
 
