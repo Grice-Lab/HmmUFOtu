@@ -85,8 +85,9 @@ void printUsage(const string& progName) {
 		 << "Options:    -o  FILE           : OTU summary output, required" << endl
 		 << "            -r  FILE           : output the read IDs for each OTU" << endl
 		 << "            -l  FILE           : sample name list, with 1st field sample-name and 2nd field assignment filename" << endl
-		 << "            -c  FILE           : OTU Consensus Sequence (CS) alignment of each OTU" << endl
-		 << "            -t  FILE           : OTU tree output" << endl
+		 << "            -c  FILE           : write Consensus Sequence (CS) alignments of all OTUs into FILE" << endl
+		 << "            -t  FILE           : write the OTU tree into FILE" << endl
+		 << "            --pseudo-tree FILE : write an additional OTU tree where all OTUs are guaranteed as leaves, by adding pseudo-nodes with zero branch-length for intermediate nodes with OTUs assigned" << endl
 		 << "            --use-dbname  FLAG : use DBNAME as prefix for OTUs" << endl
 		 << "            -q  DBL            : minimum qTaxon score (negative log10 posterior error rate) required [" << DEFAULT_MIN_Q << "]" << endl
 		 << "            --aln-iden  DBL    : minimum alignment identity (proportion of non-gapped bases of alignment) required for assignment result [" << DEFAULT_MIN_ALN_IDENTITY << "]" << endl
@@ -95,7 +96,6 @@ void printUsage(const string& progName) {
 		 << "            -n  INT            : minimum number of observed reads required to define an OTU across all samples, 0 for no filtering [" << DEFAULT_MIN_NREAD << "]" << endl
 		 << "            -s  INT            : minimum number of observed samples required to define an OTU, 0 for no filtering [" << DEFAULT_MIN_NSAMPLE << "]" << endl
 		 << "            --no-gap  FLAG     : if -c is set, this will output the non-gapped OTU sequences instead of aligned CS alignment" << endl
-		 << "            --pseudo-node FLAG : if set, all OTUs will be guaranteed as leaves by adding pseudo-nodes with zero branch-length into the original treem for OTUs from intermediate nodes" << endl
 		 << "            -v  FLAG           : enable verbose information, you may set multiple -v for more details" << endl
 		 << "            --version          : show program version and exit" << endl
 		 << "            -h|--help          : print this message and exit" << endl;
@@ -107,9 +107,9 @@ int main(int argc, char* argv[]) {
 	vector<string> inFiles;
 	map<string, string> sampleFn2Name;
 	string listFn;
-	string otuFn, readFn, csFn, treeFn;
+	string otuFn, readFn, csFn, treeFn, ptreeFn;
 	ifstream msaIn, hmmIn, ptuIn;
-	ofstream otuOut, readOut, treeOut, csOut;
+	ofstream otuOut, readOut, treeOut, ptreeOut, csOut;
 	SeqIO csO;
 	OTU2ReadMap otu2Read;
 
@@ -120,7 +120,6 @@ int main(int argc, char* argv[]) {
 	int minRead = DEFAULT_MIN_NREAD;
 	int minSample = DEFAULT_MIN_NSAMPLE;
 	bool noGap = false;
-	bool addPseudo = false;
 	bool useDBName = false;
 
 	/* parse options */
@@ -187,8 +186,8 @@ int main(int argc, char* argv[]) {
 	if(cmdOpts.hasOpt("--no-gap"))
 		noGap = true;
 
-	if(cmdOpts.hasOpt("--pseudo-node"))
-		addPseudo = true;
+	if(cmdOpts.hasOpt("--pseudo-tree"))
+		ptreeFn = cmdOpts.getOptStr("--pseudo-tree");
 
 	if(cmdOpts.hasOpt("-v"))
 		INCREASE_LEVEL(cmdOpts.getOpt("-v").length());
@@ -290,6 +289,14 @@ int main(int argc, char* argv[]) {
 		treeOut.open(treeFn.c_str());
 		if(!treeOut.is_open()) {
 			cerr << "Unable to write to '" << treeFn << "': " << ::strerror(errno) << endl;
+			return EXIT_FAILURE;
+		}
+	}
+
+	if(!ptreeFn.empty()) {
+		ptreeOut.open(ptreeFn.c_str());
+		if(!ptreeOut.is_open()) {
+			cerr << "Unable to write to '" << ptreeFn << "': " << ::strerror(errno) << endl;
 			return EXIT_FAILURE;
 		}
 	}
@@ -450,14 +457,16 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	/* write the tree */
+	/* write OTU tree */
 	if(treeOut.is_open()) {
 		infoLog << "Writing OTU tree" << endl;
-		if(addPseudo) {
-			size_t n = ptu.addPseudoLeaf(otuSeen);
-			if(n > 0)
-				infoLog << "Added " << n << " pseudo-nodes to the tree to make all OTUs as leaves" << endl;
-		}
 		treeOut << ptu.convertToNewickTree(PTUnrooted::getAncestors(otuSeen), otuPrefix);
+	}
+
+	/* write pseudo-tree */
+	if(ptreeOut.is_open()) {
+		infoLog << "Writing pseudo-tree" << endl;
+		ptu.addPseudoLeaf(otuSeen);
+		ptreeOut << ptu.convertToNewickTree(PTUnrooted::getAncestors(otuSeen), otuPrefix);
 	}
 }
