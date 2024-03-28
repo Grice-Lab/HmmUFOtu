@@ -72,7 +72,7 @@ One other major program 'hmmufotu-sum' generates TSV format OTU tables (Operatio
 
 Pre-built databases
 -------------------
-You need to build an HmmUFOtu database before assigning taxonomies to your 16S or other target-loci sequencing reads. You can build your own database using `hmmufotu-build`, or alternatively [download the pre-built databases](https://www.med.upenn.edu/gricelab/hmmufotu.html#databases "Pre-built databases").
+You need to build an HmmUFOtu database before assigning taxonomies to your 16S or other target-loci sequencing reads. You can build your own database using `hmmufotu-build`, or alternatively [download the pre-built databases](https://www.med.upenn.edu/gricelab/bioinformatic-tools.html#HmmUFOtu2 "Pre-built databases").
 
 Core programs
 -------------
