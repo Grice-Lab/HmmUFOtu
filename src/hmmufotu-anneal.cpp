@@ -245,12 +245,15 @@ int main(int argc, char* argv[]) {
 
 	while(seqI.hasNext()) {
 		PrimarySeq fwdRead = seqI.nextSeq();
-		PrimarySeq revRead = fwdRead.revcom();
-		string strand;
+		PrimarySeq revRead = fwdRead; // copy read
+		revRead = revRead.revcom();
+
+		string strand = ".";
 		double minCost = inf;
 		BandedHMMP7::HmmAlignment aln;
 
 		if(searchStrand & 01) {
+			strand = "+";
 			aln = alignSeq(hmm, fwdRead);
 			minCost = aln.cost;
 		}
@@ -258,6 +261,7 @@ int main(int argc, char* argv[]) {
 		if(searchStrand & 02) {
 			BandedHMMP7::HmmAlignment revAln = alignSeq(hmm, revRead);
 			if(revAln.cost < minCost) {
+				strand = "-";
 				aln = revAln;
 				minCost = revAln.cost;
 			}
