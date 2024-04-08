@@ -80,11 +80,11 @@ void printUsage(const string& progName) {
 	#ifdef HAVE_LIBZ
 	ZLIB_SUPPORT = ", support .gz or .bz2 compressed file";
 	#endif
-	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> <(INFILE [INFILE2 ...]> <-o OTU-OUT> [options]" << endl
+	cerr << "Usage:    " << progName << "  <HmmUFOtu-DB> [INFILE [INFILE2 ...]] <-o OTU-OUT> [options]" << endl
 		 << "INFILE          FILE           : assignment file(s) from hmmufotu" << ZLIB_SUPPORT << endl
 		 << "Options:    -o  FILE           : OTU summary output, required" << endl
 		 << "            -r  FILE           : output the read IDs for each OTU" << endl
-		 << "            -l  FILE           : sample name list, with 1st field sample-name and 2nd field assignment filename" << endl
+		 << "            -l  FILE           : sample name list, with 1st field sample-name and 2nd field assignment filename, ignore any INFILEs if provided" << endl
 		 << "            -c  FILE           : write Consensus Sequence (CS) alignments of all OTUs into FILE" << endl
 		 << "            -t  FILE           : write the OTU tree into FILE" << endl
 		 << "            --pseudo-tree FILE : write an additional OTU tree where all OTUs are guaranteed as leaves, by adding pseudo-nodes with zero branch-length for intermediate nodes with OTUs assigned" << endl
@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_SUCCESS;
 	}
 
-	if(!(cmdOpts.numMainOpts() > 1)) {
+	if(!(cmdOpts.numMainOpts() > 1 || cmdOpts.numMainOpts() == 1 && cmdOpts.hasOpt("-l"))) {
 		cerr << "Error:" << endl;
 		printUsage(argv[0]);
 		return EXIT_FAILURE;
@@ -222,7 +222,7 @@ int main(int argc, char* argv[]) {
 		}
 		infoLog << "Read in sample names from " << listFn << endl;
 		inFiles.clear(); /* clear inFiles */
-//		sampleFn2Name.clear(); /* clear sample names */
+		sampleFn2Name.clear(); /* clear sample names */
 		string line;
 		while(std::getline(listIn, line)) {
 			if(line[0] == '#')
@@ -232,11 +232,9 @@ int main(int argc, char* argv[]) {
 			if(fields.size() >= 2) {
 				string name = fields[0];
 				string fn = fields[1];
-				if(sampleFn2Name.count(fn) > 0) { /* this is an input file */
-					inFiles.push_back(fn);
-					sampleFn2Name[fn] = name; /* update the sample name */
-					nRead++;
-				}
+                inFiles.push_back(fn);
+                sampleFn2Name[fn] = name; /* update the sample name */
+                nRead++;
 			}
 		}
 		listIn.close();
