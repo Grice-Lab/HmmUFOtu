@@ -601,153 +601,150 @@ int main(int argc, char* argv[]) {
 	}
 
 #pragma omp parallel
-	{
 #pragma omp single
-		{
-			while(fwdSeqI.hasNext() && (revFn.empty() || revSeqI.hasNext())) {
-				PrimarySeq fwdRead = fwdSeqI.nextSeq();
-				PrimarySeq revRead = revFn.empty() ? PrimarySeq() : revSeqI.nextSeq().revcom();
-#pragma omp task firstprivate(fwdRead, revRead)
-				{
-					bool isPaired = !revFn.empty();
-					bool isChimera = false;
-					const string& id = fwdRead.getId();
-					const string& desc = fwdRead.getDesc();
+	{
+		while(fwdSeqI.hasNext() && (revFn.empty() || revSeqI.hasNext())) {
+			PrimarySeq fwdRead = fwdSeqI.nextSeq();
+			PrimarySeq revRead = revFn.empty() ? PrimarySeq() : revSeqI.nextSeq().revcom();
+			bool isPaired = !revFn.empty();
+			bool isChimera = false;
+			const string& id = fwdRead.getId();
+			const string& desc = fwdRead.getDesc();
 
-					if(rStrand == 2 && !isPaired) /* wrong strand for single-strand reads */
-						fwdRead.revcom();
-
-					/* align fwdRead */
-					BandedHMMP7::HmmAlignment aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode);
-					assert(aln.isValid());
-					//						infoLog << "fwd seq aligned: csStart: " << csStart << " csEnd: " << csEnd << " aln: " << aln << endl;
-					if(isPaired) { /* align revRead */
-						//							cerr << "Aligning mate: " << revRead.getId() << endl;
-						BandedHMMP7::HmmAlignment revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode);
-						assert(revAln.isValid());
-						//							infoLog << "rev seq aligned: revStart: " << revStart << " revEnd: " << revEnd << " aln: " << revAln << endl;
-						if(!ignoreOrient && !(aln.csStart <= revAln.csStart && aln.csEnd <= revAln.csEnd)) {
+			if(rStrand == 2 && !isPaired) /* wrong strand for single-strand reads */
+				fwdRead.revcom();
+#pragma omp task
+			{
+				/* align fwdRead */
+				BandedHMMP7::HmmAlignment aln = alignSeq(hmm, csfm, fwdRead, seedLen, seedRegion, mode);
+				assert(aln.isValid());
+				//						infoLog << "fwd seq aligned: csStart: " << csStart << " csEnd: " << csEnd << " aln: " << aln << endl;
+				if(isPaired) { /* align revRead */
+					//							cerr << "Aligning mate: " << revRead.getId() << endl;
+					BandedHMMP7::HmmAlignment revAln = alignSeq(hmm, csfm, revRead, seedLen, seedRegion, mode);
+					assert(revAln.isValid());
+					//							infoLog << "rev seq aligned: revStart: " << revStart << " revEnd: " << revEnd << " aln: " << revAln << endl;
+					if(!ignoreOrient && !(aln.csStart <= revAln.csStart && aln.csEnd <= revAln.csEnd)) {
 #pragma omp critical(writeLog)
 						{
 							warningLog << "Bad orientation of forward/reverse read detected, treating as chimera" << endl;
-//							infoLog << "fwd.csStart: " << aln.csStart << " fwd.csEnd: " << aln.csEnd
-//									<< " rev.csStart: " << revAln.csStart << " rev.csEnd: " << revAln.csEnd << endl;
+							//							infoLog << "fwd.csStart: " << aln.csStart << " fwd.csEnd: " << aln.csEnd
+							//									<< " rev.csStart: " << revAln.csStart << " rev.csEnd: " << revAln.csEnd << endl;
 						}
-							isChimera = true; /* bad orientation indicates a chimera seq */
-						}
+						isChimera = true; /* bad orientation indicates a chimera seq */
+					}
+					else
+						aln.merge(revAln); /* merge alignment */
+				}
+				DigitalSeq seq(abc, id, aln.align);
+				/* common seeds used for both segments and whole seq */
+				vector<PTUnrooted::PTLoc> seeds;
+				if(checkChimera && !isChimera || !alignOnly) {
+					seeds = getSeed(ptu, seq, aln.csStart - 1, aln.csEnd - 1, maxDiff, maxHeight);
+					if(seeds.size() > maxNSeed)
+						seeds.erase(seeds.end() - (seeds.size() - maxNSeed), seeds.end()); /* remove bad seeds */
+				}
+				PTUnrooted::PTPlacement bestPlace;
+				double chimeraLod = EGriceLab::HmmUFOtu::nan;
+				PTUnrooted::PTPlacement bestSeg5Place;
+				PTUnrooted::PTPlacement bestSeg3Place;
+				if(checkChimera && !isChimera) { /* need further chimera checking */
+					/* get segment seeds */
+					vector<PTUnrooted::PTPlacement> seg5Places; /* placements of 5' segments */
+					vector<PTUnrooted::PTPlacement> seg3Places; /* placements of 3' segments */
+					const int segLen = (aln.csEnd - aln.csStart + 1) / numSeg;
+					for(int n = 0; n < numSeg; ++n) {
+						int segStart = aln.csStart + n * segLen; /* 1-based */
+						int segEnd = segStart + segLen - 1;      /* 1-based */
+						/* get segment seeds using common seeds */
+						vector<PTUnrooted::PTLoc> segSeeds;
+						segSeeds.reserve(seeds.size());
+						for(vector<PTUnrooted::PTLoc>::const_iterator s = seeds.begin(); s != seeds.end(); ++s)
+							segSeeds.push_back(PTUnrooted::PTLoc(segStart - 1, segEnd - 1, s->id, SeqUtils::pDist(seq, ptu.getNode(s->id)->getSeq(), segStart - 1, segEnd - 1)));
+						/* estimate segment placements */
+						vector<PTUnrooted::PTPlacement> segPlaces = estimateSeq(ptu, seq, segSeeds, estMethod);
+						/* filter placesments for this segment */
+						filterPlacements(segPlaces, maxChimeraError);
+						placeSeq(ptu, seq, segPlaces, maxHeight);
+						/* add placements of this segment to the larget lists */
+						if(n < numSeg / 2)
+							seg5Places.insert(seg5Places.end(), segPlaces.begin(), segPlaces.end());
 						else
-							aln.merge(revAln); /* merge alignment */
+							seg3Places.insert(seg3Places.end(), segPlaces.begin(), segPlaces.end());
 					}
-					DigitalSeq seq(abc, id, aln.align);
-					/* common seeds used for both segments and whole seq */
-					vector<PTUnrooted::PTLoc> seeds;
-					if(checkChimera && !isChimera || !alignOnly) {
-						seeds = getSeed(ptu, seq, aln.csStart - 1, aln.csEnd - 1, maxDiff, maxHeight);
-						if(seeds.size() > maxNSeed)
-							seeds.erase(seeds.end() - (seeds.size() - maxNSeed), seeds.end()); /* remove bad seeds */
-					}
-					PTUnrooted::PTPlacement bestPlace;
-					double chimeraLod = EGriceLab::HmmUFOtu::nan;
-					PTUnrooted::PTPlacement bestSeg5Place;
-					PTUnrooted::PTPlacement bestSeg3Place;
-					if(checkChimera && !isChimera) { /* need further chimera checking */
-						/* get segment seeds */
-						vector<PTUnrooted::PTPlacement> seg5Places; /* placements of 5' segments */
-						vector<PTUnrooted::PTPlacement> seg3Places; /* placements of 3' segments */
-						const int segLen = (aln.csEnd - aln.csStart + 1) / numSeg;
-						for(int n = 0; n < numSeg; ++n) {
-							int segStart = aln.csStart + n * segLen; /* 1-based */
-							int segEnd = segStart + segLen - 1;      /* 1-based */
-							/* get segment seeds using common seeds */
-							vector<PTUnrooted::PTLoc> segSeeds;
-							segSeeds.reserve(seeds.size());
-							for(vector<PTUnrooted::PTLoc>::const_iterator s = seeds.begin(); s != seeds.end(); ++s)
-								segSeeds.push_back(PTUnrooted::PTLoc(segStart - 1, segEnd - 1, s->id, SeqUtils::pDist(seq, ptu.getNode(s->id)->getSeq(), segStart - 1, segEnd - 1)));
-							/* estimate segment placements */
-							vector<PTUnrooted::PTPlacement> segPlaces = estimateSeq(ptu, seq, segSeeds, estMethod);
-							/* filter placesments for this segment */
-							filterPlacements(segPlaces, maxChimeraError);
-							placeSeq(ptu, seq, segPlaces, maxHeight);
-							/* add placements of this segment to the larget lists */
-							if(n < numSeg / 2)
-								seg5Places.insert(seg5Places.end(), segPlaces.begin(), segPlaces.end());
-							else
-								seg3Places.insert(seg3Places.end(), segPlaces.begin(), segPlaces.end());
-						}
-						std::sort(seg5Places.rbegin(), seg5Places.rend(), compareByLoglik);
-						std::sort(seg3Places.rbegin(), seg3Places.rend(), compareByLoglik);
-						bestSeg5Place = seg5Places[0];
-						bestSeg3Place = seg3Places[0];
-						/* get alt-seg5-place */
-						PTUnrooted::PTLoc alt5Loc(bestSeg5Place.start, bestSeg5Place.end, bestSeg3Place.cNode->getId() /* seg3 branch */, SeqUtils::pDist(seq, bestSeg5Place.cNode->getSeq(), bestSeg5Place.start, bestSeg5Place.end));
-						PTUnrooted::PTPlacement altSeg5Place = ptu.estimateSeq(seq, alt5Loc);
-						ptu.placeSeq(seq, altSeg5Place, maxHeight);
-						/* get alt-seg3-place */
-						PTUnrooted::PTLoc alt3Loc(bestSeg3Place.start, bestSeg3Place.end, bestSeg5Place.cNode->getId() /* seg5 branch */, SeqUtils::pDist(seq, bestSeg3Place.cNode->getSeq(), bestSeg3Place.start, bestSeg3Place.end));
-						PTUnrooted::PTPlacement altSeg3Place = ptu.estimateSeq(seq, alt3Loc);
-						ptu.placeSeq(seq, altSeg3Place, maxHeight);
-						chimeraLod = bestSeg5Place.loglik - altSeg5Place.loglik + bestSeg3Place.loglik - altSeg3Place.loglik;
-						isChimera = bestSeg5Place.getTaxonId() != bestSeg3Place.getTaxonId() && chimeraLod > minChimeraLod;
-					} /* end check chimera */
+					std::sort(seg5Places.rbegin(), seg5Places.rend(), compareByLoglik);
+					std::sort(seg3Places.rbegin(), seg3Places.rend(), compareByLoglik);
+					bestSeg5Place = seg5Places[0];
+					bestSeg3Place = seg3Places[0];
+					/* get alt-seg5-place */
+					PTUnrooted::PTLoc alt5Loc(bestSeg5Place.start, bestSeg5Place.end, bestSeg3Place.cNode->getId() /* seg3 branch */, SeqUtils::pDist(seq, bestSeg5Place.cNode->getSeq(), bestSeg5Place.start, bestSeg5Place.end));
+					PTUnrooted::PTPlacement altSeg5Place = ptu.estimateSeq(seq, alt5Loc);
+					ptu.placeSeq(seq, altSeg5Place, maxHeight);
+					/* get alt-seg3-place */
+					PTUnrooted::PTLoc alt3Loc(bestSeg3Place.start, bestSeg3Place.end, bestSeg5Place.cNode->getId() /* seg5 branch */, SeqUtils::pDist(seq, bestSeg3Place.cNode->getSeq(), bestSeg3Place.start, bestSeg3Place.end));
+					PTUnrooted::PTPlacement altSeg3Place = ptu.estimateSeq(seq, alt3Loc);
+					ptu.placeSeq(seq, altSeg3Place, maxHeight);
+					chimeraLod = bestSeg5Place.loglik - altSeg5Place.loglik + bestSeg3Place.loglik - altSeg3Place.loglik;
+					isChimera = bestSeg5Place.getTaxonId() != bestSeg3Place.getTaxonId() && chimeraLod > minChimeraLod;
+				} /* end check chimera */
 
-					if(isChimera) { /* a potential chimera sequence */
-						if(chiOut.is_complete())
-							if(!chimeraInfo)
+				if(isChimera) { /* a potential chimera sequence */
+					if(chiOut.is_complete())
+						if(!chimeraInfo)
 #pragma omp critical(writeChiAssign)
-								chiOut << id << "\t" << desc << "\t" << aln
+							chiOut << id << "\t" << desc << "\t" << aln
 								<< "\t" << bestPlace << endl;
-							else
+						else
 #pragma omp critical(writeChiAssign)
-								chiOut << id << "\t" << desc << "\t" << aln
+							chiOut << id << "\t" << desc << "\t" << aln
 								<< "\t" << bestSeg5Place.getTaxonId() << "\t" << bestSeg3Place.getTaxonId()
 								<< "\t" << bestSeg5Place.getTaxonName() << "\t" << bestSeg3Place.getTaxonName()
 								<< "\t" << chimeraLod
 								<< "\t" << bestPlace << endl;
-					}
-					else { /* not a chimera sequence */
-						/* write the alignment seq to output */
-						if(!alnFn.empty()) {
-							string desc = fwdRead.getDesc();
-							desc += ";csStart=" + boost::lexical_cast<string>(aln.csStart) +
-									";csEnd=" + boost::lexical_cast<string>(aln.csEnd) + ";";
+				}
+				else { /* not a chimera sequence */
+					/* write the alignment seq to output */
+					if(!alnFn.empty()) {
+						string desc = fwdRead.getDesc();
+						desc += ";csStart=" + boost::lexical_cast<string>(aln.csStart) +
+							";csEnd=" + boost::lexical_cast<string>(aln.csEnd) + ";";
 #pragma omp critical(writeAln)
-							alnSeqO.writeSeq(PrimarySeq(abc, id, aln.align, desc));
+						alnSeqO.writeSeq(PrimarySeq(abc, id, aln.align, desc));
+					}
+
+					if(!alignOnly) {
+						/* place seq with seed-estimate-place (SEP) algorithm */
+						/* estimate placements using the common seeds */
+						vector<PTUnrooted::PTPlacement> places = estimateSeq(ptu, seq, seeds, estMethod);
+						/* filter placements */
+						filterPlacements(places, maxError);
+						/* accurate placements */
+						placeSeq(ptu, seq, places, maxHeight);
+						if(onlyML) { /* don't calculate q-values */
+							std::sort(places.rbegin(), places.rend(), compareByLoglik); /* sort places decently by real loglik */
+						}
+						else { /* calculate q-values */
+							calcQValues(places, myPrior);
+							std::sort(places.rbegin(), places.rend(), compareByQPlace); /* sort places decently by posterior placement probability */
 						}
 
-						if(!alignOnly) {
-							/* place seq with seed-estimate-place (SEP) algorithm */
-							/* estimate placements using the common seeds */
-							vector<PTUnrooted::PTPlacement> places = estimateSeq(ptu, seq, seeds, estMethod);
-							/* filter placements */
-							filterPlacements(places, maxError);
-							/* accurate placements */
-							placeSeq(ptu, seq, places, maxHeight);
-							if(onlyML) { /* don't calculate q-values */
-								std::sort(places.rbegin(), places.rend(), compareByLoglik); /* sort places decently by real loglik */
-							}
-							else { /* calculate q-values */
-								calcQValues(places, myPrior);
-								std::sort(places.rbegin(), places.rend(), compareByQPlace); /* sort places decently by posterior placement probability */
-							}
-
-							bestPlace = places[0];
-						} /* end if alignOnly */
-						/* write main output */
-						if(!chimeraInfo)
+						bestPlace = places[0];
+					} /* end if alignOnly */
+					/* write main output */
+					if(!chimeraInfo)
 #pragma omp critical(writeAssign)
-							out << id << "\t" << desc << "\t" << aln
+						out << id << "\t" << desc << "\t" << aln
 							<< "\t" << bestPlace << endl;
-						else
+					else
 #pragma omp critical(writeAssign)
-							out << id << "\t" << desc << "\t" << aln
+						out << id << "\t" << desc << "\t" << aln
 							<< "\t" << bestSeg5Place.getTaxonId() << "\t" << bestSeg3Place.getTaxonId()
 							<< "\t" << bestSeg5Place.getTaxonName() << "\t" << bestSeg3Place.getTaxonName()
 							<< "\t" << chimeraLod
 							<< "\t" << bestPlace << endl;
-					} /* end not chimera alignment */
-				} /* end task */
-			} /* end each read/pair */
-		} /* end single, implicit barrier */
-	} /* end parallel */
+				} /* end not chimera alignment */
+			} /* end task, nowait */
+		} /* end each read/pair */
+	} /* end single, implicit barrier */
 	/* release resources */
 }
