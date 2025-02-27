@@ -3,7 +3,6 @@
 	<name>HmmUFOtuExternalFmIndex</name>
 	<comment></comment>
 	<projects>
-		<project>seqan-Debug@debug-eclipse</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
@@ -35,7 +34,7 @@
 		<link>
 			<name>MSA_test1</name>
 			<type>1</type>
-			<location>/home/zhengqi/git/HmmUFOtu/HmmUFOtu/MSA_test1</location>
+			<location>C:/home/zhengqi/git/HmmUFOtu/HmmUFOtu/MSA_test1</location>
 		</link>
 	</linkedResources>
 </projectDescription>
