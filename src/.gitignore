@@ -20,3 +20,6 @@ Makefile
 /hmmufotu-jplace
 /hmmufotu-merge
 *.exe
+# ignore eclipse files
+.project
+.cproject
