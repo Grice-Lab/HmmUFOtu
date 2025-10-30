@@ -28,9 +28,9 @@
 #include <cstdlib>
 #include <algorithm>
 #include <cassert>
+#include <iostream>
 #include "DegenAlphabet.h"
 #include "StringUtils.h"
-#include <iostream>
 
 namespace EGriceLab {
 namespace HmmUFOtu {
@@ -59,8 +59,8 @@ DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const st
 		sym_map[it->first] = encode(it->second[0]); /* set synom map to the first symbol */
 
 	// set the gap_sym
-	for(string::const_iterator it = gap.begin(); it != gap.end(); ++it)
-		sym_map[*it] = GAP_BASE;
+	for(char c : gap)
+		sym_map[c] = GAP_BASE;
 }
 
 bool DegenAlphabet::isMatch(char c1, char c2) const {
@@ -68,11 +68,9 @@ bool DegenAlphabet::isMatch(char c1, char c2) const {
 }
 
 bool DegenAlphabet::isMatch(char c, int8_t b) const {
-	string synon = c + getSynonymous(c);
-	for(string::const_iterator ch = synon.begin(); ch != synon.end(); ++ch)
-		if(encode(*ch) == b)
-			return true;
-	return false;
+	string s = c + getSynonymous(c);
+	char t = decode(b);
+	return s.find(t) != string::npos;
 }
 
 bool operator==(const DegenAlphabet& lhs, const DegenAlphabet& rhs) {

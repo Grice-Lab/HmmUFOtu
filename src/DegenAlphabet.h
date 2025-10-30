@@ -30,7 +30,7 @@
 #include <map>
 #include <string>
 #include <stdexcept>
-#include <stdint.h> // C99 types
+#include <cstdint> // C99 types
 #include <limits>
 #include "HmmUFOtuDef.h"
 
@@ -43,6 +43,8 @@ using std::map;
 class DegenAlphabet {
 public:
 	/* Constructors */
+	/* explicitly disable default constructor */
+	DegenAlphabet() = delete;
 	/* customized constructors */
 	/**
 	 * Construct a DegenAlphabet with given name, symbol, expanded synonymous, and a map between sym and synon
@@ -137,8 +139,9 @@ public:
 
 	/* Get synonymous for a given symbol, or empty string if not exists */
 	string getSynonymous(char c) const {
-		if(degen_map.find(c) != degen_map.end())
-			return degen_map.find(c)->second;
+		map<char, string>::const_iterator res = degen_map.find(c);
+		if(res != degen_map.end())
+			return res->second;
 		return "";
 	}
 

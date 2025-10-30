@@ -23,26 +23,16 @@
  *  Created on: Oct 26, 2015
  *      Author: zhengqi
  */
-
 #ifndef HMMUFOTUDEF_H_
 #define HMMUFOTUDEF_H_
-#ifndef INT8_MAX
-#define INT8_MAX (127)
-#endif
 
-#ifndef UINT16_MAX
-#define UINT16_MAX (65535)
-#endif
-
-#ifndef UINT8_MAX
-#define UINT8_MAX (255)
-#endif
+/* use cstdint standard type macros */
+#include<cstdint>
 
 namespace EGriceLab {
 
 typedef unsigned char uchar_t;
 
 }
-
 
 #endif /* HMMUFOTUDEF_H_ */
