@@ -55,8 +55,8 @@ DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const st
 		sym_map[symbol[i]] = i;
 
 	// set the synon_map
-	for(map<char, string>::const_iterator it = degen_map.begin(); it != degen_map.end(); ++it)
-		sym_map[it->first] = encode(it->second[0]); /* set synom map to the first symbol */
+	for(map<char, string>::value_type pair item : degen_map)
+		sym_map[item.first] = encode(item.second); /* set synom map to the first symbol */
 
 	// set the gap_sym
 	for(char c : gap)
