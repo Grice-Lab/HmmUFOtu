@@ -26,7 +26,11 @@ using Eigen::IOFormat;
 
 class DirichletModel {
 public:
-	/* construct a Dirichlet model with given categories */
+	/* constructors */
+	/** default constructor */
+	DirichletModel() = default;
+
+	/** construct a Dirichlet model with given categories */
 	explicit DirichletModel(int K): K(K) {
 		assert(K >= MIN_K);
 	}
