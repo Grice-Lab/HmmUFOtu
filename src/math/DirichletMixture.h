@@ -19,6 +19,9 @@ using std::string;
 class DirichletMixture: public DirichletModel {
 public:
 	/* constructors */
+	/** default constructor */
+	DirichletMixture() = default;
+
 	/** construct a Dirichlet density with given categories and optionally estimated alpha */
 	DirichletMixture(int K, int L):
 		DirichletModel(K), L(L), q(L), w(K, L), alpha(K, L) /* initiate w and alpha to correct size */ {
