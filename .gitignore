@@ -6,12 +6,33 @@
 **/.cproject
 **/.project
 **/.settings
-# Ignore Autotools genereated Makefiles
+# Ignore Autotools genereated files
 **/Makefile
 **/autom4te.cache/**
 config.log
-**/config.h
 config.status
+**/Makefile.in
+**/aclocal.m4
+**/libtool.m4
+**/lt*.m4
+**/autom4te.cache
+**/autom4te.cache
+**/config.cache
+**/config.h
+**/config.h.in
+**/config.guess
+**/config.sub
+**/config.log
+**/config.mk
+**/config.status
+**/stamp-h1
+**/test-driver
+# Ignore libtool generated files
+**/ltmain.sh
+**/missing
+**/compile
+**/libtool
+**/depcomp
 **/.deps/**
 **/.libs/**
 **/*.lo
@@ -25,3 +46,4 @@ config.status
 **/*.swp
 # Ignore test binaries
 MultinomialDistribution_test
+m4/libtool.m4

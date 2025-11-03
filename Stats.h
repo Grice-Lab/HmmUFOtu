@@ -38,10 +38,10 @@ K which_max(map<K, V> freq) {
 	assert(!freq.empty());
 	K maxKey = freq.begin()->first;
 	V maxVal = freq.begin()->second;
-	for(typename map<K, V>::const_iterator it = freq.begin(); it != freq.end(); ++it)
-		if(maxVal < it->second) {
-			maxKey = it->first;
-			maxVal = it->second;
+	for(const typename map<K, V>::value_type item : freq)
+		if(maxVal < item) {
+			maxKey = item.first;
+			maxVal = item.second;
 		}
 	return maxKey;
 }
@@ -54,15 +54,7 @@ K which_max(map<K, V> freq) {
  */
 template <typename T>
 typename vector<T>::size_type which_max(vector<T> count) {
-	assert(!count.empty());
-	typename vector<T>::size_type idx = 0;
-	T max = count[0];
-	for(typename vector<T>::size_type i = 1; i != count.size(); ++i)
-		if(max < count[i]) {
-			idx = i;
-			max = count[i];
-		}
-	return idx;
+	return std::max_element(count.begin(), count.end()) - count.begin();
 }
 
 /**
@@ -74,15 +66,7 @@ typename vector<T>::size_type which_max(vector<T> count) {
  */
 template <typename T>
 size_t which_max(const T* arr, size_t n) {
-	assert(n > 0);
-	size_t idx = 0;
-	T max = arr[0];
-	for(size_t i = 1; i < n; ++i)
-		if(max < arr[i]) {
-			idx = i;
-			max = arr[i];
-		}
-	return idx;
+	return std::max_element(arr, arr + n) - arr;
 }
 
 /**
@@ -95,10 +79,9 @@ template <typename K, typename V>
 V max(map<K, V> freq) {
 	assert(!freq.empty());
 	V max = freq.begin()->second;
-	for(typename map<K, V>::const_iterator it = freq.begin(); it != freq.end(); ++it)
-		if(it->second > max) {
-			max = it->second;
-		}
+	for(const typename map<K, V>::value_type item : freq)
+		if(item.second > max)
+			max = item.second;
 	return max;
 }
 
@@ -111,15 +94,7 @@ V max(map<K, V> freq) {
  */
 template <typename T>
 T max(const T* arr, size_t n) {
-	assert(n > 0);
-	const T* ptr = arr;
-	T max = ptr++[0];
-	while(ptr != arr + n) {
-		if(max < *ptr)
-			max = *ptr;
-		ptr++;
-	}
-	return max;
+	return *which_max(arr, n);
 }
 
 /**
@@ -131,10 +106,7 @@ T max(const T* arr, size_t n) {
  */
 template <typename T>
 bool is_element(T x, vector<T> vec) {
-	for(typename vector<T>::const_iterator it = vec.begin(); it != vec.end(); ++it)
-		if(*it == x)
-			return true;
-	return false;
+	return std::count(vec.begin(), vec.end(), x) > 0;
 }
 
 /**
@@ -147,11 +119,7 @@ bool is_element(T x, vector<T> vec) {
  */
 template <typename T>
 size_t count_element(T x, const T* arr, size_t n) {
-	size_t count = 0;
-	for(const T* ptr = arr; ptr != arr + n; ++ptr)
-		if(*ptr == x)
-			count++;
-	return count;
+	return std::count(arr, arr + n, x);
 }
 
 /**
@@ -164,11 +132,7 @@ size_t count_element(T x, const T* arr, size_t n) {
  */
 template <typename T>
 size_t count_not_element(T x, const T* arr, size_t n) {
-	size_t count = 0;
-	for(const T* ptr = arr; ptr != arr + n; ++ptr)
-		if(*ptr != x)
-			count++;
-	return count;
+	return n - std::count(arr, arr + n, x);
 }
 
 /**
@@ -195,8 +159,7 @@ inline int bpe(int n) {
 template <typename T>
 T sum(const T* arr, size_t n) {
 	T sum = 0;
-	for(const T* ptr = arr; ptr != arr + n; ++ptr)
-		sum += *ptr;
+	std::for_each(arr, arr + n, [&](const T v) { sum += v; });
 	return sum;
 }
 
@@ -211,8 +174,7 @@ T sum(const T* arr, size_t n) {
 template <typename T>
 double sum(const T* arr, const double* w, size_t n) {
 	double sum = 0;
-	for(size_t i = 0; i != n; ++i)
-		sum += arr[i] * w[i];
+	std::for_each(arr, arr + n, [&](const T v) { sum += v * (*w++); });
 	return sum;
 }
 
@@ -223,8 +185,7 @@ inline void normalize(double* arr, size_t n, double C = 1.0) {
 	if(n == 0)
 		return;
 	double s = sum(arr, n);
-	for(double* ptr = arr; ptr != arr + n; ++ptr)
-		*ptr /= s * C;
+	std::for_each(arr, arr + n, [=](double &v) { v /= s * C; });
 }
 
 /**

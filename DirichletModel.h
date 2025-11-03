@@ -26,18 +26,8 @@ using Eigen::IOFormat;
 
 class DirichletModel {
 public:
-	/* default constructor, do nothing */
-	DirichletModel(): K(0), trainingCost(NAN),
-	eta(DEFAULT_ETA), maxIter(DEFAULT_MAX_ITER),
-	absEpsCost(DEFAULT_ABS_EPS_COST), absEpsParams(DEFAULT_ABS_EPS_PARAMS),
-	relEpsCost(DEFAULT_REL_EPS_COST), relEpsParams(DEFAULT_REL_EPS_PARAMS)
-	{ }
-
 	/* construct a Dirichlet model with given categories */
-	explicit DirichletModel(int K): K(K), trainingCost(NAN),
-			eta(DEFAULT_ETA), maxIter(DEFAULT_MAX_ITER),
-			absEpsCost(DEFAULT_ABS_EPS_COST), absEpsParams(DEFAULT_ABS_EPS_PARAMS),
-			relEpsCost(DEFAULT_REL_EPS_COST), relEpsParams(DEFAULT_REL_EPS_PARAMS) {
+	explicit DirichletModel(int K): K(K) {
 		assert(K >= MIN_K);
 	}
 
@@ -159,16 +149,16 @@ public:
 	}
 
 private:
-	int K; // number of parameters
-	double trainingCost; // cost during training, for documentation purpose only
+	int K = 0; // number of parameters
+	double trainingCost = NAN; // cost during training, for documentation purpose only
 
 protected:
-	double eta;
-	double absEpsCost;
-	double absEpsParams;
-	double relEpsCost;
-	double relEpsParams;
-	int maxIter;
+	double eta = DEFAULT_ETA;
+	double absEpsCost = DEFAULT_ABS_EPS_COST;
+	double absEpsParams = DEFAULT_ABS_EPS_PARAMS;
+	double relEpsCost = DEFAULT_REL_EPS_COST;
+	double relEpsParams = DEFAULT_REL_EPS_PARAMS;
+	int maxIter = DEFAULT_MAX_ITER;
 
 	/* static members */
 public:
@@ -198,9 +188,8 @@ inline double DirichletModel::pdf(const VectorXd& data) const {
 inline double DirichletModel::cost(const MatrixXd& data) const {
 	double c = 0;
 	MatrixXd::Index M = data.cols();
-	for(MatrixXd::Index t = 0; t < M; ++t) {
+	for(MatrixXd::Index t = 0; t < M; ++t)
 		c -= lpdf(data.col(t));
-	}
 	return c;
 }
 

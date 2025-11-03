@@ -13,5 +13,6 @@
 #include "DirichletDensity.h"
 #include "DirichletMixture.h"
 #include "RootFinder.h"
+#include "MultinomialDistribution.h"
 
 #endif /* SRC_MATH_EGMATH_H_ */
