@@ -20,7 +20,7 @@ namespace Math {
 using Eigen::VectorXd;
 using Eigen::MatrixBase;
 
-const double NAT2BIT = 1.0 / ::log(2);
+constexpr double NAT2BIT = 1.0 / ::log(2);
 
 /**
  * Normalize a vector
@@ -59,7 +59,7 @@ inline VectorXd scaleExp(const VectorXd& v) {
  * @return  PDF of overserving the data
  */
 inline double dDirichlet(const VectorXd& alpha, const VectorXd& x) {
-	std::cerr << "alpha:" << alpha.transpose() << " x:" << x.transpose() << std::endl;
+//	std::cerr << "alpha:" << alpha.transpose() << " x:" << x.transpose() << std::endl;
 	assert(alpha.size() == x.size());
 	VectorXd::Index K = alpha.size();
 	double sum = x.sum();
@@ -78,10 +78,8 @@ inline double dDirichlet(const VectorXd& alpha, const VectorXd& x) {
 	logDenom -= ::lgamma(alpha.sum());
 
 //	std::cerr << "logNumer:" << logNumer << " logDenom:" << logDenom << std::endl;
-
 	return ::exp(logNumer - logDenom);
 }
-
 
 /**
  * calculate relative entropy between a two distribution
