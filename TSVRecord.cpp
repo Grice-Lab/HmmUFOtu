@@ -17,20 +17,18 @@ const string TSVRecord::DEFAULT_SEP = "\t";
 void TSVRecord::parse(const string& line, const string& sep, char quote) {
 	boost::split(fields, line, boost::is_any_of(sep));
 	if(quote != '\0') { /* quote requested */
-		for(vector<string>::iterator val = fields.begin(); val != fields.end(); ++val)
-			*val = StringUtils::stripQuotes(*val, quote);
+		for(string& val : fields)
+			val = StringUtils::stripQuotes(val, string() + quote);
 	}
 }
 
 string TSVRecord::toString(const string& sep, char quote) const {
 	if(!::isprint(quote)) /* non-printable quote charaster */
 		return boost::join(fields, sep);
-
 	vector<string> fieldsQuoted;
 	fieldsQuoted.reserve(numFields());
-	for(vector<string>::const_iterator val = fields.begin(); val != fields.end(); ++val)
-		fieldsQuoted.push_back(quote + *val + quote);
-
+	for(const string& val : fields)
+		fieldsQuoted.push_back(quote + val + quote);
 	return boost::join(fieldsQuoted, sep);
 }
 

@@ -27,6 +27,7 @@
 #ifndef SRC_COMMANDOPTIONS_H_
 #define SRC_COMMANDOPTIONS_H_
 
+#include <initializer_list>
 #include <string>
 #include <set>
 #include <map>
@@ -45,16 +46,27 @@ public:
 	CommandOptions(int argc, char** argv);
 
 	/** member methods */
+	/** test whether given option name exists */
 	bool hasOpt(const string& name) const {
-		return opts.find(name) != opts.end();
+		return opts.count(name) != 0;
 	}
 
-	string getOpt(const string& name) const {
-		return hasOpt(name) ? opts.find(name)->second : "";
+	/** test any of given option names exists */
+	bool hasOpt(const std::initializer_list<string>& names) const {
+		bool flag = false;
+		for(const string& name : names)
+			flag |= hasOpt(name);
+		return flag;
 	}
 
+	/** get given option by name */
+	const string& getOpt(const string& name) const {
+		return opts.at(name);
+	}
+
+	/** get given option string in c_str style */
 	const char* getOptStr(const string& name) const {
-		return hasOpt(name) ? opts.find(name)->second.c_str() : "";
+		return getOpt(name).c_str();
 	}
 
 	/**

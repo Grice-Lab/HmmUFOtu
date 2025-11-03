@@ -55,10 +55,10 @@ vector<string> CommandOptions::getOpts(const string& name) const {
 	vector<string> opts;
 	if(hasOpt(name)) {
 		vector<string>::size_type i = 0;
-		string val = getOpt(name);
-		for(string::const_iterator c = val.begin(); c != val.end(); ++c)
-			if(*c != '\0') /* not a separator */
-				opts[i].push_back(*c);
+		string optV = getOpt(name);
+		for(const string::value_type c : optV)
+			if(c != '\0') /* not a separator */
+				opts[i].push_back(c);
 			else
 				i++;
 	}

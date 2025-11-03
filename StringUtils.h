@@ -28,6 +28,7 @@
 #ifndef STRINGUTILS_H_
 #define STRINGUTILS_H_
 #include <string>
+#include <regex>
 #include <iostream>
 #include <sstream>
 
@@ -99,20 +100,20 @@ public:
 	static string basename(string path, string suffix = "");
 
 	/**
-	 * Remove leading and tailing quotes from a given string
+	 * Remove leading and tailing whitespaces from a given string
 	 * @param str  string input
-	 * @param quotes  quoting characters
-	 * @return a new string with all quotes in "quote" removed
+	 * @param ws  whitespace characters in regex
+	 * @return a new string with all leading/tailing whitespaces trimmed
 	 */
-	static string stripQuotes(const string& str, const string& quotes = "\"'");
+	static string trim(const string& str, const string& ws = " \t\n\r\0\v");
 
 	/**
 	 * Remove leading and tailing quotes from a given string
 	 * @param str  string input
-	 * @param quote  quoting character
-	 * @return a new string with all quotes in "quote" removed
+	 * @param quotes  quoting characters in regex
+	 * @return a new string with all heading/tailing quotes removed
 	 */
-	static string stripQuotes(const string& str, char quote = '"');
+	static string stripQuotes(const string& str, const string& quotes = "\"'");
 
 	/**
 	 * check whether a string contains any white space characters
@@ -162,7 +163,8 @@ public:
 	static string removeEnd(const string& str, const string& pattern);
 
 	/**
-	 * load data from a binary input to given basic_string, override any old data
+	 * load data from a binary input to given basic_string, override any old data,
+	 * it will directly access the string memory since in C++11, strings are guaranteed to be stored linearly
 	 * @param dest  destination
 	 * @param in  input
 	 * @param number basic_string to load
@@ -170,11 +172,38 @@ public:
 	 */
 	template<typename T>
 	static istream& loadString(basic_string<T>& dest, istream& in, size_t length) {
-		T* buf = new T[length]; /* construct a temporary buffer */
+		T* buf = new T[length];
 		in.read((char*) buf, length * sizeof(T));
 		dest.assign(buf, length);
 		delete[] buf;
+		return in;
+	}
 
+	/**
+	 * load data from a binary input to given basic_string, override any old data,
+	 * it will directly access the string memory since in C++11, strings are guaranteed to be stored linearly
+	 * @param dest  destination
+	 * @param in  input
+	 * @param number basic_string to load
+	 * @return  whether loading was successful
+	 */
+	static istream& loadString(basic_string<uint8_t>& dest, istream& in, size_t length) {
+		dest.resize(length);
+		in.read(reinterpret_cast<char*>(const_cast<uint8_t*>(dest.data())), length * sizeof(uint8_t));
+		return in;
+	}
+
+	/**
+	 * load data from a binary input to given basic_string, override any old data,
+	 * it will directly access the string memory since in C++11, strings are guaranteed to be stored linearly
+	 * @param dest  destination
+	 * @param in  input
+	 * @param number basic_string to load
+	 * @return  whether loading was successful
+	 */
+	static istream& loadString(string& dest, istream& in, size_t length) {
+		dest.resize(length);
+		in.read(const_cast<char*>(dest.data()), length * sizeof(char));
 		return in;
 	}
 
@@ -186,7 +215,7 @@ public:
 	 */
 	template<typename T>
 	static istream& loadString(basic_string<T>& dest, istream& in) {
-		size_t len;
+		size_t len = 0;
 		in.read((char*) &len, sizeof(size_t));
 		return loadString(dest, in, len);
 	}
@@ -196,12 +225,11 @@ public:
 	 * @param src  source
 	 * @param out  output
 	 * @param length  number of source to save
-	 * @return  whether saving was successful
+	 * @return  output stream
 	 */
 	template<typename T>
 	static ostream& saveString(const basic_string<T>& src, ostream& out, size_t length) {
-		out.write((const char*) src.c_str(), length * sizeof(T));
-		return out;
+		return out.write((const char*) src.c_str(), length * sizeof(T));
 	}
 
 	/**
@@ -217,11 +245,8 @@ public:
 		return saveString(src, out, len);
 	}
 
-	/** get the number of common occuring characters/alphabets used by two strings */
-	static string::size_type common(const string& str1, const string& str2);
-
-	/** get the number of common occuring characters/alphabets used by two C-strs */
-	static size_t common(const char* str1, const char* str2);
+	/** get the common characters/alphabets shared by two strings */
+	static string common(string str1, string str2);
 
 }; /* end class StringUtils */
 

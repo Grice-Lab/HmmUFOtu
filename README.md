@@ -1,11 +1,11 @@
 EGriceLab::util introduction
 ============================
-EGriceLab::util is shared C++ library used among EGriceLab which contains useful classes and functions
+EGriceLab::util is shared C++11 library used among EGriceLab which contains useful classes and functions
 for common functionalities across multiple C/C++ projects
 
 Implementation
 --------------
-EGriceLab::util is written in pure C++98, and built with the GNU Autotools
+EGriceLab::util is written in C++11, and built with the GNU Autotools
 
 Dependencies
 ------------

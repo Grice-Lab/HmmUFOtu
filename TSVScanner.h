@@ -58,7 +58,7 @@ public:
 	/** member methods */
 	/** test whether this TSVScanner has a header */
 	bool hasHeader() const {
-		return header != NULL && !header->empty();
+		return header != nullptr && !header->empty();
 	}
 
 	/**
