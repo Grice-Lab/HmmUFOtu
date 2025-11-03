@@ -20,7 +20,10 @@ using std::string;
 class DirichletDensity: public DirichletModel {
 public:
 	/* constructors */
-	/* construct a Dirichlet density with given categories and optionally estimated alpha */
+	/** default constructor */
+	DirichletDensity() = default;
+
+	/** construct a Dirichlet density with given categories and optionally estimated alpha */
 	explicit DirichletDensity(int K):
 		DirichletModel(K), alpha(K), w(K)
 	{
