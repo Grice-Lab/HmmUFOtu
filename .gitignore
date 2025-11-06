@@ -58,3 +58,6 @@ test-driver
 **/configure.orig
 src/math/configure
 src/util/configure
+**/INSTALL
+**/configure
+**/install-sh
