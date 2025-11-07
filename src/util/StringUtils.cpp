@@ -127,7 +127,7 @@ bool StringUtils::containsWhiteSpace(const string& str) {
 
 bool StringUtils::containsAny(const string& str, const string& query) {
 	return std::any_of(query.begin(), query.end(),
-			[=] (string::value_type c) { return str.find(c) != string::npos; });
+			[&] (string::value_type c) { return str.find(c) != string::npos; });
 }
 
 string& StringUtils::removeAll(string& str, const string& pattern) {
