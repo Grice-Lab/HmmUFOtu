@@ -27,6 +27,7 @@
 
 #ifndef STRINGUTILS_H_
 #define STRINGUTILS_H_
+#include <cstdint>
 #include <string>
 #include <regex>
 #include <iostream>
@@ -172,43 +173,14 @@ public:
 	 */
 	template<typename T>
 	static istream& loadString(basic_string<T>& dest, istream& in, size_t length) {
-		T* buf = new T[length];
-		in.read((char*) buf, length * sizeof(T));
-		dest.assign(buf, length);
-		delete[] buf;
+		// allocate string with correct size
+		dest.resize((length + sizeof(T) - 1)) / sizeof(T);
+		in.read(&dest[0], length);
 		return in;
 	}
 
 	/**
-	 * load data from a binary input to given basic_string, override any old data,
-	 * it will directly access the string memory since in C++11, strings are guaranteed to be stored linearly
-	 * @param dest  destination
-	 * @param in  input
-	 * @param number basic_string to load
-	 * @return  whether loading was successful
-	 */
-	static istream& loadString(basic_string<uint8_t>& dest, istream& in, size_t length) {
-		dest.resize(length);
-		in.read(reinterpret_cast<char*>(const_cast<uint8_t*>(dest.data())), length * sizeof(uint8_t));
-		return in;
-	}
-
-	/**
-	 * load data from a binary input to given basic_string, override any old data,
-	 * it will directly access the string memory since in C++11, strings are guaranteed to be stored linearly
-	 * @param dest  destination
-	 * @param in  input
-	 * @param number basic_string to load
-	 * @return  whether loading was successful
-	 */
-	static istream& loadString(string& dest, istream& in, size_t length) {
-		dest.resize(length);
-		in.read(const_cast<char*>(dest.data()), length * sizeof(char));
-		return in;
-	}
-
-	/**
-	 * load data from a binary input to given string, using prepend length
+	 * load data from a binary input to given string, using a length before it
 	 * @param dest  destination
 	 * @param in  input
 	 * @return  whether loading was successful
@@ -216,7 +188,7 @@ public:
 	template<typename T>
 	static istream& loadString(basic_string<T>& dest, istream& in) {
 		size_t len = 0;
-		in.read((char*) &len, sizeof(size_t));
+		in.read(static_cast<char*>(&len), sizeof(size_t));
 		return loadString(dest, in, len);
 	}
 
@@ -233,7 +205,7 @@ public:
 	}
 
 	/**
-	 * save an entire basic_string to a binary output, with prepend string length
+	 * save an entire basic_string to a binary output, with a length before it
 	 * @param src  source
 	 * @param out  output
 	 * @return  whether saving was successful
@@ -241,7 +213,7 @@ public:
 	template<typename T>
 	static ostream& saveString(const basic_string<T>& src, ostream& out) {
 		size_t len = src.length();
-		out.write((const char*) &len, sizeof(size_t));
+		out.write(static_cast<const char*>(&len), sizeof(size_t));
 		return saveString(src, out, len);
 	}
 
