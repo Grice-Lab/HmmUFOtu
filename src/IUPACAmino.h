@@ -69,6 +69,7 @@ public:
 	/**
 	 * Get the complement char of given symbol
 	 * @return unchanged amino acids don't have complementary symbols
+	 * @override base class method
 	 */
 	virtual char getComplementSymbol(char c) const {
 		return c;

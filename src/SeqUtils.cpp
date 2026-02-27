@@ -25,8 +25,9 @@
  */
 
 #include <cassert>
+#include <algorithm>
+#include "StringUtils.h"
 #include "SeqUtils.h"
-#include <StringUtils.h>
 
 namespace EGriceLab {
 namespace HmmUFOtu {
@@ -41,10 +42,11 @@ double SeqUtils::pDist(const DigitalSeq& seq1, const DigitalSeq& seq2,
 
 	DigitalSeq::size_type d = 0;
 	DigitalSeq::size_type N = 0;
+	const DegenAlphabet* abc = seq1.getAbc();
 	for(DigitalSeq::size_type i = start; i <= end; ++i) {
-		int b1 = seq1[i];
-		int b2 = seq2[i];
-		if(b1 >= 0 && b2 >= 0) {
+		DigitalSeq::value_type b1 = seq1[i];
+		DigitalSeq::value_type b2 = seq2[i];
+		if(abc->isSymbol(b1) && abc->isSymbol(b2)) { // is a symbol
 			N++;
 			if(b1 != b2)
 				d++;
@@ -68,10 +70,17 @@ double SeqUtils::pDist(const string& seq1, const string& seq2,
 		string::size_type end) {
 	assert(seq1.length() == seq2.length());
 	string::size_type d = 0;
-	for(string::size_type i = start; i <= end; ++i)
-		if(!abc->isMatch(seq1[i], seq2[i]))
-			d++;
-	return static_cast<double>(d) / (end - start + 1);
+	string::size_type N = 0;
+	for(string::size_type i = start; i <= end; ++i) {
+		char c1 = seq1[i];
+		char c2 = seq2[i];
+		if(abc->isSymbol(c1) && abc->isSymbol(c2)) { /* only count non-gaps */
+			N++;
+			if(!abc->isMatch(c1, c2))
+				d++;
+		}
+	}
+	return static_cast<double>(d) / N;
 }
 
 double SeqUtils::pDist(const string& seq1, const DigitalSeq& seq2, size_t start,
@@ -79,10 +88,17 @@ double SeqUtils::pDist(const string& seq1, const DigitalSeq& seq2, size_t start,
 	assert(seq1.length() == seq2.length());
 	const DegenAlphabet* abc = seq2.getAbc();
 	size_t d = 0;
-	for(size_t i = start; i <= end; ++i)
-		if(!abc->isMatch(seq1[i], seq2[i]))
-			d++;
-	return static_cast<double>(d) / (end - start + 1);
+	size_t N = 0;
+	for(size_t i = start; i <= end; ++i) {
+		char c = seq1[i];
+		int8_t b = seq2[i];
+		if(abc->isSymbol(c) && abc->isSymbol(b)) { /* ignore gaps */
+			N++;
+			if(!abc->isMatch(c, b))
+				d++;
+		}
+	}
+	return static_cast<double>(d) / N;
 }
 
 bool SeqUtils::isFastaFileExt(const string& fn) {
@@ -103,9 +119,9 @@ bool SeqUtils::isFastqFileExt(const string& fn) {
 
 string SeqUtils::guessSeqFileFormat(const string& fn) {
 	if(isFastaFileExt(fn))
-		return "fasta";
+		return FASTA_FMT;
 	else if(isFastqFileExt(fn))
-		return "fastq";
+		return FASTQ_FMT;
 	else
 		return "";
 }

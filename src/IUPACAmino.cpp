@@ -33,29 +33,14 @@ namespace HmmUFOtu {
 
 map<char, string> IUPACAmino::init_IUPAC_map() {
 	map<char, string> IUPAC_map;
-	//IUPAC_map['A'] = string("A");
+	/* set upper case synonymous */
 	IUPAC_map['B'] = string("DN");
-	//IUPAC_map['C'] = string("C");
-	//IUPAC_map['D'] = string("D");
-	//IUPAC_map['E'] = string("E");
-	//IUPAC_map['F'] = string("F");
-	//IUPAC_map['G'] = string("G");
-	//IUPAC_map['H'] = string("H");
-	//IUPAC_map['I'] = string("I");
-	//IUPAC_map['K'] = string("K");
-	//IUPAC_map['L'] = string("L");
-	//IUPAC_map['M'] = string("M");
-	//IUPAC_map['N'] = string("N");
-	//IUPAC_map['P'] = string("P");
-	//IUPAC_map['Q'] = string("Q");
-	//IUPAC_map['R'] = string("R");
-	//IUPAC_map['S'] = string("S");
-	//IUPAC_map['T'] = string("T");
-	//IUPAC_map['V'] = string("V");
-	//IUPAC_map['W'] = string("W");
 	IUPAC_map['X'] = string("ACDEFGHIKLMNPQRSTVWY");
-	//IUPAC_map['Y'] = string("Y");
 	IUPAC_map['Z'] = string("EQ");
+	/* set lower case synonymous */
+	IUPAC_map['b'] = string("dn");
+	IUPAC_map['x'] = string("acdefghiklmnpqrstvwy");
+	IUPAC_map['z'] = string("eq");
 	return IUPAC_map;
 }
 

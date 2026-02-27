@@ -51,7 +51,8 @@ class PrimarySeq {
 public:
 	/* constructors */
 	/** default constructor */
-	PrimarySeq() : abc(NULL) { }
+	PrimarySeq() = default;
+
 	/**
 	 * Construct a PrimarySeq with given alphabet, id, seq and optionally description
 	 * @param alphabet  name of the alphabet
@@ -63,7 +64,7 @@ public:
 	PrimarySeq(const string& alphabet, const string& id, const string& seq,
 			const string& desc = "", const string& qual = "") :
 	abc(AlphabetFactory::getAlphabetByName(alphabet)), id(id), seq(seq),
-	desc(desc), qual(qual), phredShift(DEFAULT_PHRED_SHIFT) {
+	desc(desc), qual(qual) { /* phredShift default initiated */
 		if(!isValidate())
 			throw invalid_argument("Your sequence '" + seq + " ' contains invalid alphabet characters");
 		if(!qual.empty() && qual.length() != seq.length())
@@ -81,16 +82,14 @@ public:
 	PrimarySeq(const DegenAlphabet* abc, const string& id, const string& seq,
 			const string& desc = "", const string& qual = "") :
 	abc(abc), id(id), seq(seq),
-	desc(desc), qual(qual), phredShift(DEFAULT_PHRED_SHIFT) {
+	desc(desc), qual(qual) { /* phredShift default initiated */
 		if(!isValidate())
 			throw invalid_argument("Your sequence '" + seq + " ' contains invalid alphabet characters");
 		if(!qual.empty() && qual.length() != seq.length())
 			throw invalid_argument("qual length must be the same as seq length");
 	}
 
-	/**
-	 * destructor, do nothing
-	 */
+	/** destructor */
 	virtual ~PrimarySeq() {  }
 
 	/* Getters and Setters */
@@ -125,14 +124,11 @@ public:
 	}
 
 	string getQual() const {
-		if(!qual.empty())
-			return qual;
-		else
-			return string(length(), DEFAULT_QUAL + phredShift);
+		return !qual.empty() ? qual : string(length(), DEFAULT_QUAL + phredShift);
 	}
 
 	void setQual(const string& qual) {
-		if(!qual.empty() && qual.length() != seq.length())
+		if(qual.length() != seq.length())
 			throw invalid_argument("qual length must be the same as the seq length");
 		this->qual = qual;
 	}
@@ -168,14 +164,14 @@ public:
 	 * get the total gaps of this PrimarySeq
 	 * @return  number of gaps in this seq
 	 */
-	string::size_type numGap() const;
+	string::size_type numGaps() const;
 
 	/**
 	 * get the non-gap length of this PrimarySeq
 	 * @return  non-gap bases in this seq
 	 */
 	string::size_type nonGapLength() const {
-		return length() - numGap();
+		return length() - numGaps();
 	}
 
 	/**
@@ -278,12 +274,12 @@ public:
 
 
 private:
-	const DegenAlphabet* abc;
+	const DegenAlphabet* abc {nullptr};
 	string id;
 	string seq;
 	string desc;
 	string qual;
-	int phredShift;
+	int phredShift {DEFAULT_PHRED_SHIFT};
 
 	/* static members */
 	static const int DEFAULT_QUAL = 30;

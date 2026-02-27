@@ -30,7 +30,7 @@
 #include <map>
 #include <string>
 #include <stdexcept>
-#include <cstdint> // C99 types
+#include <cstdint>
 #include <limits>
 #include "HmmUFOtuDef.h"
 
@@ -87,11 +87,6 @@ public:
 	}
 
 	/* utility methods */
-	/* test whether a char is a symbol or synonymous */
-	bool isSymbol(char c) const {
-		return sym_map[c] >= 0;
-	}
-
 	/* encode a character to digital encoding
 	 * return an int within 0..size-1, or -2 if a gap, or -1 if other invalid symbol
 	 */
@@ -108,12 +103,24 @@ public:
 		return i == GAP_BASE ? gapCh : symbol[i];
 	}
 
-	/*
-	 * test whether a character is a valid gap
-	 * @return true if is a valid gap character
-	 */
+	/** test whether a base is a symbol/synonymous */
+	bool isSymbol(int8_t b) const {
+		return b >= 0;
+	}
+
+	/** test whether a char is a symbol/synonymous */
+	bool isSymbol(char c) const {
+		return isSymbol(encode(c));
+	}
+
+	/** test whether a base is a gap */
+	bool isGap(int8_t b) const {
+		return b == GAP_BASE;
+	}
+
+	/** test whether a char is a gap */
 	bool isGap(char c) const {
-		return sym_map[c] == GAP_BASE;
+		return isGap(encode(c));
 	}
 
 	int getSize() const {
@@ -137,22 +144,24 @@ public:
 		return getDegenSize() + gap.length();
 	}
 
-	/* Get synonymous for a given symbol, or empty string if not exists */
+	/** Get synonymous for a given symbol, or thorw exept if not exists */
 	string getSynonymous(char c) const {
-		map<char, string>::const_iterator res = degen_map.find(c);
-		if(res != degen_map.end())
-			return res->second;
-		return "";
+		return degen_map.at(c);
 	}
 
-	/* test whether a character is a degenerative synonymous */
+	/** test whether a character is a synon */
 	bool isSynonymous(char c) const {
 		return degen_map.find(c) != degen_map.end();
 	}
 
-	/* test whether a character is a valid symbol or gap */
+	/** test whether a base is valid */
+	bool isValid(int8_t b) const {
+		return b != INVALID_BASE;
+	}
+
+	/** test whether a char is valid */
 	bool isValid(char c) const {
-		return sym_map[c] != INVALID_BASE;
+		return isValid(encode(c));
 	}
 
 	/* test whether two characters c1 and c2 is a match */
@@ -160,6 +169,11 @@ public:
 
 	/* test whether a character is a match to a coded base */
 	bool isMatch(char c, int8_t b) const;
+
+	/* test whether a base is a match to a char */
+	bool isMatch(int8_t b, char c) const {
+		return isMatch(c, b);
+	}
 
 	/* pure virtual member method to be overridden by subclass */
 	virtual bool hasComplement() const = 0;
@@ -171,7 +185,7 @@ private:
 	string symbol; /* symbols of this alphabet */
 	string synon; /* Expanded synonymous */
 	string gap; /* gap characters */
-	char gapCh; /* representative gap char */
+	char gapCh {DEFAULT_GAP_CHAR}; /* representative gap char */
 	int8_t sym_map[INT8_MAX + 1]; /* internal map for symbols */
 	map<char, string> degen_map; // map for degenerative synonymous
 

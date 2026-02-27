@@ -28,6 +28,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <cstdlib>
+#include <cctype>
 #include <cassert>
 #include "DigitalSeq.h"
 #include "StringUtils.h"
@@ -53,34 +54,34 @@ DigitalSeq::DigitalSeq(const PrimarySeq& seq) :
 }
 
 string DigitalSeq::toString() const {
-	string str;
-	for(DigitalSeq::const_iterator it = begin(); it != end(); ++it)
-		str.push_back(abc->decode(*it));
+	string str(length(), '\0'); // construct a str with enough size
+	std::transform(begin(), end(), str.begin(), abc->decode); // apply decode transform
 	return str;
 }
 
 DigitalSeq DigitalSeq::revcom() const {
 	if(!abc->hasComplement())
 		throw std::invalid_argument("Sequence alphabet " + abc->getName() + " does not support reverse-complement");
-	DigitalSeq revcomSeq(abc, name); // make an empty copy with same DegebAlphabet and name
-	for(DigitalSeq::const_reverse_iterator rit = rbegin(); rit != rend(); ++rit)
-		revcomSeq.push_back(abc->encode(abc->getComplementSymbol(abc->decode(*rit))));
-	return revcomSeq;
+	DigitalSeq rcSeq(*this); // make copy of this seq
+	std::reverse(rcSeq.begin(), rcSeq.end()); // reverse
+	std::transform(rcSeq.begin(), rcSeq.end(), rcSeq.begin(),
+			[] (DigitalSeq::value_type b) -> DigitalSeq::value_type { abc->encode(abc->getComplementSymbol(abc->decode(b))); }
+	); // apply complement transform
+	return rcSeq;
 }
 
 string DigitalSeq::join(const string& sep) {
-	ostringstream ostr;
-	for(const_iterator it = begin(); it != end(); ++it) {
-		if(it != begin())
-			ostr << sep;
-		ostr << *it;
+	string str;
+	str.reserve(2 * length()); // make enough reserve
+	for(DigitalSeq::value_type b : *this) {
+		str += str.empty() ? abc->decode(b) : sep + abc->decode(b);
 	}
-	return ostr.str();
+	return str;
 }
 
 DigitalSeq& DigitalSeq::append(const string& str) {
-	for(string::const_iterator it = str.begin(); it != str.end(); ++it) {
-		char c = ::toupper(*it);
+	for(string::value_type c : str) {
+		c = std::toupper(c);
 		if(abc->isValid(c))
 			push_back(abc->encode(c));
 	}
@@ -127,11 +128,10 @@ bool DigitalSeq::seqEquals(const string& seq, bool allowDegen) const {
 }
 
 ostream& operator<<(ostream& os, const DigitalSeq& dSeq) {
-	for(DigitalSeq::const_iterator it = dSeq.begin(); it != dSeq.end(); ++it)
-		os << dSeq.abc->decode(*it);
+	for(DigitalSeq::value_type b : dSeq)
+		os << dSeq.abc->decode(b);
 	return os;
 }
 
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
-

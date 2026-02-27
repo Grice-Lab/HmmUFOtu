@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <iostream>
 #include "DegenAlphabet.h"
 #include "StringUtils.h"
@@ -43,20 +44,34 @@ const int8_t DegenAlphabet::GAP_BASE = -2; /* encoded gap symbol */
 DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const string& synon_str,
 			const map<char, string>& my_map, const string& gap) :
 				name(name), symbol(StringUtils::remove_dup_chars(sym_str)),
-				synon(StringUtils::remove_dup_chars(synon_str)), degen_map(my_map), gap(gap) {
+				synon(StringUtils::remove_dup_chars(synon_str)), degen_map(my_map), gap(gap) { /* gapCh default initiated */
 	assert(symbol.length() <= INT8_MAX + 1);
 	assert(synon.length() == degen_map.size());
-	!gap.empty() ? gapCh = gap[0] : DEFAULT_GAP_CHAR;
+	if(!gap.empty())
+		gapCh = gap.front();
 
 	// init the sym_map
 	std::fill_n(sym_map, INT8_MAX + 1, INVALID_BASE);
-	// set the symbol map
-	for(int8_t i = 0; i != symbol.length(); ++i)
-		sym_map[symbol[i]] = i;
+	// set the symbol map for both upper and lower cases
+	for(int8_t i = 0; i != symbol.length(); ++i) {
+		char c = symbol[i];
+		assert(std::isupper(c));
+		sym_map[c] = i;
+		sym_map[std::tolower(c)] = i;
+	}
 
-	// set the synon_map
-	for(map<char, string>::value_type pair : degen_map)
-		sym_map[pair.first] = encode(pair.second.front()); /* set synom map to the first symbol */
+	/* process and update degen_map */
+	for(const map<char, string>::value_type& pair : degen_map) { /* set synom map for both upper and lower case symbols */
+		char s = pair.first;
+		const string& synon = pair.second;
+		char c = synon.front(); // use the first synon char
+		assert(std::isupper(s) && std::isupper(c));
+		/* update degen_map to include lower case */
+		degen_map[::tolower(s)] = synon; // lower-case synon still map to upper case symbols
+		/* add synon to sym_map */
+		sym_map[s] = encode(c);
+		sym_map[std::tolower(s)] = encode(c);
+	}
 
 	// set the gap_sym
 	for(char c : gap)
@@ -64,13 +79,21 @@ DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const st
 }
 
 bool DegenAlphabet::isMatch(char c1, char c2) const {
-	return ! StringUtils::common(c1 + getSynonymous(c1), c2 + getSynonymous(c2)).empty();
+	bool isSynon1 = isSynonymous(c1);
+	bool isSynon2 = isSynonymous(c2);
+	if(! isSynon1 && ! isSynon2)
+		return encode(c1) == encode(c2);
+	else if(! isSynon1 && isSynon2)
+		return getSynonymous(c2).find(c1) != std::basic_string<int8_t>::npos;
+	else if(isSynon1 && ! isSynon2)
+		return getSynonymous(c1).find(c2) != std::basic_string<int8_t>::npos;
+	else
+		return ! StringUtils::common(getSynonymous(c1), getSynonymous(c2)).empty();
 }
 
 bool DegenAlphabet::isMatch(char c, int8_t b) const {
-	string s = c + getSynonymous(c);
-	char t = decode(b);
-	return s.find(t) != string::npos;
+	return !isSynonymous(c) && encode(c) == b || /* is not a snynom */
+			getSynonymous(c).find(decode(b)) != string::npos; /* search synom */
 }
 
 bool operator==(const DegenAlphabet& lhs, const DegenAlphabet& rhs) {

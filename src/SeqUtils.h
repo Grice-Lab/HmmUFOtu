@@ -66,9 +66,15 @@ public:
 		return pDist(seq1, seq2, abc, 0, seq1.length() - 1);
 	}
 
-	/** calculate the p-distance between two strings in a given region [start, end], allow Degenerated characters */
+	/** calculate the p-distance between two a string and a DigitalSeq in a given region [start, end], allow Degenerated characters */
 	static double pDist(const string& seq1, const DigitalSeq& seq2,
 			size_t start, size_t end);
+
+	/** calculate the p-distance between two a DigitalSeq and a string in a given region [start, end], allow Degenerated characters */
+	static double pDist(const DigitalSeq& seq1, const string& seq2,
+			size_t start, size_t end) {
+		return pDist(seq2, seq1, start, end);
+	}
 
 	/** calculate the p-distance between two strings */
 	static double pDist(const string& seq1, const DigitalSeq& seq2) {
@@ -87,6 +93,9 @@ public:
 
 public:
 	/** static fields */
+	const string FASTA_FMT = "fasta";
+	const string FASTQ_FMT = "fastq";
+
 	static const char *FASTA_FILE_EXTENSIONS[];
 	static const char *FASTQ_FILE_EXTENSIONS[];
 };

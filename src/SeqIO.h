@@ -27,7 +27,7 @@
 #ifndef SEQIO_H_
 #define SEQIO_H_
 
-#include <fstream>
+#include "SeqUtils.h"
 #include "PrimarySeq.h"
 
 namespace EGriceLab {
@@ -39,14 +39,17 @@ using std::ostream;
 using std::streambuf;
 using std::ifstream;
 using std::ofstream;
+using SeqUtils::FASTA_FMT;
+using SeqUtils::FASTQ_FMT;
+
 /**
  * A class to handle IO operation for PrimarySeq of various format and
  */
 class SeqIO {
 public:
 	/* constructors */
-	/** default constructor, do nothing */
-	SeqIO() : abc(NULL), in(NULL), out(NULL) {  }
+	/** default constructor */
+	SeqIO() = default;
 
 	/**
 	 * Construct a SeqIO object in READ mode with given info
@@ -104,9 +107,9 @@ public:
 	void writeSeq(const PrimarySeq& seq);
 
 private:
-	/* Disable copy and assign constructors */
-	SeqIO(const SeqIO& other);
-	SeqIO& operator=(const SeqIO& other);
+	/* Disable copy constructor and copy assignment operator */
+	SeqIO(const SeqIO& other) = delete;
+	SeqIO& operator=(const SeqIO& other) = delete;
 
 	/**
 	 * Get next PrimarySeq in fasta format, if possible
@@ -153,11 +156,11 @@ private:
 private:
 	/** member fields */
 	string format;
-	const DegenAlphabet* abc;
-	int maxLine;
+	const DegenAlphabet* abc {nullptr};
+	int maxLine {DEFAULT_MAX_LINE};
 
-	istream* in; /* input */
-	ostream* out; /* output */
+	istream* in {nullptr}; /* input */
+	ostream* out {nullptr}; /* output */
 
 	/* static members */
 	static const char fastaHead = '>';
@@ -167,26 +170,26 @@ private:
 };
 
 inline bool SeqIO::hasNext() {
-	if(format == "fasta")
+	if(format == FASTA_FMT)
 		return hasNextFasta();
-	else if(format == "fastq")
+	else if(format == FASTQ_FMT)
 		return hasNextFastq();
 	return false;
 }
 
 inline PrimarySeq SeqIO::nextSeq() {
-	if(format == "fasta")
+	if(format == FASTA_FMT)
 		return nextFastaSeq();
-	else if(format == "fastq")
+	else if(format == FASTQ_FMT)
 		return nextFastqSeq();
 	else
-		return PrimarySeq(abc, "", "");
+		return PrimarySeq(abc, "", ""); // return an empty seq
 }
 
 inline void SeqIO::writeSeq(const PrimarySeq& seq) {
-	if(format == "fasta")
+	if(format == FASTA_FMT)
 		writeFastaSeq(seq);
-	else if(format == "fastq")
+	else if(format == FASTQ_FMT)
 		writeFastqSeq(seq);
 	else { } /* do nothing */
 }

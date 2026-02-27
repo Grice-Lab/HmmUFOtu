@@ -34,10 +34,9 @@ namespace HmmUFOtu {
 using namespace std;
 
 bool PrimarySeq::isValidate() const {
-	for(string::const_iterator it = seq.begin(); it != seq.end(); ++it)
-		if(!abc->isValid(::toupper(*it))) // test synonymous case insensitive
-			return false;
-	return true;
+	return std::all_of(seq.begin(), seq.end(),
+			[=] (string::value_type ch) { return abc->isValid(ch); }
+	);
 }
 
 PrimarySeq& PrimarySeq::removeGaps() {
@@ -45,10 +44,10 @@ PrimarySeq& PrimarySeq::removeGaps() {
 		return *this;
 	// remove gaps backwards
 	for(string::size_type i = seq.length(); i != 0; --i) {
-		if(abc->isGap(seq[i-1])) {
-			seq.erase(i-1, 1);
+		if(abc->isGap(seq[i - 1])) {
+			seq.erase(i - 1, 1);
 			if(!qual.empty())
-				qual.erase(i-1, 1);
+				qual.erase(i - 1, 1);
 		}
 	}
 	return *this;
@@ -62,17 +61,15 @@ PrimarySeq& PrimarySeq::reverse() {
 PrimarySeq& PrimarySeq::complement() {
 	if(!abc->hasComplement())
 		throw logic_error("This seq's alphabet " + abc->getName() + " doesn't support reverse-complement action");
-	for(string::iterator ch = seq.begin(); ch != seq.end(); ++ch)
-		*ch = abc->getComplementSymbol(*ch);
+	for(string::value_type& ch : seq)
+		ch = abc->getComplementSymbol(ch);
 	return *this;
 }
 
-string::size_type PrimarySeq::numGap() const {
-	string::size_type n = 0;
-	for(string::const_iterator it = seq.begin(); it != seq.end(); ++it)
-		if(abc->isGap(*it))
-			n++;
-	return n;
+string::size_type PrimarySeq::numGaps() const {
+	return std::count_if(seq.begin(), seq.end(),
+			[=] (string::value_type ch) { return abc->isGap(ch); }
+	);
 }
 
 } /* namespace HmmUFOtu */

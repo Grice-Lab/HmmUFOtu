@@ -138,7 +138,7 @@ MSA& MSA::prune() {
 }
 
 long MSA::loadMSAFasta(const DegenAlphabet* abc, istream& in) {
-	SeqIO seqI(&in, abc, "fasta");
+	SeqIO seqI(&in, abc, SeqUtils::FASTA_FMT);
 	while(seqI.hasNext()) {
 		const PrimarySeq& seq = seqI.nextSeq();
 		//cerr << seq.getId() << " " << seq.getSeq() << endl;

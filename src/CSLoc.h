@@ -21,9 +21,9 @@ using std::string;
 struct CSLoc {
 	/* constructors */
 	/**
-	 * Default constructor, do nothing
+	 * Default constructor
 	 */
-	CSLoc() : start(0), end(0) {  }
+	CSLoc() = default;
 
 	/**
 	 * Construct a CSLoc at given loc
@@ -41,8 +41,8 @@ struct CSLoc {
 		return isValid() && CS.length() > to - from;
 	}
 
-	int start; // CS start
-	int end;   // CS end
+	int start {}; // CS start
+	int end {};   // CS end
 	string CS; // CS string
 };
 

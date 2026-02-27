@@ -32,6 +32,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <cctype>
+#include <limits>
 #include "DegenAlphabet.h"
 
 namespace EGriceLab {
@@ -66,19 +67,23 @@ public:
 	virtual bool hasComplement() const {
 		return true;
 	}
+
 	/**
 	 * Get the complement char of given symbol
 	 * @return the complement symbol of matched case, or leave unchanged if not defined
 	 */
 	virtual char getComplementSymbol(char c) const {
-		return !::islower(c) ? compl_map[c] : ::tolower(compl_map[::toupper(c)]);
+		return compl_map[c];
 	}
 
 private:
 	/* static initialization method */
+	static const string NAME = "IUPACNucl"; /* IUPACNucl alphabet name */
+	static const string SYMBOL = "ACGT"; /* IUPACNucl symbols */
+	static const string SYNONYM = "UMRWSYKVHDBN"; /* IUPACNucl synonyms */
 	static map<char, string> init_IUPAC_map();
 /*	static const map<char, string> degen_map;*/
-	int8_t compl_map[INT8_MAX + 1];
+	char compl_map[CHAR_MAX + 1];
 };
 
 } /* namespace HmmUFOtu */

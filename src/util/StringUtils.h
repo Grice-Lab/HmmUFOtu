@@ -32,6 +32,7 @@
 #include <regex>
 #include <iostream>
 #include <sstream>
+#include <cmath>
 
 namespace EGriceLab {
 using std::string;
