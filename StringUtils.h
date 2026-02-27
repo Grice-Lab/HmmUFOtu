@@ -174,7 +174,7 @@ public:
 	template<typename T>
 	static istream& loadString(basic_string<T>& dest, istream& in, size_t length) {
 		// allocate string with correct size
-		dest.resize((length + sizeof(T) - 1)) / sizeof(T);
+		dest.resize((length + sizeof(T) - 1) / sizeof(T));
 		in.read(&dest[0], length);
 		return in;
 	}
@@ -188,7 +188,7 @@ public:
 	template<typename T>
 	static istream& loadString(basic_string<T>& dest, istream& in) {
 		size_t len = 0;
-		in.read(static_cast<char*>(&len), sizeof(size_t));
+		in.read(reinterpret_cast<char*>(&len), sizeof(size_t));
 		return loadString(dest, in, len);
 	}
 
@@ -201,7 +201,7 @@ public:
 	 */
 	template<typename T>
 	static ostream& saveString(const basic_string<T>& src, ostream& out, size_t length) {
-		return out.write((const char*) src.c_str(), length * sizeof(T));
+		return out.write(reinterpret_cast<const char*>(src.c_str()), length * sizeof(T));
 	}
 
 	/**
@@ -213,7 +213,7 @@ public:
 	template<typename T>
 	static ostream& saveString(const basic_string<T>& src, ostream& out) {
 		size_t len = src.length();
-		out.write(static_cast<const char*>(&len), sizeof(size_t));
+		out.write(reinterpret_cast<const char*>(&len), sizeof(size_t));
 		return saveString(src, out, len);
 	}
 

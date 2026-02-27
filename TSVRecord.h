@@ -114,23 +114,20 @@ public:
 
 	/** constructors */
 	/** default constructor */
-	TSVRecord() {  }
+	TSVRecord() = default;
 
 	/** construct a record with given fields */
-	explicit TSVRecord(const vector<string>& fields, const TSVHeaderPtr& headerIdx) :
+	TSVRecord(const vector<string>& fields, const TSVHeaderPtr& headerIdx) :
 			fields(fields), header(headerIdx)
 	{  }
 
 	/** construct a record with a input line */
-	explicit TSVRecord(const string& line, const TSVHeaderPtr& headerIdx,
+	TSVRecord(const string& line, const TSVHeaderPtr& headerIdx,
 			string sep = DEFAULT_SEP, char quote = DEFAULT_QUOTE) :
 					header(headerIdx)
 	{
 		parse(line, sep, quote);
 	}
-
-	/** destructor, do nothing */
-	virtual ~TSVRecord() {  }
 
 	/** member methods*/
 	/** getters and setters */
