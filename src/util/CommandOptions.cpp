@@ -24,8 +24,8 @@
  *      Author: zhengqi
  */
 
-#include "CommandOptions.h"
 #include <iostream>
+#include "CommandOptions.h"
 
 namespace EGriceLab {
 
@@ -35,9 +35,8 @@ CommandOptions::CommandOptions(int argc, char** argv)
 	for(int i = 1; i < argc; ++i) {
 		if(*argv[i] == '-') { /* a tag name */
 			if(i < argc - 1 && *argv[i+1] != '-') {/* a tag value */
-				if(opts.count(argv[i])) /* already exists */
-					opts[argv[i]].push_back('\0'); /* 0-separated strings */
-				opts[argv[i]] += argv[i+1];
+				opts[argv[i]] += opts.count(argv[i]) > 0 /* already exists */ ?
+						string("\0") + argv[i+1] /* use '\0' as separator */ : argv[i+1];
 				i++;
 			}
 			else /* a flag tag */
@@ -56,7 +55,7 @@ vector<string> CommandOptions::getOpts(const string& name) const {
 	if(hasOpt(name)) {
 		vector<string>::size_type i = 0;
 		string optV = getOpt(name);
-		for(const string::value_type c : optV)
+		for(string::value_type c : optV)
 			if(c != '\0') /* not a separator */
 				opts[i].push_back(c);
 			else
