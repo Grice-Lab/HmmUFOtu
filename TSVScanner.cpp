@@ -15,6 +15,11 @@ using namespace std;
 
 const string TSVScanner::DEFAULT_SEP = "\t";
 
+TSVScanner::TSVScanner(istream& in, bool hasHeader) : in(in) {
+	if(hasHeader)
+		parseHeader();
+}
+
 TSVScanner::TSVScanner(istream& in, bool hasHeader, const string& sep, char quote) :
 		in(in), sep(sep), quote(quote) {
 	if(hasHeader)

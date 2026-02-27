@@ -42,17 +42,21 @@ namespace EGriceLab {
 class TSVScanner {
 public:
 	/* constructors */
-	/** construct a TSVScanner with given input and aux info */
-	TSVScanner(istream& in, bool hasHeader = false,
-			const string& sep = DEFAULT_SEP, char quote = DEFAULT_QUOTE);
+	/** construct a TSVScanner with given input header info */
+	explicit TSVScanner(istream& in, bool hasHeader = false);
 
-	/** destructor, do nothing */
-	virtual ~TSVScanner() {  }
+	/** construct a TSVScanner with given input and all other info */
+	TSVScanner(istream& in, bool hasHeader,
+			const string& sep, char quote);
 
-	/* disable copy and assign operators */
-private:
-	TSVScanner(const TSVScanner& other);
-	TSVScanner& operator=(const TSVScanner& other);
+	/** disable default constructor */
+	TSVScanner() = delete;
+
+	/** disable copy constructor */
+	TSVScanner(const TSVScanner&) = delete;
+
+	/** disable copy assignment operator */
+	TSVScanner& operator=(const TSVScanner&) = delete;
 
 public:
 	/** member methods */
@@ -76,9 +80,9 @@ public:
 
 private:
 	istream& in;
-	TSVRecord::TSVHeaderPtr header;
-	string sep;
-	char quote;
+	TSVRecord::TSVHeaderPtr header = nullptr;
+	string sep = DEFAULT_SEP;
+	char quote = DEFAULT_QUOTE;
 
 	/** static fields */
 public:
