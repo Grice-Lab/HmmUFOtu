@@ -32,6 +32,7 @@
 #include <set>
 #include <map>
 #include <vector>
+#include <algorithm>
 
 namespace EGriceLab {
 
@@ -53,10 +54,9 @@ public:
 
 	/** test any of given option names exists */
 	bool hasOpt(const std::initializer_list<string>& names) const {
-		bool flag = false;
-		for(const string& name : names)
-			flag |= hasOpt(name);
-		return flag;
+		return std::any_of(names.begin(), names.end(),
+				[&](const string& name) { return hasOpt(name); }
+		);
 	}
 
 	/** get given option by name */
@@ -70,7 +70,7 @@ public:
 	}
 
 	/**
-	 * get options of tage 'name' as a vector of strings, which is potentially empty
+	 * get options of tag 'name' as a vector of strings, which is potentially empty
 	 */
 	vector<string> getOpts(const string& name) const;
 
