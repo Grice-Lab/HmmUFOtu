@@ -105,9 +105,9 @@ Matrix4d DNASubModel::calcTransFreq3Seq(const DigitalSeq& outer,
 
 Vector4d DNASubModel::calcBaseFreq(const DigitalSeq& seq) {
 	Vector4d f = Vector4d::Zero();
-	for(DigitalSeq::const_iterator it = seq.begin(); it != seq.end(); ++it)
-		if(*it >= 0)
-			f(*it)++;
+	for(DigitalSeq::value_type b : seq)
+		if(b >= 0)
+			f(b)++;
 	return f;
 }
 
@@ -120,7 +120,7 @@ double DNASubModel::subDist(const DigitalSeq& seq1, const DigitalSeq& seq2, int 
 	);
 }
 
-Matrix4d DNASubModel::scale(Matrix4d Q, Vector4d pi, double mu) {
+Matrix4d DNASubModel::scale(const Matrix4d& Q, const Vector4d& pi, double mu) {
 	double beta = pi.dot(Q.diagonal());
 	return Q / -beta * mu;
 }

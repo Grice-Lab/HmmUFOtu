@@ -30,7 +30,7 @@
 #include <string>
 #include <iostream>
 #include <Eigen/Dense>
-#include <math.h> /* C99 header */
+#include <cmath>
 #include "HmmUFOtuConst.h"
 
 using Eigen::VectorXd;
@@ -45,7 +45,7 @@ public:
 	/**
 	 * Default constructor
 	 */
-	DiscreteGammaModel() : alpha(nan), K(0) { }
+	DiscreteGammaModel() = default;
 
 	/**
 	 * Construct a model with given K and alpha
@@ -131,8 +131,8 @@ private:
 
 	/* member fields */
 private:
-	double alpha; // shape parameter (and the scare) of the underlying gamma distribution
-	int K; // number of discrete categories
+	double alpha = nan; // shape parameter (and the scare) of the underlying gamma distribution
+	int K = 0; // number of discrete categories
 	VectorXd b; // break-points to devide Gamma distribution to equal prob-K categories
 	VectorXd r; // average rate of each category
 };

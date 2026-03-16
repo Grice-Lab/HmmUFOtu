@@ -35,6 +35,9 @@ namespace HmmUFOtu {
 
 class JC69: public DNASubModel {
 public:
+	/** default constructor */
+	JC69() = default;
+
 	/* destructor, do nothing */
 	virtual ~JC69() { }
 

@@ -32,7 +32,7 @@ namespace HmmUFOtu {
 
 using namespace std;
 
-const string& NewickTree::INVALID_CHARS = "()[]':;,";
+const string NewickTree::INVALID_CHARS = "()[]':;,";
 
 istream& NewickTree::read(istream& in) {
 	namespace qi = boost::spirit::qi;

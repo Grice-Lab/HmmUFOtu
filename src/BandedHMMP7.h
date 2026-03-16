@@ -74,7 +74,7 @@ public:
 	struct HmmAlignment {
 		/* constructors */
 		/** default constructor */
-		HmmAlignment() {  }
+		HmmAlignment() = default;
 
 		/** construct from given data */
 		HmmAlignment(int K, int L,
@@ -102,6 +102,12 @@ public:
 		 */
 		HmmAlignment& merge(const HmmAlignment& otherAln);
 
+		/** write HmmAlignment to text output */
+		ostream& write(ostream& out) const;
+
+		/** read into a HmmAlignment from text input */
+		istream& read(istream& in);
+
 		/* static methods */
 		/**
 		 * Merge two HmmAlignments
@@ -110,19 +116,21 @@ public:
 		static HmmAlignment merge(const HmmAlignment& aln1, const HmmAlignment& aln2);
 
 		/* non-member friend functions */
-		/** write to a text output */
 		friend ostream& operator<<(ostream& out, const HmmAlignment& hmmAln);
 
 		/** read from a text input */
 		friend istream& operator>>(istream& in, HmmAlignment& hmmAln);
 
 		/* member fields */
-		int K; /* HMM profile size */
-		int L; /* concensus size */
-		int seqStart, seqEnd; /* 1-based seq coordinates */
-		int hmmStart, hmmEnd; /* 1-based HMM profile coordinates */
-		int csStart, csEnd; /* 1-based consensus coordinates */
-		double cost; /* HMM align cost */
+		int K = 0; /* HMM profile size */
+		int L = 0; /* concensus size */
+		int seqStart = 0;
+		int seqEnd = 0; /* 1-based seq coordinates */
+		int hmmStart = 0;
+		int hmmEnd = 0; /* 1-based HMM profile coordinates */
+		int csStart = 0;
+		int csEnd = 0; /* 1-based consensus coordinates */
+		double cost = 0; /* HMM align cost */
 		string align; /* alignmented seq */
 
 		/* static fields */
@@ -171,6 +179,16 @@ public:
 		MIDDLE,
 		JUSTIFIED
 	};
+
+	/**
+	 * Read a BandedHMMP7 profile from text input
+	 */
+	istream& read(istream& in);
+
+	/**
+	 * Write a BandedHMMP7 profile to a text output
+	 */
+	ostream& write(ostream& out) const;
 
 	/* forward declaration of nested classes and alias */
 	struct ViterbiScores; /* struct storing the ViterbiScores used during the Viterbi algorithm */
@@ -828,6 +846,7 @@ public:
 	 * Read a BandedHMMP7 profile from an hmm file
 	 */
 	friend istream& operator>>(istream& in, BandedHMMP7& hmm);
+
 	/**
 	 * Write a BandedHMMP7 profile into a file in hmm format
 	 */
@@ -928,6 +947,21 @@ inline BandedHMMP7::HmmAlignment BandedHMMP7::HmmAlignment::merge(const HmmAlign
 	return alnMerged.merge(aln2);
 }
 
+inline ostream& operator<<(ostream& out, const BandedHMMP7::HmmAlignment& hmmAln) {
+	return hmmAln.write(out);
+}
+
+inline istream& operator>>(istream& in, BandedHMMP7::HmmAlignment& hmmAln) {
+	return hmmAln.read(in);
+}
+
+inline istream& operator>>(istream& in, BandedHMMP7& hmm) {
+	return hmm.read(in);
+}
+
+inline ostream& operator<<(ostream& out, const BandedHMMP7& hmm) {
+	return hmm.write(out);
+}
 
 /**
  * A relative entropy target functor to calculate relative entropy difference

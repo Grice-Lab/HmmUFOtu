@@ -39,6 +39,7 @@ using namespace std;
 using namespace Eigen;
 
 const string GTR::name = "GTR";
+const Matrix4d identityMat = Matrix4d::Ones();
 
 istream& GTR::read(istream& in) {
 	string line, tag, value;
@@ -139,7 +140,7 @@ void GTR::setQfromParams() {
 		errorLog << "Cannot perform EigenSolver on rate matrix Q:" << endl << Q << endl;
 		abort();
 	}
-	lambda = es.eigenvalues().real();
+	lambda = es.eigenvalues().real().asDiagonal();
 	U = es.eigenvectors().real();
 	U_1 = U.inverse();
 }

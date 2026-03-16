@@ -41,8 +41,7 @@ namespace EGriceLab {
 namespace HmmUFOtu {
 
 int32_t CSFMIndex::count(const string& pattern) const {
-	int32_t m = pattern.length();
-	if(m == 0)
+	if(pattern.empty())
 		return 0; /* empty pattern matches to nothing */
 
     int32_t start = 0;
@@ -146,7 +145,7 @@ CSLoc CSFMIndex::locateOne(const string& pattern) const {
     	return CSLoc();
 }
 
-set<unsigned> CSFMIndex::locateIndex(const string& pattern) const {
+set<uint32_t> CSFMIndex::locateIndex(const string& pattern) const {
     set<unsigned> idx;
 	if(pattern.empty())
 		return idx; /* empty pattern matches to nothing */
@@ -166,8 +165,7 @@ set<unsigned> CSFMIndex::locateIndex(const string& pattern) const {
     }
 
     for(int32_t i = start; i <= end; ++i) {
-    	int32_t k = accessSA(i); /* 0-based */
-    	idx.insert(k / (csLen + 1));
+    	idx.insert(accessSA(i) / (csLen + 1));
     }
 
     return idx;
@@ -181,15 +179,15 @@ ostream& CSFMIndex::save(ostream& out) const {
 	out.write(&gapCh, sizeof(char));
 
 	/* write sizes */
-	out.write((char*) &csLen, sizeof(uint16_t));
-	out.write((char*) &concatLen, sizeof(int32_t));
+	out.write(static_cast<const char*>(&csLen), sizeof(uint16_t));
+	out.write(static_cast<const char*>(&concatLen), sizeof(int32_t));
 
 	/* write arrays and objects */
-	out.write((char*) C, (UINT8_MAX + 1) * sizeof(int32_t));
+	out.write(static_cast<const char*>(C), (UINT8_MAX + 1) * sizeof(int32_t));
 	StringUtils::saveString(csSeq, out);
-	out.write((char*) csIdentity, (csLen + 1) * sizeof(double));
-	out.write((char*) concat2CS, (concatLen + 1) * sizeof(uint16_t));
-	out.write((char*) saSampled, (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
+	out.write(static_cast<const char*>(csIdentity), (csLen + 1) * sizeof(double));
+	out.write(static_cast<const char*>(concat2CS), (concatLen + 1) * sizeof(uint16_t));
+	out.write(static_cast<const char*>(saSampled), (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
 
 	saIdx->save(out);
 	bwt->save(out);
@@ -208,21 +206,21 @@ istream& CSFMIndex::load(istream& in) {
 	in.read(&gapCh, sizeof(char));
 
 	/* read sizes */
-	in.read((char*) &csLen, sizeof(uint16_t));
-	in.read((char*) &concatLen, sizeof(int32_t));
+	in.read(static_cast<char*>(&csLen), sizeof(uint16_t));
+	in.read(static_cast<char*>(&concatLen), sizeof(int32_t));
 
 	/* read arrays and objects */
-	in.read((char*) C, (UINT8_MAX + 1) * sizeof(int32_t));
+	in.read(static_cast<char*>(C), (UINT8_MAX + 1) * sizeof(int32_t));
 	StringUtils::loadString(csSeq, in);
 
 	csIdentity = new double[csLen + 1];
-	in.read((char*) csIdentity, (csLen + 1) * sizeof(double));
+	in.read(static_cast<char*>(csIdentity), (csLen + 1) * sizeof(double));
 
     concat2CS = new uint16_t[concatLen + 1];
-	in.read((char*) concat2CS, (concatLen + 1) * sizeof(uint16_t));
+	in.read(static_cast<char*>(concat2CS), (concatLen + 1) * sizeof(uint16_t));
 
 	saSampled = new uint32_t[concatLen / SA_SAMPLE_RATE + 1];
-	in.read((char*) saSampled, (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
+	in.read(static_cast<char*>(saSampled), (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
 
 	saIdx = BitSequenceRRR::load(in); /* use RRR implementation */
 	bwt = WaveletTreeNoptrs::load(in);
@@ -349,12 +347,10 @@ void CSFMIndex::buildBWT(const uint8_t* concatSeq) {
 
     /* construct BWT and index */
 	uint8_t* X_bwt = new uint8_t[N];
-	if(X_bwt == NULL)
+	if(X_bwt == nullptr)
 		throw runtime_error("Error: Cannot allocate BWT string for concatSeq");
     for(int32_t i = 0; i < N; ++i)
-        if(SA[i] == 0) // matches to the null
-            X_bwt[i] = '\0'; // null terminal
-        else X_bwt[i] = concatSeq[SA[i] - 1];
+    	X_bwt[i] = SA[i] == 0 ? '\0' /* null separator */ : concatSeq[SA[i] - 1];
 
 	/* construct RRR_compressed BWT */
     Mapper* map = new MapperNone(); /* smart ptr no delete necessary */

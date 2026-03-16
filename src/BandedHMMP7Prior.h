@@ -48,7 +48,7 @@ using Math::DirichletDensity;
 using Math::DirichletMixture;
 
 struct BandedHMMP7Prior {
-	/* constructors */
+	/** default constructor */
 	BandedHMMP7Prior() {
 		setMaxIter(DEFAULT_MAX_ITER);
 		setAbsEpsCost(DEFAULT_ABS_EPS_COST);

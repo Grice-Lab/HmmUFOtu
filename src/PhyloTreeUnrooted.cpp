@@ -26,8 +26,6 @@
 
 #include <sstream>
 #include <stack>
-#include <boost/unordered_set.hpp>
-#include <boost/unordered_map.hpp>
 #include <cfloat>
 #include <cctype>
 #include <cmath>
@@ -90,10 +88,8 @@ static const char* TAXON_SEP = ";: "; /* valid taxon name separator */
 bool PTUnrooted::isTip(const PTUNodePtr& node) {
 	if(node->isLeaf())
 		return false;
-	for(vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child)
-		if(isChild(*child, node) && !(*child)->isLeaf())
-			return false;
-	return true;
+	return std::all_of(node->neighbors.begin(), node->neighbors.end(),
+			[&](const PTUNodePtr& child) { return !isChild(child, node) || child->isLeaf(); });
 }
 
 istream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::load(istream& in) {
@@ -128,12 +124,12 @@ ostream& PhyloTreeUnrooted::PhyloTreeUnrootedNode::save(ostream& out) const {
 	return out;
 }
 
-PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
+PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) {
 	/* construct PTUNode by DFS of the NewickTree */
-	boost::unordered_set<const NT*> visited;
+	std::unordered_set<const NT*> visited;
 	stack<const NT*> S;
 	long id = 0; /* id start from 0 */
-	unordered_map<const NT*, PTUNodePtr> nTree2PTree;
+	std::unordered_map<const NT*, PTUNodePtr> nTree2PTree;
 
 	S.push(&ntree);
 	while(!S.empty()) {
@@ -142,14 +138,14 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 		if(visited.find(v) == visited.end()) { /* not visited before */
 			visited.insert(v);
 			/* construct this PTUNode */
-			PTUNodePtr u = boost::make_shared<PTUNode>(id++, v->name);
+			PTUNodePtr u = std::make_shared<PTUNode>(id++, v->name);
 
 			id2node.push_back(u);
 			nTree2PTree[v] = u;
 
 			/* add check each child of v */
-			for(vector<NT>::const_iterator child = v->children.begin(); child != v->children.end(); ++child)
-				S.push(&*child);
+			for(const vector<NT>::value_type& child : v->children)
+				S.push(&child);
 		}
 	}
 
@@ -167,14 +163,14 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) : csLen(0) {
 				root = u;
 
 			/* add check each child of u */
-			for(vector<NT>::const_iterator Nchild = v->children.begin(); Nchild != v->children.end(); ++Nchild) {
-				const PTUNodePtr& Pchild = nTree2PTree[&*Nchild];
+			for(const vector<NT>::value_type& Nchild : v->children) {
+				const PTUNodePtr& Pchild = nTree2PTree[&Nchild];
 				/* add this new edge */
 				addEdge(u, Pchild);
 				/* set parent */
 				Pchild->parent = u;
 				/* update branch length */
-				setBranchLength(u, Pchild, Nchild->length);
+				setBranchLength(u, Pchild, Nchild.length);
 				S.push(&*Nchild);
 			}
 		}
@@ -204,17 +200,17 @@ unsigned PhyloTreeUnrooted::loadMSA(const MSA& msa) {
 	}
 
 	/* assign seq to each leaf of the tree, ignore nodes cannot be found (unnamed, etc) */
-	for(vector<PTUNodePtr>::iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		assert(node - id2node.begin() == (*node)->id);
-		if(!(*node)->isLeaf()) /* only read in leaf sequences */
+	for(vector<PTUNodePtr>::value_type& node : id2node) {
+//		assert(node - id2node.begin() == (*node)->id);
+		if(!node->isLeaf()) /* only read in leaf sequences */
 			continue;
 
-		unordered_map<string, unsigned>::const_iterator result = name2msaId.find((*node)->name);
+		unordered_map<string, unsigned>::const_iterator result = name2msaId.find(node->name);
 		if(result == name2msaId.end()) /* this name cannot be found in the msa */
 			continue;
-		(*node)->seq = msa.dsAt(result->second);
-		msaId2node[result->second] = *node;
-		node2msaId[*node] = result->second;
+		node->seq = msa.dsAt(result->second);
+		msaId2node[result->second] = node;
+		node2msaId[node] = result->second;
 	}
 	assert(msaId2node.size() == node2msaId.size());
 	return msaId2node.size() - n0;
@@ -230,10 +226,10 @@ istream& PTUnrooted::loadAnnotation(istream& in) {
 		name2anno[name] = anno;
 	}
 
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		unordered_map<string, string>::const_iterator result = name2anno.find((*node)->name);
+	for(const vector<PTUNodePtr>::value_type& node : id2node) {
+		unordered_map<string, string>::const_iterator result = name2anno.find(node->name);
 		if(result != name2anno.end())
-			(*node)->name = result->second;
+			node->name = result->second;
 	}
 
 	return in;
@@ -246,7 +242,7 @@ PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRo
 	newRoot->parent = nullNode; // root has no parent
 //	node2loglik[newRoot][nullNode] = Matrix4Xd::Constant(4, csLen, inf); // new cache for dummy branch
 	/* DFS of this tree starting from newRoot */
-	boost::unordered_set<PTUNodePtr> visited;
+	std::unordered_set<PTUNodePtr> visited;
 	stack<PTUNodePtr> S;
 
 	S.push(newRoot);
@@ -257,11 +253,11 @@ PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRo
 			visited.insert(u);
 
 			/* check each neighbor of v */
-			for(vector<PTUNodePtr>::iterator v = u->neighbors.begin(); v != u->neighbors.end(); ++v) {
-				if(visited.find(*v) == visited.end() /* v is not parent/ancestor of u */
-						&& !isChild(*v, u)) { /* v has not been set as u's child */
-					(*v)->parent = u;
-					S.push(*v);
+			for(vector<PTUNodePtr>::value_type& v : u->neighbors) {
+				if(visited.find(v) == visited.end() /* v is not parent/ancestor of u */
+						&& !isChild(v, u)) { /* v has not been set as u's child */
+					v->parent = u;
+					S.push(v);
 				}
 			}
 		}
@@ -272,12 +268,12 @@ PhyloTreeUnrooted::PTUNodePtr PhyloTreeUnrooted::setRoot(const PTUNodePtr& newRo
 }
 
 void PhyloTreeUnrooted::calcNodeHeight() {
-	for(vector<PTUNodePtr>::const_iterator leaf = id2node.begin(); leaf != id2node.end(); ++leaf) {
-		if(!(*leaf)->isLeaf())
+	for(const vector<PTUNodePtr>::value_type& leaf : id2node) {
+		if(!leaf->isLeaf())
 			continue;
 		/* trace back this lineage */
 		double h = 0;
-		for(PTUnrooted::PTUNodePtr node = *leaf; node != nullNode; node = node->parent) {
+		for(PTUnrooted::PTUNodePtr node = leaf; node != nullNode; node = node->parent) {
 			if(node2height.find(node) == node2height.end() || h < node2height[node]) /* first time or shorter */
 				node2height[node] = h;
 			if(!node->isRoot())
@@ -287,10 +283,10 @@ void PhyloTreeUnrooted::calcNodeHeight() {
 }
 
 void PhyloTreeUnrooted::fixBranchLength(double minLen) {
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		if(!(*node)->isRoot() && (*node)->isLeaf()) {
-			if(getBranchLength(*node, (*node)->parent) <= 0)
-				setBranchLength(*node, (*node)->parent, minLen);
+	for(const vector<PTUNodePtr>::value_type& node : id2node) {
+		if(!node->isRoot() && node->isLeaf()) {
+			if(getBranchLength(node, node->parent) <= 0)
+				setBranchLength(node, node->parent, minLen);
 		}
 	}
 }
@@ -301,15 +297,15 @@ void PTUnrooted::updateRootLoglik() {
 }
 
 void PhyloTreeUnrooted::resetBranchLoglik() {
-	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u)
-		for(vector<PTUNodePtr>::iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
-			node2branch[*u][*v].loglik.setConstant(INVALID_LOGLIK);
+	for(vector<PTUNodePtr>::value_type& u : id2node)
+		for(vector<PTUNodePtr>::value_type& v : u->neighbors)
+			node2branch[u][v].loglik.setConstant(INVALID_LOGLIK);
 }
 
 void PhyloTreeUnrooted::initBranchLoglik() {
-	for(vector<PTUNodePtr>::iterator u = id2node.begin(); u != id2node.end(); ++u)
-		for(vector<PTUNodePtr>::iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v) /* u->neighbors */
-			node2branch[*u][*v].loglik = Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK);
+	for(vector<PTUNodePtr>::value_type& u : id2node)
+		for(vector<PTUNodePtr>::value_type& v : u->neighbors) /* u->neighbors */
+			node2branch[u][v].loglik = Matrix4Xd::Constant(4, csLen, INVALID_LOGLIK);
 }
 
 Vector4d PhyloTreeUnrooted::loglikConv(const PTUNodePtr& node, int j, double r) const {
@@ -326,13 +322,13 @@ Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) const {
 	if(dG != nulldG)
 		loglikMat = Matrix4Xd::Zero(4, dG->getK());
 
-	for(vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
-		if(isChild(*child, node)) {
+	for(const vector<PTUNodePtr>::value_type& child : node->neighbors) {
+		if(isChild(child, node)) {
 			if(dG == nulldG) // fixed rate
-				loglikVec += loglikConv(*child, j); // using fixed rate
+				loglikVec += loglikConv(child, j); // using fixed rate
 			else { /* use Gamma model */
 				for(int k = 0; k < dG->getK(); ++k)
-					loglikMat.col(k) += loglikConv(*child, j, dG->rate(k));
+					loglikMat.col(k) += loglikConv(child, j, dG->rate(k));
 			}
 		}
 	}
@@ -360,9 +356,9 @@ void PTUnrooted::evaluate(const PTUNodePtr& node, int start, int end) {
 		return;
 
 	/* evaluate each child recursively */
-	for(vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) { /* check each child */
-		if(isChild(*child, node)) /* a child neighbor */
-			evaluate(*child, start, end); /* evaluate child recursively */
+	for(const vector<PTUNodePtr>::value_type& child : node->neighbors) { /* check each child */
+		if(isChild(child, node)) /* a child neighbor */
+			evaluate(child, start, end); /* evaluate child recursively */
 	}
 	/* evaluating either a leaf node or a node with all children evaluated */
 	/* cache loglik if it is not the root */
@@ -376,36 +372,36 @@ void PTUnrooted::evaluate(const PTUNodePtr& node, int start, int end) {
 size_t PTUnrooted::addPseudoLeaf(const unordered_set<PTUNodePtr>& subset) {
 	const size_t N = numNodes();
 	long id = N;
-	for(unordered_set<PTUNodePtr>::const_iterator node = subset.begin(); node != subset.end(); ++node) {
-		if((*node)->isLeaf())
+	for(const unordered_set<PTUNodePtr>::value_type& node : subset) {
+		if(node->isLeaf())
 			continue; // ignore leaf OTUs
 		/* create a new internal node with same name as old one */
-		PTUNodePtr r(new PTUNode(id++, (*node)->name, (*node)->anno, (*node)->annoDist));
+		PTUNodePtr r(new PTUNode(id++, node->name, node->anno, node->annoDist));
 		/* create a new leaf node with too */
-		PTUNodePtr n(new PTUNode(id++, (*node)->name, (*node)->anno, (*node)->annoDist));
+		PTUNodePtr n(new PTUNode(id++, node->name, node->anno, node->annoDist));
 
 		/* insert the r and n to the tree */
-		PTUNodePtr oldParent = (*node)->parent; // could be nullNode
+		PTUNodePtr oldParent = node->parent; // could be nullNode
 		n->parent = r;
-		(*node)->parent = r;
+		node->parent = r;
 		r->parent = oldParent;
 
 		/* swap id between n and node */
-		std::swap(n->id, (*node)->id);
+		std::swap(n->id, node->id);
 
 		if(oldParent != nullNode)
-			removeEdge(*node, oldParent);
+			removeEdge(node, oldParent);
 		id2node.push_back(r);
 		id2node.push_back(n);
 		if(oldParent != nullNode)
 			addEdge(r, oldParent);
 		else
 			setRoot(r);
-		addEdge(*node, r);
+		addEdge(node, r);
 		addEdge(n, r);
 
-		setBranchLength(r, oldParent, getBranchLength(*node, oldParent));
-		setBranchLength(*node, r, 0);
+		setBranchLength(r, oldParent, getBranchLength(node, oldParent));
+		setBranchLength(node, r, 0);
 		setBranchLength(n, r, 0);
 	}
 	return id - N;
@@ -415,9 +411,9 @@ NewickTree PTUnrooted::convertToNewickTree(const PTUNodePtr& node, const string&
 	/* recursive generate NewickTree */
 	NewickTree NTree(prefix + boost::lexical_cast<string>(node->getId()),
 			node->isRoot() ? 0 : getBranchLength(node, node->getParent()));
-	for(std::vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
-		if(isChild(*child, node)) /* is a child */
-			NTree.addChild(convertToNewickTree(*child, prefix));
+	for(const std::vector<PTUNodePtr>::value_type& child : node->neighbors) {
+		if(isChild(child, node)) /* is a child */
+			NTree.addChild(convertToNewickTree(child, prefix));
 	}
 
 	return NTree;
@@ -429,16 +425,16 @@ NewickTree PTUnrooted::convertToNewickTree(const PTUNodePtr& node,
 	NewickTree NTree(prefix + boost::lexical_cast<string>(node->getId()),
 			node->isRoot() ? 0 : getBranchLength(node, node->getParent()));
 	bool flag = false; /* test whether ANY of the children is flagged */
-	for(std::vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
-		if(isChild(*child, node) && subset.count(*child) > 0) { /* is a child and flagged */
+	for(const std::vector<PTUNodePtr>::value_type& child : node->neighbors) {
+		if(isChild(child, node) && subset.count(child) > 0) { /* is a child and flagged */
 			flag = true;
 			break;
 		}
 	}
 	if(flag) { /* there is flagged child */
-		for(std::vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
-			if(isChild(*child, node)) { /* is a child and flagged */
-				NTree.addChild(convertToNewickTree(*child, subset, prefix));
+		for(const std::vector<PTUNodePtr>::value_type& child : node->neighbors) {
+			if(isChild(child, node)) { /* is a child and flagged */
+				NTree.addChild(convertToNewickTree(child, subset, prefix));
 			}
 		}
 	}
@@ -450,10 +446,10 @@ vector<Matrix4d> PTUnrooted::getModelTraningSetGoldman() const {
 	debugLog << "Training data using Gojobori method" << endl;
 	vector<Matrix4d> data; // store observed base transition counts
 	/* check every node of this tree */
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		if((*node)->isTip() && (*node)->neighbors.size() > 2) { // tip with >=2 children
-			const DigitalSeq& seq1 = (*node)->firstChild()->seq;
-			const DigitalSeq& seq2 = (*node)->lastChild()->seq;
+	for(const vector<PTUNodePtr>::value_type& node : id2node) {
+		if(node->isTip() && node->neighbors.size() > 2) { // tip with >=2 children
+			const DigitalSeq& seq1 = node->firstChild()->seq;
+			const DigitalSeq& seq2 = node->lastChild()->seq;
 			if(SeqUtils::pDist(seq1, seq1) <= DNASubModel::MAX_PDIST)
 				data.push_back(DNASubModel::calcTransFreq2Seq(seq1, seq2));
 		}
@@ -464,8 +460,8 @@ vector<Matrix4d> PTUnrooted::getModelTraningSetGoldman() const {
 vector<Matrix4d> PTUnrooted::getModelTraningSetGojobori() const {
 	vector<Matrix4d> data; // store observed base transition counts
 	/* check every node of this tree */
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		const vector<PTUNodePtr> children = (*node)->getChildren();
+	for(const vector<PTUNodePtr>::value_type& node : id2node) {
+		vector<PTUNodePtr> children = node->getChildren();
 		if(children.size() == 2 &&
 				(children[0]->isTip() || children[1]->isTip()) ) { /* one child is a tip node */
 			PTUNodePtr tipChild = children[0];
@@ -487,9 +483,9 @@ vector<Matrix4d> PTUnrooted::getModelTraningSetGojobori() const {
 
 Vector4d PTUnrooted::getModelFreqEst() const {
 	Vector4d freq = Vector4d::Zero();
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
-		if((*node)->isLeaf())
-			freq += DNASubModel::calcBaseFreq((*node)->seq);
+	for(const vector<PTUNodePtr>::value_type& node : id2node)
+		if(node->isLeaf())
+			freq += DNASubModel::calcBaseFreq(node->seq);
 	return freq;
 }
 
@@ -541,14 +537,14 @@ ostream& PTUnrooted::save(ostream& out) const {
 	out.write((const char*) &csLen, sizeof(int));
 
 	/* write each node */
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
-		(*node)->save(out);
+	for(const vector<PTUNodePtr>::value_type& node : id2node)
+		node->save(out);
 	/* write all edges */
 	size_t nEdges = numEdges();
-	out.write((const char*) &nEdges, sizeof(size_t));
-	for(vector<PTUNodePtr>::const_iterator u = id2node.begin(); u != id2node.end(); ++u)
-		for(vector<PTUNodePtr>::const_iterator v = (*u)->neighbors.begin(); v != (*u)->neighbors.end(); ++v)
-			saveEdge(out, *u, *v);
+	out.write(static_cast<const char*>(&nEdges), sizeof(size_t));
+	for(const vector<PTUNodePtr>::value_type& u : id2node)
+		for(const vector<PTUNodePtr>::value_type& v : u->neighbors)
+			saveEdge(out, u, v);
 
 	/* save root */
 	saveRoot(out);
@@ -569,9 +565,9 @@ ostream& PTUnrooted::save(ostream& out) const {
 ostream& PTUnrooted::saveMSAIndex(ostream& out) const {
 	unsigned N = msaId2node.size();
 	out.write((const char*) &N, sizeof(unsigned));
-	for(map<unsigned, PTUNodePtr>::const_iterator it = msaId2node.begin(); it != msaId2node.end(); ++it) {
-		out.write((const char*) &(it->first), sizeof(unsigned));
-		out.write((const char*) &(it->second->id), sizeof(long));
+	for(const map<unsigned, PTUNodePtr>::value_type& pair : msaId2node) {
+		out.write(static_cast<const char*> (&(pair.first)), sizeof(unsigned));
+		out.write(static_cast<const char*> (&(pair.second->id)), sizeof(long));
 	}
 
 	return out;
@@ -621,9 +617,9 @@ istream& PTUnrooted::loadEdge(istream& in) {
 }
 
 ostream& PTUnrooted::saveNodeHeight(ostream& out) const {
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		out.write((const char*) &((*node)->id), sizeof(long));
-		out.write((const char*) &(node2height.at(*node)), sizeof(double));
+	for(const vector<PTUNodePtr>::value_type& node : id2node) {
+		out.write(static_cast<const char*> (&(node->id)), sizeof(long));
+		out.write(static_cast<const char*> (&(node2height.at(node))), sizeof(double));
 	}
 
 	return out;
@@ -965,10 +961,8 @@ bool PhyloTreeUnrooted::isFullCanonicalName(const string& taxon) {
 bool PhyloTreeUnrooted::isPartialCanonicalName(const string& taxon) {
 	vector<string> fields;
 	boost::split(fields, taxon, boost::is_any_of(TAXON_SEP), boost::token_compress_on);
-	for(vector<string>::const_iterator name = fields.begin(); name != fields.end(); ++name)
-		if(!isCanonicalName(*name))
-			return false;
-	return true;
+	return std::all_of(fields.begin(), fields.end(),
+			[&](const string& name) { return isCanonicalName(name); });
 }
 
 string PhyloTreeUnrooted::formatTaxonName(const string& taxon) {
@@ -978,16 +972,16 @@ string PhyloTreeUnrooted::formatTaxonName(const string& taxon) {
 	vector<string> formatedTaxon;
 	vector<string> fields;
 	boost::split(fields, taxon, boost::is_any_of(TAXON_SEP), boost::token_compress_on);
-	for(vector<string>::const_iterator name = fields.begin(); name != fields.end(); ++name)
-		if(isCanonicalName(*name))
-			formatedTaxon.push_back(*name);
-
+	formatedTaxon.reserve(fields.size()); // reserve enough size
+	for(const vector<string>::value_type& name : fields)
+		if(isCanonicalName(name))
+			formatedTaxon.push_back(name);
 	return boost::join(formatedTaxon, ";");
 }
 
 void PhyloTreeUnrooted::annotate(const string& rootName) {
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
-		annotate(*node, rootName);
+	for(const vector<PTUNodePtr>::value_type& node : id2node)
+		annotate(node, rootName);
 }
 
 void PhyloTreeUnrooted::annotate(const PTUNodePtr& node, const string& rootName) {
@@ -1007,8 +1001,8 @@ void PhyloTreeUnrooted::annotate(const PTUNodePtr& node, const string& rootName)
 
 size_t PhyloTreeUnrooted::estimateNumMutations(int j) const {
 	size_t N = 0;
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node) {
-		if(!(*node)->isRoot() && inferState((*node), j) != inferState((*node)->parent, j)) {
+	for(const vector<PTUNodePtr>::value_type& node : id2node) {
+		if(!node->isRoot() && inferState((node), j) != inferState(node->parent, j)) {
 			N++;
 		}
 	}
@@ -1052,15 +1046,12 @@ double PTUnrooted::estimateBranchLengthWeighted(const Matrix4Xd& U, const Matrix
 }
 
 ostream& PTUnrooted::PTUBranch::save(ostream& out) const {
-	out.write((const char*) &length, sizeof(double));
+	out.write(static_cast<const char*> (&length), sizeof(double));
 	size_t N = loglik.size();
-	out.write((const char*) &N, sizeof(size_t));
+	out.write(static_cast<const char*> (&N), sizeof(size_t));
 
-	double *buf = new double[N];
-	Map<Matrix4Xd> loglikMap(buf, 4, loglik.cols());
-	loglikMap = loglik; /* copy data */
-	out.write((const char*) buf, sizeof(double) * N);
-	delete[] buf;
+	const double *data = loglik.data();
+	out.write(static_cast<const char*>(data), sizeof(double) * N);
 
 	return out;
 }
@@ -1072,12 +1063,8 @@ istream& PTUnrooted::PTUBranch::load(istream& in) {
 	if(loglik.size() != N)
 		loglik.resize(4, N / 4);
 
-	double *buf = new double[N];
-	in.read((char*) buf, sizeof(double) * N);
-//	Map<Matrix4Xd> loglikMap(buf, 4, N / 4);
-//	loglik = loglikMap;
-	loglik = Map<Matrix4Xd>(buf, 4, N / 4); /* copy data */
-	delete[] buf;
+	double *data = loglik.data();
+	in.read(static_cast<char*>(data), sizeof(double) * N);
 
 	return in;
 }
@@ -1124,10 +1111,10 @@ DigitalSeq PTUnrooted::inferPostCS(const PTUNodePtr& node, const Matrix4Xd& coun
 	return seq;
 }
 
-boost::unordered_set<PTUnrooted::PTUNodePtr> PTUnrooted::getAncestors(const boost::unordered_set<PTUNodePtr>& subset) {
-	boost::unordered_set<PTUNodePtr> ancestors;
-	for(boost::unordered_set<PTUNodePtr>::const_iterator it = subset.begin(); it != subset.end(); ++it)
-		for(PTUNodePtr node = *it; node; node = node->parent)
+std::unordered_set<PTUnrooted::PTUNodePtr> PTUnrooted::getAncestors(const std::unordered_set<PTUNodePtr>& subset) {
+	std::unordered_set<PTUNodePtr> ancestors;
+	for(const std::unordered_set<PTUNodePtr>::value_type& item : subset)
+		for(PTUNodePtr node = item; node != nullNode; node = node->parent)
 			ancestors.insert(node);
 	return ancestors;
 }
@@ -1137,10 +1124,10 @@ string PTUnrooted::toJPlaceTreeStr(const PTUnrooted::PTUNodePtr& node) const {
 	bool first = true;
 	if(!node->isLeaf()) {
 		str += "(";
-		for(std::vector<PTUNodePtr>::const_iterator child = node->neighbors.begin(); child != node->neighbors.end(); ++child) {
-			if((*child)->isChild(node)) {
+		for(const std::vector<PTUNodePtr>::value_type& child : node->neighbors) {
+			if(child->isChild(node)) {
 				str += first ? "" : ",";
-				str += toJPlaceTreeStr(*child);
+				str += toJPlaceTreeStr(child);
 				first = false;
 			}
 		}
@@ -1178,5 +1165,3 @@ double PTUnrooted::PTPlacement::logPriorPr(PRIOR_TYPE type) const {
 
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
-
-

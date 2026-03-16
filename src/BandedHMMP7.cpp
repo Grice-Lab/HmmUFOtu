@@ -96,16 +96,15 @@ BandedHMMP7::BandedHMMP7(const string& name, const string& hmmVersion, int K, co
 	setSpEmissionFreq(); // set special emissions by default method
 }
 
-/* non-member friend functions */
-istream& operator>>(istream& in, BandedHMMP7& hmm) {
+istream& BandedHMMP7::read(istream& in) {
 	string line;
 	int k = 0; // pos on the profile
 	while (getline(in, line)) {
 		if (line == "//") {/* end of profile */
-			hmm.extend_index();
-			hmm.resetProbByCost(); // set the cost matrices
-			hmm.adjustProfileLocalMode();
-			hmm.wingRetract();
+			extend_index();
+			resetProbByCost(); // set the cost matrices
+			adjustProfileLocalMode();
+			wingRetract();
 			return in;
 		}
 		istringstream iss(line); // detail parse this line
@@ -121,12 +120,12 @@ istream& operator>>(istream& in, BandedHMMP7& hmm) {
 				}
 			}
 			else if (tag == "NAME") {
-				iss >> hmm.name;
+				iss >> name;
 			} else if (tag == "LENG") {
-				iss >> hmm.K;
-				hmm.setProfileSize();
-				hmm.enableProfileLocalMode(); // always in profile local alignment mode
-				hmm.setSpEmissionFreq(); // set special emissions by default method
+				iss >> K;
+				setProfileSize();
+				enableProfileLocalMode(); // always in profile local alignment mode
+				setSpEmissionFreq(); // set special emissions by default method
 			} else if (tag == "ALPH") {
 				string abc;
 				iss >> abc;
@@ -135,9 +134,9 @@ istream& operator>>(istream& in, BandedHMMP7& hmm) {
 							"Not allowed alphabet '" + abc
 									+ "' in the HMM input file! Must be DNA");
 				// override the alphabet
-				hmm.abc = AlphabetFactory::getAlphabetByName("DNA");
+				abc = AlphabetFactory::nuclAbc;
 			} else if(tag == "MAXL") {
-				iss >> hmm.L;
+				iss >> L;
 			} else if (tag == "STATS") {
 				string mode;
 				string distrib;
@@ -145,7 +144,7 @@ istream& operator>>(istream& in, BandedHMMP7& hmm) {
 				tag += " " + mode + " " + distrib; // use STATS + mode + distribution as the new tag name
 				string val;
 				getline(iss, val);
-				hmm.setOptTag(tag, BandedHMMP7::trim(val));
+				setOptTag(tag, BandedHMMP7::trim(val));
 
 			} else if(tag == "HMM") { /* HMM TAG */
 				string tmp;
@@ -155,12 +154,12 @@ istream& operator>>(istream& in, BandedHMMP7& hmm) {
 				string val;
 				getline(iss, val); // get the entire remaining part of this line
 				if(!tag.empty())
-					hmm.setOptTag(tag, BandedHMMP7::trim(val)); // record this tag-value pair
+					setOptTag(tag, BandedHMMP7::trim(val)); // record this tag-value pair
 				// check some optional tags
 				if(tag == "NSEQ")
-					hmm.nSeq = ::atoi(val.c_str());
+					nSeq = ::atoi(val.c_str());
 				else if(tag == "EFFN")
-					hmm.effN = ::atof(val.c_str());
+					effN = ::atof(val.c_str());
 				else
 				{ /* do nothing */ }
 			}
@@ -174,68 +173,68 @@ istream& operator>>(istream& in, BandedHMMP7& hmm) {
 				for (Vector4d::Index i = 0; i < 4; ++i)
 					iss >> emitFreq(i);
 				if (tag == "COMPO") { // COMPO line
-					hmm.E_M_cost.col(0) = emitFreq;
+					E_M_cost.col(0) = emitFreq;
 					emitFreq = (-emitFreq).array().exp();
-					hmm.setSpEmissionFreq(emitFreq);
-					hmm.hmmBg.setBgFreq(emitFreq);
+					setSpEmissionFreq(emitFreq);
+					hmmBg.setBgFreq(emitFreq);
 				} else {
 					/* Mk emission line */
-					hmm.E_M_cost.col(k) = emitFreq;
+					E_M_cost.col(k) = emitFreq;
 					/* Make sure the MAP tag is set */
 					string val;
-					if(hmm.getOptTag("MAP") != "yes") {
+					if(getOptTag("MAP") != "yes") {
 						cerr << "Error: HMM file must has the MAP flag set to 'yes'" << endl;
 						in.setstate(ios_base::badbit);
 						return in;
 					}
 					iss >> tmp;
-					hmm.cs2ProfileIdx[atoi(tmp.c_str())] = k;
-					hmm.profile2CSIdx[k] = atoi(tmp.c_str());
-					hmm.setLocOptTag("MAP", tmp, k);
+					cs2ProfileIdx[atoi(tmp.c_str())] = k;
+					profile2CSIdx[k] = atoi(tmp.c_str());
+					setLocOptTag("MAP", tmp, k);
 					/* read other optional tags */
-					if(!hmm.getOptTag("CONS").empty()) { /* this tag is present, regarding yes or no */
+					if(!getOptTag("CONS").empty()) { /* this tag is present, regarding yes or no */
 						iss >> tmp;
-						hmm.setLocOptTag("CONS", tmp, k);
+						setLocOptTag("CONS", tmp, k);
 					}
-					if(!hmm.getOptTag("RF").empty()) { /* this tag is present, regarding yes or no */
+					if(!getOptTag("RF").empty()) { /* this tag is present, regarding yes or no */
 						iss >> tmp;
-						hmm.setLocOptTag("RF", tmp, k);
+						setLocOptTag("RF", tmp, k);
 					}
-					if(!hmm.getOptTag("MM").empty()) { /* this tag is present, regarding yes or no */
+					if(!getOptTag("MM").empty()) { /* this tag is present, regarding yes or no */
 						iss >> tmp;
-						hmm.setLocOptTag("MM", tmp, k);
+						setLocOptTag("MM", tmp, k);
 					}
-					if(!hmm.getOptTag("CS").empty()) { /* this tag is present, regarding yes or no */
+					if(!getOptTag("CS").empty()) { /* this tag is present, regarding yes or no */
 						iss >> tmp;
-						hmm.setLocOptTag("CS", tmp, k);
+						setLocOptTag("CS", tmp, k);
 					}
 				}
 				/* process the following Ik emission line */
-				for (MatrixXd::Index i = 0; i < hmm.E_I_cost.rows(); ++i)
-					in >> hmm.E_I_cost(i, k);
+				for (MatrixXd::Index i = 0; i < E_I_cost.rows(); ++i)
+					in >> E_I_cost(i, k);
 				/* process the following state K transition line */
-					in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Mk -> Mk+1
-					in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) = hmm.hmmValueOf(tmp);  // Mk -> Ik
-					in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) = hmm.hmmValueOf(tmp);  // Mk -> Dk+1
-					in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Ik -> Mk+1
-					in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) = hmm.hmmValueOf(tmp);  // Ik -> Ik
-					in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Dk -> Mk+1
-					in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) = hmm.hmmValueOf(tmp);  // Dk -> Dk+1
+					in >> tmp; Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) = hmmValueOf(tmp);  // Mk -> Mk+1
+					in >> tmp; Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) = hmmValueOf(tmp);  // Mk -> Ik
+					in >> tmp; Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) = hmmValueOf(tmp);  // Mk -> Dk+1
+					in >> tmp; Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) = hmmValueOf(tmp);  // Ik -> Mk+1
+					in >> tmp; Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) = hmmValueOf(tmp);  // Ik -> Ik
+					in >> tmp; Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) = hmmValueOf(tmp);  // Dk -> Mk+1
+					in >> tmp; Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) = hmmValueOf(tmp);  // Dk -> Dk+1
 			} /* combo line section or match state line section */
 			else { // non-COMPO begin state line (M0)
 				assert(k == 0);
 				string tmp;
 				/* process the BEGIN insert emission line */
-				for (MatrixXd::Index i = 0; i < hmm.E_I_cost.rows(); ++i)
-					in >> hmm.E_I_cost(i, k);
+				for (MatrixXd::Index i = 0; i < E_I_cost.rows(); ++i)
+					in >> E_I_cost(i, k);
 				/* process the B state K transition line */
-				in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Mk -> Mk+1
-				in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) = hmm.hmmValueOf(tmp);  // Mk -> Ik
-				in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) = hmm.hmmValueOf(tmp);  // Mk -> Dk+1
-				in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Ik -> Mk+1
-				in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) = hmm.hmmValueOf(tmp);  // Ik -> Ik
-				in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) = hmm.hmmValueOf(tmp);  // Dk -> Mk+1
-				in >> tmp; hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) = hmm.hmmValueOf(tmp);  // Dk -> Dk+1
+				in >> tmp; Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M) = hmmValueOf(tmp);  // Mk -> Mk+1
+				in >> tmp; Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I) = hmmValueOf(tmp);  // Mk -> Ik
+				in >> tmp; Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D) = hmmValueOf(tmp);  // Mk -> Dk+1
+				in >> tmp; Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M) = hmmValueOf(tmp);  // Ik -> Mk+1
+				in >> tmp; Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I) = hmmValueOf(tmp);  // Ik -> Ik
+				in >> tmp; Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M) = hmmValueOf(tmp);  // Dk -> Mk+1
+				in >> tmp; Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D) = hmmValueOf(tmp);  // Dk -> Dk+1
 			}
 			k++;
 		} /* end of main section */
@@ -321,55 +320,55 @@ double BandedHMMP7::meanRelativeEntropy() const {
 	return ent / K;
 }
 
-ostream& operator<<(ostream& out, const BandedHMMP7& hmm) {
+ostream& BandedHMMP7::write(ostream& out) const {
 	/* write mandatory tags */
-	out << "HMMER3/f\t" << hmm.hmmVersion << endl;
-	out << "NAME\t" << hmm.name << endl;
-	out << "LENG\t" << hmm.K << endl;
-	out << "ALPH\t" << hmm.abc->getAlias() << endl;
+	out << "HMMER3/f\t" << hmmVersion << endl;
+	out << "NAME\t" << name << endl;
+	out << "LENG\t" << K << endl;
+	out << "ALPH\t" << abc->getAlias() << endl;
 
 	/* write optional tags */
-	for(vector<string>::const_iterator it = hmm.optTagNames.begin(); it != hmm.optTagNames.end(); ++it)
-		out << *it << "  " << hmm.getOptTag(*it) << endl;
+	for(const vector<string>::value_type& tag : optTagNames)
+		out << tag << " " << getOptTag(tag) << endl;
 
 	/* write optional HMM tags */
 	out << BandedHMMP7::HMM_TAG << endl;
-	for(int k = 0; k <= hmm.K; ++k) {
+	for(int k = 0; k <= K; ++k) {
 		/* write M or background emission line */
 		if(k == 0)
-			out << "\tCOMPO\t" << hmm.E_M_cost.col(0).transpose().format(tabFmt) << endl;
+			out << "\tCOMPO\t" << E_M_cost.col(0).transpose().format(tabFmt) << endl;
 		else {
-			out << "\t" << k << "\t" << hmm.E_M_cost.col(k).transpose().format(tabFmt);
+			out << "\t" << k << "\t" << E_M_cost.col(k).transpose().format(tabFmt);
 			/* write other optional tags, if present */
-			if(!hmm.getOptTag("MAP").empty())
-				out << "\t" << hmm.getLocOptTag("MAP", k);
-			if(!hmm.getOptTag("CONS").empty())
-				out << "\t" << hmm.getLocOptTag("CONS", k);
-			if(!hmm.getOptTag("RF").empty())
-				out << "\t" << hmm.getLocOptTag("RF", k);
-			if(!hmm.getOptTag("MM").empty())
-				out << "\t" << hmm.getLocOptTag("MM", k);
-			if(!hmm.getOptTag("CS").empty())
-				out << "\t" << hmm.getLocOptTag("CS", k);
+			if(!getOptTag("MAP").empty())
+				out << "\t" << getLocOptTag("MAP", k);
+			if(!getOptTag("CONS").empty())
+				out << "\t" << getLocOptTag("CONS", k);
+			if(!getOptTag("RF").empty())
+				out << "\t" << getLocOptTag("RF", k);
+			if(!getOptTag("MM").empty())
+				out << "\t" << getLocOptTag("MM", k);
+			if(!getOptTag("CS").empty())
+				out << "\t" << getLocOptTag("CS", k);
 			out << endl;
 		}
 		/* write insert emission line */
 		double val;
 		out << "\t";
-		for(MatrixXd::Index i = 0; i != hmm.E_I_cost.rows(); ++i) {
-			val = hmm.E_I_cost(i, k);
+		for(MatrixXd::Index i = 0; i != E_I_cost.rows(); ++i) {
+			val = E_I_cost(i, k);
 			hmmPrintValue(out << "\t", val);
 		}
 		out << endl;
 
 		/* write state transition line */
-		val = hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M); hmmPrintValue(out << "\t\t", val);
-		val = hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I); hmmPrintValue(out << "\t", val);
-		val = hmm.Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D); hmmPrintValue(out << "\t", val);
-		val = hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M); hmmPrintValue(out << "\t", val);
-		val = hmm.Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I); hmmPrintValue(out << "\t", val);
-		val = hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M); hmmPrintValue(out << "\t", val);
-		val = hmm.Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D); hmmPrintValue(out << "\t", val);
+		val = Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::M); hmmPrintValue(out << "\t\t", val);
+		val = Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::I); hmmPrintValue(out << "\t", val);
+		val = Tmat_cost[k](BandedHMMP7::M, BandedHMMP7::D); hmmPrintValue(out << "\t", val);
+		val = Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::M); hmmPrintValue(out << "\t", val);
+		val = Tmat_cost[k](BandedHMMP7::I, BandedHMMP7::I); hmmPrintValue(out << "\t", val);
+		val = Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::M); hmmPrintValue(out << "\t", val);
+		val = Tmat_cost[k](BandedHMMP7::D, BandedHMMP7::D); hmmPrintValue(out << "\t", val);
 
 		out << endl;
 	}
@@ -1212,19 +1211,19 @@ BandedHMMP7::HmmAlignment& BandedHMMP7::HmmAlignment::merge(const HmmAlignment& 
 	return *this;
 }
 
-ostream& operator<<(ostream& out, const BandedHMMP7::HmmAlignment& hmmAln) {
-	out << hmmAln.seqStart << "\t" << hmmAln.seqEnd << "\t" <<
-			hmmAln.hmmStart << "\t" << hmmAln.hmmEnd << "\t" <<
-			hmmAln.csStart << "\t" << hmmAln.csEnd << "\t" <<
-			hmmAln.cost << "\t" << hmmAln.align;
+ostream& BandedHMMP7::HmmAlignment::write(ostream& out) const {
+	out << seqStart << "\t" << seqEnd << "\t" <<
+			hmmStart << "\t" << hmmEnd << "\t" <<
+			csStart << "\t" << csEnd << "\t" <<
+			cost << "\t" << align;
 	return out;
 }
 
-istream& operator>>(istream& in, BandedHMMP7::HmmAlignment& hmmAln) {
-	in >> hmmAln.seqStart >> hmmAln.seqEnd >>
-	hmmAln.hmmStart >> hmmAln.hmmEnd >>
-	hmmAln.csStart >> hmmAln.csEnd >>
-	hmmAln.cost >> hmmAln.align;
+istream& BandedHMMP7::HmmAlignment::read(istream& in) {
+	in >> seqStart >> seqEnd >>
+	hmmStart >> hmmEnd >>
+	csStart >> csEnd >>
+	cost >> align;
 	return in;
 }
 

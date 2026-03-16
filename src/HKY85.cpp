@@ -88,9 +88,10 @@ void HKY85::trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) {
 	pi = f / f.sum();
 	/* estimate kappa */
 	double Ti = 0, Tv = 0;
-	for(vector<Matrix4d>::const_iterator P = Pv.begin(); P != Pv.end(); ++P) {
-		Ti += (*P)(A, G) + (*P)(G, A) + (*P)(C, T) + (*P)(T, C);
-		Tv += (*P)(A, C) + (*P)(A, T) + (*P)(C, A) + (*P)(C, G) + (*P)(G, C) + (*P)(G, T) + (*P)(T, A) + (*P)(T, G);
+	for(const vector<Matrix4d>::value_type P : Pv) {
+		Ti += P(A, G) + P(G, A) + P(C, T) + P(T, C);
+		Tv += P(A, C) + P(A, T) + P(C, A) + P(C, G) +
+				P(G, C) + P(G, T) + P(T, A) + P(T, G);
 	}
 	kappa = Ti / Tv;
 	/* estimate beta */

@@ -39,8 +39,8 @@ using Eigen::RowVectorXd;
 
 struct OTUObserved {
 	/** constructors */
-	/** default constructor, do nothing */
-	OTUObserved() {  }
+	/** default constructor */
+	OTUObserved() = default;
 
 	/** construct an OTUObserved with given information */
 	OTUObserved(const string& id, const string& taxon, int csLen, int N) :
@@ -50,8 +50,6 @@ struct OTUObserved {
 		gap.setZero();
 		count.setZero();
 	}
-
-	virtual ~OTUObserved() {  }
 
 	/** member methods */
 	/** get observed number of reads */
@@ -82,8 +80,8 @@ struct OTUObserved {
 
 	string id; /* id for this OTU */
 	string taxon; /* taxon for this OTU */
-	int csLen;  /* consensus sequence length */
-	int N;      /* number of total samples */
+	int csLen = 0;  /* consensus sequence length */
+	int N = 0;      /* number of total samples */
 	Matrix4Xd freq;  /* observed aggregate base frequency over all samples */
 	RowVectorXd gap; /* observed aggregate gap over all samples */
 	RowVectorXd count;  /* observed sequence count for each sample separately */

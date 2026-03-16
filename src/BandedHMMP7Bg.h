@@ -45,14 +45,18 @@ using Eigen::Vector4d;
 class BandedHMMP7Bg {
 public:
 	/* constructors */
-	/*
-	 * constructor with given size
+	/** default constructor */
+	BandedHMMP7Bg() = default;
+
+	/**
+	 * constructor with given size and optional alphabet
 	 */
-	explicit BandedHMMP7Bg(int size, const DegenAlphabet* abc = AlphabetFactory::getAlphabetByName("DNA"))
+	explicit BandedHMMP7Bg(int size, const DegenAlphabet* abc = AlphabetFactory::nuclAbc)
 	: K(size), nuclAbc(abc) {
 		init_bgFreq();
 		init_transPr();
 	}
+
 	/* member methods */
 	/**
 	 * return the background transition prob between G states
@@ -98,6 +102,7 @@ public:
 	 * reset the size of this background model, adjusting the transition prob accordingly
 	 */
 	void setSize(int size);
+
 	/**
 	 * set the background nucleotide frequencies using observed frequencies or count
 	 * @param freq  the observed frequencies or count of each nucleotide
@@ -110,10 +115,10 @@ private:
 	void init_transPr();
 	//void init_emisPr();
 
-	int K; // profile size
-	const DegenAlphabet* nuclAbc;
+	int K = 0; // profile size
+	const DegenAlphabet* nuclAbc = nullptr;
 	Vector4d bgFreq; // null background frequencies of each nuclotide bases
-	double p1; // null transition distribution of G->G, which is 1 - p0 = 1 - transBG
+	double p1 = 0; // null transition distribution of G->G, which is 1 - p0 = 1 - transBG
 
 	static const int MIN_BG_K = 350; /* min profile length used to set bg transition probability */
 };
