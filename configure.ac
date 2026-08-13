@@ -44,9 +44,8 @@ AC_CHECK_FUNCS([select])
 AC_CHECK_FUNCS([malloc realloc])
 
 AC_CONFIG_FILES([Makefile
-									cds.pc
-									src/Makefile
-									tests/Makefile
-									tutorial/src/Makefile
-									tutorial/ssa/Makefile])
+				src/Makefile
+				tests/Makefile
+				tutorial/src/Makefile
+				tutorial/ssa/Makefile])
 AC_OUTPUT
