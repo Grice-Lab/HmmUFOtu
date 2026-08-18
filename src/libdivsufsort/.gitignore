@@ -52,3 +52,4 @@ config.status
 # Ignore test temporaries
 **/*.trs
 **/*.swp
+config.h
