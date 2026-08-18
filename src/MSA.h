@@ -33,11 +33,10 @@
 #include <Eigen/Dense>
 #include <cmath>
 
+#include "HmmUFOtuConst.h"
 #include "AlphabetFactory.h"
-#include "StringUtils.h"
 #include "PrimarySeq.h"
 #include "DigitalSeq.h"
-#include "SeqUtils.h"
 #include "ProgLog.h"
 
 namespace EGriceLab {
@@ -398,7 +397,7 @@ public:
 	 * construct an MSA with given alphabet
 	 * @throw invalid_argument if the alphabet is not known
 	 */
-	explicit MSA(const string& alphabet = "dna") : alphabet(alphabet), abc(AlphabetFactory::getAlphabetByName(alphabet))
+	explicit MSA(const string& alphabet) : alphabet(alphabet), abc(AlphabetFactory::getAlphabetByName(alphabet))
 	/* other member will be default init */
 	{  }
 
@@ -525,7 +524,7 @@ inline void MSA::sclaleWeight(double r) {
 
 inline long MSA::loadMSA(const DegenAlphabet* abc,
 		istream& in, const string& format) {
-	if(format == SeqUtils::FASTA_FMT)
+	if(format == FASTA_FMT)
 		return loadMSAFasta(abc, in);
 	else {
 		errorLog << "Unsupported MSA file format '" + format + "'";
@@ -534,7 +533,7 @@ inline long MSA::loadMSA(const DegenAlphabet* abc,
 }
 
 inline bool MSA::saveMSAFile(const string& filename, const string& format) {
-	if(format == SeqUtils::FASTA_FMT)
+	if(format == FASTA_FMT)
 		return MSA::saveFastaFile(filename);
 	else throw invalid_argument("Cannot save MSA to file, unsupported MSA file format " + format);
 }

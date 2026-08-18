@@ -171,7 +171,7 @@ PhyloTreeUnrooted::PhyloTreeUnrooted(const NewickTree& ntree) {
 				Pchild->parent = u;
 				/* update branch length */
 				setBranchLength(u, Pchild, Nchild.length);
-				S.push(&*Nchild);
+				S.push(&Nchild);
 			}
 		}
 	}
@@ -541,7 +541,7 @@ ostream& PTUnrooted::save(ostream& out) const {
 		node->save(out);
 	/* write all edges */
 	size_t nEdges = numEdges();
-	out.write(static_cast<const char*>(&nEdges), sizeof(size_t));
+	out.write(reinterpret_cast<const char*>(&nEdges), sizeof(size_t));
 	for(const vector<PTUNodePtr>::value_type& u : id2node)
 		for(const vector<PTUNodePtr>::value_type& v : u->neighbors)
 			saveEdge(out, u, v);
@@ -566,8 +566,8 @@ ostream& PTUnrooted::saveMSAIndex(ostream& out) const {
 	unsigned N = msaId2node.size();
 	out.write((const char*) &N, sizeof(unsigned));
 	for(const map<unsigned, PTUNodePtr>::value_type& pair : msaId2node) {
-		out.write(static_cast<const char*> (&(pair.first)), sizeof(unsigned));
-		out.write(static_cast<const char*> (&(pair.second->id)), sizeof(long));
+		out.write(reinterpret_cast<const char*> (&(pair.first)), sizeof(unsigned));
+		out.write(reinterpret_cast<const char*> (&(pair.second->id)), sizeof(long));
 	}
 
 	return out;
@@ -618,8 +618,8 @@ istream& PTUnrooted::loadEdge(istream& in) {
 
 ostream& PTUnrooted::saveNodeHeight(ostream& out) const {
 	for(const vector<PTUNodePtr>::value_type& node : id2node) {
-		out.write(static_cast<const char*> (&(node->id)), sizeof(long));
-		out.write(static_cast<const char*> (&(node2height.at(node))), sizeof(double));
+		out.write(reinterpret_cast<const char*> (&(node->id)), sizeof(long));
+		out.write(reinterpret_cast<const char*> (&(node2height.at(node))), sizeof(double));
 	}
 
 	return out;
@@ -765,7 +765,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 		for(int j = start; j <= end; ++j) {
 			double logA = dot_product_scaled(pi, U.col(j) + V.col(j));
 			double logB = dot_product_scaled(pi, U.col(j)) + dot_product_scaled(pi, V.col(j));
-			if(::isnan(logA) || ::isnan(logB))
+			if(std::isnan(logA) || std::isnan(logB))
 				continue;
 			double scale = std::max(logA, logB);
 			logA -= scale;
@@ -850,7 +850,7 @@ PTUnrooted::PTPlacement PTUnrooted::estimateSeq(const DigitalSeq& seq, const PTL
 	double pDist = SeqUtils::pDist(v->getSeq(), seq, loc.start, loc.end);
 	/* estimate ratio */
 	double ratio = cDist / (cDist + pDist);
-	if(::isnan(ratio)) // unable to estimate the ratio
+	if(std::isnan(ratio)) // unable to estimate the ratio
 		ratio = 0.5;
 	/* estimate wnr */
 	double w0 = getBranchLength(u, v);
@@ -1046,25 +1046,25 @@ double PTUnrooted::estimateBranchLengthWeighted(const Matrix4Xd& U, const Matrix
 }
 
 ostream& PTUnrooted::PTUBranch::save(ostream& out) const {
-	out.write(static_cast<const char*> (&length), sizeof(double));
+	out.write(reinterpret_cast<const char*> (&length), sizeof(double));
 	size_t N = loglik.size();
-	out.write(static_cast<const char*> (&N), sizeof(size_t));
+	out.write(reinterpret_cast<const char*> (&N), sizeof(size_t));
 
 	const double *data = loglik.data();
-	out.write(static_cast<const char*>(data), sizeof(double) * N);
+	out.write(reinterpret_cast<const char*>(data), sizeof(double) * N);
 
 	return out;
 }
 
 istream& PTUnrooted::PTUBranch::load(istream& in) {
-	in.read((char*) &length, sizeof(double));
+	in.read(reinterpret_cast<char*> (&length), sizeof(double));
 	size_t N;
-	in.read((char*) &N, sizeof(size_t));
+	in.read(reinterpret_cast<char*> (&N), sizeof(size_t));
 	if(loglik.size() != N)
 		loglik.resize(4, N / 4);
 
 	double *data = loglik.data();
-	in.read(static_cast<char*>(data), sizeof(double) * N);
+	in.read(reinterpret_cast<char*>(data), sizeof(double) * N);
 
 	return in;
 }

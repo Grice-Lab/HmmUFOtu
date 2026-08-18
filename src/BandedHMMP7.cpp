@@ -24,7 +24,7 @@
  *      Author: zhengqi
  */
 
-#include <math.h> /* using C99 */
+#include <cmath>
 #include <cstdlib>
 #include <cassert>
 #include <limits>
@@ -127,11 +127,11 @@ istream& BandedHMMP7::read(istream& in) {
 				enableProfileLocalMode(); // always in profile local alignment mode
 				setSpEmissionFreq(); // set special emissions by default method
 			} else if (tag == "ALPH") {
-				string abc;
-				iss >> abc;
-				if (abc != "DNA")
+				string alphabet;
+				iss >> alphabet;
+				if (alphabet != "DNA")
 					throw invalid_argument(
-							"Not allowed alphabet '" + abc
+							"Not allowed alphabet '" + alphabet
 									+ "' in the HMM input file! Must be DNA");
 				// override the alphabet
 				abc = AlphabetFactory::nuclAbc;
@@ -482,7 +482,7 @@ BandedHMMP7& BandedHMMP7::build(const MSA& msa, double symfrac,
 	RelativeEntropyTargetFunc entFunc(DEFAULT_ERE, *this, prior);
 	Math::RootFinder rf(entFunc, 0, nSeq);
 	effN = rf.rootBisection();
-	if(::isnan(effN)) /* failed to estimate effN */
+	if(std::isnan(effN)) /* failed to estimate effN */
 		effN = nSeq;
 //	cerr << "Final HMM EFFN: " << hmm.effN << endl;
 	scale(effN / nSeq);

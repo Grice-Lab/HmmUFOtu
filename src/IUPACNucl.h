@@ -32,7 +32,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <cctype>
-#include <limits>
+#include <climits>
 #include "DegenAlphabet.h"
 
 namespace EGriceLab {
@@ -78,9 +78,9 @@ public:
 
 private:
 	/* static initialization method */
-	static const string NAME = "IUPACNucl"; /* IUPACNucl alphabet name */
-	static const string SYMBOL = "ACGT"; /* IUPACNucl symbols */
-	static const string SYNONYM = "UMRWSYKVHDBN"; /* IUPACNucl synonyms */
+	static const string NAME; /* IUPACNucl alphabet name */
+	static const string SYMBOL; /* IUPACNucl symbols */
+	static const string SYNONYM; /* IUPACNucl synonyms */
 	static map<char, string> init_IUPAC_map();
 /*	static const map<char, string> degen_map;*/
 	char compl_map[CHAR_MAX + 1];

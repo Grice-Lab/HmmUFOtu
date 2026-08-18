@@ -27,7 +27,6 @@
 #ifndef SEQIO_H_
 #define SEQIO_H_
 
-#include "SeqUtils.h"
 #include "PrimarySeq.h"
 
 namespace EGriceLab {
@@ -39,13 +38,12 @@ using std::ostream;
 using std::streambuf;
 using std::ifstream;
 using std::ofstream;
-using SeqUtils::FASTA_FMT;
-using SeqUtils::FASTQ_FMT;
 
 /**
  * A class to handle IO operation for PrimarySeq of various format and
  */
 class SeqIO {
+
 public:
 	/* constructors */
 	/** default constructor */

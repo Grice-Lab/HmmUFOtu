@@ -81,7 +81,7 @@ ostream& K80::write(ostream& out) const {
 void K80::trainParams(const vector<Matrix4d>& Pv, const Vector4d& f) {
 	/* estimate kappa */
 	double Ti = 0, Tv = 0;
-	for(const vector<Matrix4d>::const_iterator& P : Pv) {
+	for(const vector<Matrix4d>::value_type& P : Pv) {
 		Ti += P(A, G) + P(G, A) + P(C, T) + P(T, C);
 		Tv += P(A, C) + P(A, T) + P(C, A) + P(C, G) +
 				P(G, C) + P(G, T) + P(T, A) + P(T, G);

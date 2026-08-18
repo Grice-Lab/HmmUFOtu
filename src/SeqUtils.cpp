@@ -32,9 +32,6 @@
 namespace EGriceLab {
 namespace HmmUFOtu {
 
-const char *SeqUtils::FASTA_FILE_EXTENSIONS[] = { "fasta", "fas", "fa", "fna" };
-const char *SeqUtils::FASTQ_FILE_EXTENSIONS[] = { "fastq", "fq" };
-
 double SeqUtils::pDist(const DigitalSeq& seq1, const DigitalSeq& seq2,
 		DigitalSeq::size_type start, DigitalSeq::size_type end) {
 	assert(seq1.getAbc() == seq2.getAbc());

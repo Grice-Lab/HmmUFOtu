@@ -29,6 +29,9 @@
 
 namespace EGriceLab {
 namespace HmmUFOtu {
+const string NAME = "IUPACNucl"; /* IUPACNucl alphabet name */
+const string SYMBOL = "ACGT"; /* IUPACNucl symbols */
+const string SYNONYM = "UMRWSYKVHDBN"; /* IUPACNucl synonyms */
 
 map<char, string> IUPACNucl::init_IUPAC_map() {
 	map<char, string> IUPAC_map;

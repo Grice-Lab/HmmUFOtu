@@ -41,8 +41,11 @@
 #include <cstdlib>
 #include <cassert>
 #include <algorithm>
+#include <boost/unordered_map.hpp>
+//#include <unordered_map>
+#include <boost/unordered_set.hpp>
+//#include <unordered_set>
 #include <Eigen/Dense>
-#include <boost/iterator.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include "AlphabetFactory.h"
@@ -68,8 +71,8 @@ using Eigen::Matrix4Xd;
 using Eigen::Matrix4d;
 using Eigen::RowVectorXd;
 using std::shared_ptr;
-using std::unordered_map;
-using std::unordered_set;
+using boost::unordered_map;
+using boost::unordered_set;
 
 class PhyloTreeUnrooted; /* forward declaration */
 
@@ -103,8 +106,8 @@ public:
 	typedef shared_ptr<DNASubModel> ModelPtr; /* use boost shared_ptr to hold DNA Sub Model */
 	typedef shared_ptr<DiscreteGammaModel> DGammaPtr; /* use boost shared_ptr to hold DiscreteGammapModel */
 
-	typedef std::unordered_map<PTUNodePtr, std::unordered_map<PTUNodePtr, PTUBranch> > BranchMap;
-	typedef std::unordered_map<PTUNodePtr, double> HeightMap;
+	typedef unordered_map<PTUNodePtr, unordered_map<PTUNodePtr, PTUBranch> > BranchMap;
+	typedef unordered_map<PTUNodePtr, double> HeightMap;
 
 	/**
 	 * A PTUnrooed node that stores its basic information and neighbors
@@ -224,11 +227,9 @@ public:
 		bool isTip() const {
 			if(isLeaf())
 				return false;
-			for(vector<PTUNodePtr>::const_iterator child = neighbors.begin(); child != neighbors.end(); ++child)
-				if(isParent(*child) /* this is really a child */
-						&& !(*child)->isLeaf())
-					return false;
-			return true;
+
+			return std::all_off(neighbors.begin(), neighbors.end(),
+				[](const PTUNodePtr child) { return !isParent(child) /* not a child */ || child->isLeaf(); /* is a leaf-child */ } -> bool
 		}
 
 		/**
@@ -246,9 +247,9 @@ public:
 		 * return nullNode if not exists
 		 */
 		PTUNodePtr firstChild() const {
-			for(vector<PTUNodePtr>::const_iterator child = neighbors.begin(); child != neighbors.end(); ++child)
-				if(isParent(*child)) // this is really a child
-					return *child;
+			for(const vector<PTUNodePtr>::value_type& child : neighbors)
+				if(isParent(child)) // this is really a child
+					return child;
 			return nullNode;
 		}
 
@@ -506,14 +507,15 @@ public:
 		static const string TSV_HEADER;
 	};
 
+
+public:
 	/* constructors */
 	/** Default constructor, do nothing */
-	PhyloTreeUnrooted() : csLen(0) {  }
+	PhyloTreeUnrooted() = default;
 
 	/** Construct a PTUnrooted from a Newick Tree */
 	PhyloTreeUnrooted(const NewickTree& ntree);
 
-public:
 	/* member methods */
 	/** Get the number of nodes of this tree */
 	size_t numNodes() const {
@@ -985,14 +987,14 @@ public:
 	 * add pseudo-leaves to the tree given a set of flagged nodes (as OTUs)
 	 * return new leaves added into the tree
 	 */
-	size_t addPseudoLeaf(const boost::unordered_set<PTUNodePtr>& subset);
+	size_t addPseudoLeaf(const unordered_set<PTUNodePtr>& subset);
 
 	/** convert this PTUnrooted subtree into NewickTree */
 	NewickTree convertToNewickTree(const PTUNodePtr& subtree, const string& prefix = "") const;
 
 	/** convert this PTUUnrooted subtree into NewickTree, only for a subset of nodes */
 	NewickTree convertToNewickTree(const PTUNodePtr& subtree,
-			const boost::unordered_set<PTUNodePtr>& subset, const string& prefix = "") const;
+			const unordered_set<PTUNodePtr>& subset, const string& prefix = "") const;
 
 	/** convert this PTUnrooted tree into NewickTree */
 	NewickTree convertToNewickTree(const string& prefix = "") const {
@@ -1000,7 +1002,7 @@ public:
 	}
 
 	/** convert this PTUUnrooted tree into NewickTree, only for a subset of nodes */
-	NewickTree convertToNewickTree(const boost::unordered_set<PTUNodePtr>& subset, const string& prefix = "") const {
+	NewickTree convertToNewickTree(const unordered_set<PTUNodePtr>& subset, const string& prefix = "") const {
 		return convertToNewickTree(root, subset, prefix);
 	}
 
@@ -1348,7 +1350,7 @@ public:
 	/** initiate the leaf loglik matrix */
 	static Matrix4d initLeafMat();
 
-	static boost::unordered_set<PTUNodePtr> getAncestors(const boost::unordered_set<PTUNodePtr>& subset);
+	static unordered_set<PTUNodePtr> getAncestors(const unordered_set<PTUNodePtr>& subset);
 
 	/* member fields */
 private:

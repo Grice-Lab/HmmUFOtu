@@ -179,15 +179,15 @@ ostream& CSFMIndex::save(ostream& out) const {
 	out.write(&gapCh, sizeof(char));
 
 	/* write sizes */
-	out.write(static_cast<const char*>(&csLen), sizeof(uint16_t));
-	out.write(static_cast<const char*>(&concatLen), sizeof(int32_t));
+	out.write(reinterpret_cast<const char*>(&csLen), sizeof(uint16_t));
+	out.write(reinterpret_cast<const char*>(&concatLen), sizeof(int32_t));
 
 	/* write arrays and objects */
-	out.write(static_cast<const char*>(C), (UINT8_MAX + 1) * sizeof(int32_t));
+	out.write(reinterpret_cast<const char*>(C), (UINT8_MAX + 1) * sizeof(int32_t));
 	StringUtils::saveString(csSeq, out);
-	out.write(static_cast<const char*>(csIdentity), (csLen + 1) * sizeof(double));
-	out.write(static_cast<const char*>(concat2CS), (concatLen + 1) * sizeof(uint16_t));
-	out.write(static_cast<const char*>(saSampled), (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
+	out.write(reinterpret_cast<const char*>(csIdentity), (csLen + 1) * sizeof(double));
+	out.write(reinterpret_cast<const char*>(concat2CS), (concatLen + 1) * sizeof(uint16_t));
+	out.write(reinterpret_cast<const char*>(saSampled), (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
 
 	saIdx->save(out);
 	bwt->save(out);
@@ -206,21 +206,21 @@ istream& CSFMIndex::load(istream& in) {
 	in.read(&gapCh, sizeof(char));
 
 	/* read sizes */
-	in.read(static_cast<char*>(&csLen), sizeof(uint16_t));
-	in.read(static_cast<char*>(&concatLen), sizeof(int32_t));
+	in.read(reinterpret_cast<char*>(&csLen), sizeof(uint16_t));
+	in.read(reinterpret_cast<char*>(&concatLen), sizeof(int32_t));
 
 	/* read arrays and objects */
-	in.read(static_cast<char*>(C), (UINT8_MAX + 1) * sizeof(int32_t));
+	in.read(reinterpret_cast<char*>(C), (UINT8_MAX + 1) * sizeof(int32_t));
 	StringUtils::loadString(csSeq, in);
 
 	csIdentity = new double[csLen + 1];
-	in.read(static_cast<char*>(csIdentity), (csLen + 1) * sizeof(double));
+	in.read(reinterpret_cast<char*>(csIdentity), (csLen + 1) * sizeof(double));
 
     concat2CS = new uint16_t[concatLen + 1];
-	in.read(static_cast<char*>(concat2CS), (concatLen + 1) * sizeof(uint16_t));
+	in.read(reinterpret_cast<char*>(concat2CS), (concatLen + 1) * sizeof(uint16_t));
 
 	saSampled = new uint32_t[concatLen / SA_SAMPLE_RATE + 1];
-	in.read(static_cast<char*>(saSampled), (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
+	in.read(reinterpret_cast<char*>(saSampled), (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
 
 	saIdx = BitSequenceRRR::load(in); /* use RRR implementation */
 	bwt = WaveletTreeNoptrs::load(in);
