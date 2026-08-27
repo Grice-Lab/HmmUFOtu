@@ -938,7 +938,7 @@ inline double BandedHMMP7::hmmValueOf(const string& s) {
 	return s != "*" ? ::atof(s.c_str()) : inf;
 }
 
-inline ostream& hmmPrintValue(ostream& out, double val) {
+inline ostream& BandedHMMP7::hmmPrintValue(ostream& out, double val) {
 	return val != inf ? out << val : out << "*";
 }
 

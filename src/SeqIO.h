@@ -27,6 +27,7 @@
 #ifndef SEQIO_H_
 #define SEQIO_H_
 
+#include "SeqUtils.h"
 #include "PrimarySeq.h"
 
 namespace EGriceLab {
@@ -168,26 +169,26 @@ private:
 };
 
 inline bool SeqIO::hasNext() {
-	if(format == FASTA_FMT)
+	if(format == SeqUtils::FASTA_FMT)
 		return hasNextFasta();
-	else if(format == FASTQ_FMT)
+	else if(format == SeqUtils::FASTQ_FMT)
 		return hasNextFastq();
 	return false;
 }
 
 inline PrimarySeq SeqIO::nextSeq() {
-	if(format == FASTA_FMT)
+	if(format == SeqUtils::FASTA_FMT)
 		return nextFastaSeq();
-	else if(format == FASTQ_FMT)
+	else if(format == SeqUtils::FASTQ_FMT)
 		return nextFastqSeq();
 	else
 		return PrimarySeq(abc, "", ""); // return an empty seq
 }
 
 inline void SeqIO::writeSeq(const PrimarySeq& seq) {
-	if(format == FASTA_FMT)
+	if(format == SeqUtils::FASTA_FMT)
 		writeFastaSeq(seq);
-	else if(format == FASTQ_FMT)
+	else if(format == SeqUtils::FASTQ_FMT)
 		writeFastqSeq(seq);
 	else { } /* do nothing */
 }

@@ -29,7 +29,6 @@
 #include <cctype>
 #include <set>
 #include <algorithm>
-#include "HmmUFOtuConst.h"
 #include "MSA.h"
 #include "Stats.h"
 #include "LinearAlgebraBasic.h"
@@ -140,8 +139,7 @@ MSA& MSA::prune() {
 long MSA::loadMSAFasta(const DegenAlphabet* abc, istream& in) {
 	SeqIO seqI(&in, abc, SeqUtils::FASTA_FMT);
 	while(seqI.hasNext()) {
-		const PrimarySeq& seq = seqI.nextSeq();
-		//cerr << seq.getId() << " " << seq.getSeq() << endl;
+		PrimarySeq seq = seqI.nextSeq();
 		/* check new seq */
 		if(csLen != 0 && seq.length() != csLen) {
 			cerr << "Invalid fasta alignment file! Not all sequences have the same length!";
@@ -154,6 +152,9 @@ long MSA::loadMSAFasta(const DegenAlphabet* abc, istream& in) {
 		concatMSA.append(seq.getSeq());
 	}
 	assert(concatMSA.length() == numSeq * csLen);
+	// update alphabet/abc
+	this->alphabet = abc->getName();
+	this->abc = abc;
 	updateRawCounts();
 	updateSeqWeight();
 	updateWeightedCounts();
@@ -234,7 +235,7 @@ void MSA::updateRawCounts() {
 		int end = -1;
 		int len = 0;
 		for(int j = 0; j < csLen; ++j) {
-			char c = ::toupper(residualAt(i, j));
+			char c = residualAt(i, j);
 			if(abc->isSymbol(c)) {
 				if(start == -1)
 					start = j;
@@ -283,7 +284,7 @@ void MSA::updateWeightedCounts() {
 	/* calculate weighted count */
 	for(unsigned i = 0; i < numSeq; ++i)
 		for(unsigned j = 0; j < csLen; ++j) {
-			char c = ::toupper(residualAt(i, j));
+			char c = residualAt(i, j);
 			if(abc->isSymbol(c))
 				resWCount(abc->encode(c), j) += seqWeight(i);
 			else if(abc->isGap(c))

@@ -100,6 +100,7 @@ public:
 	}
 
 private:
+	/* static const variables */
 	static const string name;
 	static const Matrix4d identityMat;
 
@@ -110,7 +111,7 @@ private:
 	Matrix4d Q; /* Rate matrix */
 	Matrix4d R; /* Symmetric rate parameters, Q = pi_T * R for i != j; R(i,i) = 0 */
 
-	Matrix4d lambda; /* stored eigenvalues of Q in diagnal matrix form for fast computation */
+	Vector4d lambda; /* stored eigenvalues of Q for fast computation */
 	Matrix4d U; /* stored eigen-matrix with columns as eigen vectors of Q */
 	Matrix4d U_1; /* U-1 inverse of U */
 
@@ -122,7 +123,7 @@ inline Matrix4d GTR::Pr(double v) const {
 	if(v == 0)
 		return identityMat;
 	else
-		return U * (lambda * v).array().exp().matrix() * U_1;
+		return U * (lambda * v).array().exp().matrix().asDiagonal() * U_1;
 }
 
 } /* namespace HmmUFOtu */

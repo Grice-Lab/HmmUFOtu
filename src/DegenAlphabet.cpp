@@ -38,15 +38,12 @@ namespace HmmUFOtu {
 
 using namespace std;
 
-const int8_t DegenAlphabet::INVALID_BASE = -1;
-const int8_t DegenAlphabet::GAP_BASE = -2; /* encoded gap symbol */
-
 DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const string& synon_str,
 			const map<char, string>& my_map, const string& gap) :
 				name(name), symbol(StringUtils::remove_dup_chars(sym_str)),
 				synon(StringUtils::remove_dup_chars(synon_str)), degen_map(my_map), gap(gap) { /* gapCh default initiated */
 	assert(symbol.length() <= INT8_MAX + 1);
-	assert(synon.length() == degen_map.size());
+	assert(synon.length() <= degen_map.size());
 	if(!gap.empty())
 		gapCh = gap.front();
 
@@ -60,17 +57,10 @@ DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const st
 		sym_map[std::tolower(c)] = i;
 	}
 
-	/* process and update degen_map */
+	/* process degen_map */
 	for(const map<char, string>::value_type& pair : degen_map) { /* set synom map for both upper and lower case symbols */
-		char s = pair.first;
-		const string& synon = pair.second;
-		char c = synon.front(); // use the first synon char
-		assert(std::isupper(s) && std::isupper(c));
-		/* update degen_map to include lower case */
-		degen_map[::tolower(s)] = synon; // lower-case synon still map to upper case symbols
 		/* add synon to sym_map */
-		sym_map[s] = encode(c);
-		sym_map[std::tolower(s)] = encode(c);
+		sym_map[pair.first] = encode(pair.second.front());
 	}
 
 	// set the gap_sym

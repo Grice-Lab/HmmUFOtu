@@ -35,8 +35,6 @@
 #include <cerrno>
 #include <limits>
 #include <map>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
 #include <boost/algorithm/string.hpp> /* for boost string join */
 #include <boost/lexical_cast.hpp>
 #include <boost/iostreams/filtering_stream.hpp> /* basic boost streams */
@@ -61,9 +59,9 @@ static const int DEFAULT_MIN_NSAMPLE = 0;
 static const double DEFAULT_MIN_Q = 0;
 static const double DEFAULT_MIN_ALN_IDENTITY = 0;
 static const double DEFAULT_MIN_HMM_IDENTITY = 0;
-typedef boost::unordered_map<PTUnrooted::PTUNodePtr, OTUObserved> OTUMap;
-typedef boost::unordered_set<PTUnrooted::PTUNodePtr> OTUSet;
-typedef boost::unordered_map<string, vector<string> > OTU2ReadMap;
+typedef std::unordered_map<PTUnrooted::PTUNodePtr, OTUObserved> OTUMap;
+typedef std::unordered_set<PTUnrooted::PTUNodePtr> OTUSet;
+typedef std::unordered_map<string, vector<string> > OTU2ReadMap;
 
 /**
  * Print introduction of this program

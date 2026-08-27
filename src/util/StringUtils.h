@@ -176,7 +176,7 @@ public:
 	static istream& loadString(basic_string<T>& dest, istream& in, size_t length) {
 		// allocate string with correct size
 		dest.resize((length + sizeof(T) - 1) / sizeof(T));
-		in.read(&dest[0], length);
+		in.read(reinterpret_cast<char*> (&dest[0]), length * sizeof(T));
 		return in;
 	}
 

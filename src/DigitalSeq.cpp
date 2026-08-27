@@ -55,7 +55,8 @@ DigitalSeq::DigitalSeq(const PrimarySeq& seq) :
 
 string DigitalSeq::toString() const {
 	string str(length(), '\0'); // construct a str with enough size
-	std::transform(begin(), end(), str.begin(), abc->decode); // apply decode transform
+	std::transform(begin(), end(), str.begin(),
+	[&](int8_t s) -> char { return abc->decode(s); }); // apply decode transform
 	return str;
 }
 
@@ -65,7 +66,7 @@ DigitalSeq DigitalSeq::revcom() const {
 	DigitalSeq rcSeq(*this); // make copy of this seq
 	std::reverse(rcSeq.begin(), rcSeq.end()); // reverse
 	std::transform(rcSeq.begin(), rcSeq.end(), rcSeq.begin(),
-			[] (DigitalSeq::value_type b) -> DigitalSeq::value_type { abc->encode(abc->getComplementSymbol(abc->decode(b))); }
+			[&] (DigitalSeq::value_type b) -> DigitalSeq::value_type { return abc->encode(abc->getComplementSymbol(abc->decode(b))); }
 	); // apply complement transform
 	return rcSeq;
 }
@@ -74,7 +75,9 @@ string DigitalSeq::join(const string& sep) {
 	string str;
 	str.reserve(2 * length()); // make enough reserve
 	for(DigitalSeq::value_type b : *this) {
-		str += str.empty() ? abc->decode(b) : sep + abc->decode(b);
+		if(!str.empty())
+			str += sep;
+		str += abc->decode(b);
 	}
 	return str;
 }

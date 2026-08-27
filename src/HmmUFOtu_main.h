@@ -32,8 +32,6 @@
 #include <vector>
 #include <algorithm>
 #include <cmath>
-#include <boost/unordered_set.hpp>
-#include <boost/unordered_map.hpp>
 #include "HmmUFOtu.h"
 
 namespace EGriceLab {

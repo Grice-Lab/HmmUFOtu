@@ -78,9 +78,6 @@ public:
 
 private:
 	/* static initialization method */
-	static const string NAME; /* IUPACNucl alphabet name */
-	static const string SYMBOL; /* IUPACNucl symbols */
-	static const string SYNONYM; /* IUPACNucl synonyms */
 	static map<char, string> init_IUPAC_map();
 /*	static const map<char, string> degen_map;*/
 	char compl_map[CHAR_MAX + 1];

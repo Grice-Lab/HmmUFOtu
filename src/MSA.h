@@ -34,6 +34,7 @@
 #include <cmath>
 
 #include "HmmUFOtuConst.h"
+#include "SeqUtils.h"
 #include "AlphabetFactory.h"
 #include "PrimarySeq.h"
 #include "DigitalSeq.h"
@@ -62,7 +63,6 @@ using Eigen::Map;
  */
 class MSA {
 public:
-	/* constructors */
 	/** destructor, do nothing */
 	virtual ~MSA() {
 		clear();
@@ -461,7 +461,7 @@ inline char MSA::residualAt(unsigned i, unsigned j) const {
 }
 
 inline int8_t MSA::encodeAt(unsigned i, unsigned j) const {
-	return abc->encode(::toupper(concatMSA[i * csLen + j]));
+	return abc->encode(std::toupper(concatMSA[i * csLen + j]));
 }
 
 inline string MSA::seqAt(unsigned i) const {
@@ -524,7 +524,7 @@ inline void MSA::sclaleWeight(double r) {
 
 inline long MSA::loadMSA(const DegenAlphabet* abc,
 		istream& in, const string& format) {
-	if(format == FASTA_FMT)
+	if(format == SeqUtils::FASTA_FMT)
 		return loadMSAFasta(abc, in);
 	else {
 		errorLog << "Unsupported MSA file format '" + format + "'";
@@ -533,7 +533,7 @@ inline long MSA::loadMSA(const DegenAlphabet* abc,
 }
 
 inline bool MSA::saveMSAFile(const string& filename, const string& format) {
-	if(format == FASTA_FMT)
+	if(format == SeqUtils::FASTA_FMT)
 		return MSA::saveFastaFile(filename);
 	else throw invalid_argument("Cannot save MSA to file, unsupported MSA file format " + format);
 }

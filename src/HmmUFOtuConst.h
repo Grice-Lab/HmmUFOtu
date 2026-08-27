@@ -56,13 +56,6 @@ const string BZIP2_FILE_SUFFIX = ".bz2";
 
 const int MAX_NAME_LENGTH = 4096;
 
-const string FASTA_FMT = "fasta";
-const string FASTQ_FMT = "fastq";
-
-const char *FASTA_FILE_EXTENSIONS[] = { "fasta", "fas", "fa", "fna" };
-const char *FASTQ_FILE_EXTENSIONS[] = { "fastq", "fq" };
-
-
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
 

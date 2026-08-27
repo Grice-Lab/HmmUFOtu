@@ -34,6 +34,7 @@
 #include <vector>
 #include <set>
 #include <limits>
+#include <cmath>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -41,10 +42,8 @@
 #include <cstdlib>
 #include <cassert>
 #include <algorithm>
-#include <boost/unordered_map.hpp>
-//#include <unordered_map>
-#include <boost/unordered_set.hpp>
-//#include <unordered_set>
+#include <unordered_map>
+#include <unordered_set>
 #include <Eigen/Dense>
 #include <boost/lexical_cast.hpp>
 
@@ -71,8 +70,8 @@ using Eigen::Matrix4Xd;
 using Eigen::Matrix4d;
 using Eigen::RowVectorXd;
 using std::shared_ptr;
-using boost::unordered_map;
-using boost::unordered_set;
+using std::unordered_map;
+using std::unordered_set;
 
 class PhyloTreeUnrooted; /* forward declaration */
 
@@ -228,8 +227,8 @@ public:
 			if(isLeaf())
 				return false;
 
-			return std::all_off(neighbors.begin(), neighbors.end(),
-				[](const PTUNodePtr child) { return !isParent(child) /* not a child */ || child->isLeaf(); /* is a leaf-child */ } -> bool
+			return std::all_of(neighbors.begin(), neighbors.end(),
+				[&](const PTUNodePtr child) { return !isParent(child) /* not a child */ || child->isLeaf(); /* is a leaf-child */ });
 		}
 
 		/**
@@ -1494,7 +1493,7 @@ inline Vector4d PTUnrooted::dot_product_scaled(const Matrix4d& X, const Vector4d
 	double scale = maxV != infV && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
 
 	for(Vector4d::Index i = 0; i < Y.rows(); ++i)
-		Y(i) = ::log(X.row(i).dot((V.array() + scale).exp().matrix())) - scale;
+		Y(i) = std::log(X.row(i).dot((V.array() + scale).exp().matrix())) - scale;
 	return Y;
 }
 
@@ -1502,7 +1501,7 @@ inline double PTUnrooted::dot_product_scaled(const Vector4d& P, const Vector4d& 
 	double maxV = V.maxCoeff();
 	double scale = maxV != infV && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
 
-	return ::log(P.dot((V.array() + scale).exp().matrix())) - scale;
+	return std::log(P.dot((V.array() + scale).exp().matrix())) - scale;
 }
 
 inline double PTUnrooted::dot_product_double_scaled(const Vector4d& V1, const Vector4d& V2) {
@@ -1511,7 +1510,7 @@ inline double PTUnrooted::dot_product_double_scaled(const Vector4d& V1, const Ve
 	double scale1 = maxV1 != infV && maxV1 < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV1 : 0;
 	double scale2 = maxV2 != infV && maxV2 < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV2 : 0;
 
-	return ::log((V1.array() + scale1).exp().matrix().dot((V2.array() + scale2).exp().matrix())) - scale1 - scale2;
+	return std::log((V1.array() + scale1).exp().matrix().dot((V2.array() + scale2).exp().matrix())) - scale1 - scale2;
 }
 
 inline Vector4d PTUnrooted::row_mean_exp_scaled(const Matrix4Xd& X) {

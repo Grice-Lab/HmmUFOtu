@@ -93,6 +93,12 @@ public:
 
 public:
 	/** static fields */
+	static const string FASTA_FMT;
+	static const string FASTQ_FMT;
+
+	static const char *FASTA_FILE_EXTENSIONS[];
+	static const char *FASTQ_FILE_EXTENSIONS[];
+
 };
 
 } /* namespace HmmUFOtu */

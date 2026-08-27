@@ -29,10 +29,6 @@
 
 namespace EGriceLab {
 namespace HmmUFOtu {
-const string NAME = "IUPACNucl"; /* IUPACNucl alphabet name */
-const string SYMBOL = "ACGT"; /* IUPACNucl symbols */
-const string SYNONYM = "UMRWSYKVHDBN"; /* IUPACNucl synonyms */
-
 map<char, string> IUPACNucl::init_IUPAC_map() {
 	map<char, string> IUPAC_map;
 	/* set upper case synonymous */
@@ -48,10 +44,23 @@ map<char, string> IUPACNucl::init_IUPAC_map() {
 	IUPAC_map['D'] = string("AGT");
 	IUPAC_map['B'] = string("CGT");
 	IUPAC_map['N'] = string("ACGT");
+	/* set lower case synonymous */
+    IUPAC_map['u'] = string("t");
+    IUPAC_map['m'] = string("ac");
+    IUPAC_map['r'] = string("ag");
+    IUPAC_map['w'] = string("at");
+    IUPAC_map['s'] = string("cg");
+    IUPAC_map['y'] = string("ct");
+    IUPAC_map['k'] = string("gt");
+    IUPAC_map['v'] = string("acg");
+    IUPAC_map['h'] = string("act");
+    IUPAC_map['d'] = string("agt");
+    IUPAC_map['b'] = string("cgt");
+    IUPAC_map['n'] = string("acgt");
 	return IUPAC_map;
 }
 
-IUPACNucl::IUPACNucl() : DegenAlphabet(NAME, SYMBOL, SYNONYM, init_IUPAC_map()) {
+IUPACNucl::IUPACNucl() : DegenAlphabet("IUPACNucl", "ACGT", "UMRWSYKVHDBN", init_IUPAC_map()) {
 	/* init compl_map with self complementary */
 	for(int8_t i = 0; i != INT8_MAX; ++i)
 		compl_map[i] = i;

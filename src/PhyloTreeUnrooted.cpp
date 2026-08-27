@@ -321,7 +321,7 @@ Vector4d PhyloTreeUnrooted::loglik(const PTUNodePtr& node, int j) const {
 	Matrix4Xd loglikMat;
 	if(dG != nulldG)
 		loglikMat = Matrix4Xd::Zero(4, dG->getK());
-
+	
 	for(const vector<PTUNodePtr>::value_type& child : node->neighbors) {
 		if(isChild(child, node)) {
 			if(dG == nulldG) // fixed rate

@@ -53,7 +53,7 @@ const string BandedHMMP7::HmmAlignment::TSV_HEADER = "seq_start\tseq_end\thmm_st
 const double BandedHMMP7::kMinGapFrac = 0.2;
 const double BandedHMMP7::CONS_THRESHOLD = 0.9;
 const double BandedHMMP7::DEFAULT_ERE = 1;
-const IOFormat tabFmt(StreamPrecision, DontAlignCols, "\t", "\n", "", "", "", "");
+const IOFormat BandedHMMP7::tabFmt(StreamPrecision, DontAlignCols, "\t", "\n", "", "", "", "");
 
 BandedHMMP7::BandedHMMP7() :
 		name("unnamed"), K(0), L(0), abc(NULL),
