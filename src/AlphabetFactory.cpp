@@ -40,7 +40,6 @@ const DegenAlphabet* AlphabetFactory::aminoAbc = new IUPACAmino();
 
 const DegenAlphabet* AlphabetFactory::getAlphabetByName(const string& alphabet) {
 	string name = StringUtils::toLower(alphabet);
-	std::cout << "generating DegenAlphabet named: " << name << std::endl;
 	if(name == "dna" || name == "rna" || alphabet == "IUPACNucl")
 		return nuclAbc;
 	else if(name == "protein" || alphabet == "IUPACAmino")
