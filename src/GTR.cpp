@@ -39,7 +39,7 @@ using namespace std;
 using namespace Eigen;
 
 const string GTR::name = "GTR";
-const Matrix4d GTR::identityMat = Matrix4d::Ones();
+const Matrix4d GTR::identityMat = Matrix4d::Identity();
 
 istream& GTR::read(istream& in) {
 	string line, tag, value;
