@@ -26,6 +26,8 @@ hmmufotu*.tar.gz
 **/config.h.in
 **/*.in
 *.in
+# Keep manually maintained pkg-config template
+!src/libcds/cds.pc.in
 # ignore libtools generated files
 libtool
 **/libtool
