@@ -27,6 +27,7 @@
 #ifndef DNA_H_
 #define DNA_H_
 
+#include <climits>
 #include "DegenAlphabet.h"
 
 namespace EGriceLab {
