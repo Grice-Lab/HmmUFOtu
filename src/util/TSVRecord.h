@@ -30,7 +30,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
-#include <boost/shared_ptr.hpp>
+#include <memory> // C++11
 #include <boost/algorithm/string.hpp>
 
 namespace EGriceLab {
@@ -43,10 +43,11 @@ using std::ostream;
 class TSVRecord {
 public:
 	/** nested types and enums */
-	struct TSVHeader {
+	class TSVHeader {
+	public:
 		/** constructors */
 		/** default constructor */
-		TSVHeader() {  }
+		TSVHeader() = default;
 
 		/** construct a header with a list of names */
 		explicit TSVHeader(const vector<string>& headerNames): names(headerNames) {
@@ -98,37 +99,35 @@ public:
 
 		friend ostream& operator<<(ostream& out, const TSVHeader& header);
 
-	private:
+	protected:
 		/** internal method */
 		void setHeaderIndex();
 
+	private:
 		/** member fields */
 		vector<string> names;
 		map<string, size_t> index;
 
 	};
 
-	typedef boost::shared_ptr<TSVHeader> TSVHeaderPtr;
+	typedef std::shared_ptr<TSVHeader> TSVHeaderPtr;
 
 	/** constructors */
 	/** default constructor */
-	TSVRecord() {  }
+	TSVRecord() = default;
 
 	/** construct a record with given fields */
-	explicit TSVRecord(const vector<string>& fields, const TSVHeaderPtr& headerIdx) :
+	TSVRecord(const vector<string>& fields, const TSVHeaderPtr& headerIdx) :
 			fields(fields), header(headerIdx)
 	{  }
 
 	/** construct a record with a input line */
-	explicit TSVRecord(const string& line, const TSVHeaderPtr& headerIdx,
+	TSVRecord(const string& line, const TSVHeaderPtr& headerIdx,
 			string sep = DEFAULT_SEP, char quote = DEFAULT_QUOTE) :
 					header(headerIdx)
 	{
 		parse(line, sep, quote);
 	}
-
-	/** destructor, do nothing */
-	virtual ~TSVRecord() {  }
 
 	/** member methods*/
 	/** getters and setters */
@@ -153,7 +152,7 @@ public:
 
 	/** test whether this TSVRecord has an associated header */
 	bool hasHeader() const {
-		return header != NULL && !header->empty();
+		return header != nullptr && !header->empty();
 	}
 
 	/** get field by name */

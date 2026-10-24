@@ -24,10 +24,9 @@ hmmufotu*.tar.gz
 # ignore autotools generated files
 **/Makefile.in
 **/config.h.in
-# ignore libtools generated files
-**/aclocal.m4
 **/*.in
 *.in
+# ignore libtools generated files
 libtool
 **/libtool
 aclocal.m4

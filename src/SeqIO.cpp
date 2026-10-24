@@ -25,9 +25,7 @@
  */
 #include <fstream>
 #include <cctype>
-#include "HmmUFOtuConst.h"
 #include "SeqIO.h"
-#include "StringUtils.h"
 
 namespace EGriceLab {
 namespace HmmUFOtu {
@@ -35,26 +33,26 @@ namespace HmmUFOtu {
 using namespace std;
 
 SeqIO::SeqIO(istream* in, const DegenAlphabet* abc, const string& format, int maxLine) :
-	in(in), out(NULL), abc(abc), format(format), maxLine(maxLine) {
+	in(in), out(nullptr), abc(abc), format(format), maxLine(maxLine) {
 	/* check format support */
-	if(!(format == "fasta" || format == "fastq"))
+	if(!(format == SeqUtils::FASTA_FMT || format == SeqUtils::FASTQ_FMT))
 		throw invalid_argument("Unsupported file format '" + format + "'");
 }
 
 SeqIO::SeqIO(ostream* out, const DegenAlphabet* abc, const string& format, int maxLine) :
-	in(NULL), out(out), abc(abc), format(format), maxLine(maxLine) {
+	in(nullptr), out(out), abc(abc), format(format), maxLine(maxLine) {
 	/* check format support */
-	if(!(format == "fasta" || format == "fastq"))
+	if(!(format == SeqUtils::FASTA_FMT || format == SeqUtils::FASTQ_FMT))
 		throw invalid_argument("Unsupported file format '" + format + "'");
 }
 
 void SeqIO::reset(istream* in, const DegenAlphabet* abc, const string& format, int maxLine) {
 	/* check format support */
-	if(!(format == "fasta" || format == "fastq"))
+	if(!(format == SeqUtils::FASTA_FMT || format == SeqUtils::FASTQ_FMT))
 		throw invalid_argument("Unsupported file format '" + format + "'");
 	/* replace values */
 	this->in = in;
-	out = NULL;
+	out = nullptr;
 	this->abc = abc;
 	this->format = format;
 	this->maxLine = maxLine;
@@ -62,10 +60,10 @@ void SeqIO::reset(istream* in, const DegenAlphabet* abc, const string& format, i
 
 void SeqIO::reset(ostream* out, const DegenAlphabet* abc, const string& format, int maxLine) {
 	/* check format support */
-	if(!(format == "fasta" || format == "fastq"))
+	if(!(format == SeqUtils::FASTA_FMT || format == SeqUtils::FASTQ_FMT))
 		throw invalid_argument("Unsupported file format '" + format + "'");
 	/* replace values */
-	in = NULL;
+	in = nullptr;
 	this->out = out;
 	this->abc = abc;
 	this->format = format;

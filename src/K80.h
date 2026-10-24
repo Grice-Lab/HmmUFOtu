@@ -38,7 +38,7 @@ public:
 	/* Constructors */
 
 	/** default constructor */
-	K80() : kappa(1) {
+	K80() {
 		setBeta();
 	}
 
@@ -102,7 +102,7 @@ private:
 	static const string name;
 	static const Vector4d pi;
 
-	double kappa; // Ti/Tv ratio
+	double kappa = 1.0; // Ti/Tv ratio
 	double beta;  // rate diversity
 };
 

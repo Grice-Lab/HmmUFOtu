@@ -425,7 +425,7 @@ int main(int argc, char* argv[]) {
 		infoLog << "Evaluating Phylogenetic Tree at root id: " << root->getId() << " with fixed rate model first" << endl;
 
 	tree.evaluate(); /* only evaluate, do not cache the root loglik */
-//	infoLog << "tree log-liklihood: " << tree.treeLoglik() << endl;
+	infoLog << "tree log-liklihood: " << tree.treeLoglik() << endl;
 
 	/* construct DG model, if isVar is set */
 	if(isVar) {
@@ -456,6 +456,7 @@ int main(int argc, char* argv[]) {
 		debugLog << "Evaluating root at node " << i << endl;
 		tree.setRoot(i);
 		tree.evaluate();
+		// infoLog << "tree log-liklihood: " << tree.treeLoglik() << endl;
 	}
 	/* reset to original root, and evaluate its root Loglik */
 	tree.setRoot(root);

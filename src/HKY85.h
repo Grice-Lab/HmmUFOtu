@@ -36,9 +36,8 @@ namespace HmmUFOtu {
 class HKY85: public DNASubModel {
 public:
 	/* Constructors */
-
 	/** default constructor */
-	HKY85() : kappa(1), pi(Vector4d::Constant(1.0/4))
+	HKY85()
 	{
 		setBeta();
 	}
@@ -103,8 +102,8 @@ private:
 
 	static const string name;
 
-	Vector4d pi; /* base frequency */
-	double kappa; // Ti/Tv ratio
+	Vector4d pi = Vector4d::Constant(1.0/4); /* base frequency */
+	double kappa = 1.0; // Ti/Tv ratio
 	double beta; // sequence diversity as 1 / (2(A + G)(C + T) + 2kappa(A * G + C * T))
 };
 
@@ -140,16 +139,7 @@ inline Matrix4d HKY85::Pr(double v) const {
 	P(T, T) = (t * (c + t + (a + g) * e) + c * eY) / (c + t); /* self */
 
 	/* adjust elements that could be smaller than 0 to 0 */
-	if(P(A, G) < 0)
-		P(A, G) = 0;
-	if(P(C, T) < 0)
-		P(C, T) = 0;
-	if(P(G, A) < 0)
-		P(G, A) = 0;
-	if(P(T, C) < 0)
-		P(T, C) = 0;
-
-	return P;
+	return P.array().max(0.0).matrix();
 }
 
 inline double HKY85::subDist(const Matrix4d& D, double N) const {

@@ -34,18 +34,17 @@
 #include <vector>
 #include <set>
 #include <limits>
+#include <cmath>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <cstddef>
 #include <cstdlib>
 #include <cassert>
+#include <algorithm>
+#include <unordered_map>
+#include <unordered_set>
 #include <Eigen/Dense>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
-#include <boost/iterator.hpp>
 #include <boost/lexical_cast.hpp>
 
 #include "AlphabetFactory.h"
@@ -70,9 +69,9 @@ using std::ostream;
 using Eigen::Matrix4Xd;
 using Eigen::Matrix4d;
 using Eigen::RowVectorXd;
-using boost::shared_ptr;
-using boost::unordered_map;
-using boost::unordered_set;
+using std::shared_ptr;
+using std::unordered_map;
+using std::unordered_set;
 
 class PhyloTreeUnrooted; /* forward declaration */
 
@@ -106,8 +105,8 @@ public:
 	typedef shared_ptr<DNASubModel> ModelPtr; /* use boost shared_ptr to hold DNA Sub Model */
 	typedef shared_ptr<DiscreteGammaModel> DGammaPtr; /* use boost shared_ptr to hold DiscreteGammapModel */
 
-	typedef boost::unordered_map<PTUNodePtr, boost::unordered_map<PTUNodePtr, PTUBranch> > BranchMap;
-	typedef boost::unordered_map<PTUNodePtr, double> HeightMap;
+	typedef unordered_map<PTUNodePtr, unordered_map<PTUNodePtr, PTUBranch> > BranchMap;
+	typedef unordered_map<PTUNodePtr, double> HeightMap;
 
 	/**
 	 * A PTUnrooed node that stores its basic information and neighbors
@@ -118,15 +117,15 @@ public:
 	public:
 		/* constructors */
 		/**
-		 * Default constructor, do nothing
+		 * Default constructor
 		 */
-		PhyloTreeUnrootedNode() : id(0), annoDist(0) {	}
+		PhyloTreeUnrootedNode() = default;
 
 		/**
 		 * Construct a PTUNode with a given name and id
 		 */
-		explicit PhyloTreeUnrootedNode(long id, const string& name)
-		: id(id), name(name), annoDist(0) {  }
+		PhyloTreeUnrootedNode(long id, const string& name)
+		: id(id), name(name) {  }
 
 		/**
 		 * Construct a PTUNode with a given id, name, annotation and annotation-dist
@@ -140,7 +139,7 @@ public:
 		 * Construct a PTUNode with a given id, name and sequence
 		 */
 		PhyloTreeUnrootedNode(long id, const string& name, const DigitalSeq& seq)
-		: id(id), name(name), seq(seq), annoDist(0)
+		: id(id), name(name), seq(seq)
 		{ }
 
 		/**
@@ -227,11 +226,9 @@ public:
 		bool isTip() const {
 			if(isLeaf())
 				return false;
-			for(vector<PTUNodePtr>::const_iterator child = neighbors.begin(); child != neighbors.end(); ++child)
-				if(isParent(*child) /* this is really a child */
-						&& !(*child)->isLeaf())
-					return false;
-			return true;
+
+			return std::all_of(neighbors.begin(), neighbors.end(),
+				[&](const PTUNodePtr child) { return !isParent(child) /* not a child */ || child->isLeaf(); /* is a leaf-child */ });
 		}
 
 		/**
@@ -249,9 +246,9 @@ public:
 		 * return nullNode if not exists
 		 */
 		PTUNodePtr firstChild() const {
-			for(vector<PTUNodePtr>::const_iterator child = neighbors.begin(); child != neighbors.end(); ++child)
-				if(isParent(*child)) // this is really a child
-					return *child;
+			for(const vector<PTUNodePtr>::value_type& child : neighbors)
+				if(isParent(child)) // this is really a child
+					return child;
 			return nullNode;
 		}
 
@@ -348,14 +345,14 @@ public:
 
 	private:
 		/* member fields */
-		long id; /* a unique id for each node */
+		long id = 0; /* a unique id for each node */
 		string name; /* node name, need to be unique for database loading */
 		DigitalSeq seq; /* sequence of this node */
 		vector<PTUNodePtr> neighbors; /* pointers to neighbors */
 		PTUNodePtr parent; /* pointer to parent node, set to null on default */
 
 		string anno;
-		double annoDist;
+		double annoDist = 0.0;
 	};
 
 	class PhyloTreeUnrootedBranch {
@@ -509,14 +506,15 @@ public:
 		static const string TSV_HEADER;
 	};
 
+
+public:
 	/* constructors */
 	/** Default constructor, do nothing */
-	PhyloTreeUnrooted() : csLen(0) {  }
+	PhyloTreeUnrooted() = default;
 
 	/** Construct a PTUnrooted from a Newick Tree */
 	PhyloTreeUnrooted(const NewickTree& ntree);
 
-public:
 	/* member methods */
 	/** Get the number of nodes of this tree */
 	size_t numNodes() const {
@@ -988,14 +986,14 @@ public:
 	 * add pseudo-leaves to the tree given a set of flagged nodes (as OTUs)
 	 * return new leaves added into the tree
 	 */
-	size_t addPseudoLeaf(const boost::unordered_set<PTUNodePtr>& subset);
+	size_t addPseudoLeaf(const unordered_set<PTUNodePtr>& subset);
 
 	/** convert this PTUnrooted subtree into NewickTree */
 	NewickTree convertToNewickTree(const PTUNodePtr& subtree, const string& prefix = "") const;
 
 	/** convert this PTUUnrooted subtree into NewickTree, only for a subset of nodes */
 	NewickTree convertToNewickTree(const PTUNodePtr& subtree,
-			const boost::unordered_set<PTUNodePtr>& subset, const string& prefix = "") const;
+			const unordered_set<PTUNodePtr>& subset, const string& prefix = "") const;
 
 	/** convert this PTUnrooted tree into NewickTree */
 	NewickTree convertToNewickTree(const string& prefix = "") const {
@@ -1003,7 +1001,7 @@ public:
 	}
 
 	/** convert this PTUUnrooted tree into NewickTree, only for a subset of nodes */
-	NewickTree convertToNewickTree(const boost::unordered_set<PTUNodePtr>& subset, const string& prefix = "") const {
+	NewickTree convertToNewickTree(const unordered_set<PTUNodePtr>& subset, const string& prefix = "") const {
 		return convertToNewickTree(root, subset, prefix);
 	}
 
@@ -1351,11 +1349,11 @@ public:
 	/** initiate the leaf loglik matrix */
 	static Matrix4d initLeafMat();
 
-	static boost::unordered_set<PTUNodePtr> getAncestors(const boost::unordered_set<PTUNodePtr>& subset);
+	static unordered_set<PTUNodePtr> getAncestors(const unordered_set<PTUNodePtr>& subset);
 
 	/* member fields */
 private:
-	int csLen; /* number of aligned sites */
+	int csLen = 0; /* number of aligned sites */
 
 	PTUNodePtr root; /* root node of this tree */
 	vector<PTUNodePtr> id2node; /* indexed tree nodes */
@@ -1397,17 +1395,14 @@ public:
 
 inline size_t PTUnrooted::numEdges() const {
 	size_t N = 0;
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
-		N += (*node)->numNeighbors();
+	for(const vector<PTUNodePtr>::value_type& node : id2node)
+		N += node->numNeighbors();
 	return N;
 }
 
 inline size_t PTUnrooted::numLeaves() const {
-	size_t N = 0;
-	for(vector<PTUNodePtr>::const_iterator nodeIt = id2node.begin(); nodeIt != id2node.end(); ++nodeIt)
-		if((*nodeIt)->isLeaf())
-			N++;
-	return N;
+	return std::count_if(id2node.begin(), id2node.end(),
+			[](const PTUNodePtr& node) { return node->isLeaf(); });
 }
 
 inline bool PTUnrooted::isEvaluated(const PTUNodePtr& u, const PTUNodePtr& v) const {
@@ -1450,9 +1445,9 @@ inline int8_t PhyloTreeUnrooted::inferState(const PTUNodePtr& u, const PTUNodePt
 }
 
 inline void PhyloTreeUnrooted::inferSeq() {
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
-		if(!(*node)->isLeaf()) /* not a leaf node */
-			inferSeq(*node);
+	for(const vector<PTUNodePtr>::value_type& node : id2node)
+		if(!node->isLeaf()) /* not a leaf node */
+			inferSeq(node);
 }
 
 inline vector<Matrix4d> PTUnrooted::getModelTransitionSet(string method) const {
@@ -1498,7 +1493,7 @@ inline Vector4d PTUnrooted::dot_product_scaled(const Matrix4d& X, const Vector4d
 	double scale = maxV != infV && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
 
 	for(Vector4d::Index i = 0; i < Y.rows(); ++i)
-		Y(i) = ::log(X.row(i).dot((V.array() + scale).exp().matrix())) - scale;
+		Y(i) = std::log(X.row(i).dot((V.array() + scale).exp().matrix())) - scale;
 	return Y;
 }
 
@@ -1506,7 +1501,7 @@ inline double PTUnrooted::dot_product_scaled(const Vector4d& P, const Vector4d& 
 	double maxV = V.maxCoeff();
 	double scale = maxV != infV && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
 
-	return ::log(P.dot((V.array() + scale).exp().matrix())) - scale;
+	return std::log(P.dot((V.array() + scale).exp().matrix())) - scale;
 }
 
 inline double PTUnrooted::dot_product_double_scaled(const Vector4d& V1, const Vector4d& V2) {
@@ -1515,7 +1510,7 @@ inline double PTUnrooted::dot_product_double_scaled(const Vector4d& V1, const Ve
 	double scale1 = maxV1 != infV && maxV1 < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV1 : 0;
 	double scale2 = maxV2 != infV && maxV2 < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV2 : 0;
 
-	return ::log((V1.array() + scale1).exp().matrix().dot((V2.array() + scale2).exp().matrix())) - scale1 - scale2;
+	return std::log((V1.array() + scale1).exp().matrix().dot((V2.array() + scale2).exp().matrix())) - scale1 - scale2;
 }
 
 inline Vector4d PTUnrooted::row_mean_exp_scaled(const Matrix4Xd& X) {
@@ -1552,13 +1547,13 @@ inline string PTUnrooted::taxonLevel2prefix(TaxonLevel level) {
 }
 
 inline void PTUnrooted::formatName() {
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
-		(*node)->name = formatTaxonName((*node)->name);
+	for(const vector<PTUNodePtr>::value_type& node : id2node)
+		node->name = formatTaxonName(node->name);
 }
 
 inline void PTUnrooted::formatAnnotation() {
-	for(vector<PTUNodePtr>::const_iterator node = id2node.begin(); node != id2node.end(); ++node)
-		(*node)->anno = formatTaxonName((*node)->anno);
+	for(const vector<PTUNodePtr>::value_type& node : id2node)
+		node->anno = formatTaxonName(node->anno);
 }
 
 inline bool PTUnrooted::isCanonicalName(const string& taxon) {

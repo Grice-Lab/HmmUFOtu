@@ -38,8 +38,7 @@ public:
 	/* Constructors */
 
 	/** default constructor */
-	F81() : pi(Vector4d::Constant(1.0/4))
-	{
+	F81() {
 		setBeta();
 	}
 
@@ -103,7 +102,7 @@ private:
 
 	static const string name;
 
-	Vector4d pi; /* base frequency */
+	Vector4d pi = Vector4d::Constant(1.0/4); /* base frequency */
 	double beta; // sequence diversity as 1 / (1 - A^2 - C^2 - G^2 - T^2)
 };
 

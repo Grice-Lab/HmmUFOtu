@@ -65,7 +65,7 @@ public:
 
 	/** constructors */
 	/** default constructor */
-	OTUTable() {  }
+	OTUTable() = default;
 
 	/** construct an OTUTable with given samples and OTU list */
 	OTUTable(const vector<string>& samples, const vector<string>& otus, const otuMap& otu2Taxon, const MatrixXd& otuMetric) :
@@ -76,9 +76,6 @@ public:
 	explicit OTUTable(const vector<string>& samples) :
 			samples(samples), metric(0, samples.size())
 	{  }
-
-	/** destructor, do nothing */
-	virtual ~OTUTable() { }
 
 	/** member methods */
 	/** get size of this OTUTable */

@@ -28,7 +28,6 @@
 #define DIGITALSEQ_H_
 
 #include <string>
-#include <bits/basic_string.h>
 #include <iostream>
 #include <algorithm>
 #include <cstdlib>
@@ -39,6 +38,7 @@ namespace EGriceLab {
 namespace HmmUFOtu {
 
 using std::string;
+using std::basic_string;
 using std::istream;
 using std::ostream;
 
@@ -48,11 +48,11 @@ using std::ostream;
  * Also note that a DigitalSeq's life is dependent on the life-span of the underlying alphabet; no automatic memory
  * management is carried out
  */
-class DigitalSeq: public std::basic_string<int8_t> {
+class DigitalSeq: public basic_string<int8_t> {
 public:
 	/* constructors */
-	/** default constructor, do nothing */
-	DigitalSeq() : abc(NULL) { }
+	/** default constructor */
+	DigitalSeq() = default;
 
 	/** Construct a DigitalSeq with given alphabet, name and string, invalid chars ignored
 	 * @param dgAbc  A DegenAlphabet
@@ -87,10 +87,14 @@ public:
 	}
 
 	/* utility member methods */
+	/** return number of gaps */
+	DigitalSeq::size_type numGaps() const {
+		return std::count(begin(), end(), DegenAlphabet::GAP_BASE);
+	}
 
 	/** Return the non-gap length of this seq */
 	DigitalSeq::size_type nonGapLength() const {
-		return length() - std::count(begin(), end(), DegenAlphabet::GAP_BASE);
+		return length() - numGaps();
 	}
 
 	/**
@@ -128,12 +132,21 @@ public:
 	}
 
 	/**
+	 * test whether the encoded value position i is valid
+	 * param i  position within this object
+	 * @return  true if ith code is valid
+	 */
+	bool isValid(DigitalSeq::size_type i) const {
+		return abc->isValid((*this)[i]);
+	}
+
+	/**
 	 * test whether the encoded value position i is a symbol
 	 * param i  position within this object
 	 * @return  true if ith code is a symbol
 	 */
 	bool isSymbol(DigitalSeq::size_type i) const {
-		return operator[](i) >= 0;
+		return abc->isSymbol((*this)[i]);
 	}
 
 	/**
@@ -142,7 +155,7 @@ public:
 	 * @return  true if ith code is a gap
 	 */
 	bool isGap(DigitalSeq::size_type i) const {
-		return operator[](i) == DegenAlphabet::GAP_BASE;
+		return abc->isGap((*this)[i]);
 	}
 
 	/**
@@ -172,7 +185,7 @@ public:
 	bool seqEquals(const string& seq, bool allowDegen = false) const;
 
 private:
-	const DegenAlphabet* abc;
+	const DegenAlphabet* abc {nullptr};
 	string name;
 
 	/* non-member operators */
@@ -189,7 +202,7 @@ private:
  */
 inline bool operator==(const DigitalSeq& lhs, const DigitalSeq& rhs) {
 	return (lhs.abc == rhs.abc || *lhs.abc == *rhs.abc) &&
-			dynamic_cast<const std::basic_string<int8_t>&>(lhs) == dynamic_cast<const std::basic_string<int8_t>&> (rhs);
+			dynamic_cast<const basic_string<int8_t>&>(lhs) == dynamic_cast<const basic_string<int8_t>&> (rhs);
 }
 
 /*

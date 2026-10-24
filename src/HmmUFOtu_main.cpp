@@ -28,7 +28,6 @@
 #include <cassert>
 #include <algorithm>
 #include "HmmUFOtu_main.h"
-#include "StringUtils.h"
 
 using namespace std;
 using namespace Eigen;

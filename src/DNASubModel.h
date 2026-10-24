@@ -57,7 +57,10 @@ public:
 	enum Base { A, C, G, T };
 
 	/* Constructors */
-	/* virtual destructor, do nothing */
+	/** default constructor */
+	DNASubModel() = default;
+
+	/** virtual destructor, do nothing */
 	virtual ~DNASubModel() { }
 
 	/* member methods */
@@ -151,7 +154,7 @@ public:
 	}
 
 	/** Scale a rate matrix Q so that a branch length of 1 yields mu expected change in a unit time */
-	static Matrix4d scale(Matrix4d Q, Vector4d pi = Vector4d::Ones(), double mu = 1.0);
+	static Matrix4d scale(const Matrix4d& Q, const Vector4d& pi = Vector4d::Ones(), double mu = 1.0);
 
 	/**
 	 * Obtain substitution Rate matrix Q from observed frequency matrix using matrix-log method

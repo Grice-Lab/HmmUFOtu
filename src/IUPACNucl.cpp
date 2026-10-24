@@ -29,9 +29,9 @@
 
 namespace EGriceLab {
 namespace HmmUFOtu {
-
 map<char, string> IUPACNucl::init_IUPAC_map() {
 	map<char, string> IUPAC_map;
+	/* set upper case synonymous */
 	IUPAC_map['U'] = string("T");
 	IUPAC_map['M'] = string("AC");
 	IUPAC_map['R'] = string("AG");
@@ -44,12 +44,25 @@ map<char, string> IUPACNucl::init_IUPAC_map() {
 	IUPAC_map['D'] = string("AGT");
 	IUPAC_map['B'] = string("CGT");
 	IUPAC_map['N'] = string("ACGT");
+	/* set lower case synonymous */
+    IUPAC_map['u'] = string("t");
+    IUPAC_map['m'] = string("ac");
+    IUPAC_map['r'] = string("ag");
+    IUPAC_map['w'] = string("at");
+    IUPAC_map['s'] = string("cg");
+    IUPAC_map['y'] = string("ct");
+    IUPAC_map['k'] = string("gt");
+    IUPAC_map['v'] = string("acg");
+    IUPAC_map['h'] = string("act");
+    IUPAC_map['d'] = string("agt");
+    IUPAC_map['b'] = string("cgt");
+    IUPAC_map['n'] = string("acgt");
 	return IUPAC_map;
 }
 
 IUPACNucl::IUPACNucl() : DegenAlphabet("IUPACNucl", "ACGT", "UMRWSYKVHDBN", init_IUPAC_map()) {
 	/* init compl_map with self complementary */
-	for(int8_t i = 0; i != INT8_MAX; ++i)
+	for(int i = 0; i <= CHAR_MAX; ++i)
 		compl_map[i] = i;
 	/* upper case complements */
 	compl_map['A'] = 'T';
@@ -68,8 +81,24 @@ IUPACNucl::IUPACNucl() : DegenAlphabet("IUPACNucl", "ACGT", "UMRWSYKVHDBN", init
 	compl_map['D'] = 'H';
 	compl_map['H'] = 'D';
 	compl_map['N'] = 'N';
+	/* lower case complements */
+	compl_map['a'] = 't';
+	compl_map['t'] = 'a';
+	compl_map['c'] = 'g';
+	compl_map['g'] = 'c';
+	compl_map['u'] = 'a';
+	compl_map['y'] = 'r';
+	compl_map['r'] = 'y';
+	compl_map['s'] = 's';
+	compl_map['w'] = 'w';
+	compl_map['k'] = 'm';
+	compl_map['m'] = 'k';
+	compl_map['b'] = 'v';
+	compl_map['v'] = 'b';
+	compl_map['d'] = 'h';
+	compl_map['h'] = 'd';
+	compl_map['n'] = 'n';
 }
 
 } /* namespace HmmUFOtu */
 } /* namespace EGriceLab */
-

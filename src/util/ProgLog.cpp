@@ -30,16 +30,16 @@ namespace EGriceLab {
 
 using namespace std;
 
-ostream errorLog(VERBOSE_LEVEL >= LOG_ERROR ? std::cerr.rdbuf() : NULL);
-ostream warningLog(VERBOSE_LEVEL >= LOG_WARNING ? std::cerr.rdbuf() : NULL);
-ostream infoLog(VERBOSE_LEVEL >= LOG_INFO ? std::cerr.rdbuf() : NULL);
-ostream debugLog(VERBOSE_LEVEL >= LOG_DEBUG ? std::cerr.rdbuf() : NULL);
+ostream errorLog(VERBOSE_LEVEL >= LOG_ERROR ? std::cerr.rdbuf() : nullptr);
+ostream warningLog(VERBOSE_LEVEL >= LOG_WARNING ? std::cerr.rdbuf() : nullptr);
+ostream infoLog(VERBOSE_LEVEL >= LOG_INFO ? std::cerr.rdbuf() : nullptr);
+ostream debugLog(VERBOSE_LEVEL >= LOG_DEBUG ? std::cerr.rdbuf() : nullptr);
 
 void UPDATE_LOGS() {
-	errorLog.rdbuf(VERBOSE_LEVEL >= LOG_ERROR ? std::cerr.rdbuf() : NULL);
-	warningLog.rdbuf(VERBOSE_LEVEL >= LOG_WARNING ? std::cerr.rdbuf() : NULL);
-	infoLog.rdbuf(VERBOSE_LEVEL >= LOG_INFO ? std::cerr.rdbuf() : NULL);
-	debugLog.rdbuf(VERBOSE_LEVEL >= LOG_DEBUG ? std::cerr.rdbuf() : NULL);
+	errorLog.rdbuf(VERBOSE_LEVEL >= LOG_ERROR ? std::cerr.rdbuf() : nullptr);
+	warningLog.rdbuf(VERBOSE_LEVEL >= LOG_WARNING ? std::cerr.rdbuf() : nullptr);
+	infoLog.rdbuf(VERBOSE_LEVEL >= LOG_INFO ? std::cerr.rdbuf() : nullptr);
+	debugLog.rdbuf(VERBOSE_LEVEL >= LOG_DEBUG ? std::cerr.rdbuf() : nullptr);
 }
 
 } /* namespace EGriceLab */

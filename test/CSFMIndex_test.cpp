@@ -28,7 +28,7 @@ int main() {
 	MSA msa;
 	msa.loadMSA(in, "fasta");
 	if(in.bad()) {
-		cerr << "Failed to load MSA: " << ::strerror(errno) << endl;
+		cerr << "Failed to load MSA: " << std::strerror(errno) << endl;
 		return EXIT_FAILURE;
 	}
 
@@ -44,9 +44,9 @@ int main() {
 		return EXIT_FAILURE;
 	/* test locate */
 	vector<CSLoc> locs = csfm.locate(pat);
-	for(vector<CSLoc>::const_iterator loc = locs.begin(); loc != locs.end(); ++loc) {
-		cout << "Found matched CSLoc: " << loc->start << "-" << loc->end << endl;
-		if(!(loc->start == 1 && loc->end == 3))
+	for(const CSLoc& loc : locs) {
+		cout << "Found matched CSLoc: " << loc.start << "-" << loc.end << endl;
+		if(!(loc.start == 1 && loc.end == 3))
 			return EXIT_FAILURE;
 	}
 	/* test locateFirst */

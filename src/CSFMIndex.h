@@ -51,11 +51,12 @@ using std::ostream;
 class CSFMIndex {
 public:
 	/* constructors */
-	/** Default constructor, zero-initiate all members */
-	CSFMIndex() : abc(NULL), gapCh('\0'), csLen(0),
-			concatLen(0), C(), csIdentity(NULL), concat2CS(NULL),
-			saSampled(NULL), saIdx(NULL), bwt(NULL) {
-	}
+	/** Default constructor */
+	CSFMIndex() = default;
+
+	/* disable the copy and assignment constructor */
+	CSFMIndex(const CSFMIndex& other) = delete;
+	CSFMIndex& operator=(const CSFMIndex& other) = delete;
 
 	/** Virtual destructor */
 	virtual ~CSFMIndex() {
@@ -80,9 +81,9 @@ public:
 
 	/** test whether this CSFMIndex object is fully initiated */
 	bool isInitiated() const {
-		return abc != NULL && gapCh != '\0' && csLen > 0
-				&& concatLen > 0 && C != NULL && concat2CS != NULL
-				&& saSampled != NULL && saIdx != NULL && bwt != NULL;
+		return abc != nullptr && gapCh != '\0' && csLen > 0
+				&& concatLen > 0 && C != nullptr && concat2CS != nullptr
+				&& saSampled != nullptr && saIdx != nullptr && bwt != nullptr;
 	}
 
 	virtual void clear();
@@ -128,7 +129,7 @@ public:
 	 * @param pattern  the un-coded pattern
 	 * @return  a vector of the 0-based indices in which sequences the pattern can be found
 	 */
-	set<unsigned> locateIndex(const string& pattern) const;
+	set<uint32_t> locateIndex(const string& pattern) const;
 
 	static const unsigned SA_SAMPLE_RATE = 4;  /* sample rate for SA */
 	static const unsigned RRR_SAMPLE_RATE = 8; /* RRR sample rate for BWT */
@@ -136,11 +137,6 @@ public:
 
 	/* friend functions */
 	friend void swap(CSFMIndex& lhs, CSFMIndex& rhs);
-
-private:
-	/* disable the copy and assignment constructor */
-	CSFMIndex(const CSFMIndex& other);
-	CSFMIndex& operator=(const CSFMIndex& other);
 
 	/**
 	 * LF-mapping with given position and base
@@ -190,20 +186,20 @@ private:
 	/** build saSampled, saIdx and BWT from other members */
 	void buildBWT(const uint8_t* concatSeq);
 
-	const DegenAlphabet* abc;
-	char gapCh;
-	uint16_t csLen; /* consensus length */
+	const DegenAlphabet* abc = nullptr;
+	char gapCh = '\0';
+	uint16_t csLen = 0; /* consensus length */
 	//uint8_t* concatSeq; /* concatenated alphabet-encoded non-Gap seq */
-	int32_t concatLen; /* total length of concatenated encoded non-gap seq, plus null separators between each individual seq */
-	int32_t C[UINT8_MAX + 1]; /* cumulative count of each alphabet frequency, with C[0] as dummy position */
+	int32_t concatLen = 0; /* total length of concatenated encoded non-gap seq, plus null separators between each individual seq */
+	int32_t C[UINT8_MAX + 1] = {}; /* cumulative count of each alphabet frequency, with C[0] as dummy position */
 
 	string csSeq; /* 1-based consensus seq with dummy position at 0 */
-	double* csIdentity; /* 1-based consensus identity index */
+	double* csIdentity = nullptr; /* 1-based consensus identity index */
 
-	uint16_t* concat2CS; /* 0-based concatSeq pos to 1-based CS pos, 0 for gap pos on CS */
-	uint32_t* saSampled; /* sampled SA of concatSeq */
-	cds_static::BitSequence* saIdx; /* 0-based bit index for telling whether this SA position is sampled */
-	cds_static::WaveletTreeNoptrs* bwt; /* Wavelet-Tree transformed BWT string for forward concatSeq */
+	uint16_t* concat2CS = nullptr; /* 0-based concatSeq pos to 1-based CS pos, 0 for gap pos on CS */
+	uint32_t* saSampled = nullptr; /* sampled SA of concatSeq */
+	cds_static::BitSequence* saIdx = nullptr; /* 0-based bit index for telling whether this SA position is sampled */
+	cds_static::WaveletTreeNoptrs* bwt = nullptr; /* Wavelet-Tree transformed BWT string for forward concatSeq */
 };
 
 inline void CSFMIndex::clear() {

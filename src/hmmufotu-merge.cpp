@@ -13,7 +13,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <cerrno>
-#include <boost/unordered_set.hpp>
 #include <boost/lexical_cast.hpp>
 #include "HmmUFOtu.h"
 #include "HmmUFOtu_main.h"
@@ -24,7 +23,7 @@ using namespace EGriceLab::HmmUFOtu;
 
 /* default values */
 static const string TABLE_FORMAT = "table";
-typedef boost::unordered_set<PTUnrooted::PTUNodePtr> OTUSet;
+typedef std::unordered_set<PTUnrooted::PTUNodePtr> OTUSet;
 
 
 /**

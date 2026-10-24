@@ -31,8 +31,12 @@ namespace HmmUFOtu {
 
 map<char, string> DNA::init_DNA_map() {
 	map<char, string> dna_map;
+	// upper case syn_map
 	dna_map['U'] = string("T");
 	dna_map['N'] = string("ACGT");
+	// lower case syn_map
+	dna_map['u'] = string("t");
+	dna_map['n'] = string("acgt");
 	return dna_map;
 }
 
@@ -44,6 +48,13 @@ DNA::DNA() : DegenAlphabet("DNA", "ACGT", "UN", init_DNA_map()), compl_map() /* 
 	compl_map['G'] = 'C';
 	compl_map['U'] = 'A';
 	compl_map['N'] = 'N';
+    /* lower case complements */
+    compl_map['a'] = 't';
+    compl_map['t'] = 'a';
+    compl_map['c'] = 'g';
+    compl_map['g'] = 'c';
+    compl_map['u'] = 'a';
+    compl_map['n'] = 'n';
 }
 
 } /* namespace HmmUFOtu */

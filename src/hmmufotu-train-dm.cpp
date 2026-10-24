@@ -30,7 +30,7 @@
 #include <cstdlib>
 #include <cassert>
 #include <ctime>
-#include <math.h> /* use C99 header */
+#include <cmath>
 #include <boost/iostreams/filtering_stream.hpp> /* basic boost streams */
 #include <boost/iostreams/device/file.hpp> /* file sink and source */
 #include <boost/iostreams/filter/zlib.hpp> /* for zlib support */
@@ -350,7 +350,7 @@ int main(int argc, char* argv[]) {
 			costME = cost;
 		}
 	}
-	if(!::isnan(costME))
+	if(!std::isnan(costME))
 		infoLog << "Best Match Emission model found at seed " << bestIdx << endl;
 	else {
 		cerr << "Unable to train Match Emission model" << endl;

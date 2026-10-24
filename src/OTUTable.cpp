@@ -186,10 +186,9 @@ void OTUTable::subsetUniform(size_t min) {
 
 void OTUTable::subsetMultinom(size_t min) {
 	const size_t M = numOTUs();
-	double *otuPr = new double[M]; /* raw read sample probabilities */
-	Map<VectorXd> otuPrMap(otuPr, M); /* use a map to access indirectly */
-	otuPrMap.setOnes(); /* use all equal probs by default */
-	ReadDistrib rdist(otuPr, otuPr + M); /* construct the discrete distribution */
+	VectorXd otuPr = VectorXd::Ones(M); /* read sample probabilities */
+	double* outPrPtr = otuPr.data(); /* use a map to access indirectly */
+	ReadDistrib rdist(outPrPtr, outPrPtr + M); /* construct the discrete distribution */
 
 	for(int j = 0; j < numSamples(); ++j) {
 		double sampleTotal = sumSampleMetric(j);
@@ -197,15 +196,14 @@ void OTUTable::subsetMultinom(size_t min) {
 			continue;
 
 		/** reset rdist probabilities according to current counts */
-		otuPrMap = metric.col(j);
-		rdist.param(ReadParam(otuPr, otuPr + M));
+		otuPr = metric.col(j);
+		rdist.param(ReadParam(outPrPtr, outPrPtr + M));
 		/* sample min reads */
 		VectorXd sampled = VectorXd::Zero(M);
 		for(size_t m = 0; m < min; ++m)
 			sampled(rdist(rng))++;
 		metric.col(j) = sampled;
 	}
-	delete[] otuPr;
 }
 
 OTUTable& OTUTable::operator+=(const OTUTable& other) {

@@ -44,7 +44,10 @@ using Eigen::Matrix4cd;
 
 class GTR : public DNASubModel {
 public:
-	/* virtual destructor, do nothing */
+	/** default constructor */
+	GTR() = default;
+
+	/** virtual destructor, do nothing */
 	virtual ~GTR() { }
 
 	/* member methods */
@@ -97,7 +100,9 @@ public:
 	}
 
 private:
+	/* static const variables */
 	static const string name;
+	static const Matrix4d identityMat;
 
 	/* rate parameters, alpha + beta + gamma + delta + epsilon + eta = 1 */
 //	double mu; /* substitution rate per site per unit time */
@@ -116,8 +121,9 @@ private:
 inline Matrix4d GTR::Pr(double v) const {
 	assert(v >= 0);
 	if(v == 0)
-		return Matrix4d::Identity(); /* identity matrix */
-	return U * (lambda * v).array().exp().matrix().asDiagonal() * U_1;
+		return identityMat;
+	else
+		return U * (lambda * v).array().exp().matrix().asDiagonal() * U_1;
 }
 
 } /* namespace HmmUFOtu */

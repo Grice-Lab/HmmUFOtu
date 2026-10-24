@@ -20,12 +20,13 @@ using std::string;
 class DirichletDensity: public DirichletModel {
 public:
 	/* constructors */
-	/* default constructor, do nothing */
-	DirichletDensity() { }
+	/** default constructor */
+	DirichletDensity() = default;
 
-	/* construct a Dirichlet density with given categories and optionally estimated alpha */
+	/** construct a Dirichlet density with given categories and optionally estimated alpha */
 	explicit DirichletDensity(int K):
-		DirichletModel(K), w(K), alpha(K) /* initiate w and alpha to correct size */ {
+		DirichletModel(K), alpha(K), w(K)
+	{
 		assert(K >= MIN_K);
 		alpha.setConstant(DEFAULT_ALPHA);
 		w.setConstant(DEFAULT_WEIGHT);

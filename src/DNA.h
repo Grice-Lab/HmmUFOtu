@@ -62,7 +62,7 @@ private:
 	static map<char, string> init_DNA_map();
 /*	static const map<char, string> degen_map;*/
 	//map<char, char> compl_map;
-	char compl_map[INT8_MAX + 1];
+	char compl_map[CHAR_MAX + 1];
 };
 
 

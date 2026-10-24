@@ -33,8 +33,9 @@
 #include <Eigen/Dense>
 #include <cmath>
 
+#include "HmmUFOtuConst.h"
+#include "SeqUtils.h"
 #include "AlphabetFactory.h"
-#include "StringUtils.h"
 #include "PrimarySeq.h"
 #include "DigitalSeq.h"
 #include "ProgLog.h"
@@ -62,7 +63,6 @@ using Eigen::Map;
  */
 class MSA {
 public:
-	/* constructors */
 	/** destructor, do nothing */
 	virtual ~MSA() {
 		clear();
@@ -390,12 +390,15 @@ public:
 	long loadMSAFasta(const DegenAlphabet* abc, istream& in);
 
 	/* constructors */
+	/** default constructor */
+	MSA() = default;
+
 	/**
 	 * construct an MSA with given alphabet
 	 * @throw invalid_argument if the alphabet is not known
 	 */
-	explicit MSA(const string& alphabet = "dna") : alphabet(alphabet), abc(AlphabetFactory::getAlphabetByName(alphabet)),
-		numSeq(0), csLen(0), isPruned(false)
+	explicit MSA(const string& alphabet) : alphabet(alphabet), abc(AlphabetFactory::getAlphabetByName(alphabet))
+	/* other member will be default init */
 	{  }
 
 	/* Clear the heap memories */
@@ -415,15 +418,15 @@ public:
 
 private:
 	string alphabet;
-	const DegenAlphabet* abc; /* stored abc const pointer that guarenteed to be a global variable */
+	const DegenAlphabet* abc {nullptr}; /* stored abc const pointer that guarenteed to be a global variable */
 	string name;
-	unsigned numSeq; /* number of sequences */
-	unsigned csLen;  /* consensus seq length */
+	unsigned numSeq {}; /* number of sequences */
+	unsigned csLen {};  /* consensus seq length */
 	vector<string> seqNames; /* seq names stored in their occurring order */
 	//vector<string> ids;
 	string concatMSA; // concatenated MSA
 	string CS;        // Consensus Sequence
-	bool isPruned; // flag for whether this MS is pruned
+	bool isPruned {false}; // flag for whether this MS is pruned
 	/* auxiliary data to remember each sequence start, end and length (non-gapped) */
 	vector<int> startIdx; /* start position on CS */
 	vector<int> endIdx; /* end position on CS */
@@ -458,7 +461,7 @@ inline char MSA::residualAt(unsigned i, unsigned j) const {
 }
 
 inline int8_t MSA::encodeAt(unsigned i, unsigned j) const {
-	return abc->encode(::toupper(concatMSA[i * csLen + j]));
+	return abc->encode(std::toupper(concatMSA[i * csLen + j]));
 }
 
 inline string MSA::seqAt(unsigned i) const {
@@ -521,7 +524,7 @@ inline void MSA::sclaleWeight(double r) {
 
 inline long MSA::loadMSA(const DegenAlphabet* abc,
 		istream& in, const string& format) {
-	if(format == "fasta")
+	if(format == SeqUtils::FASTA_FMT)
 		return loadMSAFasta(abc, in);
 	else {
 		errorLog << "Unsupported MSA file format '" + format + "'";
@@ -530,7 +533,7 @@ inline long MSA::loadMSA(const DegenAlphabet* abc,
 }
 
 inline bool MSA::saveMSAFile(const string& filename, const string& format) {
-	if(format == "fasta")
+	if(format == SeqUtils::FASTA_FMT)
 		return MSA::saveFastaFile(filename);
 	else throw invalid_argument("Cannot save MSA to file, unsupported MSA file format " + format);
 }

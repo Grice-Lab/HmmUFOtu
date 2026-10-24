@@ -61,7 +61,7 @@ typedef NewickTree NT;
 struct NewickTree {
 	/* constructors */
 	/** Default constructor */
-	NewickTree() : length(0) { }
+	NewickTree() = default;
 
 	/** Construct a Newick tree node with given name and an optional parent distance */
 	explicit NewickTree(const string& name, double length = 0) : name(name), length(length)
@@ -122,11 +122,11 @@ struct NewickTree {
 
 	/* member fields */
 	string name; /* subtree (node) name */
-	double length; /* branch length (to parent) of this subtree */
+	double length = 0; /* branch length (to parent) of this subtree */
 	vector<NT> children;
 
 	/* static fields */
-	static const string& INVALID_CHARS;
+	static const string INVALID_CHARS;
 
 	/* static methods */
 	static bool isNewickFileExt(const string& fn);

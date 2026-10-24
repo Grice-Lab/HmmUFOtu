@@ -38,7 +38,7 @@ public:
 	/* Constructors */
 
 	/** default constructor */
-	TN93() : kr(1), ky(1), pi(Vector4d::Constant(1.0/4))
+	TN93()
 	{
 		setBeta();
 	}
@@ -104,9 +104,9 @@ private:
 
 	static const string name;
 
-	Vector4d pi; /* base frequency */
-	double kr; // Ti/Tv ratio of purines
-	double ky; // Ti/Tv ratio of pyrimidines
+	Vector4d pi = Vector4d::Constant(1.0/4); /* base frequency */
+	double kr = 1.0; // Ti/Tv ratio of purines
+	double ky = 1.0; // Ti/Tv ratio of pyrimidines
 	double beta; // sequence diversity as 1 / 2(AC + AT + CG + GT + kr * AG + ky * CT))
 };
 
@@ -141,16 +141,7 @@ inline Matrix4d TN93::Pr(double v) const {
 	P(T, T) = (t * (c + t + (a + g) * e) + c * eY) / (c + t); /* self */
 
 	/* adjust elements that could be smaller than 0 to 0 */
-	if(P(A, G) < 0)
-		P(A, G) = 0;
-	if(P(C, T) < 0)
-		P(C, T) = 0;
-	if(P(G, A) < 0)
-		P(G, A) = 0;
-	if(P(T, C) < 0)
-		P(T, C) = 0;
-
-	return P;
+	return P.array().max(0.0).matrix();
 }
 
 inline double TN93::subDist(const Matrix4d& D, double N) const {

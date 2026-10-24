@@ -45,16 +45,15 @@ public:
 	 *
 	 */
 	RootFinder(R2RFunc& f, double xl, double xr) :
-		f(f), xl(xl), xr(xr),
-		absEps(DEFAULT_ABS_EPS), relEps(DEFAULT_REL_EPS),
-		resEps(DEFAULT_RES_EPS), maxIter(MAX_ITER) {
+		f(f), xl(xl), xr(xr)
+	{
 		assert(std::numeric_limits<double>::is_iec559);
 	}
 
 	/* disable copy and assignment constructor */
 private:
-	RootFinder(const RootFinder& other);
-	RootFinder& operator=(const RootFinder& other);
+	RootFinder(const RootFinder& other) = delete;
+	RootFinder& operator=(const RootFinder& other) = delete;
 
 public:
 	/* member methods */
@@ -67,11 +66,11 @@ public:
 	double setDomain(double xl, double xr) {
 		this->xl = xl;
 		this->xr = xr;
-		double fxl = f(xl);
-		double fxr = f(xr);
-		std::cerr << "fxl: " << fxl << " fxr: " << fxr << std::endl;
+//		double fxl = f(xl);
+//		double fxr = f(xr);
+//		std::cerr << "fxl: " << fxl << " fxr: " << fxr << std::endl;
 //		return f(xl) * f(xr);
-		return fxl * fxr;
+		return f(xl) * f(xr);
 	}
 
 	/**
@@ -127,10 +126,10 @@ private:
 //	double fr;
 //	double x;
 //	double fx;
-	double absEps;
-	double relEps;
-	double resEps;
-	int maxIter;
+	double absEps = DEFAULT_ABS_EPS;
+	double relEps = DEFAULT_REL_EPS;
+	double resEps = DEFAULT_RES_EPS;
+	int maxIter = MAX_ITER;
 
 	static const double DEFAULT_ABS_EPS; /* absolute epsilon */
 	static const double DEFAULT_REL_EPS; /* relative epsilon */
