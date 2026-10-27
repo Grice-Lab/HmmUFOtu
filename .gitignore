@@ -69,5 +69,6 @@ INSTALL
 **/INSTALL
 configure
 **/configure
+install-sh
 **/install-sh
 
