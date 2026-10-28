@@ -25,7 +25,7 @@
  */
 #include <algorithm>
 #include <stdexcept>
-#include <stdint.h>
+#include <cstdint>
 #include <cctype>
 #include <cstdlib>
 #include "CSFMIndex.h"
@@ -39,6 +39,8 @@ using namespace std;
 using namespace cds_static;
 namespace EGriceLab {
 namespace HmmUFOtu {
+
+const size_t NEW_FORMAT_SENTINEL = SIZE_MAX; // only new format first value could be this value, legacy format will never match
 
 int32_t CSFMIndex::count(const string& pattern) const {
 	if(pattern.empty())
@@ -172,6 +174,8 @@ set<uint32_t> CSFMIndex::locateIndex(const string& pattern) const {
 }
 
 ostream& CSFMIndex::save(ostream& out) const {
+	/* save sentinel */
+	out.write(reinterpret_cast<const char*>(&NEW_FORMAT_SENTINEL), sizeof(size_t));
 	/* save alphabet name */
 	StringUtils::saveString(abc->getName(), out);
 
@@ -183,11 +187,13 @@ ostream& CSFMIndex::save(ostream& out) const {
 	out.write(reinterpret_cast<const char*>(&concatLen), sizeof(int32_t));
 
 	/* write arrays and objects */
+	const int32_t N = concatLen + 1;
+	const int32_t nSampled = concatLen / SA_SAMPLE_RATE + 1;
 	out.write(reinterpret_cast<const char*>(C), (UINT8_MAX + 1) * sizeof(int32_t));
 	StringUtils::saveString(csSeq, out);
 	out.write(reinterpret_cast<const char*>(csIdentity), (csLen + 1) * sizeof(double));
-	out.write(reinterpret_cast<const char*>(concat2CS), (concatLen + 1) * sizeof(uint16_t));
-	out.write(reinterpret_cast<const char*>(saSampled), (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
+	out.write(reinterpret_cast<const char*>(concat2CS), N * sizeof(uint16_t));
+	out.write(reinterpret_cast<const char*>(saSampled), nSampled * sizeof(uint32_t));
 
 	saIdx->save(out);
 	bwt->save(out);
@@ -197,9 +203,18 @@ ostream& CSFMIndex::save(ostream& out) const {
 
 istream& CSFMIndex::load(istream& in) {
 	clear(); /* clear old data, if any */
+	/* read first size_t value as the sentinel */
+	size_t firstVal = 0;
+	in.read(reinterpret_cast<char*>(&firstVal), sizeof(size_t));
+
 	/* read alphabet by name */
 	string alphabet;
-	StringUtils::loadString(alphabet, in);
+	if(firstVal == NEW_FORMAT_SENTINEL) // new format
+		StringUtils::loadString(alphabet, in);
+	else { // legacy format
+		const size_t nAbcName = firstVal;
+		StringUtils::loadString(alphabet, in, nAbcName);
+	}
 	abc = AlphabetFactory::getAlphabetByName(alphabet);
 
 	/* read gap char */
@@ -210,17 +225,22 @@ istream& CSFMIndex::load(istream& in) {
 	in.read(reinterpret_cast<char*>(&concatLen), sizeof(int32_t));
 
 	/* read arrays and objects */
+	const int32_t N = concatLen + 1;
+	const int32_t nSampled = concatLen / SA_SAMPLE_RATE + 1;
 	in.read(reinterpret_cast<char*>(C), (UINT8_MAX + 1) * sizeof(int32_t));
 	StringUtils::loadString(csSeq, in);
 
 	csIdentity = new double[csLen + 1];
 	in.read(reinterpret_cast<char*>(csIdentity), (csLen + 1) * sizeof(double));
 
-    concat2CS = new uint16_t[concatLen + 1];
-	in.read(reinterpret_cast<char*>(concat2CS), (concatLen + 1) * sizeof(uint16_t));
+	concat2CS = new uint16_t[N];
+	in.read(reinterpret_cast<char*>(concat2CS), N * sizeof(uint16_t));
 
-	saSampled = new uint32_t[concatLen / SA_SAMPLE_RATE + 1];
-	in.read(reinterpret_cast<char*>(saSampled), (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
+	saSampled = new uint32_t[nSampled];
+	if(firstVal == NEW_FORMAT_SENTINEL) // new format
+		in.read(reinterpret_cast<char*>(saSampled), nSampled * sizeof(uint32_t));
+	else
+		in.read(reinterpret_cast<char*>(saSampled), (concatLen / SA_SAMPLE_RATE) * sizeof(uint32_t));
 
 	saIdx = BitSequenceRRR::load(in); /* use RRR implementation */
 	bwt = WaveletTreeNoptrs::load(in);

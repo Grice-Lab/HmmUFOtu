@@ -448,7 +448,7 @@ BandedHMMP7& BandedHMMP7::build(const MSA& msa, double symfrac,
 			/* find the next non P loc on this seq */
 			for(jN = j + 1; jN <= L; ++jN) {
 				int8_t bN = msa.encodeAt(i - 1, jN - 1);
-				p7_state smN = determineMatchingState(cs2ProfileIdx, jN, bN);
+				smN = determineMatchingState(cs2ProfileIdx, jN, bN);
 				if(smN != P)
 					break;
 			}
