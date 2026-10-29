@@ -158,6 +158,7 @@ public:
 	}
 
 	/* private functions */
+private:
 	/*
 	 * Access a given SA loc, either by directly searching the stored value or the next sampled value
 	 * @param i  1-index on SA
@@ -186,6 +187,8 @@ public:
 	/** build saSampled, saIdx and BWT from other members */
 	void buildBWT(const uint8_t* concatSeq);
 
+	/* private fields */
+private:
 	const DegenAlphabet* abc = nullptr;
 	char gapCh = '\0';
 	uint16_t csLen = 0; /* consensus length */
