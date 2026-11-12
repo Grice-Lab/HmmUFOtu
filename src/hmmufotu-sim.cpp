@@ -390,6 +390,9 @@ int main(int argc, char* argv[]) {
 		if(keepGap)
 			seq.append(start, PAD_SYM);
 
+		/* calculate the relative loglik of this branch point */
+		Matrix4Xd rLoglik = PTUnrooted::dot_product_scaled(model->Pr(v * rc), ptu.getBranchLoglik(cNode, pNode)) +
+			PTUnrooted::dot_product_scaled(model->Pr(v * (1 - rc)), ptu.getBranchLoglik(pNode, cNode));
 		for(int j = start; j <= end; ++j) {
 			bool isGap = gap_dist(rng) <= msa.gapWFrac(j);
 			if(isGap) {
@@ -397,12 +400,8 @@ int main(int argc, char* argv[]) {
 					seq.push_back(GAP_SYM);
 			}
 			else {
-				/* calculate the loglik of this branch point */
-				Vector4d rLoglik = PTUnrooted::dot_product_scaled(model->Pr(v * rc), ptu.getBranchLoglik(cNode, pNode, j)) +
-								   PTUnrooted::dot_product_scaled(model->Pr(v * (1 - rc)), ptu.getBranchLoglik(pNode, cNode, j));
 				/* normalize and reset the probabilities of the base distribution */
-				rLoglik.array() -= rLoglik.maxCoeff();
-				basePrMap = rLoglik.array().exp();
+				basePrMap = (rLoglik.col(j).array() - rLoglik.col(j).maxCoeff()).exp();
 				base_dist.param(BaseParam(basePr));
 				seq.push_back(abc->decode(base_dist(rng)));
 			}

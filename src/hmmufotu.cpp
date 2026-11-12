@@ -628,8 +628,8 @@ int main(int argc, char* argv[]) {
 #pragma omp critical(writeLog)
 						{
 							warningLog << "Bad orientation of forward/reverse read detected, treating as chimera" << endl;
-							//							infoLog << "fwd.csStart: " << aln.csStart << " fwd.csEnd: " << aln.csEnd
-							//									<< " rev.csStart: " << revAln.csStart << " rev.csEnd: " << revAln.csEnd << endl;
+							//infoLog	<< "fwd.csStart: " << aln.csStart << " fwd.csEnd: " << aln.csEnd
+							//	<< " rev.csStart: " << revAln.csStart << " rev.csEnd: " << revAln.csEnd << endl;
 						}
 						isChimera = true; /* bad orientation indicates a chimera seq */
 					}
@@ -686,14 +686,16 @@ int main(int argc, char* argv[]) {
 					ptu.placeSeq(seq, altSeg3Place, maxHeight);
 					chimeraLod = bestSeg5Place.loglik - altSeg5Place.loglik + bestSeg3Place.loglik - altSeg3Place.loglik;
 					isChimera = bestSeg5Place.getTaxonId() != bestSeg3Place.getTaxonId() && chimeraLod > minChimeraLod;
+					bestPlace = bestSeg5Place.loglik >= bestSeg3Place.loglik ? bestSeg5Place :  bestSeg3Place;
 				} /* end check chimera */
 
 				if(isChimera) { /* a potential chimera sequence */
 					if(chiOut.is_complete())
-						if(!chimeraInfo)
+						if(!chimeraInfo) {
 #pragma omp critical(writeChiAssign)
 							chiOut << id << "\t" << desc << "\t" << aln
 								<< "\t" << bestPlace << endl;
+						}
 						else
 #pragma omp critical(writeChiAssign)
 							chiOut << id << "\t" << desc << "\t" << aln

@@ -413,9 +413,9 @@ int main(int argc, char* argv[]) {
 	tree.setModel(model);
 
 	/* initiation the tree costs */
-	tree.initRootLoglik();
 	tree.initBranchLoglik();
 	tree.initLeafMat();
+	tree.initRootBranch();
 
 	/* make initial evaluation at the original root */
 	const PTUnrooted::PTUNodePtr root = tree.getRoot();
@@ -424,8 +424,8 @@ int main(int argc, char* argv[]) {
 	else
 		infoLog << "Evaluating Phylogenetic Tree at root id: " << root->getId() << " with fixed rate model first" << endl;
 
-	tree.evaluate(); /* only evaluate, do not cache the root loglik */
-	infoLog << "tree log-liklihood: " << tree.treeLoglik() << endl;
+	tree.evaluate(); /* evaluate at this root */
+	infoLog << "tree loglik: " << tree.treeLoglik() << endl;
 
 	/* construct DG model, if isVar is set */
 	if(isVar) {
@@ -441,8 +441,8 @@ int main(int argc, char* argv[]) {
 		else {
 			infoLog << "Estimated alpha = " << alpha << endl;
 			tree.setDGModel(DiscreteGammaModel(K, alpha));
-			tree.resetBranchLoglik(); /* reset all cached values */
-			tree.resetRootLoglik();   /* reset cached root value */
+			tree.resetBranchLoglik(); /* reset all intermediate branch */
+			tree.resetRootBranch(); /* reset root branch */
 		}
 	}
 
@@ -453,14 +453,11 @@ int main(int argc, char* argv[]) {
 
 	const size_t numNodes = tree.numNodes();
 	for(size_t i = 0; i < numNodes; ++i) {
-		debugLog << "Evaluating root at node " << i << endl;
 		tree.setRoot(i);
 		tree.evaluate();
-		// infoLog << "tree log-liklihood: " << tree.treeLoglik() << endl;
 	}
-	/* reset to original root, and evaluate its root Loglik */
+	/* reset to original root */
 	tree.setRoot(root);
-	tree.updateRootLoglik();
 	infoLog << "Final Tree log-liklihood: " << tree.treeLoglik() << endl;
 
 	/* infer the ancestor seq of all intermediate nodes */
