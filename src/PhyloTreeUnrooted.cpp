@@ -348,10 +348,8 @@ void PhyloTreeUnrooted::evaluate(const PTUNodePtr& node, int start, int end) {
 		}
 
 		/* add leaf loglik if seq is set */
-		if(node->isLeaf() && !node->seq.empty()) { // add leaf loglik per-site
-			for(int j = start; j <= end; ++j)
-				nLoglik.col(j) += getLeafLoglik(node->seq, j);
-		}
+		if(node->isLeaf() && !node->seq.empty()) // add leaf loglik per-site
+			nLoglik += getLeafLoglik(node->seq, start, end);
 	}
 }
 
@@ -734,13 +732,19 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 	const Matrix4Xd& U = getBranchLoglik(u, v);
 	const Matrix4Xd& V = getBranchLoglik(v, u);
 	/* Felsenstein's iterative optimizing algorithm */
+	/* pre-calculate intermediate values */
+	const Matrix4Xd W = U + V;
+	const RowVectorXd& convW = dot_product_scaled(pi, W);
+	const RowVectorXd& convU = dot_product_scaled(pi, U);
+	const RowVectorXd& convV = dot_product_scaled(pi, V);
+
 	for(int iter = 0; iter < MAX_ITER && p >= 0 && p <= 1; ++iter) {
 		p = 0;
 		int N = 0;
 //#pragma omp parallel for reduction(+:p,N)
 		for(int j = start; j <= end; ++j) {
-			double logA = dot_product_scaled(pi, U.col(j) + V.col(j));
-			double logB = dot_product_scaled(pi, U.col(j)) + dot_product_scaled(pi, V.col(j));
+			double logA = convW(j);
+			double logB = convU(j) + convV(j);
 			if(std::isnan(logA) || std::isnan(logB))
 				continue;
 			double scale = std::max(logA, logB);

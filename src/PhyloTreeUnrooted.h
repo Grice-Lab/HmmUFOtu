@@ -1262,6 +1262,20 @@ public:
 	/* return dot product between a pi vector and a loglik vector, scale the second vector if necessary */
 	static double dot_product_scaled(const Vector4d& P, const Vector4d& V);
 
+	/* 
+	 * return dot product between a pi vector and a loglik vector of every column in given region [start, end],
+	 * return the scacled dot_product as a rowVector
+	 */
+	static RowVectorXd dot_product_scaled(const Vector4d& P, const Matrix4Xd& X, int start, int end);
+
+	/* 
+	 * return dot product between a pi vector and a loglik vector of every column in the entire region
+	 * return the scacled dot_product as a rowVector
+	 */
+	static RowVectorXd dot_product_scaled(const Vector4d& P, const Matrix4Xd& X) {
+		return dot_product_scaled(P, X, 0, X.cols() - 1);
+	}
+
 	/* return dot product between two loglik vectors, scale both if necessary */
 	static double dot_product_double_scaled(const Vector4d& V1, const Vector4d& V2);
 
@@ -1453,10 +1467,9 @@ inline Vector4d PTUnrooted::dot_product_scaled(const Matrix4d& X, const Vector4d
 	Vector4d Y;
 	double maxV = V.maxCoeff();
 	double scale = maxV != infV && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
+	const Vector4d expV = (V.array() + scale).exp().matrix();
 
-	for(Vector4d::Index i = 0; i < Y.rows(); ++i)
-		Y(i) = std::log(X.row(i).dot((V.array() + scale).exp().matrix())) - scale;
-	return Y;
+	return (X * expV).array().log() - scale;
 }
 
 inline double PTUnrooted::dot_product_scaled(const Vector4d& P, const Vector4d& V) {
@@ -1464,6 +1477,13 @@ inline double PTUnrooted::dot_product_scaled(const Vector4d& P, const Vector4d& 
 	double scale = maxV != infV && maxV < MIN_LOGLIK_EXP ? MIN_LOGLIK_EXP - maxV : 0;
 
 	return std::log(P.dot((V.array() + scale).exp().matrix())) - scale;
+}
+
+inline RowVectorXd PTUnrooted::dot_product_scaled(const Vector4d& P, const Matrix4Xd& X, int start, int end) {
+	RowVectorXd V(X.cols()); // init RowVector
+	for(int j = start; j <= end; ++j)
+		V(j) = dot_product_scaled(P, static_cast<const Vector4d&> (X.col(j)));
+	return V;
 }
 
 inline double PTUnrooted::dot_product_double_scaled(const Vector4d& V1, const Vector4d& V2) {
