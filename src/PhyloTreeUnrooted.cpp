@@ -897,7 +897,7 @@ double PTUnrooted::placeSeq(const DigitalSeq& seq, const PTUNodePtr& u, const PT
 	return treeLoglik(start, end);
 }
 
-PTUnrooted PTUnrooted::placeSeq(const DigitalSeq& seq, PTPlacement& place, double maxHeight) const {
+void PTUnrooted::placeSeq(const DigitalSeq& seq, PTPlacement& place, double maxHeight) const {
 	double ratio0 = place.ratio;
 	double wnr0 = place.wnr;
 	double loglik0 = place.loglik;
@@ -925,7 +925,6 @@ PTUnrooted PTUnrooted::placeSeq(const DigitalSeq& seq, PTPlacement& place, doubl
 		place.aNode = place.cNode;
 	else
 		place.aNode = place.pNode;
-	return subtree;
 }
 
 bool PhyloTreeUnrooted::isFullCanonicalName(const string& taxon) {

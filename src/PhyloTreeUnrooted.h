@@ -516,6 +516,11 @@ public:
 	/** Construct a PTUnrooted from a Newick Tree */
 	PhyloTreeUnrooted(const NewickTree& ntree);
 
+	/** destructor, call clear first */
+	~PhyloTreeUnrooted() {
+		clear();
+	}
+
 	/* member methods */
 	/** Get the number of nodes of this tree */
 	size_t numNodes() const {
@@ -1139,9 +1144,8 @@ public:
 	 * @param seq  new seq to be placed at a copy of subtree
 	 * @param place  given placement position
 	 * @param maxHeight  maximum height of the annotation source node
-	 * @return  the subtree used for this placement
 	 */
-	PTUnrooted placeSeq(const DigitalSeq& seq, PTPlacement& place, double maxHeight = inf) const;
+	void placeSeq(const DigitalSeq& seq, PTPlacement& place, double maxHeight = inf) const;
 
 	/**
 	 * get posterial consensus sequence (CS) of a node using observed count data,
@@ -1220,6 +1224,12 @@ private:
 	 */
 	ostream& saveDGModel(ostream& out) const;
 
+	/* private methods */
+private:
+	/**
+	 * clear this tree, release all resources
+	 */
+	void clear();
 
 public:
 	/* static methods */
@@ -1599,6 +1609,18 @@ inline ostream& PTUnrooted::PTPlacement::write(ostream& out) const {
 			<< getAnnoDist() << "\t" << loglik << "\t"
 			<< qPlace << "\t" << qTaxon;
 	return out;
+}
+
+inline void PTUnrooted::clear() {
+	for(PTUNodePtr& node: id2node) {
+		node->neighbors.clear();
+		node->parent = nullptr;
+	}
+	
+	node2branch.clear();
+	node2height.clear();
+	id2node.clear();
+	root = nullptr;
 }
 
 inline ostream& operator<<(ostream& out, const PTUnrooted::PTPlacement& place) {
