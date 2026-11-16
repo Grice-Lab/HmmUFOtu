@@ -8,6 +8,7 @@
 #ifndef SRC_MATH_DIRICHLETMIXTURE_H_
 #define SRC_MATH_DIRICHLETMIXTURE_H_
 
+#include <cmath>
 #include <string>
 #include "DirichletModel.h"
 
@@ -97,7 +98,7 @@ public:
 	 * implemet the base abstract method
 	 */
 	virtual double lpdf(const VectorXd& freq) const {
-		return ::log(pdf(freq));
+		return std::log(pdf(freq));
 	}
 
 	/* static methods */

@@ -7,6 +7,7 @@
 
 #include <cstdlib>
 #include <cfloat>
+#include <cmath>
 #include <iostream>
 #include "RootFinder.h"
 
@@ -39,7 +40,7 @@ double RootFinder::rootBisection() {
 
 		xmag = (xl < 0 && xr > 0) ? 0 : x;
 
-		if(xr - xl < absEps + relEps * xmag || ::fabs(fx) < resEps) /* an approximate root */
+		if(xr - xl < absEps + relEps * xmag || std::fabs(fx) < resEps) /* an approximate root */
 			break;
 
 		/* narrow the bracket */

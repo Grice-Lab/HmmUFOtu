@@ -56,7 +56,7 @@ VectorXd DirichletMixture::meanPostP(const VectorXd& data) const {
 	RowVectorXd alphaSum = alpha.colwise().sum();
 	for(int i = 0; i < K; ++i)
 		for(int j = 0; j < L; ++j)
-			X(i) += q(j) * ::exp(logB(j)) * (alpha(i, j) + data(i)) / (alphaSum(j) + dataSum);
+			X(i) += q(j) * std::exp(logB(j)) * (alpha(i, j) + data(i)) / (alphaSum(j) + dataSum);
 	return X / X.sum();
 }
 
@@ -162,7 +162,7 @@ double DirichletMixture::pdf(const VectorXd& data) const {
 						- lgamma(static_cast<double> (data(i)) + 1)
 						- lgamma(static_cast<double> (alpha(i, j)));
 		}
-		p += q(j) * ::exp(logC + logS);
+		p += q(j) * std::exp(logC + logS);
 	}
 	return p;
 }

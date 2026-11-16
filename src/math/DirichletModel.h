@@ -186,7 +186,7 @@ inline istream& operator>>(istream& in, DirichletModel& dm) {
 }
 
 inline double DirichletModel::pdf(const VectorXd& data) const {
-	return ::exp(lpdf(data));
+	return std::exp(lpdf(data));
 }
 
 inline double DirichletModel::cost(const MatrixXd& data) const {

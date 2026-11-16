@@ -20,7 +20,7 @@ namespace Math {
 using Eigen::VectorXd;
 using Eigen::MatrixBase;
 
-constexpr double NAT2BIT = 1.0 / ::log(2);
+constexpr double NAT2BIT = 1.0 / std::log(2);
 
 /**
  * Normalize a vector
@@ -69,7 +69,7 @@ inline double dDirichlet(const VectorXd& alpha, const VectorXd& x) {
 	/* calculate numerator */
 	double logNumer = 0;
 	for(VectorXd::Index i = 0; i < K; ++i)
-		logNumer += (alpha(i) - 1.0) * ::log(xNorm(i));
+		logNumer += (alpha(i) - 1.0) * std::log(xNorm(i));
 
 	/* calculate denominator */
 	double logDenom = 0;
@@ -78,7 +78,7 @@ inline double dDirichlet(const VectorXd& alpha, const VectorXd& x) {
 	logDenom -= ::lgamma(alpha.sum());
 
 //	std::cerr << "logNumer:" << logNumer << " logDenom:" << logDenom << std::endl;
-	return ::exp(logNumer - logDenom);
+	return std::exp(logNumer - logDenom);
 }
 
 /**
@@ -91,7 +91,7 @@ inline double relative_entropy(const VectorXd& p, const VectorXd& q) {
 	double ent = 0;
 	for(VectorXd::Index i = 0; i < N; ++i)
 		if(p(i) > 0)
-			ent += p(i) * ::log( static_cast<double> (p(i)) / static_cast<double> (q(i)) );
+			ent += p(i) * std::log( static_cast<double> (p(i)) / static_cast<double> (q(i)) );
 	return NAT2BIT * ent; /* return entropy in bits */
 }
 

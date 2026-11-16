@@ -193,17 +193,17 @@ inline void normalize(double* arr, size_t n, double C = 1.0) {
  */
 inline double add_scaled(double logA, double logB) {
 	double scale = std::max(logA, logB); /* always scaling */
-	return ::log(::exp(logA - scale) + ::exp(logB - scale)) + scale;
+	return std::log(std::exp(logA - scale) + std::exp(logB - scale)) + scale;
 }
 
 /** calculate Q value from p-value */
 inline double p2q(double p, double b = 10) {
-	return -b * ::log(p) / ::log(b);
+	return -b * std::log(p) / std::log(b);
 }
 
 /** calculate p value from q-value */
 inline double q2p(double q, double b = 10) {
-	return ::exp(- q / b * ::log(b));
+	return std::exp(- q / b * std::log(b));
 }
 
 /** calculate Eucledian distance between two vectors */
@@ -220,7 +220,7 @@ inline double euclideanDist(const Vector4d& p, const Vector4d& q) {
 /** calculate Bhattacharyya distance between two vectors */
 inline double bhattacharyyaDist(const VectorXd& p, const VectorXd& q) {
 	assert(p.rows() == q.rows());
-	return - ::log(p.cwiseProduct(q).cwiseSqrt().sum());
+	return - std::log(p.cwiseProduct(q).cwiseSqrt().sum());
 }
 
 /** calculate the Kullback–Leibler KL divergence */
