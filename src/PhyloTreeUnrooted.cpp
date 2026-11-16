@@ -721,7 +721,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 
 	double w0 = getBranchLength(u, v);
 
-	double q0 = ::exp(-w0);
+	double q0 = std::exp(-w0);
 	double p0 = 1 - q0;
 
 	double p = p0;
@@ -750,7 +750,7 @@ double PTUnrooted::optimizeBranchLength(const PTUNodePtr& u, const PTUNodePtr& v
 			double scale = std::max(logA, logB);
 			logA -= scale;
 			logB -= scale;
-			p += ::exp(logB) * p0 / (::exp(logA) * q0 + ::exp(logB) * p0);
+			p += std::exp(logB) * p0 / (std::exp(logA) * q0 + std::exp(logB) * p0);
 			N++;
 		}
 		p /= N;

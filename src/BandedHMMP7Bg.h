@@ -74,7 +74,7 @@ public:
 	 * return the background transition lods between G states
 	 */
 	double getBgTransLods() const {
-		return log(p1);
+		return std::log(p1);
 	}
 
 	/*

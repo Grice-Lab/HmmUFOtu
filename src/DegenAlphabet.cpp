@@ -52,9 +52,9 @@ DegenAlphabet::DegenAlphabet(const string& name, const string& sym_str, const st
 	// set the symbol map for both upper and lower cases
 	for(int8_t i = 0; i != symbol.length(); ++i) {
 		char c = symbol[i];
-		assert(std::isupper(c));
+		assert(::isupper(c));
 		sym_map[c] = i;
-		sym_map[std::tolower(c)] = i;
+		sym_map[::tolower(c)] = i;
 	}
 
 	/* process degen_map */

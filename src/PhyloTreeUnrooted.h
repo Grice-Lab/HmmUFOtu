@@ -455,7 +455,7 @@ public:
 
 		/** calculate prior proability of a placement given a prior type */
 		double priorPr(PRIOR_TYPE type) const {
-			return ::exp(logPriorPr(type));
+			return std::exp(logPriorPr(type));
 		}
 
 		/** get the annotation distance of this placement */

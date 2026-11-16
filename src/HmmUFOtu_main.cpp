@@ -24,6 +24,7 @@
  *      Author: zhengqi
  */
 
+#include <cmath>
 #include <Eigen/Dense>
 #include <cassert>
 #include <algorithm>
@@ -209,7 +210,7 @@ void calcQValues(vector<PTUnrooted::PTPlacement>& places, PTUnrooted::PRIOR_TYPE
 
 	/* calculate qTaxonomy */
 	for(vector<PTUnrooted::PTPlacement>::iterator placement = places.begin(); placement != places.end(); ++placement) {
-		double q = EGriceLab::Math::p2q(1 - ::exp(ppTaxon[placement->getTaxonName()] - ppTaxNorm));
+		double q = EGriceLab::Math::p2q(1 - std::exp(ppTaxon[placement->getTaxonName()] - ppTaxNorm));
 		placement->qTaxon = q > PTUnrooted::PTPlacement::MAX_Q ? PTUnrooted::PTPlacement::MAX_Q : q;
 	}
 }

@@ -114,9 +114,9 @@ inline Matrix4d HKY85::Pr(double v) const {
 	double c = pi(C);
 	double g = pi(G);
 	double t = pi(T);
-	double e = ::exp(-beta * v);
-	double eR = ::exp(-(1 + (a + g) * (kappa - 1)) * beta * v);
-	double eY = ::exp(-(1 + (c + t) * (kappa - 1)) * beta * v);
+	double e = std::exp(-beta * v);
+	double eR = std::exp(-(1 + (a + g) * (kappa - 1)) * beta * v);
+	double eY = std::exp(-(1 + (c + t) * (kappa - 1)) * beta * v);
 
 	P(A, A) = (a * (a + g + (c + t) * e) + g * eR) / (a + g); /* self */
 	P(A, C) = c * (1 - e);                                    /* Tv */
@@ -154,7 +154,7 @@ inline double HKY85::subDist(const Matrix4d& D, double N) const {
 	double coefC = (a + g) * (c + t);
 	double p = (D(A,G) + D(G,A) + D(C,T) + D(T,C)) / N; /* observed Ti diff */
 	double q = (D(A,C) + D(A,T) + D(C,A) + D(C,G) + D(G,C) + D(G,T) + D(T,A) + D(T,G)) / N; /* observed Tv diff */
-	return - 2 * coefA * ::log(1 - p / (2 * coefA) - (coefA - coefB) * q / (2 * coefA * coefC));
+	return - 2 * coefA * std::log(1 - p / (2 * coefA) - (coefA - coefB) * q / (2 * coefA * coefC));
 }
 
 } /* namespace HmmUFOtu */

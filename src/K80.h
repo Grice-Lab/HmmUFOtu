@@ -108,8 +108,8 @@ private:
 
 inline Matrix4d K80::Pr(double v) const {
 	Matrix4d P;
-	double e = ::exp(-4 * beta * v);
-	double eV = ::exp(-2 * (1 + kappa) * beta * v);
+	double e = std::exp(-4 * beta * v);
+	double eV = std::exp(-2 * (1 + kappa) * beta * v);
 	P.diagonal().setConstant((1.0 + e + 2 * eV) / 4);
 	P(A,G) = P(G,A) = P(C,T) = P(T,C) = (1.0 + e - 2 * eV) / 4;
 	P(A,C) = P(A,T) = P(C,A) = P(C,G) = P(G,C) = P(G,T) = P(T,A) = P(T,G) = (1.0 - e) / 4;
@@ -122,7 +122,7 @@ inline double K80::subDist(const Matrix4d& D, double N) const {
 		return 0;
 	double p = (D(A,G) + D(G,A) + D(C,T) + D(T,C)) / N; /* observed Ti diff */
 	double q = (D(A,C) + D(A,T) + D(C,A) + D(C,G) + D(G,C) + D(G,T) + D(T,A) + D(T,G)) / N; /* observed Tv diff */
-	return - 1.0 / 2 * ::log(1 - 2 * p - q) - 1.0 / 4 * ::log(1 - 2 * q);
+	return - 1.0 / 2 * std::log(1 - 2 * p - q) - 1.0 / 4 * std::log(1 - 2 * q);
 }
 
 } /* namespace HmmUFOtu */

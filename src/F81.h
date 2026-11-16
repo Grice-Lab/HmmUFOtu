@@ -108,7 +108,7 @@ private:
 
 inline Matrix4d F81::Pr(double v) const {
 	Matrix4d P;
-	double e = ::exp(-beta * v);
+	double e = std::exp(-beta * v);
 	for(Matrix4d::Index i = 0; i < P.rows(); ++i)
 		for(Matrix4d::Index j = 0; j < P.cols(); ++j)
 			P(i, j) = i == j ? e + pi(j) * (1 - e) : pi(j) * (1 - e);
@@ -121,7 +121,7 @@ inline double F81::subDist(const Matrix4d& D, double N) const {
 		return 0;
 	double p = (D.sum() - D.diagonal().sum()) / N;
 	double E = 1 - pi.squaredNorm();
-	return - E * ::log(1 - p / E);
+	return - E * std::log(1 - p / E);
 }
 
 } /* namespace HmmUFOtu */

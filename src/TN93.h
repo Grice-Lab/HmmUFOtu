@@ -116,9 +116,9 @@ inline Matrix4d TN93::Pr(double v) const {
 	double c = pi(C);
 	double g = pi(G);
 	double t = pi(T);
-	double e = ::exp(-beta * v);
-	double eR = ::exp(-(1 + (a + g) * (kr - 1)) * beta * v);
-	double eY = ::exp(-(1 + (c + t) * (ky - 1)) * beta * v);
+	double e = std::exp(-beta * v);
+	double eR = std::exp(-(1 + (a + g) * (kr - 1)) * beta * v);
+	double eY = std::exp(-(1 + (c + t) * (ky - 1)) * beta * v);
 
 	P(A, A) = (a * (a + g + (c + t) * e) + g * eR) / (a + g); /* self */
 	P(A, C) = c * (1 - e);                                    /* Tv */
@@ -157,9 +157,9 @@ inline double TN93::subDist(const Matrix4d& D, double N) const {
 	double py = (D(C,T) + D(T,C)) / N; /* observed Ty diff */
 	double q = (D(A,C) + D(A,T) + D(C,A) + D(C,G) + D(G,C) + D(G,T) + D(T,A) + D(T,G)) / N; /* observed Tv diff */
 
-	return - 2 * a * g / r * ::log(1 - r / (2 * a * g) * pr - 1 / (2 * r) * q)
-		   - 2 * g * c / y * ::log(1 - y / (2 * t * c) * py - 1 / (2 * y) * q)
-	       - 2 * (r * y - a * g * y / r - t * c * r / y) * ::log(1 - 1 / (2 * r * y) * q);
+	return - 2 * a * g / r * std::log(1 - r / (2 * a * g) * pr - 1 / (2 * r) * q)
+		   - 2 * g * c / y * std::log(1 - y / (2 * t * c) * py - 1 / (2 * y) * q)
+	       - 2 * (r * y - a * g * y / r - t * c * r / y) * std::log(1 - 1 / (2 * r * y) * q);
 }
 
 } /* namespace HmmUFOtu */

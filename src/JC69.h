@@ -98,8 +98,8 @@ private:
 };
 
 inline Matrix4d JC69::Pr(double v) const {
-	Matrix4d P = Matrix4d::Constant((1 - ::exp(-4 * v / 3)) / 4);
-	P.diagonal().setConstant((1 + 3 * ::exp(-4 * v / 3)) / 4);
+	Matrix4d P = Matrix4d::Constant((1 - std::exp(-4 * v / 3)) / 4);
+	P.diagonal().setConstant((1 + 3 * std::exp(-4 * v / 3)) / 4);
 	return P;
 }
 
@@ -107,7 +107,7 @@ inline double JC69::subDist(const Matrix4d& D, double N) const {
 	if(N == 0)
 		return 0;
 	double p = (D.sum() - D.diagonal().sum()) / N; /* p-distance */
-	return - 3.0 / 4.0 * ::log(1.0 - 4.0 / 3.0 * p);
+	return - 3.0 / 4.0 * std::log(1.0 - 4.0 / 3.0 * p);
 }
 
 } /* namespace HmmUFOtu */

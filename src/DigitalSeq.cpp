@@ -84,7 +84,7 @@ string DigitalSeq::join(const string& sep) {
 
 DigitalSeq& DigitalSeq::append(const string& str) {
 	for(string::value_type c : str) {
-		c = std::toupper(c);
+		c = ::toupper(c);
 		if(abc->isValid(c))
 			push_back(abc->encode(c));
 	}

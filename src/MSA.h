@@ -32,6 +32,7 @@
 #include <stdexcept>
 #include <Eigen/Dense>
 #include <cmath>
+#include <cctype>
 
 #include "HmmUFOtuConst.h"
 #include "SeqUtils.h"
@@ -461,7 +462,7 @@ inline char MSA::residualAt(unsigned i, unsigned j) const {
 }
 
 inline int8_t MSA::encodeAt(unsigned i, unsigned j) const {
-	return abc->encode(std::toupper(concatMSA[i * csLen + j]));
+	return abc->encode(::toupper(concatMSA[i * csLen + j]));
 }
 
 inline string MSA::seqAt(unsigned i) const {

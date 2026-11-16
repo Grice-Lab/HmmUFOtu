@@ -110,7 +110,7 @@ istream& BandedHMMP7::read(istream& in) {
 		istringstream iss(line); // detail parse this line
 		string tag; /* header tag names and values */
 		string tmp;
-		if (!isspace(line[0])) { /* header section starts with non-empty characters */
+		if (!::isspace(line[0])) { /* header section starts with non-empty characters */
 			iss >> tag;
 			if (tag.substr(0, 6) == "HMMER3") { // do not override our version, check minor version
 				if(tag.length() < 8 || tag[7] < 'f') {
@@ -1091,7 +1091,7 @@ void BandedHMMP7::wingRetract() {
 			cost += Tmat_cost[i](D, D); // Di->Di+1
 		cost += Tmat_cost[j-1](D, M); // Dj-1->Mj
 		assert(cost > 0);
-		entryPr(j) += ::exp(-cost); // retract B->D1->D2...Dj-1->Mj to B->Mj
+		entryPr(j) += std::exp(-cost); // retract B->D1->D2...Dj-1->Mj to B->Mj
 		if(entryPr(j) > 1)
 			entryPr(j) = 1;
 	}
@@ -1104,7 +1104,7 @@ void BandedHMMP7::wingRetract() {
 			cost += Tmat_cost[j](D, D); // Dj->Dj+1
 		cost += Tmat_cost[K](D, M); // DK -> E (DK->MK+1)
 		assert(cost > 0);
-		exitPr(i) += ::exp(-cost); // retract Mj->Dj+1->Dj+2...->DK->E to Mj->E
+		exitPr(i) += std::exp(-cost); // retract Mj->Dj+1->Dj+2...->DK->E to Mj->E
 		if(exitPr(i) > 1)
 			exitPr(i) = 1;
 	}
@@ -1159,20 +1159,20 @@ string BandedHMMP7::getPaddingSeq(int L, const string& insert, char padCh, paddi
 		if(insert.length() >= L)
 			pad.append(insert.substr((insert.length() - L) / 2, L));
 		else {
-			pad.append(static_cast<int> (::floor((L - insert.length()) / 2.0)), padCh);
+			pad.append(static_cast<int> (std::floor((L - insert.length()) / 2.0)), padCh);
 			pad.append(insert);
-			pad.append(static_cast<int> (::ceil((L - insert.length()) / 2.0)), padCh);
+			pad.append(static_cast<int> (std::ceil((L - insert.length()) / 2.0)), padCh);
 		}
 		break;
 	case JUSTIFIED:
 		if(insert.length() >= L) {
-			pad.append(insert.substr(0, static_cast<int> (::floor(L / 2.0))));
-			pad.append(insert.substr(insert.length() - static_cast<int> (::ceil(L / 2.0)), static_cast<int> (::ceil(L / 2.0))));
+			pad.append(insert.substr(0, static_cast<int> (std::floor(L / 2.0))));
+			pad.append(insert.substr(insert.length() - static_cast<int> (std::ceil(L / 2.0)), static_cast<int> (std::ceil(L / 2.0))));
 		}
 		else {
-			pad.append(insert.substr(0, static_cast<int> (::floor(insert.length() / 2.0))));
+			pad.append(insert.substr(0, static_cast<int> (std::floor(insert.length() / 2.0))));
 			pad.append(L - insert.length(), padCh);
-			pad.append(insert.substr(0, static_cast<int> (::ceil(insert.length() / 2.0))));
+			pad.append(insert.substr(0, static_cast<int> (std::ceil(insert.length() / 2.0))));
 		}
 		break;
 	default:
