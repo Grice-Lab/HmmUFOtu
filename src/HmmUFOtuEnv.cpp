@@ -30,7 +30,7 @@
 namespace EGriceLab {
 
 const std::string progName = "HmmUFOtu";
-const VersionSequence progVer("v1.6.3");
+const VersionSequence progVer("v1.6.4");
 const std::string projectURL = "https://github.com/Grice-Lab/HmmUFOtu";
 
 } /* namespace EGriceLab */
