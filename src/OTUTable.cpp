@@ -26,6 +26,22 @@ const IOFormat OTUTable::dblTabFmt(FullPrecision, DontAlignCols, "\t", "\n", "",
 const IOFormat OTUTable::fltTabFmt(FullPrecision, DontAlignCols, "\t", "\n", "", "", "");
 OTUTable::RNG OTUTable::rng(time(NULL)); /* initiate RNG with random seed */
 
+OTUTable::OTUTable(const vector<string>& samples, const OTUMap& id2OTU) : samples(samples) {
+	const OTUMap::size_type M = id2OTU.size(); // num of OTUs
+	const vector<string>::size_type N = samples.size(); // num of samples
+	otus.reserve(M);
+	metric = MatrixXd(M, N); // init metrix
+	for(const OTUMap::value_type& item : id2OTU) {
+		// const long id = item.first;
+		const OTUObserved& otu = item.second;
+		assert(otu.N == N);
+		vector<string>::size_type i = otus.size(); // index using current otus size
+		otus.push_back(otu.id); // add this OTU id
+		otu2Taxon[otu.id] = otu.taxon; // insert this OTU taxon
+		metric.row(i) = otu.count; // copy otu.count
+	}
+}
+
 void OTUTable::clear() {
 	samples.clear();
 	otus.clear();

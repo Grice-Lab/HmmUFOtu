@@ -58,7 +58,8 @@ using Eigen::RowVectorXd;
 class OTUTable {
 public:
 	/* typedefs */
-	typedef map<string, string> otuMap;
+	typedef map<string, string> taxonMap; // taxonMap using OTU ID
+	typedef map<long, OTUObserved> OTUMap; // OTUMap using node_id as keys for uniqueness
 	typedef boost::random::mt11213b RNG; /* preferred random number generator type */
 	typedef boost::random::discrete_distribution<size_t> ReadDistrib; /* base (nucleotide) distribution */
 	typedef ReadDistrib::param_type ReadParam; /* read distribution parameters */
@@ -68,7 +69,7 @@ public:
 	OTUTable() = default;
 
 	/** construct an OTUTable with given samples and OTU list */
-	OTUTable(const vector<string>& samples, const vector<string>& otus, const otuMap& otu2Taxon, const MatrixXd& otuMetric) :
+	OTUTable(const vector<string>& samples, const vector<string>& otus, const taxonMap& otu2Taxon, const MatrixXd& otuMetric) :
 		samples(samples), otus(otus), otu2Taxon(otu2Taxon), metric(otuMetric)
 	{  }
 
@@ -76,6 +77,9 @@ public:
 	explicit OTUTable(const vector<string>& samples) :
 			samples(samples), metric(0, samples.size())
 	{  }
+
+	/** construct an OTUTable with num of aligned sites L, a vector of samples, and an OTUMap using unique OTU IDs */
+	OTUTable(const vector<string>& samples, const OTUMap& id2OTU);
 
 	/** member methods */
 	/** get size of this OTUTable */
@@ -400,7 +404,7 @@ private:
 	/** member fields */
 	vector<string> samples; /* 0..N sample names */
 	vector<string> otus;    /* 0..M OTUs */
-	otuMap otu2Taxon;
+	taxonMap otu2Taxon;
 	MatrixXd metric; /* M * N matrix of OTU (relative) abundance metric */
 
 	/** static fields */
