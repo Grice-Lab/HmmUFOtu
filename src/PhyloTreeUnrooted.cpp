@@ -77,7 +77,7 @@ const string PhyloTreeUnrooted::FAMILY_PREFIX = "f__";
 const string PhyloTreeUnrooted::GENUS_PREFIX = "g__";
 const string PhyloTreeUnrooted::SPECIES_PREFIX = "s__";
 
-const string PhyloTreeUnrooted::DEFAULT_ROOT_NAME = "cellular_organisms";
+const string PhyloTreeUnrooted::DEFAULT_ROOT_NAME = "d__cellular_organisms";
 
 const Matrix4d PhyloTreeUnrooted::leafMat = initLeafMat();
 const PTUnrooted::DGammaPtr PhyloTreeUnrooted::nulldG;
