@@ -516,11 +516,6 @@ public:
 	/** Construct a PTUnrooted from a Newick Tree */
 	PhyloTreeUnrooted(const NewickTree& ntree);
 
-	/** destructor, call clear first */
-	~PhyloTreeUnrooted() {
-		clear();
-	}
-
 	/* member methods */
 	/** Get the number of nodes of this tree */
 	size_t numNodes() const {
@@ -1224,8 +1219,6 @@ private:
 	 */
 	ostream& saveDGModel(ostream& out) const;
 
-	/* private methods */
-private:
 	/**
 	 * clear this tree, release all resources
 	 */

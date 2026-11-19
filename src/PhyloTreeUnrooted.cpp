@@ -925,6 +925,8 @@ void PTUnrooted::placeSeq(const DigitalSeq& seq, PTPlacement& place, double maxH
 		place.aNode = place.cNode;
 	else
 		place.aNode = place.pNode;
+	/* clear subtree */
+	subtree.clear();
 }
 
 bool PhyloTreeUnrooted::isFullCanonicalName(const string& taxon) {
